@@ -13,7 +13,7 @@
 namespace App\Organization\Domain\Exception;
 
 /**
- * No live pending invitation to act on. Declined, revoked and expired invitations are terminal, so a
+ * No active pending invitation to act on. Declined, revoked and expired invitations are terminal, so a
  * fresh invitation is required rather than reviving one.
  */
 final class NoPendingInvitationException extends OrganizationException

@@ -36,7 +36,7 @@ use Symfony\Component\Uid\Ulid;
  *
  * External facts are checked by {@see \App\Organization\InvitationManager} before a command reaches
  * here: that the org is active, that the target teams exist and belong to the org, that no duplicate
- * live invitation exists, and the raw-token match. The org-side membership created on acceptance lives
+ * active invitation exists, and the raw-token match. The org-side membership created on acceptance lives
  * on the org aggregate; the manager appends both streams in one transaction.
  */
 final class Invitation extends AbstractAggregate

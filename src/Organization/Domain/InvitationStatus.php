@@ -13,7 +13,7 @@
 namespace App\Organization\Domain;
 
 /**
- * Lifecycle of an {@see Invitation}. Only {@see self::Pending} is a live state; every other value is
+ * Lifecycle of an {@see Invitation}. Only {@see self::Pending} is an active state; every other value is
  * terminal (a resolved invitation is never revived, a fresh {@see \App\Organization\Domain\Event\UserInvitationSent}
  * is required instead). The backing values are persisted in the {@see \App\Entity\OrganizationInvitation}
  * read model and event payloads, so they must remain stable.

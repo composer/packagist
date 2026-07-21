@@ -13,7 +13,7 @@
 namespace App\Organization\Domain\Exception;
 
 /**
- * A live (pending, unexpired) invitation already exists for this org/email pair.
+ * An active (pending, unexpired) invitation already exists for this org/email pair.
  */
 final class DuplicatePendingInvitationException extends OrganizationException
 {

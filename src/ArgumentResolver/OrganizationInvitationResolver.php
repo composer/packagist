@@ -25,7 +25,7 @@ use Symfony\Component\Uid\Ulid;
  * Loads an {@see OrganizationInvitation} from the `invitation` route attribute, ensuring it belongs to
  * the organization named in the same route and is still actionable, i.e. pending and not past its
  * expiry. Anything else (unknown id, another organization's invitation, or one that is resolved or
- * expired) resolves to a 404, so an owner can only act on a live invitation and nothing leaks across
+ * expired) resolves to a 404, so an owner can only act on an active invitation and nothing leaks across
  * org boundaries.
  */
 final readonly class OrganizationInvitationResolver implements ValueResolverInterface
@@ -55,7 +55,7 @@ final readonly class OrganizationInvitationResolver implements ValueResolverInte
             throw new NotFoundHttpException('Invitation not found.');
         }
 
-        if (!$invitation->isLive($this->clock->now())) {
+        if (!$invitation->isActive($this->clock->now())) {
             throw new NotFoundHttpException('Invitation not found.');
         }
 

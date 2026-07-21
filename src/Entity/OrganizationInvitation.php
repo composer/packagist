@@ -93,7 +93,7 @@ class OrganizationInvitation
      * A pending invitation that has not yet passed its expiry, i.e. one a valid link can still act on
      * and one that blocks a duplicate {@see \App\Organization\Domain\Event\UserInvitationSent}.
      */
-    public function isLive(\DateTimeImmutable $now): bool
+    public function isActive(\DateTimeImmutable $now): bool
     {
         return $this->isPending() && !$this->isExpired($now);
     }

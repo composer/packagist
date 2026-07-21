@@ -78,7 +78,7 @@ final class InvitationManager
         // Rate limiting (per-org pending cap, per-user/24h, per-IP) is intentionally not enforced yet;
         // the concrete limits are an open question. See .task/open-questions.md. This is the seam.
 
-        if ($this->invitations->findLiveForEmail($organization->id, $emailVo->canonical, $now) !== null) {
+        if ($this->invitations->findActiveForEmail($organization->id, $emailVo->canonical, $now) !== null) {
             throw new DuplicatePendingInvitationException(sprintf('There is already a pending invitation for "%s".', $emailVo->value));
         }
 

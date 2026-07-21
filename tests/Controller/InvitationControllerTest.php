@@ -153,7 +153,7 @@ class InvitationControllerTest extends IntegrationTestCase
         $alice = self::createUser('alice', 'alice@example.org');
         $this->store($alice);
 
-        // A pending-but-expired invitation is no longer live, so the resolver rejects the link.
+        // A pending-but-expired invitation is no longer active, so the resolver rejects the link.
         $invitation = new OrganizationInvitation(
             new Ulid(),
             $organization->id,
