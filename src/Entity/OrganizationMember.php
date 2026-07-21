@@ -18,8 +18,7 @@ use Symfony\Component\Uid\Ulid;
 /**
  * Read-model projection of an org-level membership. A member's access is still derived from their team
  * memberships ({@see OrganizationTeamMember}); this row carries the org-scoped facts that team rows
- * cannot express (when they joined, whether they are suspended, when policies were last checked) and is
- * the record the Policy section keys off. It carries no role: an owner is simply a member of the
+ * cannot express (when they joined). It carries no role: an owner is simply a member of the
  * `owners` team.
  *
  * Maintained by {@see \App\Organization\Projection\OrganizationReadModelProjector} alongside team
@@ -41,12 +40,6 @@ class OrganizationMember
 
         #[ORM\Column(type: 'datetime_immutable')]
         public readonly \DateTimeImmutable $joinedAt,
-
-        #[ORM\Column]
-        public bool $suspended = false,
-
-        #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-        public ?\DateTimeImmutable $lastPolicyCheckAt = null,
     ) {
     }
 }

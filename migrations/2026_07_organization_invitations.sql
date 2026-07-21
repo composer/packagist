@@ -42,14 +42,11 @@ CREATE TABLE organization_invitation_team (
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
 
 -- Org-level membership record. A member's team memberships (organization_team_member) still drive
--- access; this row carries the org-scoped facts that are not derivable from team rows (joinedAt,
--- suspended, lastPolicyCheckAt) and is the row the Policy section (a later stage) keys off.
+-- access; this row carries the org-scoped facts that are not derivable from team rows (joinedAt).
 CREATE TABLE organization_member (
     orgId BINARY(16) NOT NULL,
     userId INT NOT NULL,
     joinedAt DATETIME NOT NULL,
-    suspended TINYINT(1) NOT NULL DEFAULT 0,
-    lastPolicyCheckAt DATETIME DEFAULT NULL,
     PRIMARY KEY (orgId, userId),
     KEY org_member_user_idx (userId),
     CONSTRAINT FK_organization_member_org FOREIGN KEY (orgId) REFERENCES organization (id) ON DELETE CASCADE,
