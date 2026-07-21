@@ -248,7 +248,7 @@ final class InvitationManager
     {
         $acceptUrl = $this->urlGenerator->generate(
             'organization_invitation_show',
-            ['organization' => $organization->slug, 'invite' => $invitationId->toBase32(), 'token' => $rawToken],
+            ['organization' => $organization->slug, 'invitation' => $invitationId->toBase32(), 'token' => $rawToken],
             UrlGeneratorInterface::ABSOLUTE_URL,
         );
 

@@ -7,7 +7,7 @@
 
     <p>
         You have been invited to join
-        <strong>{{ organization ? organization.displayName : 'an organization' }}</strong>
+        <strong>{{ organization.displayName }}</strong>
         on Packagist.org.
     </p>
 
@@ -27,10 +27,10 @@
         {% endif %}
 
         <div class="btn-toolbar">
-            {{ form_start(acceptForm, { action: path('organization_invitation_accept', { organization: slug, invite: invite, token: token }), attr: { style: 'display:inline' } }) }}
+            {{ form_start(acceptForm, { action: path('organization_invitation_accept', { organization: organization.slug, invitation: invitation.id, token: token }), attr: { style: 'display:inline' } }) }}
                 <button class="btn btn-success" type="submit">Accept invitation</button>
             {{ form_end(acceptForm) }}
-            {{ form_start(declineForm, { action: path('organization_invitation_decline', { organization: slug, invite: invite, token: token }), attr: { style: 'display:inline' } }) }}
+            {{ form_start(declineForm, { action: path('organization_invitation_decline', { organization: organization.slug, invitation: invitation.id, token: token }), attr: { style: 'display:inline' } }) }}
                 <button class="btn btn-default" type="submit">Decline</button>
             {{ form_end(declineForm) }}
         </div>

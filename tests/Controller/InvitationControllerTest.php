@@ -147,6 +147,33 @@ class InvitationControllerTest extends IntegrationTestCase
         self::assertSame(InvitationStatus::Revoked, $rows[0]->status);
     }
 
+    public function testExpiredInvitationLinkReturns404(): void
+    {
+        [, $organization] = $this->orgWithTeam();
+        $alice = self::createUser('alice', 'alice@example.org');
+        $this->store($alice);
+
+        // A pending-but-expired invitation is no longer live, so the resolver rejects the link.
+        $invitation = new OrganizationInvitation(
+            new Ulid(),
+            $organization->id,
+            'alice@example.org',
+            'alice@example.org',
+            InvitationStatus::Pending,
+            'hash',
+            new \DateTimeImmutable('-8 days'),
+            new \DateTimeImmutable('-1 day'),
+            new \DateTimeImmutable('-8 days'),
+            null,
+        );
+        $this->store($invitation);
+
+        $this->client->loginUser($alice);
+        $this->client->request('GET', sprintf('/organizations/acme/invitations/%s/%s', $invitation->id->toBase32(), str_repeat('a', 64)));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testInviteeAcceptsThroughLink(): void
     {
         [$owner, $organization, $backend] = $this->orgWithTeam();
@@ -190,7 +217,7 @@ class InvitationControllerTest extends IntegrationTestCase
         );
     }
 
-    public function testInvalidTokenReturns403(): void
+    public function testInvalidTokenReturns404(): void
     {
         [$owner, , $backend] = $this->orgWithTeam();
         $alice = self::createUser('alice', 'alice@example.org');
@@ -206,7 +233,8 @@ class InvitationControllerTest extends IntegrationTestCase
         $this->client->loginUser($alice);
         $this->client->request('GET', $tampered);
 
-        self::assertResponseStatusCodeSame(403);
+        // A bad token is indistinguishable from a missing/expired invitation: both are 404.
+        self::assertResponseStatusCodeSame(404);
     }
 
     public function testEmailMismatchHidesAcceptButton(): void
@@ -230,8 +258,24 @@ class InvitationControllerTest extends IntegrationTestCase
     public function testLinkRequiresAuthentication(): void
     {
         // The invitee link requires a logged-in user; security runs before any token validation, so an
-        // anonymous visitor is redirected to log in regardless of the (here dummy) invitation and token.
-        $path = sprintf('/organizations/acme/invitations/%s/%s', (new Ulid())->toBase32(), str_repeat('a', 64));
+        // anonymous visitor is redirected to log in regardless of the (here dummy) token. The organization
+        // and invitation are resolved into the action before the auth check runs, so both must exist.
+        [, $organization] = $this->orgWithTeam();
+        $invitation = new OrganizationInvitation(
+            new Ulid(),
+            $organization->id,
+            'alice@example.org',
+            'alice@example.org',
+            InvitationStatus::Pending,
+            'hash',
+            new \DateTimeImmutable(),
+            new \DateTimeImmutable('+7 days'),
+            new \DateTimeImmutable(),
+            null,
+        );
+        $this->store($invitation);
+
+        $path = sprintf('/organizations/acme/invitations/%s/%s', $invitation->id->toBase32(), str_repeat('a', 64));
         $this->client->request('GET', $path);
 
         self::assertResponseRedirects();
