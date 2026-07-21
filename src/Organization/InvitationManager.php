@@ -235,7 +235,7 @@ final class InvitationManager
             return Actor::member($actor);
         }
 
-        if ($this->security->isGranted('ROLE_ADMIN')) {
+        if ($this->security->isGranted('ROLE_ADMIN_ORGS')) {
             return Actor::packagistAdmin($actor);
         }
 
