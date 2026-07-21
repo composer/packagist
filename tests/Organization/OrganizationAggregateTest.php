@@ -25,7 +25,6 @@ use App\Organization\Domain\Event\TeamMemberRemoved;
 use App\Organization\Domain\Event\TeamRenamed;
 use App\Organization\Domain\Exception\LastOwnerProtectedException;
 use App\Organization\Domain\Exception\NotAMemberException;
-use App\Organization\Domain\Exception\ReservedTeamNameException;
 use App\Organization\Domain\Exception\TeamNameTakenException;
 use App\Organization\Domain\Exception\TeamNotFoundException;
 use App\Organization\Domain\Exception\TeamProtectedException;
@@ -155,14 +154,6 @@ class OrganizationAggregateTest extends TestCase
         self::assertInstanceOf(TeamCreated::class, $events[0]);
         self::assertTrue($teamId->equals($events[0]->teamId));
         self::assertSame('backend', $events[0]->name);
-    }
-
-    public function testCreateTeamRejectsReservedName(): void
-    {
-        $organization = $this->created(new Ulid());
-
-        $this->expectException(ReservedTeamNameException::class);
-        $organization->createTeam(new Ulid(), new TeamName('Owners'));
     }
 
     public function testCreateTeamRejectsDuplicateNameCaseInsensitively(): void

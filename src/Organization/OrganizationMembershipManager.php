@@ -40,27 +40,23 @@ final class OrganizationMembershipManager
     }
 
     /**
-     * @throws \App\Organization\Domain\Exception\InvalidTeamNameException
-     * @throws \App\Organization\Domain\Exception\ReservedTeamNameException
      * @throws TeamNameTakenException
      */
     public function createTeam(OrganizationReadModel $organization, User $actor, string $name, ?string $ip): void
     {
-        $teamName = TeamName::fromUserInput($name);
+        $teamName = new TeamName($name);
 
         $this->mutate($organization, $actor, static fn (Organization $org) => $org->createTeam(new Ulid(), $teamName), $ip);
     }
 
     /**
-     * @throws \App\Organization\Domain\Exception\InvalidTeamNameException
-     * @throws \App\Organization\Domain\Exception\ReservedTeamNameException
      * @throws \App\Organization\Domain\Exception\TeamNotFoundException
      * @throws \App\Organization\Domain\Exception\TeamProtectedException
      * @throws TeamNameTakenException
      */
     public function renameTeam(OrganizationReadModel $organization, User $actor, Ulid $teamId, string $name, ?string $ip): void
     {
-        $teamName = TeamName::fromUserInput($name);
+        $teamName = new TeamName($name);
 
         $this->mutate($organization, $actor, static fn (Organization $org) => $org->renameTeam($teamId, $teamName), $ip);
     }

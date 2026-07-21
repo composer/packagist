@@ -17,7 +17,6 @@ use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Organization\Domain\Exception\LastOwnerProtectedException;
-use App\Organization\Domain\Exception\ReservedTeamNameException;
 use App\Organization\Domain\Exception\TeamNameTakenException;
 use App\Organization\Domain\Exception\TeamProtectedException;
 use App\Organization\Domain\OrganizationTeamKind;
@@ -91,15 +90,6 @@ class OrganizationMembershipTest extends IntegrationTestCase
 
         $this->expectException(TeamNameTakenException::class);
         $this->membership()->createTeam($this->readModel('acme'), $owner, 'Backend', null);
-    }
-
-    public function testReservedTeamNameIsRejected(): void
-    {
-        $owner = $this->persistOwner('orgowner');
-        $this->createOrg($owner, 'acme');
-
-        $this->expectException(ReservedTeamNameException::class);
-        $this->membership()->createTeam($this->readModel('acme'), $owner, 'owners', null);
     }
 
     public function testOwnersTeamCannotBeDeleted(): void

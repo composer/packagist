@@ -12,7 +12,6 @@
 
 namespace App\Organization\Domain;
 
-use App\Organization\Domain\Exception\InvalidTeamNameException;
 use Composer\Pcre\Preg;
 
 /**
@@ -31,22 +30,21 @@ final readonly class TeamName
 
     public string $value;
 
-    /**
-     * Canonicalise raw user input (trim surrounding whitespace).
-     */
-    public static function fromUserInput(string $value): self
-    {
-        return new self(trim($value));
-    }
-
     public function __construct(string $value)
     {
+        $value = trim($value);
+
         if ($value === '' || mb_strlen($value) > self::MAX_LENGTH) {
-            throw new InvalidTeamNameException(sprintf('The team name must be between 1 and %d characters.', self::MAX_LENGTH));
+            throw new \InvalidArgumentException(sprintf('The team name must be between 1 and %d characters.', self::MAX_LENGTH));
         }
 
         if (!Preg::isMatch('/^' . self::PATTERN . '$/u', $value)) {
-            throw new InvalidTeamNameException('The team name may only contain letters, numbers, spaces and hyphens.');
+            throw new \InvalidArgumentException('The team name may only contain letters, numbers, spaces and hyphens.');
+        }
+
+        $reserved = [mb_strtolower(Organization::OWNERS_TEAM_NAME), mb_strtolower(Organization::ALL_ORGANIZATION_MEMBERS_TEAM_NAME)];
+        if (\in_array(mb_strtolower($value), $reserved, true)) {
+            throw new \InvalidArgumentException(sprintf('"%s" is a reserved team name.', $value));
         }
 
         $this->value = $value;

@@ -13,12 +13,12 @@
 namespace App\Form\Model;
 
 use App\Organization\Domain\TeamName;
+use App\Validator\ValidValueObject;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class TeamRequest
 {
     #[Assert\NotBlank]
-    #[Assert\Length(max: TeamName::MAX_LENGTH)]
-    #[Assert\Regex(pattern: '/^' . TeamName::PATTERN . '$/u', message: 'The team name may only contain letters, numbers, spaces and hyphens.')]
+    #[ValidValueObject(TeamName::class)]
     public string $name = '';
 }

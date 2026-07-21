@@ -24,8 +24,6 @@ use App\Organization\Domain\Event\TeamMemberRemoved;
 use App\Organization\Domain\Event\TeamRenamed;
 use App\Organization\Domain\Exception\LastOwnerProtectedException;
 use App\Organization\Domain\Exception\NotAMemberException;
-use App\Organization\Domain\Exception\OrganizationException;
-use App\Organization\Domain\Exception\ReservedTeamNameException;
 use App\Organization\Domain\Exception\TeamNameTakenException;
 use App\Organization\Domain\Exception\TeamNotFoundException;
 use App\Organization\Domain\Exception\TeamProtectedException;
@@ -109,12 +107,10 @@ final class Organization extends AbstractAggregate
     /**
      * Create a custom team. The `owners` team is bootstrapped by creation, not this path.
      *
-     * @throws ReservedTeamNameException the name is the reserved `owners`
      * @throws TeamNameTakenException    another team already uses this name (case-insensitive)
      */
     public function createTeam(Ulid $teamId, TeamName $name): void
     {
-        $this->assertNameAllowed($name);
         $this->assertNameAvailable($name, null);
 
         $this->record(new TeamCreated($this->id, $teamId, $name->value));
@@ -125,7 +121,6 @@ final class Organization extends AbstractAggregate
      *
      * @throws TeamNotFoundException
      * @throws TeamProtectedException    the `owners` team cannot be renamed
-     * @throws ReservedTeamNameException
      * @throws TeamNameTakenException
      */
     public function renameTeam(Ulid $teamId, TeamName $name): void
@@ -136,7 +131,6 @@ final class Organization extends AbstractAggregate
             return;
         }
 
-        $this->assertNameAllowed($name);
         $this->assertNameAvailable($name, $teamId);
 
         $this->record(new TeamRenamed($this->id, $teamId, $name->value, $this->teams[$teamId->toRfc4122()]['name']));
@@ -327,14 +321,6 @@ final class Organization extends AbstractAggregate
     {
         if ($teamId->equals($this->allMembersTeamId)) {
             throw new TeamProtectedException('Membership of the "All organization members" team is managed automatically.');
-        }
-    }
-
-    private function assertNameAllowed(TeamName $name): void
-    {
-        $reserved = [mb_strtolower(self::OWNERS_TEAM_NAME), mb_strtolower(self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME)];
-        if (\in_array(mb_strtolower($name->value), $reserved, true)) {
-            throw new ReservedTeamNameException(sprintf('"%s" is a reserved team name.', $name->value));
         }
     }
 
