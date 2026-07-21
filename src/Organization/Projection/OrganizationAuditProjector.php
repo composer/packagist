@@ -86,23 +86,13 @@ final readonly class OrganizationAuditProjector implements Projector
                 $event instanceof TeamRenamed => AuditRecord::organizationTeamRenamed($event->organizationId, $org->slug, $org->displayName, $event->previousName, $event->name, $actor),
                 $event instanceof TeamDeleted => AuditRecord::organizationTeamDeleted($event->organizationId, $org->slug, $org->displayName, $event->name, $actor),
                 $event instanceof TeamMemberAdded => AuditRecord::organizationTeamMemberAdded($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
-                $event instanceof MemberJoined => AuditRecord::organizationMemberJoined($event->organizationId, $org->slug, $org->displayName, $this->teamNames($event->teamIds), $this->user($event->userId)),
+                $event instanceof MemberJoined => AuditRecord::organizationMemberJoined($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId)),
                 $event instanceof TeamMemberRemoved => AuditRecord::organizationTeamMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
                 $event instanceof MemberRemoved => AuditRecord::organizationMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId), $actor),
                 $event instanceof MemberLeft => AuditRecord::organizationMemberLeft($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId)),
                 default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
             }
         );
-    }
-
-    /**
-     * @param list<Ulid> $teamIds
-     *
-     * @return list<string>
-     */
-    private function teamNames(array $teamIds): array
-    {
-        return array_map(fn (Ulid $teamId): string => $this->teamName($teamId), $teamIds);
     }
 
     private function teamName(Ulid $teamId): string

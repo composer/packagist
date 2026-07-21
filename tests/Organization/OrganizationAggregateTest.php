@@ -13,6 +13,7 @@
 namespace App\Tests\Organization;
 
 use App\Organization\Domain\DisplayName;
+use App\Organization\Domain\Event\MemberJoined;
 use App\Organization\Domain\Event\MemberLeft;
 use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
@@ -50,9 +51,10 @@ class OrganizationAggregateTest extends TestCase
 
         $events = $organization->pullPendingEvents();
 
-        // Creation is an explicit event sequence: the org, its two system teams, then the creator
-        // joining each. Every fact is a first-class event so projections replay them uniformly.
-        self::assertCount(5, $events);
+        // Creation is an explicit event sequence: the org, the founding owner joining, its two system
+        // teams, then the owner's membership of each. Every fact is a first-class event so projections
+        // replay them uniformly.
+        self::assertCount(6, $events);
 
         self::assertInstanceOf(OrganizationCreated::class, $events[0]);
         self::assertTrue($id->equals($events[0]->organizationId));
@@ -61,23 +63,27 @@ class OrganizationAggregateTest extends TestCase
         self::assertTrue($ownersTeamId->equals($events[0]->ownersTeamId));
         self::assertTrue($allMembersTeamId->equals($events[0]->allMembersTeamId));
 
-        self::assertInstanceOf(TeamCreated::class, $events[1]);
-        self::assertTrue($ownersTeamId->equals($events[1]->teamId));
-        self::assertSame(Organization::OWNERS_TEAM_NAME, $events[1]->name);
-        self::assertSame(OrganizationTeamKind::System, $events[1]->kind);
+        self::assertInstanceOf(MemberJoined::class, $events[1]);
+        self::assertSame(self::OWNER, $events[1]->userId);
+        self::assertNull($events[1]->invitationId);
 
         self::assertInstanceOf(TeamCreated::class, $events[2]);
-        self::assertTrue($allMembersTeamId->equals($events[2]->teamId));
-        self::assertSame(Organization::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, $events[2]->name);
+        self::assertTrue($ownersTeamId->equals($events[2]->teamId));
+        self::assertSame(Organization::OWNERS_TEAM_NAME, $events[2]->name);
         self::assertSame(OrganizationTeamKind::System, $events[2]->kind);
 
-        self::assertInstanceOf(TeamMemberAdded::class, $events[3]);
-        self::assertTrue($ownersTeamId->equals($events[3]->teamId));
-        self::assertSame(self::OWNER, $events[3]->userId);
+        self::assertInstanceOf(TeamCreated::class, $events[3]);
+        self::assertTrue($allMembersTeamId->equals($events[3]->teamId));
+        self::assertSame(Organization::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, $events[3]->name);
+        self::assertSame(OrganizationTeamKind::System, $events[3]->kind);
 
         self::assertInstanceOf(TeamMemberAdded::class, $events[4]);
-        self::assertTrue($allMembersTeamId->equals($events[4]->teamId));
+        self::assertTrue($ownersTeamId->equals($events[4]->teamId));
         self::assertSame(self::OWNER, $events[4]->userId);
+
+        self::assertInstanceOf(TeamMemberAdded::class, $events[5]);
+        self::assertTrue($allMembersTeamId->equals($events[5]->teamId));
+        self::assertSame(self::OWNER, $events[5]->userId);
 
         self::assertTrue($organization->isOwner(self::OWNER));
         self::assertTrue($organization->isOrgMember(self::OWNER));
@@ -98,7 +104,7 @@ class OrganizationAggregateTest extends TestCase
 
         self::assertSame('acme', $reloaded->slug());
         self::assertSame('ACME Corp', $reloaded->displayName());
-        self::assertSame(5, $reloaded->version());
+        self::assertSame(6, $reloaded->version());
         self::assertTrue($reloaded->isOwner(self::OWNER));
         self::assertTrue($reloaded->isOrgMember(self::OWNER));
         // History replay must not leave events pending to be appended again.

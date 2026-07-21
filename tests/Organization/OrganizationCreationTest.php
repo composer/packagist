@@ -38,17 +38,17 @@ class OrganizationCreationTest extends IntegrationTestCase
         self::assertSame('ACME Corp', $readModel->displayName);
         self::assertFalse($readModel->isDeleted());
 
-        // Canonical event stream: creation is recorded as the org plus its two system teams and the
-        // creator joining each, in sequence.
+        // Canonical event stream: the org, the founding owner joining, its two system teams, then the
+        // owner's membership of each, in sequence.
         $events = $connection->fetchAllAssociative(
             'SELECT type, sequence, actorLabel FROM organization_event WHERE aggregateId = :id ORDER BY sequence',
             ['id' => $organization->id->toBinary()],
         );
         self::assertSame(
-            ['organization-created', 'team-created', 'team-created', 'team-member-added', 'team-member-added'],
+            ['organization-created', 'member-joined', 'team-created', 'team-created', 'team-member-added', 'team-member-added'],
             array_column($events, 'type'),
         );
-        self::assertSame([1, 2, 3, 4, 5], array_map('intval', array_column($events, 'sequence')));
+        self::assertSame([1, 2, 3, 4, 5, 6], array_map('intval', array_column($events, 'sequence')));
         self::assertSame(['user'], array_values(array_unique(array_column($events, 'actorLabel'))));
 
         // Transparency log projection.
@@ -75,6 +75,22 @@ class OrganizationCreationTest extends IntegrationTestCase
             ['actor' => $owner->getId(), 'member' => $owner->getId()],
         );
         self::assertSame(['All organization members', 'Owners'], $joinedTeams);
+
+        // The founding owner's join is published once as an org-level member-joined entry (the teams
+        // they land in are the separate team-member-added entries asserted above).
+        $memberJoined = $connection->fetchOne(
+            "SELECT COUNT(*) FROM audit_log
+             WHERE type = 'organization_member_joined' AND actorId = :actor AND userId = :member",
+            ['actor' => $owner->getId(), 'member' => $owner->getId()],
+        );
+        self::assertSame(1, (int) $memberJoined);
+
+        // The read model is not double-added: the owner has exactly one row per system team.
+        $ownerTeamRows = $connection->fetchOne(
+            'SELECT COUNT(*) FROM organization_team_member WHERE userId = :member',
+            ['member' => $owner->getId()],
+        );
+        self::assertSame(2, (int) $ownerTeamRows);
     }
 
     public function testCreateRejectsReservedSlug(): void

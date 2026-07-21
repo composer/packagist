@@ -153,39 +153,11 @@ final readonly class OrganizationReadModelProjector implements Projector
             $this->user($recorded->actor->userId),
             $recorded->occurredAt,
         ));
-
-        // Being added to any team makes the user an org member; ensure the org-level record exists.
-        $this->ensureOrgMember($event->organizationId, $event->userId, $recorded->occurredAt);
     }
 
     private function memberJoined(RecordedEvent $recorded, MemberJoined $event): void
     {
-        $actor = $this->user($recorded->actor->userId);
-        foreach ($event->teamIds as $teamId) {
-            $this->getEM()->persist(new OrganizationTeamMember(
-                $teamId,
-                $event->userId,
-                $event->organizationId,
-                $actor,
-                $recorded->occurredAt,
-            ));
-        }
-
-        $this->ensureOrgMember($event->organizationId, $event->userId, $recorded->occurredAt);
-    }
-
-    /**
-     * Create the org-level membership record on first join, if not already present. Membership is the
-     * union of team memberships, so a user added to several teams (bootstrap, invitation) gets one row
-     * stamped at their first join.
-     */
-    private function ensureOrgMember(Ulid $orgId, int $userId, \DateTimeImmutable $joinedAt): void
-    {
-        if ($this->organizationMemberRepo->findOneByOrgAndUser($orgId, $userId) !== null) {
-            return;
-        }
-
-        $this->getEM()->persist(new OrganizationMember($orgId, $userId, $joinedAt));
+        $this->getEM()->persist(new OrganizationMember($event->organizationId, $event->userId, $recorded->occurredAt));
     }
 
     private function teamDeleted(TeamDeleted $event): void

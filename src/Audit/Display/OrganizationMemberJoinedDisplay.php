@@ -16,13 +16,9 @@ use App\Audit\AuditRecordType;
 
 readonly class OrganizationMemberJoinedDisplay extends AbstractAuditLogDisplay
 {
-    /**
-     * @param list<string> $teamNames
-     */
     public function __construct(
         \DateTimeImmutable $datetime,
         public OrganizationDisplay $organization,
-        public array $teamNames,
         public ActorDisplay $member,
         ?string $ip,
     ) {

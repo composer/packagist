@@ -72,10 +72,12 @@ final class Organization extends AbstractAggregate
     {
         $organization = new self($id);
 
-        // Bootstrap the org through multiple events: the org itself, then its two system teams,
-        // then the creator joining each. The teams and memberships are modeled as their own events (rather
-        // than all being covered by a single OrganizationCreated event).
+        // Bootstrap the org through multiple events: the org itself, the founding owner joining, then its
+        // two system teams and the owner's membership of each. Every fact is a first-class event (rather
+        // than all being covered by a single OrganizationCreated event); MemberJoined is the org-level
+        // membership fact and the TeamMemberAdded events place the owner in the system teams.
         $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownersTeamId, $allMembersTeamId));
+        $organization->record(new MemberJoined($id, $creatorUserId, null));
         $organization->record(new TeamCreated($id, $ownersTeamId, self::OWNERS_TEAM_NAME, OrganizationTeamKind::System));
         $organization->record(new TeamCreated($id, $allMembersTeamId, self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, OrganizationTeamKind::System));
         $organization->record(new TeamMemberAdded($id, $ownersTeamId, $ownerId));
@@ -232,7 +234,10 @@ final class Organization extends AbstractAggregate
             return;
         }
 
-        $this->record(new MemberJoined($this->id, $userId, $teamIds, $invitationId));
+        $this->record(new MemberJoined($this->id, $userId, $invitationId));
+        foreach ($teamIds as $teamId) {
+            $this->record(new TeamMemberAdded($this->id, $teamId, $userId));
+        }
     }
 
     /**
@@ -419,7 +424,9 @@ final class Organization extends AbstractAggregate
             $event instanceof TeamMemberAdded => $this->teamMembers[$event->teamId->toRfc4122()][] = $event->userId,
             $event instanceof TeamMemberRemoved => $this->applyTeamMemberRemoved($event),
             $event instanceof TeamDeleted => $this->applyTeamDeleted($event),
-            $event instanceof MemberJoined => $this->applyMemberJoined($event),
+            // Org-level membership only; the aggregate derives membership from team rosters, which the
+            // accompanying TeamMemberAdded events populate, so there is no separate state to update here.
+            $event instanceof MemberJoined => null,
             $event instanceof MemberRemoved => $this->applyMemberGone($event->userId),
             $event instanceof MemberLeft => $this->applyMemberGone($event->userId),
             default => throw new \LogicException('Unhandled organization event: '.$event->eventType()->value),
@@ -454,13 +461,6 @@ final class Organization extends AbstractAggregate
     private function applyTeamDeleted(TeamDeleted $event): void
     {
         unset($this->teams[$event->teamId->toRfc4122()], $this->teamMembers[$event->teamId->toRfc4122()]);
-    }
-
-    private function applyMemberJoined(MemberJoined $event): void
-    {
-        foreach ($event->teamIds as $teamId) {
-            $this->teamMembers[$teamId->toRfc4122()][] = $event->userId;
-        }
     }
 
     private function applyMemberGone(int $userId): void

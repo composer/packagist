@@ -17,27 +17,21 @@ use App\Organization\EventStore\OrganizationEventType;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * The org-stream half of accepting an invitation: a new member joins, added to the given teams (the
- * still-existing target teams plus the automatically-managed `all organization members` team). Appended
- * to the org stream in the same transaction as the invitation stream's
- * {@see UserInvitationAccepted}.
- *
- * Unlike the owner-driven {@see TeamMemberAdded}, this event carries the whole team set for the join and
- * is the single event the transparency log publishes for it ("{user} joined ... via invitation"), so the
- * accompanying per-team adds are not separately logged.
+ * A user becomes a member of the organization. This is the org-level membership fact; the teams they
+ * land in are recorded separately by the accompanying {@see TeamMemberAdded} events. Recorded in two
+ * cases:
+ *  - accepting an invitation: the org-stream half of the acceptance, appended to the org stream in the
+ *    same transaction as the invitation stream's {@see UserInvitationAccepted} ($invitationId set);
+ *  - creating the organization: the founding owner joining the new org ($invitationId null).
  */
 final readonly class MemberJoined implements DomainEvent
 {
     public const OrganizationEventType TYPE = OrganizationEventType::MemberJoined;
 
-    /**
-     * @param list<Ulid> $teamIds the teams the user is added to (target teams + the all-members team)
-     */
     public function __construct(
         public Ulid $organizationId,
         public int $userId,
-        public array $teamIds,
-        public Ulid $invitationId,
+        public ?Ulid $invitationId,
     ) {
     }
 
@@ -55,8 +49,7 @@ final readonly class MemberJoined implements DomainEvent
     {
         return [
             'userId' => $this->userId,
-            'teamIds' => array_map(static fn (Ulid $id): string => $id->toRfc4122(), $this->teamIds),
-            'invitationId' => $this->invitationId->toRfc4122(),
+            'invitationId' => $this->invitationId?->toRfc4122(),
         ];
     }
 
@@ -65,14 +58,10 @@ final readonly class MemberJoined implements DomainEvent
      */
     public static function fromPayload(Ulid $organizationId, array $payload): self
     {
-        /** @var list<string> $teamIds */
-        $teamIds = $payload['teamIds'];
-
         return new self(
             $organizationId,
             (int) $payload['userId'],
-            array_map(static fn (string $id): Ulid => Ulid::fromString($id), $teamIds),
-            Ulid::fromString((string) $payload['invitationId']),
+            isset($payload['invitationId']) ? Ulid::fromString((string) $payload['invitationId']) : null,
         );
     }
 }

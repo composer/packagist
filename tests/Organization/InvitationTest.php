@@ -97,9 +97,10 @@ class InvitationTest extends IntegrationTestCase
         self::assertSame(InvitationStatus::Accepted, $reloaded->status);
         self::assertNotNull($reloaded->resolvedAt);
 
-        // The join is published once as organization_member_joined, and NOT as a team-member-added entry.
+        // The join is published once as an org-level organization_member_joined entry, plus one
+        // organization_team_member_added entry per team she landed in (owners + all-members).
         self::assertSame(1, $this->auditCount($connection, $organization, 'organization_member_joined', 'alice'));
-        self::assertSame(0, $this->auditCount($connection, $organization, 'organization_team_member_added', 'alice'));
+        self::assertSame(2, $this->auditCount($connection, $organization, 'organization_team_member_added', 'alice'));
     }
 
     public function testAcceptToOwnersRequiresTwoFactor(): void

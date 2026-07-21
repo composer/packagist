@@ -289,19 +289,18 @@ class AuditRecord
     }
 
     /**
-     * A new member joined the org by accepting an invitation. This is the sole public transparency-log
-     * entry for the invitation flow; the pre-membership events (sent/resent/revoked/declined/expired)
-     * stay internal, and the invitee is identified only by username, never by the invited email.
-     *
-     * @param list<string> $teamNames the teams the member joined
+     * A user became a member of the org (by accepting an invitation, or as the founding owner at
+     * creation). The teams they landed in are logged separately as organization_team_member_added
+     * entries. For the invitation flow this is the public counterpart to the internal pre-membership
+     * events (sent/resent/revoked/declined/expired); the member is identified only by username, never
+     * by the invited email.
      */
-    public static function organizationMemberJoined(Ulid $organizationId, string $slug, string $displayName, array $teamNames, ?User $member): self
+    public static function organizationMemberJoined(Ulid $organizationId, string $slug, string $displayName, ?User $member): self
     {
         return new self(
             AuditRecordType::OrganizationMemberJoined,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
-                'team_names' => $teamNames,
                 'member' => self::getUserData($member),
                 'actor' => self::getUserData($member),
             ],

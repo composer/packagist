@@ -128,7 +128,7 @@ class OrganizationAuditRecordTest extends TestCase
         self::assertSame(7, $record->actorId);
     }
 
-    public function testMemberJoinedCapturesTeamsAndUsesMemberAsActor(): void
+    public function testMemberJoinedUsesMemberAsActor(): void
     {
         $member = new User();
         $member->setUsername('alice');
@@ -137,11 +137,10 @@ class OrganizationAuditRecordTest extends TestCase
         new \ReflectionProperty($member, 'id')->setValue($member, 7);
 
         $organizationId = new Ulid();
-        $record = AuditRecord::organizationMemberJoined($organizationId, 'acme', 'ACME Corp', ['Owners', 'AI'], $member);
+        $record = AuditRecord::organizationMemberJoined($organizationId, 'acme', 'ACME Corp', $member);
 
         self::assertSame(AuditRecordType::OrganizationMemberJoined, $record->type);
         self::assertSame('organization', AuditRecordType::OrganizationMemberJoined->category());
-        self::assertSame(['Owners', 'AI'], $record->attributes['team_names']);
         self::assertSame('alice', $record->attributes['member']['username']);
         // The member joins on their own behalf, so they are also the actor. The invited email never appears.
         self::assertSame('alice', $record->attributes['actor']['username']);
