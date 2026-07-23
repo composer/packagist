@@ -107,8 +107,8 @@ class OrganizationAuditRecordTest extends TestCase
 
         self::assertSame(AuditRecordType::OrganizationTeamMemberAdded, $record->type);
         self::assertSame('backend', $record->attributes['team_name']);
-        self::assertSame(7, $record->attributes['member']['id']);
-        self::assertSame('alice', $record->attributes['member']['username']);
+        self::assertSame(7, $record->attributes['user']['id']);
+        self::assertSame('alice', $record->attributes['user']['username']);
         self::assertSame(7, $record->userId);
     }
 
@@ -123,7 +123,7 @@ class OrganizationAuditRecordTest extends TestCase
         $record = AuditRecord::organizationMemberLeft(new Ulid(), 'acme', 'ACME Corp', $member);
 
         self::assertSame(AuditRecordType::OrganizationMemberLeft, $record->type);
-        self::assertSame('alice', $record->attributes['member']['username']);
+        self::assertSame('alice', $record->attributes['user']['username']);
         self::assertSame('alice', $record->attributes['actor']['username']);
         self::assertSame(7, $record->actorId);
     }

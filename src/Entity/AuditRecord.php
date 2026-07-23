@@ -262,7 +262,7 @@ class AuditRecord
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'team_name' => $teamName,
-                'member' => self::getUserData($member),
+                'user' => self::getUserData($member),
                 'actor' => self::getUserData($actor),
             ],
             $actor?->getId(),
@@ -278,7 +278,7 @@ class AuditRecord
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'team_name' => $teamName,
-                'member' => self::getUserData($member),
+                'user' => self::getUserData($member),
                 'actor' => self::getUserData($actor),
             ],
             $actor?->getId(),
@@ -293,7 +293,7 @@ class AuditRecord
             AuditRecordType::OrganizationMemberRemoved,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
-                'member' => self::getUserData($member),
+                'user' => self::getUserData($member),
                 'actor' => self::getUserData($actor),
             ],
             $actor?->getId(),
@@ -308,7 +308,7 @@ class AuditRecord
             AuditRecordType::OrganizationMemberLeft,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
-                'member' => self::getUserData($member),
+                'user' => self::getUserData($member),
                 'actor' => self::getUserData($member),
             ],
             $member?->getId(),
