@@ -6,6 +6,14 @@
     {%- endif -%}
 {% endmacro %}
 
+{% macro userLink(username) %}
+    {%- if username is existing_user -%}
+        <a href="{{ path('user_profile', { 'name': username }) }}">{{ username }}</a>
+    {%- else -%}
+        {{ username }}
+    {%- endif -%}
+{% endmacro %}
+
 {% macro organizationLink(organization) %}
     {%- if organization.slug is existing_organization -%}
         <a href="{{ path('organization_show', { 'organization': organization.slug }) }}">{{ organization.displayName }}</a>

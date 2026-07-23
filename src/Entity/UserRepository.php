@@ -41,6 +41,16 @@ class UserRepository extends ServiceEntityRepository
         return $this->findOneBy(['usernameCanonical' => $usernameOrEmail]);
     }
 
+    public function usernameExists(string $username): bool
+    {
+        return (bool) $this->createQueryBuilder('u')
+            ->select('COUNT(u.id)')
+            ->where('u.usernameCanonical = :username')
+            ->setParameter('username', mb_strtolower($username))
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /**
      * @param string[]               $usernames
      * @param ?array<string, 'ASC'|'asc'|'DESC'|'desc'> $orderBy
