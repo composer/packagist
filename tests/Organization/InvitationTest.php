@@ -185,7 +185,7 @@ class InvitationTest extends IntegrationTestCase
     {
         return (int) $connection->fetchOne(
             "SELECT COUNT(*) FROM audit_log WHERE type = :type AND organizationId = :org
-             AND JSON_UNQUOTE(JSON_EXTRACT(attributes, '$.member.username')) = :member",
+             AND JSON_UNQUOTE(JSON_EXTRACT(attributes, '$.user.username')) = :member",
             ['type' => $type, 'org' => $organization->id->toBinary(), 'member' => $memberUsername],
         );
     }

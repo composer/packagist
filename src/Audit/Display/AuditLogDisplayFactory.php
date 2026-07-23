@@ -407,7 +407,7 @@ class AuditLogDisplayFactory
             AuditRecordType::OrganizationMemberJoined => new OrganizationMemberJoinedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
-                $this->buildActor($record->attributes['member']),
+                $this->buildActor($record->attributes['user']),
                 $record->ip,
             ),
             AuditRecordType::OrganizationMemberRemoved => new OrganizationMemberRemovedDisplay(

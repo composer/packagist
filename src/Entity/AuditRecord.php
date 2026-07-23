@@ -301,7 +301,7 @@ class AuditRecord
             AuditRecordType::OrganizationMemberJoined,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
-                'member' => self::getUserData($member),
+                'user' => self::getUserData($member),
                 'actor' => self::getUserData($member),
             ],
             $member?->getId(),

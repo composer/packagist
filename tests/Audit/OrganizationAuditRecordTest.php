@@ -141,7 +141,7 @@ class OrganizationAuditRecordTest extends TestCase
 
         self::assertSame(AuditRecordType::OrganizationMemberJoined, $record->type);
         self::assertSame('organization', AuditRecordType::OrganizationMemberJoined->category());
-        self::assertSame('alice', $record->attributes['member']['username']);
+        self::assertSame('alice', $record->attributes['user']['username']);
         // The member joins on their own behalf, so they are also the actor. The invited email never appears.
         self::assertSame('alice', $record->attributes['actor']['username']);
         self::assertArrayNotHasKey('email', $record->attributes);
