@@ -40,6 +40,7 @@ use App\Form\Type\RemoveTeamMemberType;
 use App\Form\Type\ResendInvitationType;
 use App\Form\Type\TeamType;
 use App\Organization\Domain\Exception\OrganizationException;
+use App\Organization\Domain\Organization as OrganizationDomain;
 use App\Organization\Domain\Slug;
 use App\Organization\InvitationManager;
 use App\Organization\OrganizationManager;
@@ -530,6 +531,7 @@ class OrganizationController extends Controller
 
         return $this->render('organization/invitation_create.html.twig', [
             'organization' => $organization,
+            'allMembersTeamName' => OrganizationDomain::ALL_ORGANIZATION_MEMBERS_TEAM_NAME,
             'form' => $form->createView(),
         ]);
     }

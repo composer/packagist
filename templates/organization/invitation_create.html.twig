@@ -20,6 +20,14 @@
                 <div class="checkbox">
                     <label>{{ form_widget(team) }} {{ team.vars.label }}</label>
                 </div>
+                {# Mirror the teams page order: the automatically-managed all-members team sits right
+                   after Owners. It is shown checked and disabled rather than as a real choice, since
+                   every invitee joins it on acceptance. #}
+                {% if team.vars.value == organization.ownersTeamId.toRfc4122() %}
+                    <div class="checkbox disabled">
+                        <label><input type="checkbox" checked disabled> {{ allMembersTeamName }} <i class="glyphicon glyphicon-info-sign text-muted" data-toggle="tooltip" data-placement="top" data-container="body" title="Every member is added to this team automatically."></i></label>
+                    </div>
+                {% endif %}
             {% endfor %}
             {{ form_help(form.teamIds) }}
         </div>
