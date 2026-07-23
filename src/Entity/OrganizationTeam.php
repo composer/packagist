@@ -24,14 +24,10 @@ use Symfony\Component\Uid\Ulid;
  */
 #[ORM\Entity(repositoryClass: OrganizationTeamRepository::class)]
 #[ORM\Table(name: 'organization_team')]
-#[ORM\UniqueConstraint(name: 'org_team_name_uniq', columns: ['orgId', 'nameLower'])]
+#[ORM\UniqueConstraint(name: 'org_team_name_uniq', columns: ['orgId', 'name'])]
 #[ORM\Index(name: 'org_team_org_idx', columns: ['orgId'])]
 class OrganizationTeam
 {
-    /** Generated lowercase mirror of `name` backing the case-insensitive uniqueness constraint. */
-    #[ORM\Column(insertable: false, updatable: false, columnDefinition: 'VARCHAR(' . TeamName::MAX_LENGTH . ') GENERATED ALWAYS AS (LOWER(name)) STORED')]
-    public string $nameLower = '';
-
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: 'ulid')]

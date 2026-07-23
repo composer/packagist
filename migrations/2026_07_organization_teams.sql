@@ -13,11 +13,10 @@ CREATE TABLE organization_team (
     orgId BINARY(16) NOT NULL,
     kind VARCHAR(16) NOT NULL,
     name VARCHAR(40) NOT NULL,
-    nameLower VARCHAR(40) GENERATED ALWAYS AS (LOWER(name)) STORED,
     createdBy INT DEFAULT NULL,
     createdAt DATETIME NOT NULL,
     PRIMARY KEY (teamId),
-    UNIQUE KEY org_team_name_uniq (orgId, nameLower),
+    UNIQUE KEY org_team_name_uniq (orgId, name),
     KEY org_team_org_idx (orgId),
     CONSTRAINT FK_organization_team_org FOREIGN KEY (orgId) REFERENCES organization (id) ON DELETE CASCADE,
     CONSTRAINT FK_organization_team_created_by FOREIGN KEY (createdBy) REFERENCES fos_user (id) ON DELETE SET NULL

@@ -15,7 +15,7 @@ namespace App\Organization\Domain;
 use Composer\Pcre\Preg;
 
 /**
- * Team name: letters, numbers, spaces and hyphens, max 40 characters.
+ * Team name: ASCII letters, numbers, spaces and hyphens, max 40 characters.
  *
  * Format only. The reserved-name check (`owners`) and case-insensitive uniqueness within the
  * org are enforced by the {@see Organization} aggregate, mirroring how slug reserved-words and
@@ -25,8 +25,8 @@ final readonly class TeamName
 {
     public const int MAX_LENGTH = 40;
 
-    /** Letters, numbers, spaces and hyphens. */
-    public const string PATTERN = '[\p{L}\p{N}\- ]+';
+    /** ASCII letters, numbers, spaces and hyphens. */
+    public const string PATTERN = '[A-Za-z0-9\- ]+';
 
     public string $value;
 
