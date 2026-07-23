@@ -2,12 +2,15 @@
 
 {% block title %}Invitations - {{ organization.displayName }} - {{ parent() }}{% endblock %}
 
-{% block org_content %}
-    <h3 class="title">Invitations</h3>
+{% set canInvite = is_granted(enum('App\\Security\\Voter\\OrganizationActions').InviteMember.value, organization) %}
 
-    <p>
-        <a class="btn btn-success" href="{{ path('organization_invitation_create', { organization: organization.slug }) }}">Invite a member</a>
-    </p>
+{% block org_content %}
+    <h3 class="title clearfix">
+        Invitations
+        {% if canInvite %}
+            <a class="btn btn-success btn-sm pull-right" href="{{ path('organization_invitation_create', { organization: organization.slug }) }}">Invite a member</a>
+        {% endif %}
+    </h3>
 
     {% if invitations is empty %}
         <p>No invitations have been sent yet.</p>
