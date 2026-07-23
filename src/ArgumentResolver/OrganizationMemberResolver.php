@@ -12,27 +12,32 @@
 
 namespace App\ArgumentResolver;
 
+use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\User;
+use App\Security\Voter\OrganizationActions;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Resolves a `User $organizationMember` controller argument from the `organizationMember` route
- * attribute, which carries the member's username rather than their id so no internal user id leaks
- * into URLs. The user is loaded together with the membership check in a single joined query scoped
- * to the `organization` slug from the same route; a username that exists but is not a member of the
- * org resolves to a 404, exactly like a username that does not exist at all.
+ * Resolves a `User $organizationMember` argument from the `organizationMember` route attribute, which
+ * carries the username (not an id) so no user id leaks into URLs. A username that is not a member of
+ * the org resolves to a 404, exactly like an unknown one.
  *
- * Runs ahead of {@see UserResolver} (which claims every `User` argument) via a higher service
- * priority, so it only applies to the `organizationMember` argument and leaves other users to it.
+ * As defense in depth the organization is loaded first and the current user must be able to read it,
+ * so a member only resolves for someone who can view the org.
+ *
+ * Runs ahead of {@see UserResolver} via a higher service priority.
  */
 final readonly class OrganizationMemberResolver implements ValueResolverInterface
 {
     public function __construct(
         private OrganizationTeamMemberRepository $organizationTeamMemberRepo,
+        private OrganizationRepository $organizationRepo,
+        private Security $security,
     ) {
     }
 
@@ -45,7 +50,18 @@ final readonly class OrganizationMemberResolver implements ValueResolverInterfac
             return [];
         }
 
-        $member = $this->organizationTeamMemberRepo->findOrgMember($request->attributes->getString('organization'), $request->attributes->getString('organizationMember'));
+        $slug = $request->attributes->getString('organization');
+
+        $organization = $this->organizationRepo->findOneBySlug($slug);
+        if (null === $organization) {
+            throw new NotFoundHttpException('Member not found.');
+        }
+
+        if (!$this->security->isGranted(OrganizationActions::View->value, $organization)) {
+            throw new NotFoundHttpException('Member not found.');
+        }
+
+        $member = $this->organizationTeamMemberRepo->findOrgMember($slug, $request->attributes->getString('organizationMember'));
         if (null === $member) {
             throw new NotFoundHttpException('Member not found.');
         }

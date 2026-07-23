@@ -475,7 +475,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertCount(0, $crawler->selectButton('Remove member'));
     }
 
-    public function testRemoveTeamMemberForbiddenForNonOwner(): void
+    public function testRemoveTeamMemberReturns404ForNonMemberOfOrg(): void
     {
         $owner = self::createUser('owner', 'owner@example.org');
         $owner->setTotpSecret('totp-secret');
@@ -485,8 +485,32 @@ class OrganizationControllerTest extends IntegrationTestCase
         [$organization, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
         static::getService(OrganizationMembershipManager::class)->addTeamMember($organization, $owner, $backend->teamId, $owner->getId(), null);
 
+        // A user who is not a member of the org cannot even see the team exists: the resolver's
+        // read-access check turns this into a 404 before the owner-only guard is reached.
         $this->client->loginUser($intruder);
         $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testRemoveTeamMemberForbiddenForMemberWhoIsNotOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $owner->setTotpSecret('totp-secret');
+        $member = self::createUser('member', 'member@example.org');
+        $this->store($owner, $member);
+        $organization = $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        // A custom team with `owner` as its (removable) member, and `member` as an org member too.
+        $team = new OrganizationTeam(new Ulid(), $organization, OrganizationTeamKind::Custom, 'backend', $owner, new \DateTimeImmutable());
+        $ownerMembership = new OrganizationTeamMember($team->teamId, $owner->getId(), $organization->id, $owner, new \DateTimeImmutable());
+        $memberMembership = new OrganizationTeamMember($team->teamId, $member->getId(), $organization->id, $member, new \DateTimeImmutable());
+        $this->store($team, $ownerMembership, $memberMembership);
+
+        // A member of the org passes the resolver's read-access check, so the owner-only guard is
+        // reached and denies with a 403.
+        $this->client->loginUser($member);
+        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $team->teamId));
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -612,14 +636,36 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    public function testRemoveMemberForbiddenForNonOwner(): void
+    public function testRemoveMemberReturns404ForNonMemberOfOrg(): void
     {
         $owner = self::createUser('owner', 'owner@example.org');
         $intruder = self::createUser('intruder', 'intruder@example.org');
         $this->store($owner, $intruder);
         $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
 
+        // A user who is not a member of the org cannot enumerate its members: the resolver's
+        // read-access check turns this into a 404 before the owner-only guard is reached.
         $this->client->loginUser($intruder);
+        $this->client->request('GET', '/organizations/acme/members/owner/remove');
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testRemoveMemberForbiddenForMemberWhoIsNotOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $member = self::createUser('member', 'member@example.org');
+        $this->store($owner, $member);
+        $organization = $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        // Make `member` a member of the org through a custom team (not the owners team).
+        $team = new OrganizationTeam(new Ulid(), $organization, OrganizationTeamKind::Custom, 'backend', $owner, new \DateTimeImmutable());
+        $teamMember = new OrganizationTeamMember($team->teamId, $member->getId(), $organization->id, $member, new \DateTimeImmutable());
+        $this->store($team, $teamMember);
+
+        // A member of the org passes the resolver's read-access check, so the owner-only guard is
+        // reached and denies with a 403.
+        $this->client->loginUser($member);
         $this->client->request('GET', '/organizations/acme/members/owner/remove');
 
         self::assertResponseStatusCodeSame(403);

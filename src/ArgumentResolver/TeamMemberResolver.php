@@ -21,14 +21,11 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * Resolves a `User $teamMember` controller argument from the `teamMember` route attribute, which
- * carries the member's username rather than their id so no internal user id leaks into URLs. The
- * user is loaded together with the membership check in a single joined query scoped to the `team`
- * from the same route; a username that exists but is not in the team resolves to a 404, exactly
- * like a username that does not exist at all.
+ * Resolves a `User $teamMember` argument from the `teamMember` route attribute, which carries the
+ * username (not an id) so no user id leaks into URLs. A username that is not in the team resolves to
+ * a 404, exactly like an unknown one.
  *
- * Runs ahead of {@see UserResolver} (which claims every `User` argument) via a higher service
- * priority, so it only applies to the `teamMember` argument and leaves other users to that resolver.
+ * Runs ahead of {@see UserResolver} via a higher service priority.
  */
 final readonly class TeamMemberResolver implements ValueResolverInterface
 {
