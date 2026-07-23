@@ -200,7 +200,7 @@ class InvitationTest extends IntegrationTestCase
 
     private function createOrg(User $owner, string $slug): OrganizationReadModel
     {
-        static::getService(OrganizationManager::class)->create($owner, $slug, 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, $slug, 'ACME Corp', null);
         $organization = static::getService(OrganizationRepository::class)->findOneBySlug($slug);
         self::assertNotNull($organization);
 

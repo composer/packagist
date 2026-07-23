@@ -80,7 +80,7 @@ final class Organization extends AbstractAggregate
         // than all being covered by a single OrganizationCreated event); MemberJoined is the org-level
         // membership fact and the TeamMemberAdded events place the owner in the system teams.
         $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownersTeamId, $allMembersTeamId));
-        $organization->record(new MemberJoined($id, $creatorUserId, null));
+        $organization->record(new MemberJoined($id, $ownerId, null));
         $organization->record(new TeamCreated($id, $ownersTeamId, self::OWNERS_TEAM_NAME, OrganizationTeamKind::System));
         $organization->record(new TeamCreated($id, $allMembersTeamId, self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, OrganizationTeamKind::System));
         $organization->record(new TeamMemberAdded($id, $ownersTeamId, $ownerId));

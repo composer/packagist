@@ -446,7 +446,7 @@ class OrganizationAggregateTest extends TestCase
                 'allMembersTeamId' => $allMembersTeamId->toRfc4122(),
                 'ownerId' => self::OWNER,
             ]],
-            ['type' => OrganizationEventType::MemberJoined, 'payload' => ['userId' => self::CREATOR]],
+            ['type' => OrganizationEventType::MemberJoined, 'payload' => ['userId' => self::OWNER]],
             ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'name' => Organization::OWNERS_TEAM_NAME, 'kind' => 'system']],
             ['type' => OrganizationEventType::TeamCreated, 'payload' => ['teamId' => $allMembersTeamId->toRfc4122(), 'name' => Organization::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, 'kind' => 'system']],
             ['type' => OrganizationEventType::TeamMemberAdded, 'payload' => ['teamId' => $ownersTeamId->toRfc4122(), 'userId' => self::OWNER]],

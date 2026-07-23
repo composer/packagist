@@ -123,7 +123,7 @@ class InvitationControllerTest extends IntegrationTestCase
         $invitation = $this->pendingInvitation($organization);
 
         // A second organization the same admin owns; the invitation belongs to acme, not beta.
-        static::getService(OrganizationManager::class)->create($owner, 'beta', 'Beta Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'beta', 'Beta Corp', null);
 
         $this->client->request('GET', sprintf('/organizations/beta/invitations/%s/resend', $invitation->id->toBase32()));
 
@@ -319,7 +319,7 @@ class InvitationControllerTest extends IntegrationTestCase
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
-        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
         $organization = static::getService(OrganizationRepository::class)->findOneBySlug('acme');
         self::assertNotNull($organization);
 
