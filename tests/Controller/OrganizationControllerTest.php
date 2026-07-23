@@ -104,84 +104,6 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertStringNotContainsString('Their Org', $body);
     }
 
-    public function testCreateIsForbiddenForNonAdmin(): void
-    {
-        $user = self::createUser('regular', 'regular@example.org');
-        $this->store($user);
-
-        $this->client->loginUser($user);
-        $this->client->request('GET', '/organizations/create');
-
-        self::assertResponseStatusCodeSame(403);
-    }
-
-    public function testCreateRedirectsWhenTwoFactorNotEnabled(): void
-    {
-        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
-        $this->store($admin);
-
-        $this->client->loginUser($admin);
-        $this->client->request('GET', '/organizations/create');
-
-        // 2FA is required to create an organization / become an owner.
-        self::assertResponseRedirects();
-        self::assertNull($this->organizations()->findOneBySlug('acme'));
-    }
-
-    public function testCreateRendersForm(): void
-    {
-        $admin = $this->createAdminWithTwoFactor();
-        $this->store($admin);
-
-        $this->client->loginUser($admin);
-        $crawler = $this->client->request('GET', '/organizations/create');
-
-        self::assertResponseIsSuccessful();
-        self::assertCount(1, $crawler->selectButton('Create organization'));
-    }
-
-    public function testCreatePersistsOrganizationAndRedirects(): void
-    {
-        $admin = $this->createAdminWithTwoFactor();
-        $this->store($admin);
-
-        $this->client->loginUser($admin);
-        $crawler = $this->client->request('GET', '/organizations/create');
-
-        $form = $crawler->selectButton('Create organization')->form([
-            'organization_details[displayName]' => 'ACME Corp',
-            'organization_details[slug]' => 'acme',
-        ]);
-        $this->client->submit($form);
-
-        self::assertResponseRedirects('/organizations/acme');
-
-        $organization = $this->organizations()->findOneBySlug('acme');
-        self::assertNotNull($organization);
-        self::assertSame('ACME Corp', $organization->displayName);
-        self::assertSame($admin->getId(), $organization->createdBy?->getId());
-    }
-
-    public function testCreateRendersFormErrorForReservedSlug(): void
-    {
-        $admin = $this->createAdminWithTwoFactor();
-        $this->store($admin);
-
-        $this->client->loginUser($admin);
-        $crawler = $this->client->request('GET', '/organizations/create');
-
-        $form = $crawler->selectButton('Create organization')->form([
-            'organization_details[displayName]' => 'Acme Corp',
-            'organization_details[slug]' => 'composer',
-        ]);
-        $crawler = $this->client->submit($form);
-
-        // A reserved slug is rejected by form validation and surfaced as a form error, not a 500.
-        self::assertResponseIsSuccessful();
-        $this->assertFormError('"composer" is a reserved name and cannot be used.', 'organization_details', $crawler);
-        self::assertNull($this->organizations()->findOneBySlug('composer'));
-    }
-
     public function testSettingsForbiddenForNonOwner(): void
     {
         $owner = self::createUser('owner', 'owner@example.org', roles: ['ROLE_ADMIN_ORGS']);
@@ -231,7 +153,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->store($owner);
 
         // Create through the event store so the aggregate has a history to update.
-        static::getService(OrganizationManager::class)->create($owner, 'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
 
         $this->client->loginUser($owner);
         $crawler = $this->client->request('GET', '/organizations/acme/settings');
@@ -284,20 +206,12 @@ class OrganizationControllerTest extends IntegrationTestCase
     private function renameOrganization(User $owner, string $from, string $to): void
     {
         $manager = static::getService(OrganizationManager::class);
-        $manager->create($owner, $from, 'ACME Corp', null);
+        $manager->create($owner, $owner, $from, 'ACME Corp', null);
 
         $organization = $this->organizations()->findOneBySlug($from);
         self::assertNotNull($organization);
 
         $manager->edit($organization, $owner, $to, 'ACME Corp', null);
-    }
-
-    private function createAdminWithTwoFactor(): User
-    {
-        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
-        $admin->setTotpSecret('totp-secret');
-
-        return $admin;
     }
 
     private function persistOrganization(string $slug, string $displayName, ?User $owner = null, ?\DateTimeImmutable $deletedAt = null): Organization

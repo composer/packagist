@@ -85,8 +85,15 @@ class MenuBuilder
         if ($this->security->isGranted('ROLE_ADMIN_ORGS')) {
             $menu->addChild('Organizations', [
                 'label' => '<span class="icon-users"></span>Organizations',
-                'route' => 'organization_list',
-                'extras' => ['safe_label' => true, 'translation_domain' => false],
+                'route' => 'admin_organization_list',
+                'extras' => [
+                    'safe_label' => true,
+                    'translation_domain' => false,
+                    'routes' => [
+                        ['route' => 'admin_organization_list'],
+                        ['route' => 'admin_organization_create'],
+                    ],
+                ],
             ]);
         }
         $menu->addChild('Transparency log', [

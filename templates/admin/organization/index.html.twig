@@ -1,12 +1,26 @@
-{% extends "layout.html.twig" %}
+{% extends "admin/layout.html.twig" %}
 
-{% block title %}{{ 'menu.my_organizations'|trans }} - {{ parent() }}{% endblock %}
+{% block title %}Organizations - {{ parent() }}{% endblock %}
 
-{% block content %}
-    <h2 class="title">{{ 'menu.my_organizations'|trans }}</h2>
+{% block admin_content %}
+    <div class="row">
+        <div class="col-xs-12 package">
+            <div class="package-header">
+                <h2 class="title">
+                    Organizations
+                    <small>({{ organizations|length }})</small>
+                </h2>
+                <p>Manage and moderate organizations.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="clearfix" style="margin-bottom: 15px">
+        <a href="{{ path('admin_organization_create') }}" class="btn btn-success pull-right">Create organization</a>
+    </div>
 
     {% if organizations is empty %}
-        <p>You do not belong to any organizations yet.</p>
+        <p>There are no organizations yet.</p>
     {% else %}
         <table class="table">
             <thead>
@@ -14,7 +28,6 @@
                     <th>Name</th>
                     <th>Slug</th>
                     <th>Created</th>
-                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -22,18 +35,12 @@
                     <tr>
                         <td>
                             <a href="{{ path('organization_show', { organization: organization.slug }) }}">{{ organization.displayName }}</a>
-                            {# Groundwork for org deletion (not yet implemented). #}
                             {% if organization.deleted %}
                                 <span class="label label-warning">deleted</span>
                             {% endif %}
                         </td>
                         <td><code>{{ organization.slug }}</code></td>
                         <td>{{ organization.createdAt|date('Y-m-d') }}</td>
-                        <td class="text-right">
-                            {% if is_granted(enum('App\\Security\\Voter\\OrganizationActions').Edit.value, organization) %}
-                                <a href="{{ path('organization_settings', { organization: organization.slug }) }}" class="btn btn-default btn-sm">Settings</a>
-                            {% endif %}
-                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
