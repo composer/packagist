@@ -28,7 +28,7 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
     }
 
     /**
-     * All invitations for an org, newest first, for the owner's management view.
+     * All invitations for an org, newest first.
      *
      * @return list<OrganizationInvitation>
      */
@@ -37,6 +37,26 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('i')
             ->where('i.orgId = :orgId')
             ->setParameter('orgId', $orgId, 'ulid')
+            ->orderBy('i.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Invitations for the owner's management view, newest first: every pending one plus those resolved on
+     * or after $resolvedCutoff. Long-resolved invitations (accepted/declined/revoked/expired) drop off so
+     * the list does not grow without bound.
+     *
+     * @return list<OrganizationInvitation>
+     */
+    public function findVisibleByOrg(Ulid $orgId, \DateTimeImmutable $resolvedCutoff): array
+    {
+        return $this->createQueryBuilder('i')
+            ->where('i.orgId = :orgId')
+            ->andWhere('i.status = :pending OR i.resolvedAt >= :cutoff')
+            ->setParameter('orgId', $orgId, 'ulid')
+            ->setParameter('pending', InvitationStatus::Pending->value)
+            ->setParameter('cutoff', $resolvedCutoff)
             ->orderBy('i.createdAt', 'DESC')
             ->getQuery()
             ->getResult();

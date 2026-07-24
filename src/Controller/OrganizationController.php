@@ -68,6 +68,9 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class OrganizationController extends Controller
 {
+    /** How many days a resolved (accepted/declined/revoked/expired) invitation stays in the list. */
+    private const int RESOLVED_INVITATION_VISIBILITY_DAYS = 7;
+
     public function __construct(
         private readonly OrganizationManager $organizationManager,
         private readonly OrganizationMembershipManager $membershipManager,
@@ -497,7 +500,8 @@ class OrganizationController extends Controller
             $teamNamesById[$team->teamId->toRfc4122()] = $team->name;
         }
 
-        $invitationRows = $this->organizationInvitationRepo->findByOrg($organization->id);
+        $resolvedCutoff = $this->clock->now()->sub(new \DateInterval('P'.self::RESOLVED_INVITATION_VISIBILITY_DAYS.'D'));
+        $invitationRows = $this->organizationInvitationRepo->findVisibleByOrg($organization->id, $resolvedCutoff);
         $teamIdsByInvitation = $this->organizationInvitationTeamRepo->findTeamIdsByInvitation(
             array_map(static fn (OrganizationInvitation $invitation): Ulid => $invitation->id, $invitationRows),
         );
