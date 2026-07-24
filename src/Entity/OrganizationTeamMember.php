@@ -27,6 +27,7 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Index(name: 'org_team_member_org_user_idx', columns: ['orgId', 'userId'])]
 #[ORM\Index(name: 'org_team_member_user_idx', columns: ['userId'])]
 #[ORM\Index(name: 'org_team_member_team_idx', columns: ['teamId'])]
+#[ORM\Index(name: 'org_team_member_added_by_idx', columns: ['addedBy'])]
 class OrganizationTeamMember
 {
     public function __construct(

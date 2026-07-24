@@ -26,6 +26,7 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Table(name: 'organization_team')]
 #[ORM\UniqueConstraint(name: 'org_team_name_uniq', columns: ['orgId', 'name'])]
 #[ORM\Index(name: 'org_team_org_idx', columns: ['orgId'])]
+#[ORM\Index(name: 'org_team_created_by_idx', columns: ['createdBy'])]
 class OrganizationTeam
 {
     public function __construct(
