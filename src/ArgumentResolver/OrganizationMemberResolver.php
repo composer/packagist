@@ -12,8 +12,8 @@
 
 namespace App\ArgumentResolver;
 
+use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationRepository;
-use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\User;
 use App\Security\Voter\OrganizationActions;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -35,7 +35,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 final readonly class OrganizationMemberResolver implements ValueResolverInterface
 {
     public function __construct(
-        private OrganizationTeamMemberRepository $organizationTeamMemberRepo,
+        private OrganizationMemberRepository $organizationMemberRepo,
         private OrganizationRepository $organizationRepo,
         private Security $security,
     ) {
@@ -61,7 +61,7 @@ final readonly class OrganizationMemberResolver implements ValueResolverInterfac
             throw new NotFoundHttpException('Member not found.');
         }
 
-        $member = $this->organizationTeamMemberRepo->findOrgMember($slug, $request->attributes->getString('organizationMember'));
+        $member = $this->organizationMemberRepo->findOrgMember($organization->id, $request->attributes->getString('organizationMember'));
         if (null === $member) {
             throw new NotFoundHttpException('Member not found.');
         }

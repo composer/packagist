@@ -19,6 +19,7 @@ use App\Entity\Organization;
 use App\Entity\OrganizationInvitation;
 use App\Entity\OrganizationInvitationRepository;
 use App\Entity\OrganizationInvitationTeamRepository;
+use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeam;
 use App\Entity\OrganizationTeamMember;
@@ -76,6 +77,7 @@ class OrganizationController extends Controller
         private readonly OrganizationTeamMemberRepository $organizationTeamMemberRepo,
         private readonly OrganizationInvitationRepository $organizationInvitationRepo,
         private readonly OrganizationInvitationTeamRepository $organizationInvitationTeamRepo,
+        private readonly OrganizationMemberRepository $organizationMemberRepo,
         private readonly UserRepository $userRepo,
         private readonly ClockInterface $clock,
     ) {
@@ -324,7 +326,7 @@ class OrganizationController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $target = $this->organizationTeamMemberRepo->findOrgMember($organization->slug, $addRequest->username);
+            $target = $this->organizationMemberRepo->findOrgMember($organization->id, $addRequest->username);
             if ($target === null) {
                 $form->addError(new FormError(sprintf('No member "%s" was found in this organization.', $addRequest->username)));
             } else {
