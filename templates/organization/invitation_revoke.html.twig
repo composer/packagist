@@ -1,0 +1,20 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block title %}Revoke invitation - {{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block org_content %}
+    <h3 class="title">Revoke invitation to "{{ invitation.email }}"</h3>
+
+    <p>Revoking the invitation to "{{ invitation.email }}" will:</p>
+    <ul>
+        <li>cancel the pending invitation, and</li>
+        <li>invalidate the invitation link, so it can no longer be used to join.</li>
+    </ul>
+    <p>You can send a fresh invitation to "{{ invitation.email }}" again later if needed.</p>
+
+    {{ form_start(form, { 'attr': { 'class': 'organization_invitation_revoke' } }) }}
+        {{ form_errors(form) }}
+        <input class="btn btn-danger" type="submit" value="Revoke invitation" />
+        <a class="btn btn-default" href="{{ path('organization_invitations', { organization: organization.slug }) }}">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}

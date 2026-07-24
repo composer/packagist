@@ -39,6 +39,7 @@ use App\Form\Type\OrganizationDetailsType;
 use App\Form\Type\RemoveMemberType;
 use App\Form\Type\RemoveTeamMemberType;
 use App\Form\Type\ResendInvitationType;
+use App\Form\Type\RevokeInvitationType;
 use App\Form\Type\TeamType;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Organization as OrganizationDomain;
@@ -577,19 +578,28 @@ class OrganizationController extends Controller
     }
 
     #[IsGranted(OrganizationActions::RevokeInvitation->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/invitations/{invitation}/revoke', name: 'organization_invitation_revoke', methods: ['POST'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID])]
+    #[Route(path: '/organizations/{organization}/invitations/{invitation}/revoke', name: 'organization_invitation_revoke', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID])]
     public function revokeInvitation(Request $request, Organization $organization, OrganizationInvitation $invitation, #[CurrentUser] User $user): Response
     {
-        if ($this->isCsrfTokenValid('invitation', (string) $request->request->get('_token'))) {
+        $form = $this->createForm(RevokeInvitationType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->invitationManager->revoke($organization, $user, $invitation, $request->getClientIp());
                 $this->addFlash('success', sprintf('Invitation to "%s" revoked.', $invitation->email));
+
+                return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
-                $this->addFlash('error', $e->getMessage());
+                $form->addError(new FormError($e->getMessage()));
             }
         }
 
-        return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
+        return $this->render('organization/invitation_revoke.html.twig', [
+            'organization' => $organization,
+            'invitation' => $invitation,
+            'form' => $form->createView(),
+        ]);
     }
 
     /**

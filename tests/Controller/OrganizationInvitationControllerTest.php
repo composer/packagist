@@ -54,7 +54,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         // The invitation's team is resolved and rendered (via the batched team lookup).
         self::assertStringContainsString('backend', $crawler->filter('.team-labels')->text());
         self::assertCount(1, $crawler->filter('a:contains("Resend")'));
-        self::assertCount(1, $crawler->selectButton('Revoke'));
+        self::assertCount(1, $crawler->filter('a:contains("Revoke")'));
     }
 
     public function testOwnerResendsInvitationFromDedicatedPage(): void
@@ -132,16 +132,21 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
-    public function testOwnerRevokesInvitationFromList(): void
+    public function testOwnerRevokesInvitationFromDedicatedPage(): void
     {
         [$owner, $organization, $backend] = $this->orgWithTeam();
 
         $this->client->loginUser($owner);
         $this->submitInvite($backend, 'alice@example.org');
 
+        // The list links to a dedicated revoke page that explains the consequences.
         $crawler = $this->client->request('GET', '/organizations/acme/invitations');
-        $this->client->submit($crawler->selectButton('Revoke')->form());
+        $crawler = $this->client->click($crawler->filter('a:contains("Revoke")')->link());
 
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('invalidate the invitation link', $crawler->text());
+
+        $this->client->submit($crawler->selectButton('Revoke invitation')->form());
         self::assertResponseRedirects('/organizations/acme/invitations');
 
         $rows = static::getService(OrganizationInvitationRepository::class)->findByOrg($organization->id);
