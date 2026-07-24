@@ -19,7 +19,7 @@
             {% for member in members %}
                 <tr>
                     <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
-                    <td>
+                    <td class="team-labels">
                         {% for team in member.teams %}
                             <span class="label label-default">{{ team.name }}</span>
                         {% endfor %}

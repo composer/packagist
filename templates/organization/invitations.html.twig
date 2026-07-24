@@ -32,7 +32,7 @@
                     {% set effectiveStatus = invitation.effectiveStatus(now).value %}
                     <tr>
                         <td>{{ invitation.email }}</td>
-                        <td>
+                        <td class="team-labels">
                             {% for name in row.teamNames %}
                                 <span class="label label-default">{{ name }}</span>
                             {% endfor %}
