@@ -75,6 +75,59 @@ class OrganizationAuditRecordTest extends TestCase
         self::assertSame('organization', AuditRecordType::OrganizationSlugChanged->category());
     }
 
+    public function testTeamCreatedCapturesTeamName(): void
+    {
+        $organizationId = new Ulid();
+        $record = AuditRecord::organizationTeamCreated($organizationId, 'acme', 'ACME Corp', 'backend', null);
+
+        self::assertSame(AuditRecordType::OrganizationTeamCreated, $record->type);
+        self::assertSame('backend', $record->attributes['team_name']);
+        self::assertSame((string) $organizationId, (string) $record->organizationId);
+        self::assertSame('organization', AuditRecordType::OrganizationTeamCreated->category());
+    }
+
+    public function testTeamRenamedCapturesBeforeAndAfter(): void
+    {
+        $record = AuditRecord::organizationTeamRenamed(new Ulid(), 'acme', 'ACME Corp', 'backend', 'platform', null);
+
+        self::assertSame(AuditRecordType::OrganizationTeamRenamed, $record->type);
+        self::assertSame('backend', $record->attributes['team_name_from']);
+        self::assertSame('platform', $record->attributes['team_name_to']);
+    }
+
+    public function testTeamMemberAddedCapturesMemberAndTeam(): void
+    {
+        $member = new User();
+        $member->setUsername('alice');
+        $member->setEmail('alice@example.com');
+        $member->setPassword('password');
+        new \ReflectionProperty($member, 'id')->setValue($member, 7);
+
+        $record = AuditRecord::organizationTeamMemberAdded(new Ulid(), 'acme', 'ACME Corp', 'backend', $member, null);
+
+        self::assertSame(AuditRecordType::OrganizationTeamMemberAdded, $record->type);
+        self::assertSame('backend', $record->attributes['team_name']);
+        self::assertSame(7, $record->attributes['user']['id']);
+        self::assertSame('alice', $record->attributes['user']['username']);
+        self::assertSame(7, $record->userId);
+    }
+
+    public function testMemberLeftUsesMemberAsActor(): void
+    {
+        $member = new User();
+        $member->setUsername('alice');
+        $member->setEmail('alice@example.com');
+        $member->setPassword('password');
+        new \ReflectionProperty($member, 'id')->setValue($member, 7);
+
+        $record = AuditRecord::organizationMemberLeft(new Ulid(), 'acme', 'ACME Corp', $member);
+
+        self::assertSame(AuditRecordType::OrganizationMemberLeft, $record->type);
+        self::assertSame('alice', $record->attributes['user']['username']);
+        self::assertSame('alice', $record->attributes['actor']['username']);
+        self::assertSame(7, $record->actorId);
+    }
+
     private function actor(): User
     {
         $actor = $this->createUser();

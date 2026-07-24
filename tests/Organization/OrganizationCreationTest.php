@@ -36,18 +36,20 @@ class OrganizationCreationTest extends IntegrationTestCase
         $readModel = static::getService(OrganizationRepository::class)->findOneBySlug('acme');
         self::assertNotNull($readModel);
         self::assertSame('ACME Corp', $readModel->displayName);
-        self::assertSame($owner->getId(), $readModel->createdBy?->getId());
         self::assertFalse($readModel->isDeleted());
 
-        // Canonical event stream.
-        $event = $connection->fetchAssociative(
-            'SELECT type, sequence, actorLabel FROM organization_event WHERE aggregateId = :id',
+        // Canonical event stream: creation is recorded as the org plus its two system teams and the
+        // creator joining each, in sequence.
+        $events = $connection->fetchAllAssociative(
+            'SELECT type, sequence, actorLabel FROM organization_event WHERE aggregateId = :id ORDER BY sequence',
             ['id' => $organization->id->toBinary()],
         );
-        self::assertNotFalse($event);
-        self::assertSame('organization-created', $event['type']);
-        self::assertSame(1, (int) $event['sequence']);
-        self::assertSame('user', $event['actorLabel']);
+        self::assertSame(
+            ['organization-created', 'team-created', 'team-created', 'team-member-added', 'team-member-added'],
+            array_column($events, 'type'),
+        );
+        self::assertSame([1, 2, 3, 4, 5], array_map('intval', array_column($events, 'sequence')));
+        self::assertSame(['user'], array_values(array_unique(array_column($events, 'actorLabel'))));
 
         // Transparency log projection.
         $auditCount = $connection->fetchOne(
@@ -55,6 +57,24 @@ class OrganizationCreationTest extends IntegrationTestCase
             ['actor' => $owner->getId()],
         );
         self::assertSame(1, (int) $auditCount);
+
+        // Both system teams are logged as created.
+        $createdTeams = $connection->fetchFirstColumn(
+            "SELECT JSON_UNQUOTE(JSON_EXTRACT(attributes, '$.team_name')) FROM audit_log
+             WHERE type = 'organization_team_created' AND actorId = :actor
+             ORDER BY 1",
+            ['actor' => $owner->getId()],
+        );
+        self::assertSame(['All organization members', 'Owners'], $createdTeams);
+
+        // The creator joins both system teams as part of creation; each join is logged.
+        $joinedTeams = $connection->fetchFirstColumn(
+            "SELECT JSON_UNQUOTE(JSON_EXTRACT(attributes, '$.team_name')) FROM audit_log
+             WHERE type = 'organization_team_member_added' AND actorId = :actor AND userId = :member
+             ORDER BY 1",
+            ['actor' => $owner->getId(), 'member' => $owner->getId()],
+        );
+        self::assertSame(['All organization members', 'Owners'], $joinedTeams);
     }
 
     public function testCreateRejectsReservedSlug(): void

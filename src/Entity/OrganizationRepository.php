@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -31,16 +32,22 @@ class OrganizationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Live organizations owned by the given user, newest first.
+     * Live organizations owned by the given user, newest first. Ownership is membership in the org's
+     * bootstrapped `owners` team.
      *
      * @return list<Organization>
      */
     public function findByOwner(User $user): array
     {
         return $this->createQueryBuilder('o')
-            ->where('o.createdBy = :owner')
-            ->andWhere('o.deletedAt IS NULL')
-            ->setParameter('owner', $user)
+            ->innerJoin(
+                OrganizationTeamMember::class,
+                'm',
+                Join::WITH,
+                'm.orgId = o.id AND m.teamId = o.ownersTeamId AND m.userId = :userId',
+            )
+            ->where('o.deletedAt IS NULL')
+            ->setParameter('userId', $user->getId())
             ->orderBy('o.createdAt', 'DESC')
             ->getQuery()
             ->getResult();

@@ -30,6 +30,7 @@ class NotReservedWordValidator extends ConstraintValidator
         'automation', // used to describe background workers doing things automatically in transparency log
         'unknown', // used to describe unknown actors in transparency log
         'admin', // used to describe admin actors in transparency log
+        'create', // used in the URL when creating an organization
     ];
 
     public function validate(mixed $value, Constraint $constraint): void

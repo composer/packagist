@@ -1,0 +1,23 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block title %}Remove member - {{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block org_content %}
+    <h3 class="title">Remove "{{ member.username }}" from {{ organization.displayName }}</h3>
+
+    {% if isLastOwner %}
+        <p>"{{ member.username }}" is the last owner of {{ organization.displayName }} and cannot be removed. Every organization must always keep at least one owner who can manage it.</p>
+
+        <p>To remove this owner, first <a href="{{ path('organization_team_member_add', { organization: organization.slug, team: organization.ownersTeamId }) }}">add another member to the "Owners" team</a>, then come back and remove "{{ member.username }}".</p>
+
+        <a class="btn btn-default" href="{{ path('organization_members', { organization: organization.slug }) }}">Back</a>
+    {% else %}
+        <p>This removes the member from the organization and all of its teams. This action cannot be undone.</p>
+
+        {{ form_start(form, { 'attr': { 'class': 'organization_member_remove' } }) }}
+            {{ form_errors(form) }}
+            <input class="btn btn-danger" type="submit" value="Remove member" />
+            <a class="btn btn-default" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
+        {{ form_end(form) }}
+    {% endif %}
+{% endblock %}

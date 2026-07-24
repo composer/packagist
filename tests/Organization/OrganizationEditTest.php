@@ -42,8 +42,9 @@ class OrganizationEditTest extends IntegrationTestCase
 
         self::assertSame('ACME Inc', $this->readModel('acme')->displayName);
 
+        // The rename is the latest event, appended after the creation batch.
         $type = $this->connection->fetchOne(
-            'SELECT type FROM organization_event WHERE aggregateId = :id AND sequence = 2',
+            'SELECT type FROM organization_event WHERE aggregateId = :id ORDER BY sequence DESC LIMIT 1',
             ['id' => $organization->id->toBinary()],
         );
         self::assertSame('organization-name-changed', $type);
@@ -89,11 +90,12 @@ class OrganizationEditTest extends IntegrationTestCase
 
         $manager->edit($this->readModel('acme'), $owner, 'acme-inc', 'ACME Inc', null);
 
+        // The two edit events are appended after the creation batch, in the order they were made.
         $types = $this->connection->fetchFirstColumn(
-            'SELECT type FROM organization_event WHERE aggregateId = :id ORDER BY sequence',
+            "SELECT type FROM organization_event WHERE aggregateId = :id AND type IN ('organization-name-changed', 'organization-slug-changed') ORDER BY sequence",
             ['id' => $organization->id->toBinary()],
         );
-        self::assertSame(['organization-created', 'organization-name-changed', 'organization-slug-changed'], $types);
+        self::assertSame(['organization-name-changed', 'organization-slug-changed'], $types);
     }
 
     public function testUnchangedSubmissionIsNoop(): void
@@ -104,11 +106,12 @@ class OrganizationEditTest extends IntegrationTestCase
 
         $manager->edit($this->readModel('acme'), $owner, 'acme', 'ACME Corp', null);
 
-        $count = $this->connection->fetchOne(
-            'SELECT COUNT(*) FROM organization_event WHERE aggregateId = :id',
+        // A no-op edit records nothing, so no name/slug change events are appended.
+        $editEvents = $this->connection->fetchOne(
+            "SELECT COUNT(*) FROM organization_event WHERE aggregateId = :id AND type IN ('organization-name-changed', 'organization-slug-changed')",
             ['id' => $organization->id->toBinary()],
         );
-        self::assertSame(1, (int) $count);
+        self::assertSame(0, (int) $editEvents);
     }
 
     public function testOrgCanReclaimItsOwnPreviousSlug(): void

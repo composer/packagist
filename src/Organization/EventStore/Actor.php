@@ -27,9 +27,9 @@ final readonly class Actor
     }
 
     /**
-     * The org owner. Until the membership management is done this is exactly the creating user.
+     * An org member who is not an owner (e.g. a member leaving on their own). Carries no org role.
      */
-    public static function owner(User $user): self
+    public static function member(User $user): self
     {
         return new self($user->getId(), ActorLabel::User);
     }

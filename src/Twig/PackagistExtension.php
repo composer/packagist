@@ -14,6 +14,7 @@ namespace App\Twig;
 
 use App\Entity\OrganizationRepository;
 use App\Entity\PackageLink;
+use App\Entity\UserRepository;
 use App\Entity\Version;
 use App\Model\ProviderManager;
 use App\Security\RecaptchaHelper;
@@ -32,13 +33,15 @@ class PackagistExtension extends AbstractExtension
     private RecaptchaHelper $recaptchaHelper;
     private Security $security;
     private OrganizationRepository $organizationRepo;
+    private UserRepository $userRepo;
 
-    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, OrganizationRepository $organizationRepo, Security $security)
+    public function __construct(ProviderManager $providerManager, RecaptchaHelper $recaptchaHelper, OrganizationRepository $organizationRepo, UserRepository $userRepo, Security $security)
     {
         $this->providerManager = $providerManager;
         $this->recaptchaHelper = $recaptchaHelper;
         $this->security = $security;
         $this->organizationRepo = $organizationRepo;
+        $this->userRepo = $userRepo;
     }
 
     public function getTests(): array
@@ -46,6 +49,7 @@ class PackagistExtension extends AbstractExtension
         return [
             new TwigTest('existing_package', [$this, 'packageExistsTest']),
             new TwigTest('existing_organization', [$this, 'organizationExistsTest']),
+            new TwigTest('existing_user', [$this, 'userExistsTest']),
             new TwigTest('existing_provider', [$this, 'providerExistsTest']),
             new TwigTest('numeric', [$this, 'numericTest']),
         ];
@@ -112,6 +116,15 @@ class PackagistExtension extends AbstractExtension
         }
 
         return $this->organizationRepo->slugExists($slug, false);
+    }
+
+    public function userExistsTest(mixed $username): bool
+    {
+        if (!\is_string($username) || $username === '') {
+            return false;
+        }
+
+        return $this->userRepo->usernameExists($username);
     }
 
     public function providerExistsTest(mixed $package): bool

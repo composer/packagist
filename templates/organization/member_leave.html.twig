@@ -1,0 +1,15 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block title %}Leave organization - {{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block org_content %}
+    <h3 class="title">Leave "{{ organization.displayName }}"</h3>
+
+    <p>This removes you from the organization and all of its teams. This action cannot be undone.</p>
+
+    {{ form_start(form, { 'attr': { 'class': 'organization_member_leave' } }) }}
+        {{ form_errors(form) }}
+        <input class="btn btn-danger" type="submit" value="Leave organization" />
+        <a class="btn btn-default" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}

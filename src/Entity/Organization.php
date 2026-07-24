@@ -31,7 +31,6 @@ enum OrganizationStatus: string
 #[ORM\Entity(repositoryClass: OrganizationRepository::class)]
 #[ORM\Table(name: 'organization')]
 #[ORM\UniqueConstraint(name: 'org_slug_idx', columns: ['slug'])]
-#[ORM\Index(name: 'org_created_by_idx', columns: ['createdBy'])]
 class Organization
 {
     public function __construct(
@@ -51,10 +50,13 @@ class Organization
         #[ORM\Column(type: 'datetime_immutable')]
         public readonly \DateTimeImmutable $createdAt,
 
-        /** Owner by virtue of creation until the membership stage ships. Null once the creating user is deleted, or for system/automation-created orgs. */
-        #[ORM\ManyToOne(targetEntity: User::class)]
-        #[ORM\JoinColumn(name: 'createdBy', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
-        public readonly ?User $createdBy,
+        /** The bootstrapped system `owners` team. Set at creation; the owner check is a membership lookup against it. */
+        #[ORM\Column(type: 'ulid')]
+        public readonly Ulid $ownersTeamId,
+
+        /** The bootstrapped system `all organization members` team. Every org member belongs to it; its roster is managed automatically. */
+        #[ORM\Column(type: 'ulid')]
+        public readonly Ulid $allMembersTeamId,
 
         // Groundwork for org deletion (not yet implemented)
         #[ORM\Column(nullable: true)]

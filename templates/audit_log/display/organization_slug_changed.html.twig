@@ -2,4 +2,4 @@
 
 <strong>{{ auditLog.organizationLink(display.organization) }}</strong>
 <strong>{{ display.slugFrom }}</strong> → <strong>{{ display.slugTo }}</strong><br>
-Changed by: {{ display.actor.username }}
+Changed by: {{ auditLog.userLink(display.actor.username) }}

@@ -4,24 +4,77 @@ namespace App\Tests\Fixtures;
 
 use App\Entity\Organization;
 use App\Entity\OrganizationStatus;
+use App\Entity\OrganizationTeam;
+use App\Entity\OrganizationTeamMember;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Organization\Domain\Organization as OrganizationAggregate;
+use App\Organization\Domain\OrganizationTeamKind;
 use Symfony\Component\Uid\Ulid;
 
 trait Fixtures
 {
-    protected static function createOrganization(string $slug, string $displayName, ?User $owner = null, ?\DateTimeImmutable $deletedAt = null): Organization
+    protected static function createOrganization(string $slug, string $displayName, ?\DateTimeImmutable $deletedAt = null): Organization
     {
         return new Organization(
-            new Ulid(),
-            $slug,
-            $displayName,
-            $deletedAt !== null ? OrganizationStatus::Deleted : OrganizationStatus::Active,
-            new \DateTimeImmutable(),
-            $owner,
-            $deletedAt,
-            $deletedAt !== null ? 'owner' : null,
+            id: new Ulid(),
+            slug: $slug,
+            displayName: $displayName,
+            status: $deletedAt !== null ? OrganizationStatus::Deleted : OrganizationStatus::Active,
+            createdAt: new \DateTimeImmutable(),
+            ownersTeamId: new Ulid(),
+            allMembersTeamId: new Ulid(),
+            deletedAt: $deletedAt,
+            deletedReason: $deletedAt !== null ? 'owner' : null,
         );
+    }
+
+    /**
+     * The two bootstrapped system teams (`owners` and `all organization members`) and the owner's
+     * membership in both, mirroring what OrganizationCreated projects. Persist these alongside the
+     * organization so the owner is recognised as an owner and org member.
+     *
+     * @return array{OrganizationTeam, OrganizationTeamMember, OrganizationTeam, OrganizationTeamMember}
+     */
+    protected static function createOwnerMembership(Organization $organization, User $owner): array
+    {
+        $now = new \DateTimeImmutable();
+
+        $ownersTeam = new OrganizationTeam(
+            $organization->ownersTeamId,
+            $organization,
+            OrganizationTeamKind::System,
+            OrganizationAggregate::OWNERS_TEAM_NAME,
+            $owner,
+            $now,
+        );
+
+        $ownerMembership = new OrganizationTeamMember(
+            $organization->ownersTeamId,
+            $owner->getId(),
+            $organization->id,
+            $owner,
+            $now,
+        );
+
+        $allMembersTeam = new OrganizationTeam(
+            $organization->allMembersTeamId,
+            $organization,
+            OrganizationTeamKind::System,
+            OrganizationAggregate::ALL_ORGANIZATION_MEMBERS_TEAM_NAME,
+            $owner,
+            $now,
+        );
+
+        $allMembersMembership = new OrganizationTeamMember(
+            $organization->allMembersTeamId,
+            $owner->getId(),
+            $organization->id,
+            $owner,
+            $now,
+        );
+
+        return [$ownersTeam, $ownerMembership, $allMembersTeam, $allMembersMembership];
     }
 
     /**

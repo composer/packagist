@@ -21,4 +21,11 @@ enum OrganizationEventType: string
     case OrganizationCreated = 'organization-created';
     case OrganizationNameChanged = 'organization-name-changed';
     case OrganizationSlugChanged = 'organization-slug-changed';
+    case TeamCreated = 'team-created';
+    case TeamRenamed = 'team-renamed';
+    case TeamMemberAdded = 'team-member-added';
+    case TeamMemberRemoved = 'team-member-removed';
+    case TeamDeleted = 'team-deleted';
+    case MemberRemoved = 'member-removed';
+    case MemberLeft = 'member-left';
 }

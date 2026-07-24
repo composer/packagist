@@ -21,4 +21,20 @@ enum OrganizationActions: string
     // Groundwork for org deletion (not yet implemented).
     case SoftDelete = 'soft-delete';
     case Restore = 'restore';
+
+    // Team & member management — owner-only.
+    case ViewTeams = 'view-teams';
+    case CreateTeam = 'create-team';
+    case RenameTeam = 'rename-team';
+    case DeleteTeam = 'delete-team';
+    case AddTeamMember = 'add-team-member';
+    case RemoveTeamMember = 'remove-team-member';
+
+    case ViewMembers = 'view-members';
+    case RemoveMember = 'remove-member';
+
+    case View = 'view';
+
+    // Any org member may leave on their own.
+    case Leave = 'leave';
 }

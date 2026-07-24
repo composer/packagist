@@ -152,7 +152,8 @@ class OrganizationResolverTest extends TestCase
             'ACME Corp',
             $deleted ? OrganizationStatus::Deleted : OrganizationStatus::Active,
             new \DateTimeImmutable(),
-            null,
+            new Ulid(),
+            new Ulid(),
             $deleted ? new \DateTimeImmutable() : null,
             $deleted ? 'owner' : null,
         );

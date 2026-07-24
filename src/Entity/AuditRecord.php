@@ -212,6 +212,111 @@ class AuditRecord
         );
     }
 
+    public static function organizationTeamCreated(Ulid $organizationId, string $slug, string $displayName, string $teamName, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::OrganizationTeamCreated,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'team_name' => $teamName,
+                'actor' => self::getUserData($actor),
+            ],
+            $actor?->getId(),
+            organizationId: $organizationId,
+        );
+    }
+
+    public static function organizationTeamRenamed(Ulid $organizationId, string $slug, string $displayName, string $previousName, string $newName, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::OrganizationTeamRenamed,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'team_name_from' => $previousName,
+                'team_name_to' => $newName,
+                'actor' => self::getUserData($actor),
+            ],
+            $actor?->getId(),
+            organizationId: $organizationId,
+        );
+    }
+
+    public static function organizationTeamDeleted(Ulid $organizationId, string $slug, string $displayName, string $teamName, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::OrganizationTeamDeleted,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'team_name' => $teamName,
+                'actor' => self::getUserData($actor),
+            ],
+            $actor?->getId(),
+            organizationId: $organizationId,
+        );
+    }
+
+    public static function organizationTeamMemberAdded(Ulid $organizationId, string $slug, string $displayName, string $teamName, ?User $member, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::OrganizationTeamMemberAdded,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'team_name' => $teamName,
+                'user' => self::getUserData($member),
+                'actor' => self::getUserData($actor),
+            ],
+            $actor?->getId(),
+            organizationId: $organizationId,
+            userId: $member?->getId(),
+        );
+    }
+
+    public static function organizationTeamMemberRemoved(Ulid $organizationId, string $slug, string $displayName, string $teamName, ?User $member, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::OrganizationTeamMemberRemoved,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'team_name' => $teamName,
+                'user' => self::getUserData($member),
+                'actor' => self::getUserData($actor),
+            ],
+            $actor?->getId(),
+            organizationId: $organizationId,
+            userId: $member?->getId(),
+        );
+    }
+
+    public static function organizationMemberRemoved(Ulid $organizationId, string $slug, string $displayName, ?User $member, ?User $actor): self
+    {
+        return new self(
+            AuditRecordType::OrganizationMemberRemoved,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'user' => self::getUserData($member),
+                'actor' => self::getUserData($actor),
+            ],
+            $actor?->getId(),
+            organizationId: $organizationId,
+            userId: $member?->getId(),
+        );
+    }
+
+    public static function organizationMemberLeft(Ulid $organizationId, string $slug, string $displayName, ?User $member): self
+    {
+        return new self(
+            AuditRecordType::OrganizationMemberLeft,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'user' => self::getUserData($member),
+                'actor' => self::getUserData($member),
+            ],
+            $member?->getId(),
+            organizationId: $organizationId,
+            userId: $member?->getId(),
+        );
+    }
+
     public static function canonicalUrlChange(Package $package, ?User $actor, string $oldRepository): self
     {
         return new self(

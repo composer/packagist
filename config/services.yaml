@@ -85,6 +85,14 @@ services:
         tags:
             - { name: controller.argument_value_resolver, priority: 115 } # Put these above doctrine.orm.entity_value_resolver (110) but below user_value_resolver (120)
 
+    # Must resolve their User argument before UserResolver (115), which claims every User argument.
+    App\ArgumentResolver\TeamMemberResolver:
+        tags:
+            - { name: controller.argument_value_resolver, priority: 116 }
+    App\ArgumentResolver\OrganizationMemberResolver:
+        tags:
+            - { name: controller.argument_value_resolver, priority: 116 }
+
     App\Package\V2Dumper:
         $buildDir: '%packagist_metadata_dir%'
 

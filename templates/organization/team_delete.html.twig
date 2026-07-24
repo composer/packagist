@@ -1,0 +1,15 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block title %}Delete team - {{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block org_content %}
+    <h3 class="title">Delete team "{{ team.name }}"</h3>
+
+    <p>Deleting this team removes it and all of its memberships. This action cannot be undone.</p>
+
+    {{ form_start(form, { 'attr': { 'class': 'organization_team_delete' } }) }}
+        {{ form_errors(form) }}
+        <input class="btn btn-danger" type="submit" value="Delete team" />
+        <a class="btn btn-default" href="{{ path('organization_teams', { organization: organization.slug }) }}">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}

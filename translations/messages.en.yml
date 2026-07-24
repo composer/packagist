@@ -26,6 +26,8 @@ menu:
     my_organizations: My organizations
     my_favorites: My favorites
     organization_overview: Overview
+    organization_teams: Teams
+    organization_members: Members
     organization_settings: Settings
 
 signinbox:
@@ -215,6 +217,13 @@ audit_log:
         organization_created: Organization created
         organization_name_changed: Organization name changed
         organization_slug_changed: Organization slug changed
+        organization_team_created: Team created
+        organization_team_renamed: Team renamed
+        organization_team_deleted: Team deleted
+        organization_team_member_added: Team member added
+        organization_team_member_removed: Team member removed
+        organization_member_removed: Member removed
+        organization_member_left: Member left
     enums:
         user-registration-method:
             form: 'Registration form'
