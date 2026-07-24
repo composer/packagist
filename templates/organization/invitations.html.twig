@@ -38,7 +38,7 @@
                         </td>
                         <td><span class="label label-{{ invitation.status.value == 'pending' ? 'info' : (invitation.status.value == 'accepted' ? 'success' : 'default') }}">{{ invitation.status.value }}</span></td>
                         <td>{{ invitation.lastSentAt|date('Y-m-d H:i') }}</td>
-                        <td>{{ invitation.expiresAt|date('Y-m-d H:i') }}</td>
+                        <td>{% if invitation.pending %}{{ invitation.expiresAt|date('Y-m-d H:i') }}{% endif %}</td>
                         {# btn-group-xs is the app's small-button hook (.btn-group-xs .btn); plain btn-xs is
                            overridden by the app's .btn padding. Each action is its own CSRF-protected form. #}
                         <td class="text-right btn-group-xs" style="white-space:nowrap">
