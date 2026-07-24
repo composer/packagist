@@ -97,4 +97,17 @@ class OrganizationInvitation
     {
         return $this->isPending() && !$this->isExpired($now);
     }
+
+    /**
+     * The status to present right now: `expired` for a pending row already past its expiry, since the
+     * sweep to `expired` happens lazily. Otherwise the persisted status.
+     */
+    public function effectiveStatus(\DateTimeImmutable $now): InvitationStatus
+    {
+        if ($this->isPending() && $this->isExpired($now)) {
+            return InvitationStatus::Expired;
+        }
+
+        return $this->status;
+    }
 }

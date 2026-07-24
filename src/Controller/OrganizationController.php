@@ -52,6 +52,7 @@ use App\QueryFilter\AuditLog\DateTimeToFilter;
 use App\QueryFilter\QueryFilterInterface;
 use App\Security\Voter\OrganizationActions;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Psr\Clock\ClockInterface;
 use Pagerfanta\Pagerfanta;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Uid\Ulid;
@@ -76,6 +77,7 @@ class OrganizationController extends Controller
         private readonly OrganizationInvitationRepository $organizationInvitationRepo,
         private readonly OrganizationInvitationTeamRepository $organizationInvitationTeamRepo,
         private readonly UserRepository $userRepo,
+        private readonly ClockInterface $clock,
     ) {
     }
 
@@ -506,6 +508,7 @@ class OrganizationController extends Controller
         return $this->render('organization/invitations.html.twig', [
             'organization' => $organization,
             'invitations' => $invitations,
+            'now' => $this->clock->now(),
         ]);
     }
 
