@@ -36,7 +36,7 @@ use Symfony\Component\Uid\Ulid;
  * redirected to log in and returned here.
  */
 #[IsGranted('ROLE_USER')]
-class InvitationController extends Controller
+class OrganizationInvitationController extends Controller
 {
     public function __construct(
         private readonly OrganizationInvitationTeamRepository $organizationInvitationTeamRepo,

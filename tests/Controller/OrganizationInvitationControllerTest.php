@@ -26,7 +26,7 @@ use App\Organization\OrganizationMembershipManager;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Uid\Ulid;
 
-class InvitationControllerTest extends IntegrationTestCase
+class OrganizationInvitationControllerTest extends IntegrationTestCase
 {
     public function testOwnerInvitesMemberAndEmailIsSent(): void
     {
