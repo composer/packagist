@@ -15,17 +15,18 @@ namespace App\Organization\Domain\Event;
 use App\Organization\EventStore\DomainEvent;
 
 /**
- * Marker for events on the Invitation aggregate stream. Lets the org projectors ignore invitation
- * events (they have their own {@see \App\Organization\Projection\InvitationReadModelProjector} and are
- * never published to the public transparency log) while still catching genuinely-unhandled org events.
+ * Marker for events on the Invitation aggregate stream. Lets the org projectors route invitation events
+ * to their own handling ({@see \App\Organization\Projection\InvitationReadModelProjector} maintains the
+ * read model, {@see \App\Organization\Projection\OrganizationAuditProjector} publishes the transparency
+ * log entry) while still catching genuinely-unhandled org events.
  *
  * The aggregate id of an invitation event is the invitation's ULID, not the org's.
  */
 interface InvitationEvent extends DomainEvent
 {
     /**
-     * The invited email address. Stored in the read model and event payload for the owner's management
-     * view, but never written to the public transparency log.
+     * The invited email address. Written to the transparency log, where the display layer obfuscates it
+     * from anyone who is neither an auditor nor a member of the invitation's organization.
      */
     public function email(): string;
 }

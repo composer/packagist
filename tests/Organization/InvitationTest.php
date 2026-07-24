@@ -54,6 +54,10 @@ class InvitationTest extends IntegrationTestCase
             [$organization->ownersTeamId->toRfc4122(), $organization->allMembersTeamId->toRfc4122()],
             $teamIdStrings,
         );
+
+        // Sending the invitation is recorded in the transparency log, keyed by the invited email.
+        $connection = static::getService(Connection::class);
+        self::assertSame(1, $this->invitationAuditCount($connection, $organization, 'organization_invitation_sent', 'alice@example.org'));
     }
 
     public function testInviteRejectsUnknownTeam(): void
@@ -106,6 +110,10 @@ class InvitationTest extends IntegrationTestCase
         // organization_team_member_added entry per team she landed in (owners + all-members).
         self::assertSame(1, $this->auditCount($connection, $organization, 'organization_member_joined', 'alice'));
         self::assertSame(2, $this->auditCount($connection, $organization, 'organization_team_member_added', 'alice'));
+
+        // The invitation lifecycle itself is logged separately, keyed by the invited email.
+        self::assertSame(1, $this->invitationAuditCount($connection, $organization, 'organization_invitation_sent', 'alice@example.org'));
+        self::assertSame(1, $this->invitationAuditCount($connection, $organization, 'organization_invitation_accepted', 'alice@example.org'));
     }
 
     public function testAcceptToOwnersRequiresTwoFactor(): void
@@ -149,6 +157,8 @@ class InvitationTest extends IntegrationTestCase
         self::assertNotNull($reloaded);
         self::assertSame(InvitationStatus::Declined, $reloaded->status);
         self::assertFalse(static::getService(OrganizationTeamMemberRepository::class)->isMemberOfOrg($organization->id, $alice->getId()));
+
+        self::assertSame(1, $this->invitationAuditCount(static::getService(Connection::class), $organization, 'organization_invitation_declined', 'alice@example.org'));
     }
 
     public function testRevokeResolvesInvitation(): void
@@ -165,6 +175,8 @@ class InvitationTest extends IntegrationTestCase
         self::assertNotNull($reloaded);
         self::assertSame(InvitationStatus::Revoked, $reloaded->status);
         self::assertNotNull($reloaded->resolvedAt);
+
+        self::assertSame(1, $this->invitationAuditCount(static::getService(Connection::class), $organization, 'organization_invitation_revoked', 'alice@example.org'));
     }
 
     public function testResendKeepsInvitationPendingAndRotatesToken(): void
@@ -184,6 +196,8 @@ class InvitationTest extends IntegrationTestCase
         self::assertSame(InvitationStatus::Pending, $reloaded->status);
         self::assertNotSame($originalHash, $reloaded->tokenHash);
         self::assertGreaterThanOrEqual($originalExpiry, $reloaded->expiresAt);
+
+        self::assertSame(1, $this->invitationAuditCount(static::getService(Connection::class), $organization, 'organization_invitation_resent', 'alice@example.org'));
     }
 
     private function auditCount(Connection $connection, OrganizationReadModel $organization, string $type, string $memberUsername): int
@@ -192,6 +206,15 @@ class InvitationTest extends IntegrationTestCase
             "SELECT COUNT(*) FROM audit_log WHERE type = :type AND organizationId = :org
              AND JSON_UNQUOTE(JSON_EXTRACT(attributes, '$.user.username')) = :member",
             ['type' => $type, 'org' => $organization->id->toBinary(), 'member' => $memberUsername],
+        );
+    }
+
+    private function invitationAuditCount(Connection $connection, OrganizationReadModel $organization, string $type, string $email): int
+    {
+        return (int) $connection->fetchOne(
+            "SELECT COUNT(*) FROM audit_log WHERE type = :type AND organizationId = :org
+             AND JSON_UNQUOTE(JSON_EXTRACT(attributes, '$.email')) = :email",
+            ['type' => $type, 'org' => $organization->id->toBinary(), 'email' => $email],
         );
     }
 

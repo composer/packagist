@@ -76,6 +76,14 @@ enum AuditRecordType: string
     case OrganizationMemberRemoved = 'organization_member_removed';
     case OrganizationMemberLeft = 'organization_member_left';
 
+    // organization invitations (pre-membership lifecycle; carry the invited email)
+    case OrganizationInvitationSent = 'organization_invitation_sent';
+    case OrganizationInvitationResent = 'organization_invitation_resent';
+    case OrganizationInvitationRevoked = 'organization_invitation_revoked';
+    case OrganizationInvitationAccepted = 'organization_invitation_accepted';
+    case OrganizationInvitationDeclined = 'organization_invitation_declined';
+    case OrganizationInvitationExpired = 'organization_invitation_expired';
+
     /**
      * @return list<self>
      */
@@ -107,7 +115,10 @@ enum AuditRecordType: string
             self::OrganizationTeamCreated, self::OrganizationTeamRenamed, self::OrganizationTeamDeleted,
             self::OrganizationTeamMemberAdded, self::OrganizationTeamMemberRemoved,
             self::OrganizationMemberJoined,
-            self::OrganizationMemberRemoved, self::OrganizationMemberLeft => 'organization',
+            self::OrganizationMemberRemoved, self::OrganizationMemberLeft,
+            self::OrganizationInvitationSent, self::OrganizationInvitationResent,
+            self::OrganizationInvitationRevoked, self::OrganizationInvitationAccepted,
+            self::OrganizationInvitationDeclined, self::OrganizationInvitationExpired => 'organization',
         };
     }
 }

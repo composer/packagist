@@ -149,6 +149,52 @@ class OrganizationAuditRecordTest extends TestCase
         self::assertSame(7, $record->actorId);
     }
 
+    public function testInvitationSentCapturesEmailAndActor(): void
+    {
+        $organizationId = new Ulid();
+        $record = AuditRecord::organizationInvitationSent($organizationId, 'acme', 'ACME Corp', 'alice@example.org', $this->actor());
+
+        self::assertSame(AuditRecordType::OrganizationInvitationSent, $record->type);
+        self::assertSame('organization', AuditRecordType::OrganizationInvitationSent->category());
+        self::assertSame('acme', $record->attributes['organization']['org_slug']);
+        self::assertSame('alice@example.org', $record->attributes['email']);
+        self::assertSame('test', $record->attributes['actor']['username']);
+        self::assertSame((string) $organizationId, (string) $record->organizationId);
+        self::assertSame(42, $record->actorId);
+    }
+
+    public function testInvitationAcceptedRecordsInviteeAsActor(): void
+    {
+        $record = AuditRecord::organizationInvitationAccepted(new Ulid(), 'acme', 'ACME Corp', 'alice@example.org', $this->actor());
+
+        self::assertSame(AuditRecordType::OrganizationInvitationAccepted, $record->type);
+        self::assertSame('alice@example.org', $record->attributes['email']);
+        self::assertSame('test', $record->attributes['actor']['username']);
+        self::assertSame(42, $record->actorId);
+    }
+
+    public function testInvitationExpiredHasNoActor(): void
+    {
+        $record = AuditRecord::organizationInvitationExpired(new Ulid(), 'acme', 'ACME Corp', 'alice@example.org');
+
+        self::assertSame(AuditRecordType::OrganizationInvitationExpired, $record->type);
+        self::assertSame('alice@example.org', $record->attributes['email']);
+        // Expiry is recorded by automation, so there is no acting user.
+        self::assertSame('automation', $record->attributes['actor']);
+        self::assertNull($record->actorId);
+    }
+
+    /**
+     * The invited email is only ever kept in attributes, never fed to the search index.
+     */
+    public function testInvitationEmailIsNotIndexed(): void
+    {
+        $record = AuditRecord::organizationInvitationSent(new Ulid(), 'acme', 'ACME Corp', 'alice@example.org', $this->actor());
+
+        $names = array_column($record->getSearchTerms(), 'name');
+        self::assertNotContains('alice@example.org', $names);
+    }
+
     private function actor(): User
     {
         $actor = $this->createUser();
