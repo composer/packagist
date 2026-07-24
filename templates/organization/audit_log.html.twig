@@ -1,0 +1,116 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block org_content %}
+    <div class="audit-log-filters">
+        <form method="get" action="{{ path('organization_audit_log', { organization: organization.slug }) }}" name="filters">
+            <div class="row">
+                <div class="col-md-4 col-sm-6">
+                    <div class="form-group">
+                        <label for="type-filter">Type</label>
+                        <select name="type[]" id="type-filter" class="form-control audit-log-type-select" multiple style="height: 120px;">
+                            {% for type in types %}
+                                <option value="{{ type.value }}" {% if type.value in selectedFilters.type %}selected="selected"{% endif %}>
+                                    {{ ('audit_log.type.' ~ type.value)|trans }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="help-block">Hold Ctrl/Cmd to select multiple</small>
+                    </div>
+                </div>
+                <div class="col-md-8 col-sm-6">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="actor-filter">Actor</label>
+                                <input type="text" name="actor" id="actor-filter" class="form-control" value="{{ selectedFilters.actor }}" placeholder="Filter by username">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label for="datetime-from-filter">Date & Time From</label>
+                                <input type="datetime-local" name="datetime_from" id="datetime-from-filter" class="form-control" value="{{ selectedFilters.datetime_from }}" step="1">
+                                <small class="help-block">Filter logs from this time onwards (UTC)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label for="datetime-to-filter">Date & Time To</label>
+                                <input type="datetime-local" name="datetime_to" id="datetime-to-filter" class="form-control" value="{{ selectedFilters.datetime_to }}" step="1">
+                                <small class="help-block">Filter logs up to this time (UTC)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="audit-log-filter-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-filter"></span> Apply Filters
+                        </button>
+                        <a href="{{ url('organization_audit_log', { organization: organization.slug }) }}" class="btn btn-default">
+                            <span class="glyphicon glyphicon-remove-circle"></span> Clear All Filters
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if dateTimeFromFilter.dateTime or dateTimeToFilter.dateTime %}
+        <div class="alert alert-info audit-log-time-range">
+            <strong>Time range:</strong>
+            {% if dateTimeFromFilter.dateTime %}
+                <span>From: {{ dateTimeFromFilter.dateTime|date('Y-m-d H:i:s') }} UTC</span>
+            {% endif %}
+            {% if dateTimeToFilter.dateTime %}
+                <span>{% if dateTimeFromFilter.dateTime %} | {% endif %}To: {{ dateTimeToFilter.dateTime|date('Y-m-d H:i:s') }} UTC</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if auditLogDisplays|length %}
+        <table class="table audit-log-table">
+            <thead>
+            <tr>
+                <th class="audit-log-datetime">Date & Time</th>
+                <th class="audit-log-type">Type</th>
+                <th class="audit-log-details">Details</th>
+                {% if is_granted('ROLE_AUDITOR') %}
+                  <th class="audit-log-ip">IP</th>
+                {% endif  %}
+            </tr>
+            </thead>
+            <tbody>
+                {% for display in auditLogDisplays %}
+                    <tr>
+                        <td class="audit-log-datetime">
+                            {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
+                            {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
+                            <a href="{{ path('organization_audit_log', { organization: organization.slug, 'datetime_from': fromDate, 'datetime_to': toDate }) }}" title="Show surrounding logs">
+                                <span class="glyphicon glyphicon-time"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
+                            </a>
+                        </td>
+                        <td class="audit-log-type" data-test="audit-log-type">{{ display.typeTranslationKey|trans }}</td>
+                        <td class="audit-log-details">
+                            {% include display.templateName with {display} only %}
+                        </td>
+                        {% if is_granted('ROLE_AUDITOR') %}
+                            <td class="audit-log-ip">{{ display.ip }}</td>
+                        {% endif  %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if auditLogPaginator.haveToPaginate() %}
+            {{ pagerfanta(auditLogPaginator, 'twitter_bootstrap', {'proximity': 2}) }}
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <p>No audit logs found.</p>
+        </div>
+    {% endif %}
+{% endblock %}

@@ -12,6 +12,8 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
+use App\Entity\AuditRecord;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeam;
@@ -816,6 +818,63 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->client->request('GET', '/organizations/acme/settings');
 
         self::assertResponseRedirects('/organizations/acme-inc/settings', 302);
+    }
+
+    public function testAuditLogShowsOnlyRecordsForThisOrganization(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+        $organization = $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+        $otherOrganization = $this->persistOrganization('globex', 'Globex', owner: $owner);
+
+        $this->store(
+            AuditRecord::organizationCreated($organization->id, $organization->slug, $organization->displayName, $owner),
+            AuditRecord::organizationNameChanged($organization->id, $organization->slug, 'ACME Inc', 'ACME Corp', $owner),
+            // Belongs to a different organization and must not leak into this page.
+            AuditRecord::organizationCreated($otherOrganization->id, $otherOrganization->slug, $otherOrganization->displayName, $owner),
+        );
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/audit-log');
+        self::assertResponseIsSuccessful();
+
+        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        self::assertCount(2, $types, 'Only the two records for this organization should be listed');
+    }
+
+    public function testAuditLogTypeFilterNarrowsResults(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $owner->setTotpSecret('totp-secret');
+        $this->store($owner);
+        $organization = $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->store(
+            AuditRecord::organizationCreated($organization->id, $organization->slug, $organization->displayName, $owner),
+            AuditRecord::organizationNameChanged($organization->id, $organization->slug, 'ACME Inc', 'ACME Corp', $owner),
+        );
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/organizations/acme/audit-log?type[]='.AuditRecordType::OrganizationNameChanged->value);
+        self::assertResponseIsSuccessful();
+
+        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        self::assertCount(1, $types, 'The type filter should narrow the results to a single record');
+    }
+
+    public function testAuditLogForbiddenForNonOwner(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $owner->setTotpSecret('totp-secret');
+        $stranger = self::createUser('stranger', 'stranger@example.org');
+        $this->store($owner, $stranger);
+        $this->persistOrganization('acme', 'ACME Corp', owner: $owner);
+
+        $this->client->loginUser($stranger);
+        $this->client->request('GET', '/organizations/acme/audit-log');
+
+        self::assertResponseStatusCodeSame(403);
     }
 
     /**

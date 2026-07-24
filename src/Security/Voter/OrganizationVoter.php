@@ -82,6 +82,7 @@ class OrganizationVoter extends Voter
             OrganizationActions::ViewTeams,
             OrganizationActions::Leave => $this->memberDenialReason($organization, $user),
             OrganizationActions::Edit,
+            OrganizationActions::ViewAuditLog,
             OrganizationActions::SoftDelete,
             OrganizationActions::CreateTeam,
             OrganizationActions::RenameTeam,

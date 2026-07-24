@@ -12,6 +12,9 @@
 
 namespace App\Controller;
 
+use App\Audit\AuditRecordType;
+use App\Audit\Display\AuditLogDisplayFactory;
+use App\Entity\AuditRecordRepository;
 use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeam;
@@ -34,7 +37,15 @@ use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Slug;
 use App\Organization\OrganizationManager;
 use App\Organization\OrganizationMembershipManager;
+use App\QueryFilter\AuditLog\ActorFilter;
+use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
+use App\QueryFilter\AuditLog\DateTimeFromFilter;
+use App\QueryFilter\AuditLog\DateTimeToFilter;
+use App\QueryFilter\QueryFilterInterface;
 use App\Security\Voter\OrganizationActions;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Pagerfanta\Pagerfanta;
+use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -107,6 +118,53 @@ class OrganizationController extends Controller
         return $this->render('organization/settings.html.twig', [
             'organization' => $organization,
             'form' => $form->createView(),
+        ]);
+    }
+
+    #[IsGranted(OrganizationActions::ViewAuditLog->value, 'organization')]
+    #[Route(path: '/organizations/{organization}/audit-log', name: 'organization_audit_log', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
+    public function auditLog(Request $request, Organization $organization, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $displayFactory): Response
+    {
+        $isAuditAdmin = $this->isGranted('ROLE_AUDITOR');
+
+        $dateTimeFromFilter = DateTimeFromFilter::fromQuery($request->query);
+        $dateTimeToFilter = DateTimeToFilter::fromQuery($request->query);
+
+        /** @var QueryFilterInterface[] $filters */
+        $filters = [
+            AuditRecordTypeFilter::fromQuery($request->query),
+            ActorFilter::fromQuery($request->query, 'actor', $isAuditAdmin),
+            $dateTimeFromFilter,
+            $dateTimeToFilter,
+        ];
+
+        $qb = $auditRecordRepository->createQueryBuilder('a')
+            ->where('a.organizationId = :organizationId')
+            ->setParameter('organizationId', $organization->id, UlidType::NAME)
+            ->orderBy('a.id', 'DESC');
+
+        foreach ($filters as $filter) {
+            $filter->filter($qb);
+        }
+
+        $auditLogs = new Pagerfanta(new QueryAdapter($qb, false, false));
+        $auditLogs->setNormalizeOutOfRangePages(true);
+        $auditLogs->setMaxPerPage(20);
+        $auditLogs->setCurrentPage(max(1, $request->query->getInt('page', 1)));
+
+        $selectedFilters = [];
+        foreach ($filters as $filter) {
+            $selectedFilters[$filter->getKey()] = $filter->getSelectedValue();
+        }
+
+        return $this->render('organization/audit_log.html.twig', [
+            'organization' => $organization,
+            'auditLogDisplays' => $displayFactory->build($auditLogs),
+            'auditLogPaginator' => $auditLogs,
+            'types' => AuditRecordType::organizationCases(),
+            'selectedFilters' => $selectedFilters,
+            'dateTimeFromFilter' => $dateTimeFromFilter,
+            'dateTimeToFilter' => $dateTimeToFilter,
         ]);
     }
 

@@ -116,7 +116,7 @@ class MenuBuilder
         }
 
         $menu->addChild($this->translator->trans('menu.organization_overview'), [
-            'label' => '<span class="icon-dashboard"></span>'.$this->translator->trans('menu.organization_overview'),
+            'label' => '<span class="icon-chart"></span>'.$this->translator->trans('menu.organization_overview'),
             'route' => 'organization_show',
             'routeParameters' => ['organization' => $slug],
             'extras' => ['safe_label' => true, 'translation_domain' => false],
@@ -155,6 +155,13 @@ class MenuBuilder
         $menu->addChild($this->translator->trans('menu.organization_settings'), [
             'label' => '<span class="icon-tools"></span>'.$this->translator->trans('menu.organization_settings'),
             'route' => 'organization_settings',
+            'routeParameters' => ['organization' => $slug],
+            'extras' => ['safe_label' => true, 'translation_domain' => false],
+        ]);
+
+        $menu->addChild($this->translator->trans('menu.organization_audit_log'), [
+            'label' => '<span class="icon-back-in-time"></span>'.$this->translator->trans('menu.organization_audit_log'),
+            'route' => 'organization_audit_log',
             'routeParameters' => ['organization' => $slug],
             'extras' => ['safe_label' => true, 'translation_domain' => false],
         ]);

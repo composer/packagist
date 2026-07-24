@@ -18,6 +18,7 @@ namespace App\Security\Voter;
 enum OrganizationActions: string
 {
     case Edit = 'edit';
+    case ViewAuditLog = 'view-audit-log';
     // Groundwork for org deletion (not yet implemented).
     case SoftDelete = 'soft-delete';
     case Restore = 'restore';
