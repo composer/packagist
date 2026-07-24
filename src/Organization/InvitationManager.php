@@ -168,6 +168,19 @@ final class InvitationManager
         $this->eventStore->append($aggregate, Actor::member($user), $ip);
     }
 
+    /**
+     * Resolve a due invitation to `expired` with a system actor. A no-op if it is no longer pending or not
+     * yet due (see {@see Invitation::markExpired()}).
+     *
+     * @throws \App\Organization\EventStore\ConcurrencyException if another actor resolved it concurrently
+     */
+    public function expire(OrganizationInvitation $invitation): void
+    {
+        $aggregate = $this->reconstituteInvitation($invitation->id);
+        $aggregate->markExpired($this->clock->now());
+        $this->eventStore->append($aggregate, Actor::automation(), null);
+    }
+
     private function reconstituteInvitation(Ulid $invitationId): Invitation
     {
         return Invitation::reconstitute($invitationId, $this->eventStore->loadHistory($invitationId));

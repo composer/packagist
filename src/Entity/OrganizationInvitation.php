@@ -99,8 +99,8 @@ class OrganizationInvitation
     }
 
     /**
-     * The status to present right now: `expired` for a pending row already past its expiry, since the
-     * sweep to `expired` happens lazily. Otherwise the persisted status.
+     * The status to present right now. The sweep to `expired` is lazy, so report a pending row past its
+     * expiry as `expired`; otherwise the persisted status.
      */
     public function effectiveStatus(\DateTimeImmutable $now): InvitationStatus
     {

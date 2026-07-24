@@ -79,4 +79,23 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /**
+     * Pending invitations past expiry, oldest first, for the cron sweep. $limit bounds the batch so a
+     * large backlog drains over several runs. Backed by org_invitation_expiry_idx.
+     *
+     * @return list<OrganizationInvitation>
+     */
+    public function findPendingExpired(\DateTimeImmutable $now, int $limit): array
+    {
+        return $this->createQueryBuilder('i')
+            ->where('i.status = :pending')
+            ->andWhere('i.expiresAt < :now')
+            ->setParameter('pending', InvitationStatus::Pending->value)
+            ->setParameter('now', $now)
+            ->orderBy('i.expiresAt', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }
