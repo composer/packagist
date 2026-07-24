@@ -497,10 +497,15 @@ class OrganizationController extends Controller
             $teamNamesById[$team->teamId->toRfc4122()] = $team->name;
         }
 
+        $invitationRows = $this->organizationInvitationRepo->findByOrg($organization->id);
+        $teamIdsByInvitation = $this->organizationInvitationTeamRepo->findTeamIdsByInvitation(
+            array_map(static fn (OrganizationInvitation $invitation): Ulid => $invitation->id, $invitationRows),
+        );
+
         $invitations = [];
-        foreach ($this->organizationInvitationRepo->findByOrg($organization->id) as $invitation) {
+        foreach ($invitationRows as $invitation) {
             $teamNames = [];
-            foreach ($this->organizationInvitationTeamRepo->findTeamIds($invitation->id) as $teamId) {
+            foreach ($teamIdsByInvitation[$invitation->id->toRfc4122()] ?? [] as $teamId) {
                 $teamNames[] = $teamNamesById[$teamId->toRfc4122()] ?? '(deleted team)';
             }
 

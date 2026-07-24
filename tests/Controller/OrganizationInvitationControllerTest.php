@@ -51,6 +51,8 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('alice@example.org', $crawler->text());
+        // The invitation's team is resolved and rendered (via the batched team lookup).
+        self::assertStringContainsString('backend', $crawler->filter('.team-labels')->text());
         self::assertCount(1, $crawler->filter('a:contains("Resend")'));
         self::assertCount(1, $crawler->selectButton('Revoke'));
     }

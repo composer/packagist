@@ -38,4 +38,26 @@ class OrganizationInvitationTeamRepository extends ServiceEntityRepository
             $this->findBy(['invitationId' => $invitationId]),
         );
     }
+
+    /**
+     * The target team ids of several invitations at once, grouped by invitation id, so a list view
+     * resolves every invitation's teams in one query instead of one per row.
+     *
+     * @param list<Ulid> $invitationIds
+     *
+     * @return array<string, list<Ulid>> invitationId (rfc4122) => team ids
+     */
+    public function findTeamIdsByInvitation(array $invitationIds): array
+    {
+        if ($invitationIds === []) {
+            return [];
+        }
+
+        $grouped = [];
+        foreach ($this->findBy(['invitationId' => $invitationIds]) as $row) {
+            $grouped[$row->invitationId->toRfc4122()][] = $row->teamId;
+        }
+
+        return $grouped;
+    }
 }
