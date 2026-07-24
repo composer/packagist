@@ -425,10 +425,47 @@ class OrganizationController extends Controller
             ];
         }
 
+        // Invitations are owner-only, but any member may view the members list; only load them when
+        // the viewer is allowed to see them so the template can render the invitations section.
+        $invitations = $this->isGranted(OrganizationActions::ViewInvitations->value, $organization)
+            ? $this->loadInvitations($organization)
+            : null;
+
         return $this->render('organization/members.html.twig', [
             'organization' => $organization,
             'members' => $members,
+            'invitations' => $invitations,
+            'now' => $this->clock->now(),
         ]);
+    }
+
+    /**
+     * @return list<array{invitation: OrganizationInvitation, teamNames: list<string>}>
+     */
+    private function loadInvitations(Organization $organization): array
+    {
+        $teamNamesById = [];
+        foreach ($this->organizationTeamRepo->findByOrg($organization->id) as $team) {
+            $teamNamesById[$team->teamId->toRfc4122()] = $team->name;
+        }
+
+        $resolvedCutoff = $this->clock->now()->sub(new \DateInterval('P'.self::RESOLVED_INVITATION_VISIBILITY_DAYS.'D'));
+        $invitationRows = $this->organizationInvitationRepo->findVisibleByOrg($organization->id, $resolvedCutoff);
+        $teamIdsByInvitation = $this->organizationInvitationTeamRepo->findTeamIdsByInvitation(
+            array_map(static fn (OrganizationInvitation $invitation): Ulid => $invitation->id, $invitationRows),
+        );
+
+        $invitations = [];
+        foreach ($invitationRows as $invitation) {
+            $teamNames = [];
+            foreach ($teamIdsByInvitation[$invitation->id->toRfc4122()] ?? [] as $teamId) {
+                $teamNames[] = $teamNamesById[$teamId->toRfc4122()] ?? '(deleted team)';
+            }
+
+            $invitations[] = ['invitation' => $invitation, 'teamNames' => $teamNames];
+        }
+
+        return $invitations;
     }
 
     #[IsGranted(OrganizationActions::RemoveMember->value, 'organization')]
@@ -492,38 +529,6 @@ class OrganizationController extends Controller
         ]);
     }
 
-    #[IsGranted(OrganizationActions::ViewInvitations->value, 'organization')]
-    #[Route(path: '/organizations/{organization}/invitations', name: 'organization_invitations', methods: ['GET'], requirements: ['organization' => Slug::PATTERN])]
-    public function invitations(Organization $organization): Response
-    {
-        $teamNamesById = [];
-        foreach ($this->organizationTeamRepo->findByOrg($organization->id) as $team) {
-            $teamNamesById[$team->teamId->toRfc4122()] = $team->name;
-        }
-
-        $resolvedCutoff = $this->clock->now()->sub(new \DateInterval('P'.self::RESOLVED_INVITATION_VISIBILITY_DAYS.'D'));
-        $invitationRows = $this->organizationInvitationRepo->findVisibleByOrg($organization->id, $resolvedCutoff);
-        $teamIdsByInvitation = $this->organizationInvitationTeamRepo->findTeamIdsByInvitation(
-            array_map(static fn (OrganizationInvitation $invitation): Ulid => $invitation->id, $invitationRows),
-        );
-
-        $invitations = [];
-        foreach ($invitationRows as $invitation) {
-            $teamNames = [];
-            foreach ($teamIdsByInvitation[$invitation->id->toRfc4122()] ?? [] as $teamId) {
-                $teamNames[] = $teamNamesById[$teamId->toRfc4122()] ?? '(deleted team)';
-            }
-
-            $invitations[] = ['invitation' => $invitation, 'teamNames' => $teamNames];
-        }
-
-        return $this->render('organization/invitations.html.twig', [
-            'organization' => $organization,
-            'invitations' => $invitations,
-            'now' => $this->clock->now(),
-        ]);
-    }
-
     #[IsGranted(OrganizationActions::InviteMember->value, 'organization')]
     #[Route(path: '/organizations/{organization}/invitations/invite', name: 'organization_invitation_create', methods: ['GET', 'POST'], requirements: ['organization' => Slug::PATTERN])]
     public function inviteMember(Request $request, Organization $organization, #[CurrentUser] User $user): Response
@@ -538,7 +543,7 @@ class OrganizationController extends Controller
                 $this->invitationManager->invite($organization, $user, $inviteRequest->email, $teamIds, $request->getClientIp());
                 $this->addFlash('success', sprintf('Invitation sent to "%s".', $inviteRequest->email));
 
-                return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
+                return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
                 $form->addError(new FormError($e->getMessage()));
             }
@@ -563,7 +568,7 @@ class OrganizationController extends Controller
                 $this->invitationManager->resend($organization, $user, $invitation, $request->getClientIp());
                 $this->addFlash('success', sprintf('Invitation to "%s" re-sent.', $invitation->email));
 
-                return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
+                return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
                 $form->addError(new FormError($e->getMessage()));
             }
@@ -589,7 +594,7 @@ class OrganizationController extends Controller
                 $this->invitationManager->revoke($organization, $user, $invitation, $request->getClientIp());
                 $this->addFlash('success', sprintf('Invitation to "%s" revoked.', $invitation->email));
 
-                return $this->redirectToRoute('organization_invitations', ['organization' => $organization->slug]);
+                return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
                 $form->addError(new FormError($e->getMessage()));
             }

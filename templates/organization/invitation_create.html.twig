@@ -32,6 +32,6 @@
             {{ form_help(form.teamIds) }}
         </div>
         <input class="btn btn-success" type="submit" value="Send invitation" />
-        <a class="btn btn-default" href="{{ path('organization_invitations', { organization: organization.slug }) }}">Cancel</a>
+        <a class="btn btn-default" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
     {{ form_end(form) }}
 {% endblock %}

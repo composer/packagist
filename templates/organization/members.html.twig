@@ -2,10 +2,63 @@
 
 {% block title %}Members - {{ organization.displayName }} - {{ parent() }}{% endblock %}
 
+{% set canInvite = is_granted(enum('App\\Security\\Voter\\OrganizationActions').InviteMember.value, organization) %}
+{% set canViewInvitations = is_granted(enum('App\\Security\\Voter\\OrganizationActions').ViewInvitations.value, organization) %}
 {% set canRemove = is_granted(enum('App\\Security\\Voter\\OrganizationActions').RemoveMember.value, organization) %}
 
 {% block org_content %}
-    <h3 class="title">Members</h3>
+    <h3 class="title clearfix">
+        Members
+        {% if canInvite %}
+            <a class="btn btn-success btn-sm pull-right" href="{{ path('organization_invitation_create', { organization: organization.slug }) }}">Invite a member</a>
+        {% endif %}
+    </h3>
+
+    {% if canViewInvitations %}
+        <h4>Invitations</h4>
+
+        {% if invitations is empty %}
+            <p>No invitations have been sent yet.</p>
+        {% else %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Teams</th>
+                        <th>Status</th>
+                        <th>Last sent</th>
+                        <th>Expires</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in invitations %}
+                        {% set invitation = row.invitation %}
+                        {% set effectiveStatus = invitation.effectiveStatus(now).value %}
+                        <tr>
+                            <td>{{ invitation.email }}</td>
+                            <td class="team-labels">
+                                {% for name in row.teamNames %}
+                                    <span class="label label-default">{{ name }}</span>
+                                {% endfor %}
+                            </td>
+                            <td><span class="label label-{{ effectiveStatus == 'pending' ? 'info' : (effectiveStatus == 'accepted' ? 'success' : 'default') }}">{{ effectiveStatus }}</span></td>
+                            <td>{{ invitation.lastSentAt|date('Y-m-d H:i') }}</td>
+                            <td>{% if invitation.isActive(now) %}{{ invitation.expiresAt|date('Y-m-d H:i') }}{% endif %}</td>
+                            <td class="text-right btn-group-xs" style="white-space:nowrap">
+                                {% if invitation.pending %}
+                                    <a class="btn btn-default" href="{{ path('organization_invitation_resend', { organization: organization.slug, invitation: invitation.id }) }}">Resend</a>
+                                    <a class="btn btn-danger" href="{{ path('organization_invitation_revoke', { organization: organization.slug, invitation: invitation.id }) }}">Revoke</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    {% endif %}
+
+    <h4>Members</h4>
 
     <table class="table">
         <thead>

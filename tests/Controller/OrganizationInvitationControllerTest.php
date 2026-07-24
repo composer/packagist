@@ -35,7 +35,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $this->client->loginUser($owner);
         $this->submitInvite($backend, 'alice@example.org');
 
-        self::assertResponseRedirects('/organizations/acme/invitations');
+        self::assertResponseRedirects('/organizations/acme/members');
         self::assertEmailCount(1);
         self::assertStringContainsString('/organizations/acme/invitations/', self::getMailerMessages()[0]->getTextBody() ?? '');
     }
@@ -47,7 +47,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $this->client->loginUser($owner);
         $this->submitInvite($backend, 'alice@example.org');
 
-        $crawler = $this->client->request('GET', '/organizations/acme/invitations');
+        $crawler = $this->client->request('GET', '/organizations/acme/members');
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('alice@example.org', $crawler->text());
@@ -66,7 +66,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $before = $this->pendingInvitation($organization);
 
         // The list links to a dedicated resend page that explains the consequences.
-        $crawler = $this->client->request('GET', '/organizations/acme/invitations');
+        $crawler = $this->client->request('GET', '/organizations/acme/members');
         $crawler = $this->client->click($crawler->filter('a:contains("Resend")')->link());
 
         self::assertResponseIsSuccessful();
@@ -74,7 +74,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         self::assertStringContainsString('another 7 days', $crawler->text());
 
         $this->client->submit($crawler->selectButton('Resend invitation')->form());
-        self::assertResponseRedirects('/organizations/acme/invitations');
+        self::assertResponseRedirects('/organizations/acme/members');
 
         // A fresh link is sent (one email per request) and the expiry is pushed out.
         self::assertEmailCount(1);
@@ -140,14 +140,14 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $this->submitInvite($backend, 'alice@example.org');
 
         // The list links to a dedicated revoke page that explains the consequences.
-        $crawler = $this->client->request('GET', '/organizations/acme/invitations');
+        $crawler = $this->client->request('GET', '/organizations/acme/members');
         $crawler = $this->client->click($crawler->filter('a:contains("Revoke")')->link());
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('invalidate the invitation link', $crawler->text());
 
         $this->client->submit($crawler->selectButton('Revoke invitation')->form());
-        self::assertResponseRedirects('/organizations/acme/invitations');
+        self::assertResponseRedirects('/organizations/acme/members');
 
         $rows = static::getService(OrganizationInvitationRepository::class)->findByOrg($organization->id);
         self::assertCount(1, $rows);

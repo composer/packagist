@@ -28,7 +28,6 @@ menu:
     organization_overview: Overview
     organization_teams: Teams
     organization_members: Members
-    organization_invitations: Invitations
     organization_settings: Settings
     organization_audit_log: Audit log
 

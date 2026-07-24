@@ -15,6 +15,6 @@
     {{ form_start(form, { 'attr': { 'class': 'organization_invitation_revoke' } }) }}
         {{ form_errors(form) }}
         <input class="btn btn-danger" type="submit" value="Revoke invitation" />
-        <a class="btn btn-default" href="{{ path('organization_invitations', { organization: organization.slug }) }}">Cancel</a>
+        <a class="btn btn-default" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
     {{ form_end(form) }}
 {% endblock %}
