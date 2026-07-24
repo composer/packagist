@@ -210,26 +210,16 @@ final class Organization extends AbstractAggregate
     }
 
     /**
-     * A new member joins by accepting an invitation. They are added to the given target teams plus the
-     * automatically-managed `all organization members` team. The caller ({@see \App\Organization\InvitationManager})
-     * resolves the still-existing target teams and enforces the invitation-side checks (email match, 2FA
-     * for owners); this records the org-side membership.
+     * A new member joins by accepting an invitation. The invitation always carries the automatically-managed
+     * `all organization members` team, so the resolved set is never empty and the org-side membership is
+     * recorded straight from the target teams. The caller ({@see \App\Organization\InvitationManager}) resolves
+     * the still-existing target teams and enforces the invitation-side checks (email match, 2FA for owners).
      *
-     * @param list<Ulid> $targetTeamIds the still-existing target teams (must be non-empty)
-     *
-     * @throws TeamNotFoundException none of the target teams exist any more
+     * @param list<Ulid> $targetTeamIds the still-existing target teams, including the all-members team
      */
     public function joinViaInvitation(int $userId, array $targetTeamIds, Ulid $invitationId): void
     {
         $teamIds = $this->existingTeamsAmong($targetTeamIds);
-        if ($teamIds === []) {
-            throw new TeamNotFoundException('None of the invited teams exist any more.');
-        }
-
-        // Every org member belongs to the all-members team; add it alongside the target teams.
-        if ($this->allMembersTeamId !== null && !$this->containsTeam($teamIds, $this->allMembersTeamId)) {
-            $teamIds[] = $this->allMembersTeamId;
-        }
 
         // Skip any team the user is somehow already in, so a re-run cannot double-add.
         $teamIds = array_values(array_filter($teamIds, fn (Ulid $teamId): bool => !$this->isInTeam($teamId, $userId)));
@@ -254,20 +244,6 @@ final class Organization extends AbstractAggregate
     public function existingTeamsAmong(array $teamIds): array
     {
         return array_values(array_filter($teamIds, fn (Ulid $teamId): bool => isset($this->teams[$teamId->toRfc4122()])));
-    }
-
-    /**
-     * @param list<Ulid> $teamIds
-     */
-    private function containsTeam(array $teamIds, Ulid $needle): bool
-    {
-        foreach ($teamIds as $teamId) {
-            if ($teamId->equals($needle)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

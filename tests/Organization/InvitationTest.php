@@ -29,6 +29,7 @@ use App\Organization\InvitationManager;
 use App\Organization\OrganizationManager;
 use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;
+use Symfony\Component\Uid\Ulid;
 
 class InvitationTest extends IntegrationTestCase
 {
@@ -46,9 +47,13 @@ class InvitationTest extends IntegrationTestCase
         self::assertSame(64, \strlen($rows[0]->tokenHash));
         self::assertSame($owner->getId(), $rows[0]->invitedBy?->getId());
 
+        // The invitation carries the selected team plus the automatically-managed all-members team.
         $teamIds = static::getService(OrganizationInvitationTeamRepository::class)->findTeamIds($rows[0]->id);
-        self::assertCount(1, $teamIds);
-        self::assertTrue($teamIds[0]->equals($organization->ownersTeamId));
+        $teamIdStrings = array_map(static fn (Ulid $id): string => $id->toRfc4122(), $teamIds);
+        self::assertEqualsCanonicalizing(
+            [$organization->ownersTeamId->toRfc4122(), $organization->allMembersTeamId->toRfc4122()],
+            $teamIdStrings,
+        );
     }
 
     public function testInviteRejectsUnknownTeam(): void

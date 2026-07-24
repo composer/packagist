@@ -84,6 +84,12 @@ final class InvitationManager
 
         $this->assertTeamsBelongToOrg($organization, $teamIds);
 
+        // Every org member belongs to the all-members team, so record it on the invitation itself. The org
+        // aggregate then adds the invitee to it on accept with no special-casing.
+        if (!$this->containsTeam($teamIds, $organization->allMembersTeamId)) {
+            $teamIds[] = $organization->allMembersTeamId;
+        }
+
         $token = $this->tokens->generate();
         $expiresAt = $now->add(new \DateInterval('P'.self::INVITATION_EXPIRY_DAYS.'D'));
 
@@ -196,8 +202,20 @@ final class InvitationManager
      */
     private function containsOwnersTeam(Organization $organization, array $teamIds): bool
     {
+        return $this->containsTeam($teamIds, $organization->ownersTeamId());
+    }
+
+    /**
+     * @param list<Ulid> $teamIds
+     */
+    private function containsTeam(array $teamIds, ?Ulid $needle): bool
+    {
+        if ($needle === null) {
+            return false;
+        }
+
         foreach ($teamIds as $teamId) {
-            if ($teamId->equals($organization->ownersTeamId())) {
+            if ($teamId->equals($needle)) {
                 return true;
             }
         }
