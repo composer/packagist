@@ -21,7 +21,6 @@ use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
 use App\Entity\Job;
 use App\Entity\Package;
-use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
 use App\Entity\PhpStat;

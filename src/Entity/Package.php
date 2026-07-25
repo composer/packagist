@@ -46,21 +46,6 @@ enum PackageFreezeReason: string
         return 'freezing_reasons.'.$this->value;
     }
 
-    public function isSpam(): bool
-    {
-        return $this === self::Spam;
-    }
-
-    public function isGone(): bool
-    {
-        return $this === self::Gone;
-    }
-
-    public function isRemoteIdMismatch(): bool
-    {
-        return $this === self::RemoteIdMismatch;
-    }
-
     /**
      * Whether the package should be hidden from the public entirely: skipped by the dumper, removed
      * from the search index, and 404'd on the package page/API. Gentle freezes (a moving/gone

@@ -44,11 +44,6 @@ enum UserFreezeReason: string
     {
         return 'user_freeze_reasons.'.$this->value;
     }
-
-    public function isSpam(): bool
-    {
-        return $this === self::Spam;
-    }
 }
 
 #[ORM\Entity(repositoryClass: 'App\Entity\UserRepository')]
