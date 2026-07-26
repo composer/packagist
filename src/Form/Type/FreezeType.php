@@ -32,7 +32,6 @@ class FreezeType extends AbstractType
         $builder
             ->add('reason', EnumType::class, [
                 'class' => UserFreezeReason::class,
-                'choices' => $options['account_reasons'],
                 'choice_label' => static fn (UserFreezeReason $reason): string => 'user_freeze_reasons.'.$reason->value,
             ])
             ->add('reasonText', TextareaType::class, [
@@ -62,10 +61,8 @@ class FreezeType extends AbstractType
         $resolver->setDefaults([
             'data_class' => FreezeRequest::class,
             'csrf_token_id' => 'freeze_user',
-            'account_reasons' => UserFreezeReason::cases(),
-            'package_reasons' => [PackageFreezeReason::Spam, PackageFreezeReason::Malware, PackageFreezeReason::Temporary],
+            'package_reasons' => PackageFreezeReason::casesForRole(true),
         ]);
-        $resolver->setAllowedTypes('account_reasons', UserFreezeReason::class.'[]');
         $resolver->setAllowedTypes('package_reasons', PackageFreezeReason::class.'[]');
     }
 

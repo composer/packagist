@@ -25,7 +25,7 @@
                         <p class="list-group-item-text">Manage filter list entries received from external providers (e.g. malware reports).</p>
                     </a>
                 {% endif %}
-                {% if is_granted('ROLE_ANTISPAM') %}
+                {% if is_granted('ROLE_DISABLE_PACKAGES') %}
                     <a href="{{ path('view_spam') }}" class="list-group-item">
                         <h4 class="list-group-item-heading"><span class="icon-traffic-cone"></span> Suspect packages</h4>
                         <p class="list-group-item-text">Review packages flagged as potential spam and mark them as safe.</p>

@@ -13,7 +13,7 @@
 <h2 class="title">
     {{ user.username }}
     <small>
-        {% if (is_granted('ROLE_ANTISPAM') or is_granted('ROLE_DISABLE_USERS')) and user.isFrozen() %}
+        {% if is_granted('ROLE_DISABLE_USERS') and user.isFrozen() %}
             [FROZEN: {{ ('user_freeze_reasons.' ~ user.freezeReason.value)|trans }}]
         {% endif %}
         {{ 'user.member_since'|trans }}: {{ user.createdAt|date('M d, Y') }}
@@ -29,9 +29,7 @@
         {%- endif %}
         {%- if freezeForm is defined %}
             {%- if user.isFrozen() %}
-                {%- if canUnfreezeUser|default(false) %}
-                    <button type="button" class="btn btn-success action" data-toggle="modal" data-target="#unfreeze-user-modal">Unfreeze account</button>
-                {%- endif %}
+                <button type="button" class="btn btn-success action" data-toggle="modal" data-target="#unfreeze-user-modal">Unfreeze account</button>
             {%- else %}
                 <button type="button" class="btn btn-danger action" data-toggle="modal" data-target="#freeze-user-modal">Freeze account</button>
             {%- endif %}
@@ -46,6 +44,15 @@
             <dl class="dl-horizontal">
                 <dt>Created At:</dt>
                 <dd>{{ user.createdAt|date('Y-m-d H:i:s') }}</dd>
+
+                <dt>Email Confirmed:</dt>
+                <dd>
+                    {% if user.isEnabled() %}
+                        <span class="text-success">Yes</span>
+                    {% else %}
+                        <span class="text-danger">No</span>
+                    {% endif %}
+                </dd>
 
                 <dt>Last Login:</dt>
                 <dd>{{ user.lastLogin ? user.lastLogin|date('Y-m-d H:i:s') : 'Never' }}</dd>
@@ -96,7 +103,7 @@
 </section>
 
 {% if freezeForm is defined %}
-    {% if user.isFrozen() and canUnfreezeUser|default(false) %}
+    {% if user.isFrozen() %}
         <div class="modal fade" id="unfreeze-user-modal" tabindex="-1" role="dialog" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 {{ form_start(unfreezeForm, {'action': path('unfreeze_user', {name: user.username}), 'attr': {'class': 'modal-content'}}) }}

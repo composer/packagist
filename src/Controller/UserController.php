@@ -18,7 +18,6 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\TemporaryTwoFactorUser;
 use App\Entity\User;
-use App\Entity\UserFreezeReason;
 use App\Form\Model\EnableTwoFactorRequest;
 use App\Form\Model\FreezeRequest;
 use App\Form\Model\UnfreezeRequest;
@@ -84,35 +83,28 @@ class UserController extends Controller
         return $this->redirectToRoute('my_profile');
     }
 
+    #[IsGranted('ROLE_DISABLE_USERS')]
     #[Route(path: '/users/{name}/freeze', name: 'freeze_user', methods: ['POST'])]
     public function freezeUserAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $adminUser): RedirectResponse
     {
-        // Anti-spam moderators may freeze accounts as spam; ROLE_DISABLE_USERS may use any reason.
-        if (!$this->isGranted('ROLE_ANTISPAM') && !$this->isGranted('ROLE_DISABLE_USERS')) {
-            throw $this->createAccessDeniedException('You cannot freeze accounts');
-        }
-
         if ($user->getId() === $adminUser->getId()) {
             $this->addFlash('error', 'You cannot freeze your own account.');
 
             return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
         }
 
-        // The role-limited choices below are what enforce that, e.g., an anti-spam moderator can
-        // only pick the spam reason — the form rejects anything outside the allowed set.
-        $packageReasons = $this->allowedPackageFreezeReasons();
+        // Package controls only appear when the moderator may act on packages; the role-limited
+        // choices are what the form validates a submission against.
+        $packageReasons = PackageFreezeReason::casesForRole($this->isGranted('ROLE_DISABLE_PACKAGES'));
         $freezeRequest = new FreezeRequest();
         $form = $this->createForm(FreezeType::class, $freezeRequest, [
-            'account_reasons' => $this->allowedAccountFreezeReasons(),
             'package_reasons' => $packageReasons,
         ]);
         $form->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $reason = $freezeRequest->reason;
-            if ($reason === null) {
-                return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
-            }
+            // Guaranteed non-null by FreezeRequest::$reason's NotNull constraint; narrows the type.
+            $reason = $freezeRequest->reason ?? throw new \LogicException('Freeze reason must be set once the form validates');
 
             $user->freeze($reason);
 
@@ -132,16 +124,10 @@ class UserController extends Controller
         return $this->redirectToRoute('user_profile', ['name' => $user->getUsername()]);
     }
 
+    #[IsGranted('ROLE_DISABLE_USERS')]
     #[Route(path: '/users/{name}/unfreeze', name: 'unfreeze_user', methods: ['POST'])]
     public function unfreezeUserAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $adminUser): RedirectResponse
     {
-        // ROLE_DISABLE_USERS may unfreeze any reason; anti-spam moderators only spam freezes.
-        $mayUnfreeze = $this->isGranted('ROLE_DISABLE_USERS')
-            || ($this->isGranted('ROLE_ANTISPAM') && $user->getFreezeReason() === UserFreezeReason::Spam);
-        if (!$mayUnfreeze) {
-            throw $this->createAccessDeniedException('You cannot unfreeze this account');
-        }
-
         $unfreezeRequest = new UnfreezeRequest();
         $form = $this->createForm(UnfreezeType::class, $unfreezeRequest);
         $form->handleRequest($req);
@@ -167,54 +153,31 @@ class UserController extends Controller
     }
 
     /**
-     * @return list<UserFreezeReason>
-     */
-    private function allowedAccountFreezeReasons(): array
-    {
-        return $this->isGranted('ROLE_DISABLE_USERS') ? UserFreezeReason::cases() : [UserFreezeReason::Spam];
-    }
-
-    /**
-     * @return list<PackageFreezeReason>
-     */
-    private function allowedPackageFreezeReasons(): array
-    {
-        if ($this->isGranted('ROLE_DISABLE_PACKAGES')) {
-            return [PackageFreezeReason::Spam, PackageFreezeReason::Malware, PackageFreezeReason::Temporary];
-        }
-        if ($this->isGranted('ROLE_ANTISPAM')) {
-            return [PackageFreezeReason::Spam];
-        }
-
-        return [];
-    }
-
-    /**
      * Freezes the user's packages with the chosen reason immediately (so suppressed ones stop being
-     * served right away). When purging, the heavy per-package work — soft-deleting versions and
-     * removing published artifacts — is offloaded to a background job per package.
+     * served right away). Freezing goes through the entity so PackageListener records a PackageFrozen
+     * audit entry per real transition (and Package::freeze() drops suppressed packages from the search
+     * index). When purging, the heavy per-package work — soft-deleting versions and removing published
+     * artifacts — is offloaded to a background job per package.
      */
     private function freezeUserPackages(User $user, User $actor, PackageFreezeReason $reason, bool $purge): void
     {
         $em = $this->getEM();
 
-        // Suppressed reasons (spam/malware) also drop the package from the search index immediately.
-        if ($reason->suppressesPackage()) {
-            $sql = 'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id SET frozen = :reason, indexedAt = NULL WHERE mp.user_id = :userId';
-        } else {
-            $sql = 'UPDATE package p JOIN maintainers_packages mp ON mp.package_id = p.id SET frozen = :reason WHERE mp.user_id = :userId';
+        /** @var list<Package> $packages */
+        $packages = $em->getRepository(Package::class)->createQueryBuilder('p')
+            ->leftJoin('p.maintainers', 'm')
+            ->where('m.id = :maintainer')
+            ->setParameter('maintainer', $user->getId())
+            ->getQuery()->getResult();
+
+        foreach ($packages as $package) {
+            $package->freeze($reason);
         }
-        $em->getConnection()->executeStatement($sql, ['reason' => $reason->value, 'userId' => $user->getId()]);
+        $em->flush();
 
         if (!$purge) {
             return;
         }
-
-        $qb = $em->getRepository(Package::class)->createQueryBuilder('p');
-        $packages = $qb->leftJoin('p.maintainers', 'm')
-            ->where('m.id = :maintainer')
-            ->setParameter('maintainer', $user->getId())
-            ->getQuery()->getResult();
 
         foreach ($packages as $package) {
             $this->scheduler->schedulePackagePurge($package, $package->getName(), $actor->getId());

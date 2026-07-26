@@ -75,7 +75,7 @@ class MenuBuilder
                 'extras' => ['safe_label' => true, 'translation_domain' => false],
             ]);
         }
-        if ($this->security->isGranted('ROLE_ANTISPAM')) {
+        if ($this->security->isGranted('ROLE_DISABLE_PACKAGES')) {
             $menu->addChild('Suspect packages', [
                 'label' => '<span class="icon-traffic-cone"></span>Suspect packages',
                 'route' => 'view_spam',

@@ -85,6 +85,32 @@ class ProfileControllerTest extends IntegrationTestCase
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
     }
 
+    public function testAdminSeesEmailConfirmedFlagOnProfile(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
+        $unconfirmed = self::createUser('bob', 'bob@example.org', enabled: false);
+        $this->store($admin, $unconfirmed);
+
+        $this->client->loginUser($admin);
+
+        // An unconfirmed (disabled) account is flagged with a red "No".
+        $crawler = $this->client->request('GET', '/users/bob/');
+        self::assertResponseIsSuccessful();
+        $metadata = $crawler->filter('.dl-horizontal');
+        self::assertStringContainsString('Email Confirmed:', $metadata->text());
+        self::assertSame('No', $metadata->filter('.text-danger')->text());
+        self::assertCount(0, $metadata->filter('.text-success'));
+    }
+
+    public function testEmailConfirmedFlagHiddenFromNonAdmins(): void
+    {
+        $this->store(self::createUser('bob', 'bob@example.org'));
+
+        $crawler = $this->client->request('GET', '/users/bob/');
+        self::assertResponseIsSuccessful();
+        self::assertStringNotContainsString('Email Confirmed:', $crawler->html());
+    }
+
     public function testTokenRotate(): void
     {
         $user = self::createUser();

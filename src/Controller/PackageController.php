@@ -451,7 +451,7 @@ class PackageController extends Controller
             return $package;
         }
 
-        if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage() && !$this->isGranted('ROLE_ANTISPAM') && !$this->isGranted('ROLE_DISABLE_PACKAGES')) {
+        if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage() && !$this->isGranted('ROLE_DISABLE_PACKAGES')) {
             throw new NotFoundHttpException('This package has been frozen');
         }
 
@@ -695,7 +695,7 @@ class PackageController extends Controller
             }
         }
 
-        if ($this->isGranted('ROLE_ANTISPAM')) {
+        if ($this->isGranted('ROLE_DISABLE_PACKAGES')) {
             $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
         }
         if ($this->isGranted('ROLE_ADMIN')) {

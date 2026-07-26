@@ -19,13 +19,13 @@ class AdminController extends Controller
 {
     /**
      * Roles that grant access to the /admin/ section. Any one of them is sufficient, so the
-     * fine-grained admins (filter-list, antispam, orgs, auditor) can reach the section too.
+     * fine-grained admins (filter-list, disable-packages, orgs, auditor) can reach the section too.
      * ROLE_ADMIN is covered transitively but listed for clarity. Also used by
      * App\Menu\MenuBuilder to decide whether to show the Admin menu entries.
      *
      * @var list<string>
      */
-    public const ADMIN_ROLES = ['ROLE_ADMIN', 'ROLE_FILTER_LIST_ADMIN', 'ROLE_ANTISPAM', 'ROLE_ADMIN_ORGS', 'ROLE_AUDITOR'];
+    public const ADMIN_ROLES = ['ROLE_ADMIN', 'ROLE_FILTER_LIST_ADMIN', 'ROLE_DISABLE_PACKAGES', 'ROLE_ADMIN_ORGS', 'ROLE_AUDITOR'];
 
     #[Route(path: '/admin/', name: 'admin_index', methods: ['GET'])]
     public function index(): Response

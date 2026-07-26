@@ -14,10 +14,13 @@ namespace App\Tests\Entity;
 
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
+use App\Tests\Fixtures\Fixtures;
 use PHPUnit\Framework\TestCase;
 
 class UserTest extends TestCase
 {
+    use Fixtures;
+
     public function testFreezeUnfreeze(): void
     {
         $user = new User();
@@ -84,11 +87,7 @@ class UserTest extends TestCase
 
     private function makeUser(): User
     {
-        $user = new User();
-        $user->setUsername('sameuser');
-        $user->setEmail('same@example.com');
-        $user->setPassword('samehash');
-        $user->setEnabled(true);
+        $user = self::createUser('sameuser', 'same@example.com', 'samehash');
         // __serialize() reads the id, which Doctrine would normally assign on persist.
         new \ReflectionProperty($user, 'id')->setValue($user, 1);
 

@@ -55,6 +55,18 @@ enum PackageFreezeReason: string
     {
         return $this === self::Spam || $this === self::Malware;
     }
+
+    /**
+     * Freeze reasons a package moderator may apply through the UI, given whether they hold
+     * ROLE_DISABLE_PACKAGES. Excludes automation-only reasons (RemoteIdMismatch, Gone) which are
+     * set by the crawler, never chosen by a human.
+     *
+     * @return list<self>
+     */
+    public static function casesForRole(bool $mayDisablePackages): array
+    {
+        return $mayDisablePackages ? [self::Spam, self::Malware, self::Temporary] : [];
+    }
 }
 
 /**

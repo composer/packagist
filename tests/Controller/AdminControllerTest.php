@@ -44,9 +44,9 @@ class AdminControllerTest extends IntegrationTestCase
 
     public function testIndexAccessibleToDelegatedCapabilityShowsOnlyPermittedTools(): void
     {
-        // A user with only ROLE_ANTISPAM can reach the admin section but should only see the
+        // A user with only ROLE_DISABLE_PACKAGES can reach the admin section but should only see the
         // spam tooling, not filter-list administration (which needs ROLE_FILTER_LIST_ADMIN).
-        $mod = self::createUser('antispam', 'antispam@example.com', roles: ['ROLE_ANTISPAM']);
+        $mod = self::createUser('pkgmod', 'pkgmod@example.com', roles: ['ROLE_DISABLE_PACKAGES']);
         $this->store($mod);
 
         $this->client->loginUser($mod);

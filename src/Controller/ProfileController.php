@@ -18,7 +18,6 @@ use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\User;
-use App\Entity\UserFreezeReason;
 use App\Form\Model\AdminUpdateEmailRequest;
 use App\Form\Model\FreezeRequest;
 use App\Form\Model\UnfreezeRequest;
@@ -133,25 +132,11 @@ class ProfileController extends Controller
             'user' => $user,
         ];
 
-        if ($this->isGranted('ROLE_ANTISPAM') || $this->isGranted('ROLE_DISABLE_USERS')) {
-            // Choices are role-limited and must match UserController's freeze/unfreeze actions:
-            // anti-spam moderators only deal in the spam reason; ROLE_DISABLE_USERS may use any
-            // account reason and ROLE_DISABLE_PACKAGES any package reason.
-            $accountReasons = $this->isGranted('ROLE_DISABLE_USERS') ? UserFreezeReason::cases() : [UserFreezeReason::Spam];
-            $packageReasons = [];
-            if ($this->isGranted('ROLE_DISABLE_PACKAGES')) {
-                $packageReasons = [PackageFreezeReason::Spam, PackageFreezeReason::Malware, PackageFreezeReason::Temporary];
-            } elseif ($this->isGranted('ROLE_ANTISPAM')) {
-                $packageReasons = [PackageFreezeReason::Spam];
-            }
-
+        if ($this->isGranted('ROLE_DISABLE_USERS')) {
             $data['freezeForm'] = $this->createForm(FreezeType::class, new FreezeRequest(), [
-                'account_reasons' => $accountReasons,
-                'package_reasons' => $packageReasons,
+                'package_reasons' => PackageFreezeReason::casesForRole($this->isGranted('ROLE_DISABLE_PACKAGES')),
             ])->createView();
             $data['unfreezeForm'] = $this->createForm(UnfreezeType::class, new UnfreezeRequest())->createView();
-            $data['canUnfreezeUser'] = $this->isGranted('ROLE_DISABLE_USERS')
-                || $user->getFreezeReason() === UserFreezeReason::Spam;
         }
         if (!\count($packages) && ($this->isGranted('ROLE_ADMIN') || $loggedUser?->getId() === $user->getId())) {
             $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
