@@ -7,7 +7,7 @@
 
     {% block list %}
         {% if packages|length %}
-            {{ macros.listPackages(packages, paginate is not defined or paginate, showAutoUpdateWarning|default(false), meta|default(null)) }}
+            {{ macros.listPackages(packages, paginate is not defined or paginate, showAutoUpdateWarning|default(false), meta|default(null), showFrozen|default(false)) }}
         {% else %}
             <div class="alert alert-danger">
                 <p>{{ 'listing.nopackages'|trans }}</p>

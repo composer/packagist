@@ -14,6 +14,7 @@ namespace App\Tests\Controller;
 
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
+use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Mime\Email;
@@ -109,6 +110,54 @@ class ProfileControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/users/bob/');
         self::assertResponseIsSuccessful();
         self::assertStringNotContainsString('Email Confirmed:', $crawler->html());
+    }
+
+    public function testFrozenPackagesListedForPackageModeratorsOnly(): void
+    {
+        $mod = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
+        $bob = self::createUser('bob', 'bob@example.org');
+        // Malware passes the repository's SQL filter; spam is excluded there — both must surface for
+        // a moderator (macro + query relaxed) yet stay hidden from the public.
+        $malware = self::createPackage('test/malwarepkg', 'https://example.org/malwarepkg', maintainers: [$bob]);
+        $malware->freeze(PackageFreezeReason::Malware);
+        $spam = self::createPackage('test/spampkg', 'https://example.org/spampkg', maintainers: [$bob]);
+        $spam->freeze(PackageFreezeReason::Spam);
+        $this->store($mod, $bob, $malware, $spam);
+
+        // A regular visitor sees neither suppressed package.
+        $crawler = $this->client->request('GET', '/users/bob/');
+        self::assertResponseIsSuccessful();
+        self::assertStringNotContainsString('test/malwarepkg', $crawler->html());
+        self::assertStringNotContainsString('test/spampkg', $crawler->html());
+
+        // A package moderator sees both, each flagged as frozen.
+        $this->client->loginUser($mod);
+        $crawler = $this->client->request('GET', '/users/bob/');
+        self::assertResponseIsSuccessful();
+        $listing = $crawler->html();
+        self::assertStringContainsString('test/malwarepkg', $listing);
+        self::assertStringContainsString('[FROZEN: malware]', $listing);
+        self::assertStringContainsString('test/spampkg', $listing);
+        self::assertStringContainsString('[FROZEN: spam]', $listing);
+    }
+
+    public function testFrozenPackagesStayHiddenOnBrowseListingsForModerators(): void
+    {
+        // Browse/search/vendor listings never opt into showFrozen, so a moderator does not see
+        // suppressed packages there even though they would on a user profile.
+        $mod = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
+        $good = self::createPackage('somevendor/good', 'https://example.org/somevendor/good');
+        $spam = self::createPackage('somevendor/bad', 'https://example.org/somevendor/bad');
+        $spam->freeze(PackageFreezeReason::Spam);
+        $this->store($mod, $good, $spam);
+
+        $this->client->loginUser($mod);
+        $crawler = $this->client->request('GET', '/packages/somevendor/');
+        self::assertResponseIsSuccessful();
+        $html = $crawler->html();
+        self::assertStringContainsString('somevendor/good', $html);
+        self::assertStringNotContainsString('somevendor/bad', $html);
+        self::assertStringNotContainsString('[FROZEN', $html);
     }
 
     public function testTokenRotate(): void

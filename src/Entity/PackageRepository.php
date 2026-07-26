@@ -100,7 +100,8 @@ class PackageRepository extends ServiceEntityRepository
     public function getPackageNames(): array
     {
         $query = $this->getEntityManager()
-            ->createQuery("SELECT p.name FROM App\Entity\Package p WHERE p.frozen IS NULL OR p.frozen != 'spam'");
+            ->createQuery('SELECT p.name FROM App\Entity\Package p WHERE p.frozen IS NULL OR p.frozen NOT IN (:suppressed)')
+            ->setParameter('suppressed', PackageFreezeReason::suppressingCases());
 
         $names = $this->getPackageNamesForQuery($query);
 
@@ -454,8 +455,11 @@ class PackageRepository extends ServiceEntityRepository
 
     /**
      * @param array<string, string|int|null> $filters
+     * @param bool $includeFrozen When false (default) suppressed (spam/malware) frozen packages are
+     *                            excluded, matching the public listings. Pass true only for
+     *                            moderator-facing listings.
      */
-    public function getFilteredQueryBuilder(array $filters = [], bool $orderByName = false): QueryBuilder
+    public function getFilteredQueryBuilder(array $filters = [], bool $orderByName = false, bool $includeFrozen = false): QueryBuilder
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $qb->select('p')
@@ -466,7 +470,10 @@ class PackageRepository extends ServiceEntityRepository
             $qb->leftJoin('v.tags', 't');
         }
 
-        $qb->andWhere('(p.frozen IS NULL OR p.frozen != \'spam\')');
+        if (!$includeFrozen) {
+            $qb->andWhere('(p.frozen IS NULL OR p.frozen NOT IN (:suppressedReasons))')
+                ->setParameter('suppressedReasons', PackageFreezeReason::suppressingCases());
+        }
 
         $qb->orderBy('p.abandoned');
         if (true === $orderByName) {

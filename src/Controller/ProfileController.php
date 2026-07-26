@@ -271,7 +271,7 @@ class ProfileController extends Controller
     {
         $packages = $this->getEM()
             ->getRepository(Package::class)
-            ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true);
+            ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true, includeFrozen: $this->isGranted('ROLE_DISABLE_PACKAGES'));
 
         $paginator = new Pagerfanta(new QueryAdapter($packages, true));
         $paginator->setNormalizeOutOfRangePages(true);

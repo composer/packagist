@@ -53,7 +53,17 @@ enum PackageFreezeReason: string
      */
     public function suppressesPackage(): bool
     {
-        return $this === self::Spam || $this === self::Malware;
+        return in_array($this, self::suppressingCases(), true);
+    }
+
+    /**
+     * The freeze reasons that suppress a package (hide it from the public).
+     *
+     * @return list<self>
+     */
+    public static function suppressingCases(): array
+    {
+        return [self::Spam, self::Malware];
     }
 
     /**
