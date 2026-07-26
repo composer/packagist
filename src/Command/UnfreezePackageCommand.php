@@ -13,7 +13,6 @@
 namespace App\Command;
 
 use App\Entity\Package;
-use App\Entity\PackageFreezeReason;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Model\ProviderManager;
@@ -65,10 +64,12 @@ class UnfreezePackageCommand extends Command
         $this->providerManager->insertPackage($package);
         $package->setCrawledAt(null);
         $package->setUpdatedAt(new \DateTimeImmutable());
-        $wasSpam = $package->getFreezeReason() === PackageFreezeReason::Spam;
+        // Any suppressing freeze (spam/malware) hides the package's versions via the purge worker, so
+        // unfreezing must recover them — mirrors PackageController::unfreezePackageAction.
+        $wasSuppressed = $package->getFreezeReason()?->suppressesPackage() ?? false;
         $package->unfreeze();
 
-        if ($wasSpam) {
+        if ($wasSuppressed) {
             /** @var VersionRepository $versionRepo */
             $versionRepo = $this->getEM()->getRepository(Version::class);
             $versionRepo->recoverHiddenVersionsForPackage($package, null);

@@ -12,8 +12,12 @@
 
 namespace App\Tests\Service;
 
+use App\Audit\VersionDeletionReason;
 use App\Entity\Job;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
+use App\Entity\Version;
+use App\Entity\VersionRepository;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Service\PackagePurgeWorker;
@@ -21,6 +25,7 @@ use App\Tests\Fixtures\Fixtures;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\Persistence\ObjectRepository;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Seld\Signal\SignalHandler;
 
@@ -64,13 +69,40 @@ class PackagePurgeWorkerTest extends TestCase
         self::assertSame(Job::STATUS_COMPLETED, $result['status']);
     }
 
-    private function mockRegistry(?Package $package): ManagerRegistry
+    #[TestWith([PackageFreezeReason::Spam, 'spam'])]
+    #[TestWith([PackageFreezeReason::Malware, 'malware'])]
+    public function testSoftDeletesVersionsWithReasonTextMatchingFreezeReason(PackageFreezeReason $freezeReason, string $expectedReasonText): void
     {
-        $repo = $this->createStub(ObjectRepository::class);
-        $repo->method('findOneBy')->willReturn($package);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->freeze($freezeReason);
+        $version = new Version();
+        $package->addVersion($version);
+
+        $versionRepo = $this->createMock(VersionRepository::class);
+        $versionRepo->expects($this->once())
+            ->method('softDelete')
+            ->with($version, VersionDeletionReason::Hidden, $expectedReasonText, null, null);
+
+        $worker = new PackagePurgeWorker(
+            $this->mockRegistry($package, $versionRepo),
+            $this->createStub(ProviderManager::class),
+            $this->createStub(PackageManager::class),
+        );
+
+        $result = $worker->process(new Job('id', 'package:purge', ['name' => 'test/pkg']), SignalHandler::create());
+
+        self::assertSame(Job::STATUS_COMPLETED, $result['status']);
+    }
+
+    private function mockRegistry(?Package $package, ?VersionRepository $versionRepo = null): ManagerRegistry
+    {
+        $packageRepo = $this->createStub(ObjectRepository::class);
+        $packageRepo->method('findOneBy')->willReturn($package);
 
         $registry = $this->createStub(ManagerRegistry::class);
-        $registry->method('getRepository')->willReturn($repo);
+        $registry->method('getRepository')->willReturnCallback(
+            fn (string $class) => $class === Version::class && $versionRepo !== null ? $versionRepo : $packageRepo,
+        );
         $registry->method('getManager')->willReturn($this->createStub(ObjectManager::class));
 
         return $registry;
