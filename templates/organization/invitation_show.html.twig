@@ -17,6 +17,17 @@
             different email address. To accept, sign in with (or change your account email to) the invited
             address, or ask an owner to re-invite the address you use.
         </div>
+    {% elseif alreadyMember %}
+        <div class="alert alert-info">
+            You are already a member of <strong>{{ organization.displayName }}</strong>, so there is nothing to accept.
+            An owner can add you to further teams from the organization's team management.
+        </div>
+
+        <div class="btn-toolbar">
+            {{ form_start(declineForm, { action: path('organization_invitation_decline', { organization: organization.slug, invitation: invitation.id, token: token }), attr: { style: 'display:inline' } }) }}
+                <button class="btn btn-default" type="submit">Dismiss invitation</button>
+            {{ form_end(declineForm) }}
+        </div>
     {% else %}
         {% if needsTwoFactor %}
             <div class="alert alert-warning">

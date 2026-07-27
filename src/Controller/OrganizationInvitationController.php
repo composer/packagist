@@ -15,6 +15,7 @@ namespace App\Controller;
 use App\Entity\Organization;
 use App\Entity\OrganizationInvitation;
 use App\Entity\OrganizationInvitationTeamRepository;
+use App\Entity\OrganizationMemberRepository;
 use App\Entity\User;
 use App\Form\Type\InvitationConfirmType;
 use App\Organization\Domain\Exception\OrganizationException;
@@ -40,6 +41,7 @@ class OrganizationInvitationController extends Controller
 {
     public function __construct(
         private readonly OrganizationInvitationTeamRepository $organizationInvitationTeamRepo,
+        private readonly OrganizationMemberRepository $organizationMemberRepo,
         private readonly InvitationManager $invitationManager,
         private readonly InvitationTokenGenerator $tokens,
     ) {
@@ -58,6 +60,7 @@ class OrganizationInvitationController extends Controller
             'invitation' => $invitation,
             'token' => $token,
             'emailMatches' => $user->getEmailCanonical() === $invitation->emailCanonical,
+            'alreadyMember' => $this->organizationMemberRepo->findOneByOrgAndUser($organization->id, $user->getId()) !== null,
             'needsTwoFactor' => $targetsOwners && !$user->isTotpAuthenticationEnabled(),
             'acceptForm' => $this->createForm(InvitationConfirmType::class)->createView(),
             'declineForm' => $this->createForm(InvitationConfirmType::class)->createView(),

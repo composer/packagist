@@ -288,6 +288,45 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         self::assertResponseRedirects();
     }
 
+    public function testAlreadyMemberSeesNoticeInsteadOfAcceptButton(): void
+    {
+        // The owner is already a member; inviting their own address and following the link should not
+        // offer acceptance (which the aggregate would reject), only a way to dismiss the invitation.
+        [$owner, , $backend] = $this->orgWithTeam();
+
+        $this->client->loginUser($owner);
+        $this->submitInvite($backend, 'owner@example.org');
+        $path = $this->acceptUrlPath();
+
+        $crawler = $this->client->request('GET', $path);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->selectButton('Accept invitation'));
+        self::assertStringContainsString('already a member', $crawler->text());
+    }
+
+    public function testExpiredInvitationHidesResendAndRevokeInList(): void
+    {
+        [$owner, $organization, $backend] = $this->orgWithTeam();
+
+        $this->client->loginUser($owner);
+        $this->submitInvite($backend, 'alice@example.org');
+
+        // Move the pending invitation past its expiry without sweeping the status: the list must render
+        // it as expired and drop the Resend/Revoke actions, which would only 404.
+        $invitation = $this->pendingInvitation($organization);
+        $invitation->expiresAt = new \DateTimeImmutable('-1 day');
+        static::getEM()->flush();
+
+        $crawler = $this->client->request('GET', '/organizations/acme/members');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('alice@example.org', $crawler->text());
+        self::assertStringContainsString('expired', $crawler->text());
+        self::assertCount(0, $crawler->filter('a:contains("Resend")'));
+        self::assertCount(0, $crawler->filter('a:contains("Revoke")'));
+    }
+
     private function submitInvite(OrganizationTeam $team, string $email): void
     {
         $crawler = $this->client->request('GET', '/organizations/acme/invitations/invite');
