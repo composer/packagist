@@ -14,11 +14,40 @@
         {% endif %}
     </h3>
 
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Member</th>
+                <th>Teams</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+                <tr>
+                    <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
+                    <td class="team-labels">
+                        {% for team in member.teams %}
+                            <span class="label label-default">{{ team.name }}</span>
+                        {% endfor %}
+                    </td>
+                    <td class="text-right">
+                        {% if app.user and member.userId == app.user.id %}
+                            <a class="btn btn-xs btn-default" href="{{ path('organization_member_leave', { organization: organization.slug }) }}">Leave</a>
+                        {% elseif canRemove and member.user %}
+                            <a class="btn btn-xs btn-danger" href="{{ path('organization_member_remove', { organization: organization.slug, organizationMember: member.user.username }) }}">Remove</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
     {% if canViewInvitations %}
-        <h4>Invitations</h4>
+        <h4 class="title">Pending invitations</h4>
 
         {% if invitations is empty %}
-            <p>No invitations have been sent yet.</p>
+            <p class="text-muted">No invitations have been sent yet.</p>
         {% else %}
             <table class="table">
                 <thead>
@@ -57,35 +86,4 @@
             </table>
         {% endif %}
     {% endif %}
-
-    <h4>Members</h4>
-
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Member</th>
-                <th>Teams</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for member in members %}
-                <tr>
-                    <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
-                    <td class="team-labels">
-                        {% for team in member.teams %}
-                            <span class="label label-default">{{ team.name }}</span>
-                        {% endfor %}
-                    </td>
-                    <td class="text-right">
-                        {% if app.user and member.userId == app.user.id %}
-                            <a class="btn btn-xs btn-default" href="{{ path('organization_member_leave', { organization: organization.slug }) }}">Leave</a>
-                        {% elseif canRemove and member.user %}
-                            <a class="btn btn-xs btn-danger" href="{{ path('organization_member_remove', { organization: organization.slug, organizationMember: member.user.username }) }}">Remove</a>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 {% endblock %}
