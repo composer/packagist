@@ -75,7 +75,7 @@
                             <td>{{ invitation.lastSentAt|date('Y-m-d H:i') }}</td>
                             <td>{% if invitation.isActive(now) %}{{ invitation.expiresAt|date('Y-m-d H:i') }}{% endif %}</td>
                             <td class="text-right btn-group-xs" style="white-space:nowrap">
-                                {% if invitation.pending %}
+                                {% if invitation.isActive(now) %}
                                     <a class="btn btn-default" href="{{ path('organization_invitation_resend', { organization: organization.slug, invitation: invitation.id }) }}">Resend</a>
                                     <a class="btn btn-danger" href="{{ path('organization_invitation_revoke', { organization: organization.slug, invitation: invitation.id }) }}">Revoke</a>
                                 {% endif %}
