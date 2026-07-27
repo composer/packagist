@@ -134,6 +134,7 @@ final class InvitationManager
      * already validated the link token.
      *
      * @throws \App\Organization\Domain\Exception\EmailMismatchException
+     * @throws \App\Organization\Domain\Exception\AlreadyMemberException
      * @throws \App\Organization\Domain\Exception\PolicyNotMetException
      * @throws \App\Organization\Domain\Exception\InvitationNotPendingException
      * @throws \App\Organization\Domain\Exception\NoPendingInvitationException
@@ -152,6 +153,7 @@ final class InvitationManager
         $aggregate->accept(
             $user->getId(),
             $user->getEmailCanonical(),
+            $organization->isOrgMember($user->getId()),
             $acceptedTeamIds,
             $ownersAmongTeams,
             $user->isTotpAuthenticationEnabled(),

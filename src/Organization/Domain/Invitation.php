@@ -19,6 +19,7 @@ use App\Organization\Domain\Event\UserInvitationExpired;
 use App\Organization\Domain\Event\UserInvitationResent;
 use App\Organization\Domain\Event\UserInvitationRevoked;
 use App\Organization\Domain\Event\UserInvitationSent;
+use App\Organization\Domain\Exception\AlreadyMemberException;
 use App\Organization\Domain\Exception\EmailMismatchException;
 use App\Organization\Domain\Exception\InvitationNotPendingException;
 use App\Organization\Domain\Exception\NoPendingInvitationException;
@@ -127,10 +128,11 @@ final class Invitation extends AbstractAggregate
      * @throws InvitationNotPendingException
      * @throws NoPendingInvitationException the invitation has lapsed
      * @throws EmailMismatchException
-     * @throws TeamNotFoundException        none of the target teams exist any more
-     * @throws PolicyNotMetException        joining owners requires 2FA
+     * @throws AlreadyMemberException        the invitee already belongs to the organization
+     * @throws TeamNotFoundException         none of the target teams exist any more
+     * @throws PolicyNotMetException         joining owners requires 2FA
      */
-    public function accept(int $userId, string $userEmailCanonical, array $acceptedTeamIds, bool $ownersAmongTeams, bool $hasTwoFactor, \DateTimeImmutable $now): void
+    public function accept(int $userId, string $userEmailCanonical, bool $alreadyMember, array $acceptedTeamIds, bool $ownersAmongTeams, bool $hasTwoFactor, \DateTimeImmutable $now): void
     {
         if (!$this->status->isPending()) {
             throw new InvitationNotPendingException('This invitation is no longer pending.');
@@ -141,6 +143,10 @@ final class Invitation extends AbstractAggregate
         }
 
         $this->assertEmailMatches($userEmailCanonical);
+
+        if ($alreadyMember) {
+            throw new AlreadyMemberException('You are already a member of this organization.');
+        }
 
         if ($acceptedTeamIds === []) {
             throw new TeamNotFoundException('None of the invited teams exist any more.');

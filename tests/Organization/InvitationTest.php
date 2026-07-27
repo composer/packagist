@@ -20,6 +20,7 @@ use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\User;
+use App\Organization\Domain\Exception\AlreadyMemberException;
 use App\Organization\Domain\Exception\DuplicatePendingInvitationException;
 use App\Organization\Domain\Exception\EmailMismatchException;
 use App\Organization\Domain\Exception\PolicyNotMetException;
@@ -127,6 +128,42 @@ class InvitationTest extends IntegrationTestCase
 
         $this->expectException(PolicyNotMetException::class);
         $this->invitations()->accept($invitation, $alice, null);
+    }
+
+    public function testAcceptRejectsUserWhoIsAlreadyAMember(): void
+    {
+        $owner = $this->persistUser('owner', 'owner@example.org', twoFactor: true);
+        $organization = $this->createOrg($owner, 'acme');
+        $alice = $this->persistUser('alice', 'alice@example.org', twoFactor: true);
+
+        // Alice joins once.
+        $this->invitations()->invite($organization, $owner, 'alice@example.org', [$organization->ownersTeamId], null);
+        $this->invitations()->accept($this->pendingInvitation($organization), $alice, null);
+
+        // A fresh invitation for the same, now-member address is accepted at the invite step, but
+        // accepting it must be rejected rather than re-recording the membership.
+        $this->invitations()->invite($organization, $owner, 'alice@example.org', [$organization->ownersTeamId], null);
+        $pending = $this->onlyPendingInvitation($organization);
+
+        try {
+            $this->invitations()->accept($pending, $alice, null);
+            self::fail('Expected AlreadyMemberException.');
+        } catch (AlreadyMemberException) {
+            // Expected: the second invitation stays pending and no duplicate membership is written.
+        }
+
+        self::assertNotNull(static::getService(OrganizationMemberRepository::class)->findOneByOrgAndUser($organization->id, $alice->getId()));
+    }
+
+    private function onlyPendingInvitation(OrganizationReadModel $organization): OrganizationInvitation
+    {
+        $pending = array_values(array_filter(
+            static::getService(OrganizationInvitationRepository::class)->findByOrg($organization->id),
+            static fn (OrganizationInvitation $invitation): bool => $invitation->status === InvitationStatus::Pending,
+        ));
+        self::assertCount(1, $pending);
+
+        return $pending[0];
     }
 
     public function testAcceptRejectsEmailMismatch(): void
