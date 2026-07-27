@@ -89,7 +89,7 @@ class UpdatePackagesCommand extends Command
             $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
             $updateSourceDistUrl = true;
         } else {
-            $packages = $this->getEM()->getRepository(Package::class)->getStalePackages();
+            $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForUpdating();
         }
 
         $ids = [];

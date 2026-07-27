@@ -83,11 +83,11 @@ class PackageRepository extends ServiceEntityRepository
     public function getPackageNamesUpdatedSince(\DateTimeInterface $date): array
     {
         $query = $this->getEntityManager()
-            ->createQuery("
+            ->createQuery('
                 SELECT p.name FROM App\Entity\Package p
-                WHERE p.dumpedAt >= :date AND p.frozen IS NULL
-            ")
-            ->setParameters(['date' => $date]);
+                WHERE p.dumpedAt >= :date AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
+            ')
+            ->setParameters(['date' => $date, 'suppressed' => PackageFreezeReason::suppressingCases()]);
 
         $names = $this->getPackageNamesForQuery($query);
 
@@ -132,7 +132,8 @@ class PackageRepository extends ServiceEntityRepository
     {
         $qb = $this->getEntityManager()->getRepository(Package::class)->createQueryBuilder('p')
             ->select('p.name')
-            ->where('p.frozen IS NULL');
+            ->where('(p.frozen IS NULL OR p.frozen NOT IN (:suppressed))')
+            ->setParameter('suppressed', PackageFreezeReason::suppressingCases());
         if ($type !== null) {
             $qb->andWhere('p.type = :type')
                 ->setParameter('type', $type);
@@ -204,13 +205,13 @@ class PackageRepository extends ServiceEntityRepository
             $selector .= ', p.replacementPackage';
         }
 
-        $where = 'p.frozen IS NULL';
+        $where = '(p.frozen IS NULL OR p.frozen NOT IN (:suppressedReasons))';
         foreach ($filters as $filter => $val) {
             $where .= ' AND p.'.$filter.' = :'.$filter;
         }
         $query = $this->getEntityManager()
             ->createQuery("SELECT p.name $selector FROM App\Entity\Package p WHERE $where ORDER BY p.name")
-            ->setParameters($filters);
+            ->setParameters(array_merge($filters, ['suppressedReasons' => PackageFreezeReason::suppressingCases()]));
 
         $result = [];
         /** @var array{name: string, abandoned?: string, replacementPackage?: string|null} $row */
@@ -250,7 +251,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return list<array{id: int}>
      */
-    public function getStalePackages(): array
+    public function getStalePackagesForUpdating(): array
     {
         $conn = $this->getEntityManager()->getConnection();
 
@@ -299,23 +300,10 @@ class PackageRepository extends ServiceEntityRepository
             FROM package p
             LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
             WHERE (p.dumpedAt IS NULL OR (p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW()))
-            AND p.frozen IS NULL
+            AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
             AND (d.total > 1000 OR d.lastUpdated > :date)
             ORDER BY p.crawledAt ASC
-        ', ['date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
-    }
-
-    public function isPackageDumpableForV1(Package $package): bool
-    {
-        $conn = $this->getEntityManager()->getConnection();
-
-        return (bool) $conn->fetchOne('
-            SELECT p.id
-            FROM package p
-            LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
-            WHERE p.id = :id AND p.frozen IS NULL
-            AND (d.total > 1000 OR d.lastUpdated > :date)
-        ', ['id' => $package->getId(), 'date' => date('Y-m-d H:i:s', strtotime('-4months'))]);
+        ', ['date' => date('Y-m-d H:i:s', strtotime('-4months')), 'suppressed' => PackageFreezeReason::suppressingValues()], ['suppressed' => ArrayParameterType::STRING]);
     }
 
     /**
@@ -325,8 +313,9 @@ class PackageRepository extends ServiceEntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        $sql = 'SELECT p.id FROM package p USE INDEX (dumped2_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND p.frozen IS NULL';
-        $params = [];
+        $sql = 'SELECT p.id FROM package p USE INDEX (dumped2_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
+        $params = ['suppressed' => PackageFreezeReason::suppressingValues()];
+        $types = ['suppressed' => ArrayParameterType::STRING];
 
         if ($numWorkers > 1) {
             $sql .= ' AND p.id % :numWorkers = :workerId';
@@ -334,7 +323,7 @@ class PackageRepository extends ServiceEntityRepository
             $params['workerId'] = $workerId;
         }
 
-        return $conn->fetchFirstColumn($sql, $params);
+        return $conn->fetchFirstColumn($sql, $params, $types);
     }
 
     /**
@@ -804,7 +793,8 @@ class PackageRepository extends ServiceEntityRepository
         $qb->select('p')
             ->from('App\Entity\Package', 'p')
             ->where('p.abandoned = false')
-            ->andWhere('p.frozen IS NULL')
+            ->andWhere('(p.frozen IS NULL OR p.frozen NOT IN (:suppressed))')
+            ->setParameter('suppressed', PackageFreezeReason::suppressingCases())
             ->orderBy('p.id', 'DESC');
 
         return $qb;
@@ -819,7 +809,8 @@ class PackageRepository extends ServiceEntityRepository
         $qb->select('p')
             ->from('App\Entity\Package', 'p')
             ->where('p.abandoned = false')
-            ->andWhere('p.frozen IS NULL')
+            ->andWhere('(p.frozen IS NULL OR p.frozen NOT IN (:suppressed))')
+            ->setParameter('suppressed', PackageFreezeReason::suppressingCases())
             ->andWhere("(p.type = 'php-ext' OR p.type = 'php-ext-zend')")
             ->orderBy('p.id', 'DESC');
 

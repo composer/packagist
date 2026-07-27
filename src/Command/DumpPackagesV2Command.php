@@ -13,8 +13,10 @@
 namespace App\Command;
 
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Package\V2Dumper;
 use App\Service\Locker;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
@@ -122,15 +124,18 @@ class DumpPackagesV2Command extends Command
 
             while ($iterations--) {
                 if ($force) {
-                    $sql = 'SELECT id FROM package WHERE frozen IS NULL';
-                    $params = [];
+                    // Dump everything publicly served: skip only suppressed (spam/malware) packages,
+                    // matching V2Dumper::dump()'s own guard; gentle freezes keep their served files.
+                    $sql = 'SELECT id FROM package WHERE (frozen IS NULL OR frozen NOT IN (:suppressed))';
+                    $params = ['suppressed' => PackageFreezeReason::suppressingValues()];
+                    $types = ['suppressed' => ArrayParameterType::STRING];
                     if ($numWorkers > 1) {
                         $sql .= ' AND id % :numWorkers = :workerId';
                         $params['numWorkers'] = $numWorkers;
                         $params['workerId'] = $workerId;
                     }
                     $sql .= ' ORDER BY id ASC';
-                    $ids = $this->getEM()->getConnection()->fetchFirstColumn($sql, $params);
+                    $ids = $this->getEM()->getConnection()->fetchFirstColumn($sql, $params, $types);
                 } else {
                     // instrumentation only: time the stale-select query to rule it out as a bottleneck during a buildup
                     $selectStart = microtime(true);

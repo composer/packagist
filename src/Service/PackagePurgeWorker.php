@@ -54,21 +54,28 @@ class PackagePurgeWorker
 
         $package = $this->doctrine->getRepository(Package::class)->findOneBy(['name' => $packageName]);
         if ($package !== null) {
+            $freezeReason = $package->getFreezeReason();
+
+            // The freeze may have been reverted before this job ran (an admin undid it); if the
+            // package is no longer suppressed, the purge is stale — leave its versions and published
+            // artifacts untouched.
+            if ($freezeReason === null || !$freezeReason->suppressesPackage()) {
+                return [
+                    'status' => Job::STATUS_COMPLETED,
+                    'message' => 'Skipped purge for '.$packageName.', it is no longer frozen for a suppressing reason',
+                ];
+            }
+
             $actor = isset($payload['actorId'])
                 ? $this->doctrine->getRepository(User::class)->find($payload['actorId'])
                 : null;
-
-            // Record the actual freeze reason (spam/malware) as the takedown text; the caller froze
-            // the package before scheduling the purge. Fall back to 'spam' if it is somehow no longer
-            // frozen (e.g. unfrozen between scheduling and this retry).
-            $freezeReason = $package->getFreezeReason();
-            $reasonText = $freezeReason !== null ? $freezeReason->value : 'spam';
 
             /** @var VersionRepository $versionRepo */
             $versionRepo = $this->doctrine->getRepository(Version::class);
             foreach ($package->getVersions() as $version) {
                 if (!$version->isSoftDeleted()) {
-                    $versionRepo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, null, $actor);
+                    // Record the actual freeze reason (spam/malware) as the takedown text.
+                    $versionRepo->softDelete($version, VersionDeletionReason::Hidden, $freezeReason->value, null, $actor);
                 }
             }
 

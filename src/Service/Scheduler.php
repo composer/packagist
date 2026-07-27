@@ -93,16 +93,14 @@ class Scheduler
      *
      * @return Job<PackagePurgeJob>
      */
-    public function schedulePackagePurge(Package|int $packageOrId, string $packageName, ?int $actorId = null): Job
+    public function schedulePackagePurge(Package $package, ?int $actorId = null): Job
     {
-        $packageId = $packageOrId instanceof Package ? $packageOrId->getId() : $packageOrId;
-
-        $payload = ['name' => $packageName];
+        $payload = ['name' => $package->getName()];
         if ($actorId !== null) {
             $payload['actorId'] = $actorId;
         }
 
-        return $this->createJob('package:purge', $payload, $packageId);
+        return $this->createJob('package:purge', $payload, $package->getId());
     }
 
     private function getPendingUpdateJob(int $packageId, bool $updateSourceDistUrl = false, bool $deleteBefore = false): ?string

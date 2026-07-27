@@ -67,6 +67,17 @@ enum PackageFreezeReason: string
     }
 
     /**
+     * The backing string values of the suppressing freeze reasons, for raw SQL (DBAL) IN/NOT IN
+     * clauses where enum instances cannot be bound directly.
+     *
+     * @return list<string>
+     */
+    public static function suppressingValues(): array
+    {
+        return array_map(static fn (self $reason): string => $reason->value, self::suppressingCases());
+    }
+
+    /**
      * Freeze reasons a package moderator may apply through the UI, given whether they hold
      * ROLE_DISABLE_PACKAGES. Excludes automation-only reasons (RemoteIdMismatch, Gone) which are
      * set by the crawler, never chosen by a human.

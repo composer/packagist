@@ -36,6 +36,7 @@ class PackagePurgeWorkerTest extends TestCase
     public function testPurgesArtifactsForExistingPackage(): void
     {
         $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->freeze(PackageFreezeReason::Spam);
 
         $providerManager = $this->createMock(ProviderManager::class);
         $providerManager->expects($this->once())->method('deletePackage')->with($package);
@@ -67,6 +68,27 @@ class PackagePurgeWorkerTest extends TestCase
         $result = $worker->process(new Job('id', 'package:purge', ['name' => 'test/pkg']), SignalHandler::create());
 
         self::assertSame(Job::STATUS_COMPLETED, $result['status']);
+    }
+
+    public function testSkipsPurgeWhenFreezeWasReverted(): void
+    {
+        // The admin undid the freeze before the job ran, so the stale purge must not touch anything.
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+
+        $providerManager = $this->createMock(ProviderManager::class);
+        $providerManager->expects($this->never())->method('deletePackage');
+
+        $packageManager = $this->createMock(PackageManager::class);
+        $packageManager->expects($this->never())->method('deletePackageMetadata');
+        $packageManager->expects($this->never())->method('deletePackageCdnMetadata');
+        $packageManager->expects($this->never())->method('deletePackageSearchIndex');
+
+        $worker = new PackagePurgeWorker($this->mockRegistry($package), $providerManager, $packageManager);
+
+        $result = $worker->process(new Job('id', 'package:purge', ['name' => 'test/pkg']), SignalHandler::create());
+
+        self::assertSame(Job::STATUS_COMPLETED, $result['status']);
+        self::assertStringContainsString('Skipped purge', $result['message']);
     }
 
     #[TestWith([PackageFreezeReason::Spam, 'spam'])]

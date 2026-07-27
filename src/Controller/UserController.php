@@ -180,7 +180,7 @@ class UserController extends Controller
         }
 
         foreach ($packages as $package) {
-            $this->scheduler->schedulePackagePurge($package, $package->getName(), $actor->getId());
+            $this->scheduler->schedulePackagePurge($package, $actor->getId());
         }
     }
 

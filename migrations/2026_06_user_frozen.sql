@@ -1,4 +1,4 @@
--- Admin-controlled account freeze, mirroring the package freeze (see src/Entity/UserFreezeReason.php).
+-- Admin-controlled account freeze, mirroring the package freeze reason (see src/Entity/User.php).
 -- NULL = not frozen. A frozen account cannot log in, reset its password, authenticate via API token,
 -- or be used as a maintainer; only an admin can unfreeze it.
 --

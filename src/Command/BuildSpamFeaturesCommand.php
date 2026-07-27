@@ -88,7 +88,7 @@ class BuildSpamFeaturesCommand extends Command
             // label 0 = safe (packages whose vendor is verified)
             $safeCounts = $this->processClass(
                 0,
-                'SELECT p.id FROM package p JOIN vendor v ON v.name = p.vendor WHERE v.verified = 1 AND p.frozen IS NULL',
+                'SELECT p.id FROM package p JOIN vendor v ON v.name = p.vendor WHERE v.verified = 1 AND (p.frozen IS NULL OR p.frozen != "spam")',
                 [],
                 $metadataHandle,
                 $readmeHandle,

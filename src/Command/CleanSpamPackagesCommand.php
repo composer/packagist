@@ -70,7 +70,7 @@ class CleanSpamPackagesCommand extends Command
             }
 
             // Purge published artifacts (provider record, metadata, CDN, search index) out of band.
-            $this->scheduler->schedulePackagePurge($package, $package->getName());
+            $this->scheduler->schedulePackagePurge($package);
         }
 
         $em->flush();
