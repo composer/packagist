@@ -12,10 +12,30 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\AuditRecord;
+use App\Entity\UserFreezeReason;
 use App\Tests\IntegrationTestCase;
 
 class AdminControllerTest extends IntegrationTestCase
 {
+    public function testIndexShowsRecentModerationActivity(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $victim = self::createUser('victim', 'victim@example.org');
+        $this->store($admin, $victim);
+
+        self::getEM()->getRepository(AuditRecord::class)->insert(
+            AuditRecord::userFrozen($victim, $admin, UserFreezeReason::Temporary, 'pending review')
+        );
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/');
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('Recent moderation activity', $crawler->html());
+        static::assertStringContainsString('victim', $crawler->filter('.audit-log-table')->text());
+    }
+
     public function testIndexDeniedForRegularUser(): void
     {
         $user = self::createUser('plain', 'plain@example.com', roles: ['ROLE_USER']);
