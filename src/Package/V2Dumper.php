@@ -15,7 +15,6 @@ namespace App\Package;
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
-use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
 use App\Entity\Version;
 use App\FilterList\Dump\DumpableFilterList;
@@ -189,8 +188,8 @@ class V2Dumper
 
             // prepare packages in memory
             foreach ($packages as $package) {
-                // skip spam packages in the dumper in case one appears due to a race condition
-                if ($package->isFrozen() && $package->getFreezeReason() === PackageFreezeReason::Spam) {
+                // skip suppressed (spam/malware) packages in the dumper in case one appears due to a race condition
+                if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage()) {
                     continue;
                 }
 

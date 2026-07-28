@@ -36,27 +36,57 @@ use Symfony\Component\Validator\Constraints as Assert;
 enum PackageFreezeReason: string
 {
     case Spam = 'spam';
+    case Malware = 'malware';
     case RemoteIdMismatch = 'remote_id';
     case Gone = 'gone';
+    case Temporary = 'temporary';
 
     public function translationKey(): string
     {
         return 'freezing_reasons.'.$this->value;
     }
 
-    public function isSpam(): bool
+    /**
+     * Whether the package should be hidden from the public entirely: skipped by the dumper, removed
+     * from the search index, and 404'd on the package page/API. Gentle freezes (a moving/gone
+     * canonical repo, or a temporary hold) keep their metadata served — they are just not updated.
+     */
+    public function suppressesPackage(): bool
     {
-        return $this === self::Spam;
+        return in_array($this, self::suppressingCases(), true);
     }
 
-    public function isGone(): bool
+    /**
+     * The freeze reasons that suppress a package (hide it from the public).
+     *
+     * @return list<self>
+     */
+    public static function suppressingCases(): array
     {
-        return $this === self::Gone;
+        return [self::Spam, self::Malware];
     }
 
-    public function isRemoteIdMismatch(): bool
+    /**
+     * The backing string values of the suppressing freeze reasons, for raw SQL (DBAL) IN/NOT IN
+     * clauses where enum instances cannot be bound directly.
+     *
+     * @return list<string>
+     */
+    public static function suppressingValues(): array
     {
-        return $this === self::RemoteIdMismatch;
+        return array_map(static fn (self $reason): string => $reason->value, self::suppressingCases());
+    }
+
+    /**
+     * Freeze reasons a package moderator may apply through the UI, given whether they hold
+     * ROLE_DISABLE_PACKAGES. Excludes automation-only reasons (RemoteIdMismatch, Gone) which are
+     * set by the crawler, never chosen by a human.
+     *
+     * @return list<self>
+     */
+    public static function casesForRole(bool $mayDisablePackages): array
+    {
+        return $mayDisablePackages ? [self::Spam, self::Malware, self::Temporary] : [];
     }
 }
 
@@ -812,8 +842,8 @@ class Package
     public function freeze(PackageFreezeReason $reason): void
     {
         $this->frozen = $reason;
-        // force re-indexing for spam packages to ensure they get deleted from the search index
-        if ($reason === PackageFreezeReason::Spam) {
+        // force re-indexing for suppressed packages to ensure they get deleted from the search index
+        if ($reason->suppressesPackage()) {
             $this->setIndexedAt(null);
         }
     }

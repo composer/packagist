@@ -16,10 +16,15 @@ use App\Attribute\VarName;
 use App\Entity\AuditRecord;
 use App\Entity\Job;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\Form\Model\AdminUpdateEmailRequest;
+use App\Form\Model\FreezeRequest;
+use App\Form\Model\UnfreezeRequest;
 use App\Form\Type\AdminUpdateEmailType;
+use App\Form\Type\FreezeType;
 use App\Form\Type\ProfileFormType;
+use App\Form\Type\UnfreezeType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Security\UserNotifier;
@@ -127,8 +132,11 @@ class ProfileController extends Controller
             'user' => $user,
         ];
 
-        if ($this->isGranted('ROLE_ANTISPAM')) {
-            $data['spammerForm'] = $this->createFormBuilder([])->getForm()->createView();
+        if ($this->isGranted('ROLE_DISABLE_USERS')) {
+            $data['freezeForm'] = $this->createForm(FreezeType::class, new FreezeRequest(), [
+                'package_reasons' => PackageFreezeReason::casesForRole($this->isGranted('ROLE_DISABLE_PACKAGES')),
+            ])->createView();
+            $data['unfreezeForm'] = $this->createForm(UnfreezeType::class, new UnfreezeRequest())->createView();
         }
         if (!\count($packages) && ($this->isGranted('ROLE_ADMIN') || $loggedUser?->getId() === $user->getId())) {
             $data['deleteForm'] = $this->createFormBuilder([])->getForm()->createView();
@@ -263,7 +271,7 @@ class ProfileController extends Controller
     {
         $packages = $this->getEM()
             ->getRepository(Package::class)
-            ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true);
+            ->getFilteredQueryBuilder(['maintainer' => $user->getId()], true, includeFrozen: $this->isGranted('ROLE_DISABLE_PACKAGES'));
 
         $paginator = new Pagerfanta(new QueryAdapter($packages, true));
         $paginator->setNormalizeOutOfRangePages(true);

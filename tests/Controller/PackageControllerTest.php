@@ -45,7 +45,7 @@ class PackageControllerTest extends IntegrationTestCase
     public function testSpamListingShowsClassifierScoresWhenModelAvailable(): void
     {
         // Fixture weights: name token "widget" is strongly safe, "spam" strongly spammy.
-        $antispam = self::createUser('mod', 'mod@example.org', roles: ['ROLE_ANTISPAM']);
+        $antispam = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
         $safe = self::createPackage('goodvendor/widget', 'https://example.org/goodvendor/widget');
         $safe->setSuspect('Too many views');
         $spam = self::createPackage('badvendor/spam', 'https://example.org/badvendor/spam');

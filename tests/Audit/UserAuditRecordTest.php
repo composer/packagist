@@ -15,6 +15,7 @@ namespace App\Tests\Audit;
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\User;
+use App\Entity\UserFreezeReason;
 use PHPUnit\Framework\TestCase;
 
 class UserAuditRecordTest extends TestCase
@@ -82,5 +83,51 @@ class UserAuditRecordTest extends TestCase
         self::assertSame('actoruser', $record->attributes['actor']['username']);
         self::assertSame(567, $record->actorId);
         self::assertSame(456, $record->userId);
+    }
+
+    public function testUserFrozen(): void
+    {
+        $user = $this->makeUser('baduser', 123);
+        $actor = $this->makeUser('admin', 456);
+
+        $record = AuditRecord::userFrozen($user, $actor, UserFreezeReason::Spam, 'spamming packages', 'ticket #42');
+
+        self::assertSame(AuditRecordType::UserFrozen, $record->type);
+        self::assertSame('baduser', $record->attributes['user']['username']);
+        self::assertSame('spam', $record->attributes['reason']);
+        self::assertSame('spamming packages', $record->attributes['reasonText']);
+        self::assertSame('ticket #42', $record->attributes['internalReason']);
+        self::assertIsArray($record->attributes['actor']);
+        self::assertSame(456, $record->attributes['actor']['id']);
+        self::assertSame(456, $record->actorId);
+        self::assertSame(123, $record->userId);
+    }
+
+    public function testUserUnfrozen(): void
+    {
+        $user = $this->makeUser('reformed', 123);
+        $actor = $this->makeUser('admin', 456);
+
+        $record = AuditRecord::userUnfrozen($user, $actor, 'appeal accepted');
+
+        self::assertSame(AuditRecordType::UserUnfrozen, $record->type);
+        self::assertSame('reformed', $record->attributes['user']['username']);
+        self::assertArrayNotHasKey('reason', $record->attributes);
+        self::assertSame('appeal accepted', $record->attributes['reasonText']);
+        self::assertNull($record->attributes['internalReason']);
+        self::assertSame(456, $record->actorId);
+        self::assertSame(123, $record->userId);
+    }
+
+    private function makeUser(string $username, int $id): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($username.'@example.com');
+        $user->setPassword('password');
+
+        new \ReflectionProperty($user, 'id')->setValue($user, $id);
+
+        return $user;
     }
 }

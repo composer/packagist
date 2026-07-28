@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -34,7 +35,8 @@ class ExtensionController extends Controller
             ->getRepository(Package::class)
             ->createQueryBuilder('p')
             ->where("(p.type = 'php-ext' OR p.type = 'php-ext-zend')")
-            ->andWhere('p.frozen IS NULL')
+            ->andWhere('(p.frozen IS NULL OR p.frozen NOT IN (:suppressed))')
+            ->setParameter('suppressed', PackageFreezeReason::suppressingCases())
             ->orderBy('p.name');
 
         $packages = new Pagerfanta(new QueryAdapter($packageQuery, false));

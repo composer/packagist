@@ -13,6 +13,7 @@
 namespace App\Tests\Entity;
 
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Entity\Tag;
 use App\Entity\Version;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -60,5 +61,14 @@ class PackageTest extends TestCase
         $package->setName('vendor/name');
 
         self::assertSame('composer require vendor/name', $package->getInstallCommand());
+    }
+
+    public function testFreezeReasonCasesForRole(): void
+    {
+        self::assertSame(
+            [PackageFreezeReason::Spam, PackageFreezeReason::Malware, PackageFreezeReason::Temporary],
+            PackageFreezeReason::casesForRole(true),
+        );
+        self::assertSame([], PackageFreezeReason::casesForRole(false));
     }
 }

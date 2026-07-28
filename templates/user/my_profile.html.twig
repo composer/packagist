@@ -54,7 +54,7 @@
         {% endif %}
     {% endif %}
 
-    {% embed "web/list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: true} %}
+    {% embed "web/list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: true, showFrozen: true} %}
         {% block content_title %}
             <h3 class="font-normal">{{ 'packages.yours'|trans }}</h3>
         {% endblock %}

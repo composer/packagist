@@ -30,7 +30,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-#[IsGranted('ROLE_ANTISPAM')]
+#[IsGranted('ROLE_DISABLE_PACKAGES')]
 class SpamController extends Controller
 {
     public function __construct(
