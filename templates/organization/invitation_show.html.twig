@@ -13,9 +13,9 @@
 
     {% if not emailMatches %}
         <div class="alert alert-warning">
-            This invitation was sent to <strong>{{ invitation.email }}</strong>, but your account uses a
-            different email address. To accept, sign in with (or change your account email to) the invited
-            address, or ask an owner to re-invite the address you use.
+            This invitation was sent to a different email address than the one your account uses. To accept,
+            sign in with (or change your account email to) the invited address, or ask an owner to re-invite
+            the address you use.
         </div>
     {% elseif alreadyMember %}
         <div class="alert alert-info">
