@@ -399,7 +399,7 @@ class PackageController extends Controller
 
     #[IsGranted('ROLE_DISABLE_PACKAGES')]
     #[Route(path: '/package/{name}/unfreeze', name: 'unfreeze_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'html'], methods: ['POST'])]
-    public function unfreezePackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] User $user): Response
+    public function unfreezePackageAction(Request $req, string $name): Response
     {
         if (!$this->isCsrfTokenValid('unfreeze', $req->request->getString('token'))) {
             throw new BadRequestHttpException('Invalid CSRF token');
@@ -410,15 +410,7 @@ class PackageController extends Controller
             return $package;
         }
 
-        $wasSuppressed = $package->getFreezeReason()?->suppressesPackage() ?? false;
-        $package->unfreeze();
-        $this->getEM()->persist($package);
-
-        if ($wasSuppressed) {
-            $this->getEM()->getRepository(Version::class)->recoverHiddenVersionsForPackage($package, $user);
-        }
-
-        $this->getEM()->flush();
+        $this->packageManager->unfreeze($package, 'web unfreeze');
 
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }

@@ -25,6 +25,7 @@ use App\Entity\Version;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use App\Service\CdnClient;
 use App\Service\GitHubUserMigrationWorker;
+use App\Service\Scheduler;
 use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
@@ -58,7 +59,25 @@ class PackageManager
         private VersionIdCache $versionIdCache,
         private readonly CdnClient $cdnClient,
         private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly Scheduler $scheduler,
     ) {
+    }
+
+    /**
+     * Unfreezes a package: re-adds it to the provider list, clears the frozen flag (which also resets
+     * crawledAt), and forces an immediate re-crawl/re-dump so its metadata is regenerated.
+     */
+    public function unfreeze(Package $package, string $source): void
+    {
+        $this->providerManager->insertPackage($package);
+        $package->setUpdatedAt(new \DateTimeImmutable());
+        $package->unfreeze();
+
+        $em = $this->doctrine->getManager();
+        $em->persist($package);
+        $em->flush();
+
+        $this->scheduler->scheduleUpdate($package, $source, forceDump: true);
     }
 
     public function deletePackage(Package $package, ?string $reason = null, ?string $internalReason = null): void

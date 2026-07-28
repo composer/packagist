@@ -28,6 +28,4 @@ class FreezeRequest
     public bool $freezePackages = true;
 
     public ?PackageFreezeReason $packageFreezeReason = PackageFreezeReason::Spam;
-
-    public bool $purgePackages = false;
 }

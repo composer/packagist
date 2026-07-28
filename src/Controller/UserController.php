@@ -114,8 +114,7 @@ class UserController extends Controller
             $em->flush();
 
             if ($freezeRequest->freezePackages && $freezeRequest->packageFreezeReason !== null && $packageReasons !== []) {
-                $purge = $freezeRequest->purgePackages && $freezeRequest->packageFreezeReason->suppressesPackage();
-                $this->freezeUserPackages($user, $adminUser, $freezeRequest->packageFreezeReason, $purge);
+                $this->freezeUserPackages($user, $adminUser, $freezeRequest->packageFreezeReason);
             }
 
             $this->addFlash('success', $user->getUsername().' has been frozen.');
@@ -156,10 +155,9 @@ class UserController extends Controller
      * Freezes the user's packages with the chosen reason immediately (so suppressed ones stop being
      * served right away). Freezing goes through the entity so PackageListener records a PackageFrozen
      * audit entry per real transition (and Package::freeze() drops suppressed packages from the search
-     * index). When purging, the heavy per-package work — soft-deleting versions and removing published
-     * artifacts — is offloaded to a background job per package.
+     * index). If the freeze reason suppresses/hides the package, purging is scheduled as a backgroudn job.
      */
-    private function freezeUserPackages(User $user, User $actor, PackageFreezeReason $reason, bool $purge): void
+    private function freezeUserPackages(User $user, User $actor, PackageFreezeReason $reason): void
     {
         $em = $this->getEM();
 
@@ -175,12 +173,10 @@ class UserController extends Controller
         }
         $em->flush();
 
-        if (!$purge) {
-            return;
-        }
-
-        foreach ($packages as $package) {
-            $this->scheduler->schedulePackagePurge($package, $actor->getId());
+        if ($reason->suppressesPackage()) {
+            foreach ($packages as $package) {
+                $this->scheduler->schedulePackagePurge($package, $actor->getId());
+            }
         }
     }
 

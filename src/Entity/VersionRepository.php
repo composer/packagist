@@ -117,40 +117,6 @@ class VersionRepository extends ServiceEntityRepository
     }
 
     /**
-     * Bulk-recover every Hidden version of the given package. Used by the unfreeze flow so an
-     * admin reversing a spam decision restores all the hidden versions in one go without N
-     * scheduler dispatches. Emits one audit row per recovered version.
-     */
-    public function recoverHiddenVersionsForPackage(Package $package, ?User $actor): int
-    {
-        $em = $this->getEntityManager();
-        /** @var Version[] $hidden */
-        $hidden = $this->createQueryBuilder('v')
-            ->where('v.package = :package')
-            ->andWhere('v.deletionReason = :reason')
-            ->setParameter('package', $package)
-            ->setParameter('reason', VersionDeletionReason::Hidden)
-            ->getQuery()->getResult();
-
-        if (\count($hidden) === 0) {
-            return 0;
-        }
-
-        foreach ($hidden as $version) {
-            $version->setSoftDeletedAt(null);
-            $version->setDeletionReason(null);
-            $version->setDeletionReasonText(null);
-            $version->setInternalDeletionReasonText(null);
-            $em->persist($version);
-            $em->persist(AuditRecord::versionRecovered($version, VersionDeletionReason::Hidden, $actor));
-        }
-
-        $this->scheduler->scheduleUpdate($package, 'unfreeze_recover_hidden');
-
-        return \count($hidden);
-    }
-
-    /**
      * Clear a soft-delete marking. Schedules a fresh Updater run for the same reasons as softDelete().
      */
     public function recover(Version $version, ?User $actor): void

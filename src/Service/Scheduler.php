@@ -87,9 +87,10 @@ class Scheduler
     }
 
     /**
-     * Schedules the out-of-band cleanup of a package — freeze, version soft-deletes, and purge of
-     * its published artifacts. Keyed by name so it stays correct even if the row is later removed;
-     * $actorId, when given, is recorded as the actor of the version soft-deletes.
+     * Schedules the out-of-band cleanup of a package — freeze, purge of
+     * its published artifacts / metadata / search index. Keyed by name so it stays
+     * correct even if the row is later removed; $actorId, when given, is recorded
+     * as the actor of any audit log generated.
      *
      * @return Job<PackagePurgeJob>
      */

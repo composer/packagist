@@ -13,10 +13,7 @@
 namespace App\Command;
 
 use App\Entity\Package;
-use App\Entity\Version;
-use App\Entity\VersionRepository;
-use App\Model\ProviderManager;
-use App\Service\Scheduler;
+use App\Model\PackageManager;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -27,16 +24,11 @@ class UnfreezePackageCommand extends Command
 {
     use \App\Util\DoctrineTrait;
 
-    private ProviderManager $providerManager;
-    private ManagerRegistry $doctrine;
-    private Scheduler $scheduler;
-
-    public function __construct(ProviderManager $providerManager, ManagerRegistry $doctrine, Scheduler $scheduler)
-    {
-        $this->providerManager = $providerManager;
-        $this->doctrine = $doctrine;
+    public function __construct(
+        private ManagerRegistry $doctrine,
+        private PackageManager $packageManager,
+    ) {
         parent::__construct();
-        $this->scheduler = $scheduler;
     }
 
     protected function configure(): void
@@ -61,23 +53,7 @@ class UnfreezePackageCommand extends Command
             return 1;
         }
 
-        $this->providerManager->insertPackage($package);
-        $package->setCrawledAt(null);
-        $package->setUpdatedAt(new \DateTimeImmutable());
-        // Any suppressing freeze (spam/malware) hides the package's versions via the purge worker, so
-        // unfreezing must recover them — mirrors PackageController::unfreezePackageAction.
-        $wasSuppressed = $package->getFreezeReason()?->suppressesPackage() ?? false;
-        $package->unfreeze();
-
-        if ($wasSuppressed) {
-            /** @var VersionRepository $versionRepo */
-            $versionRepo = $this->getEM()->getRepository(Version::class);
-            $versionRepo->recoverHiddenVersionsForPackage($package, null);
-        }
-
-        $this->getEM()->flush();
-
-        $this->scheduler->scheduleUpdate($package, 'unfreeze cmd', forceDump: true);
+        $this->packageManager->unfreeze($package, 'unfreeze cmd');
 
         $output->writeln('<info>Package '.$name.' has been unfrozen and marked for update</info>');
 

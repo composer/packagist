@@ -155,11 +155,8 @@
                                 <label>{{ form_widget(freezeForm.freezePackages) }} Also act on the user's packages</label>
                             </div>
                             <div class="form-group">
-                                <label>Package freeze reason</label>
+                                <label>Package freeze reason (For {% for r in enum('App\\Entity\\PackageFreezeReason').suppressingValues() %}{{ r }}{% if not loop.last %}/{% endif %}{% endfor %} the package will be hidden from the public and uninstallable)</label>
                                 {{ form_widget(freezeForm.packageFreezeReason, {'attr': {'class': 'form-control'}}) }}
-                            </div>
-                            <div class="checkbox">
-                                <label>{{ form_widget(freezeForm.purgePackages) }} Purge package metadata <small class="text-muted">(soft-delete all versions and remove all published metadata; ignored for temporary freezes)</small></label>
                             </div>
                         {% endif %}
                     </div>

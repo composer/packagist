@@ -66,19 +66,6 @@ class PackagePurgeWorker
                 ];
             }
 
-            $actor = isset($payload['actorId'])
-                ? $this->doctrine->getRepository(User::class)->find($payload['actorId'])
-                : null;
-
-            /** @var VersionRepository $versionRepo */
-            $versionRepo = $this->doctrine->getRepository(Version::class);
-            foreach ($package->getVersions() as $version) {
-                if (!$version->isSoftDeleted()) {
-                    // Record the actual freeze reason (spam/malware) as the takedown text.
-                    $versionRepo->softDelete($version, VersionDeletionReason::Hidden, $freezeReason->value, null, $actor);
-                }
-            }
-
             $this->providerManager->deletePackage($package);
             $this->doctrine->getManager()->flush();
         }

@@ -50,9 +50,8 @@ class FreezeType extends AbstractType
                 ->add('packageFreezeReason', EnumType::class, [
                     'class' => PackageFreezeReason::class,
                     'choices' => $options['package_reasons'],
-                    'choice_label' => static fn (PackageFreezeReason $reason): string => 'freezing_reasons.'.$reason->value,
-                ])
-                ->add('purgePackages', CheckboxType::class, ['required' => false]);
+                    'choice_label' => static fn (PackageFreezeReason $reason): string => $reason->value,
+                ]);
         }
     }
 
