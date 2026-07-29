@@ -23,5 +23,8 @@
         "dev": "node esbuild.js --dev",
         "build": "node esbuild.js",
         "analyze": "node esbuild.js --analyze"
+    },
+    "allowScripts": {
+        "esbuild@0.15.18": true
     }
 }
