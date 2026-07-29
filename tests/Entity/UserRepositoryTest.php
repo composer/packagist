@@ -12,6 +12,8 @@
 
 namespace App\Tests\Entity;
 
+use App\Entity\User;
+use App\Entity\UserFreezeReason;
 use App\Entity\UserRepository;
 use App\Tests\IntegrationTestCase;
 
@@ -24,6 +26,26 @@ class UserRepositoryTest extends IntegrationTestCase
         parent::setUp();
 
         $this->userRepository = self::getEM()->getRepository(\App\Entity\User::class);
+    }
+
+    public function testGetFrozenUsersQueryBuilderExcludesUnfrozenAndFiltersByReason(): void
+    {
+        $spammer = self::createUser('spammer', 'spammer@example.org');
+        $spammer->freeze(UserFreezeReason::Spam);
+        $temp = self::createUser('temphold', 'temp@example.org');
+        $temp->freeze(UserFreezeReason::Temporary);
+        $active = self::createUser('active', 'active@example.org');
+        $this->store($spammer, $temp, $active);
+
+        $usernames = static fn (array $users): array => array_map(static fn (User $u): string => $u->getUsername(), $users);
+
+        $all = $usernames($this->userRepository->getFrozenUsersQueryBuilder()->getQuery()->getResult());
+        self::assertContains('spammer', $all);
+        self::assertContains('temphold', $all);
+        self::assertNotContains('active', $all, 'unfrozen accounts must not appear');
+
+        $temporaryOnly = $usernames($this->userRepository->getFrozenUsersQueryBuilder(UserFreezeReason::Temporary)->getQuery()->getResult());
+        self::assertSame(['temphold'], $temporaryOnly);
     }
 
     public function testFindUsersByUsernameWithMultipleValidUsernames(): void

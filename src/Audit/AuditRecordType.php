@@ -83,6 +83,25 @@ enum AuditRecordType: string
         return array_values(array_filter(self::cases(), static fn (self $type): bool => $type->category() === 'organization'));
     }
 
+    /**
+     * The manually-performed moderation actions surfaced on the admin dashboard so admins can see at a
+     * glance what their peers have been up to. Curated (not every human action) to stay high-signal.
+     *
+     * @return list<self>
+     */
+    public static function moderationActionCases(): array
+    {
+        return [
+            self::UserFrozen,
+            self::UserUnfrozen,
+            self::UserDeleted,
+            self::PackageFrozen,
+            self::PackageUnfrozen,
+            self::VersionSoftDeleted,
+            self::VersionRecovered,
+        ];
+    }
+
     public function category(): string
     {
         return match ($this) {
