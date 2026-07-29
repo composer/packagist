@@ -19,6 +19,7 @@ use App\Entity\Dependent;
 use App\Entity\Download;
 use App\Entity\EmptyReferenceCache;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Entity\PhpStat;
 use App\Entity\User;
 use App\Entity\Version;
@@ -61,6 +62,25 @@ class PackageManager
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly Scheduler $scheduler,
     ) {
+    }
+
+    /**
+     * Freezes a package. Freezing goes through the entity so PackageListener records the PackageFrozen
+     * audit and Package::freeze() drops suppressed packages from the search index. Suppressing reasons
+     * (spam/malware) additionally schedule a background purge of the package's published artifacts;
+     * $actorId, when given, is recorded as the actor of the resulting version soft-deletes.
+     */
+    public function freeze(Package $package, PackageFreezeReason $reason, ?int $actorId = null): void
+    {
+        $package->freeze($reason);
+
+        $em = $this->doctrine->getManager();
+        $em->persist($package);
+        $em->flush();
+
+        if ($reason->suppressesPackage()) {
+            $this->scheduler->schedulePackagePurge($package, $actorId);
+        }
     }
 
     /**

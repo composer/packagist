@@ -124,7 +124,10 @@
                                     <input class="btn btn-danger" type="submit" value="Mark Not Spam" />
                                 </form>
                             {% endif %}
-                            {% if is_granted('ROLE_ADMIN') and package.isFrozen() %}
+                            {% if freezeCsrfToken is defined and not package.isFrozen() %}
+                                <button type="button" class="btn btn-danger action" data-toggle="modal" data-target="#freeze-package-modal">Freeze</button>
+                            {% endif %}
+                            {% if unfreezeCsrfToken is defined and package.isFrozen() %}
                                 <form class="action" action="{{ path("unfreeze_package", {name: package.name}) }}" method="POST">
                                     <input type="hidden" name="token" value="{{ unfreezeCsrfToken }}" />
                                     <input class="btn btn-danger" type="submit" value="Unfreeze" />
@@ -409,5 +412,39 @@
     </div>
     {% if is_granted('ROLE_DELETE_PACKAGES') %}
         {% include 'package/_deletion_reason_modal.html.twig' %}
+    {% endif %}
+
+    {% if freezeCsrfToken is defined and not package.isFrozen() %}
+        <div class="modal fade" id="freeze-package-modal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <form class="modal-content" action="{{ path('freeze_package', {name: package.name}) }}" method="POST">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title">Freeze {{ package.name }}</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="freeze-package-reason">Reason</label>
+                            <select name="reason" id="freeze-package-reason" class="form-control">
+                                {% for reason in enum('App\\Entity\\PackageFreezeReason').casesForRole(true) %}
+                                    <option value="{{ reason.value }}">{{ reason.value|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <p class="help-block">
+                            Freezing as
+                            {%- for r in enum('App\\Entity\\PackageFreezeReason').suppressingValues() %} <strong>{{ r }}</strong>{% if not loop.last %} or{% endif %}{% endfor %}
+                            hides the package from the public, removes it from search, and purges its published metadata.
+                            A <strong>temporary</strong> freeze keeps its metadata served but stops updates.
+                        </p>
+                        <input type="hidden" name="token" value="{{ freezeCsrfToken }}" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Freeze</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     {% endif %}
 {% endblock %}

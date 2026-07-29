@@ -14,7 +14,10 @@ namespace App\Tests\Controller;
 
 use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
+use App\Entity\AuditRecord;
+use App\Entity\Job;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\User;
 use App\Entity\Version;
@@ -40,6 +43,50 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $auditLink);
         self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+    }
+
+    public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void
+    {
+        $mod = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($mod, $package);
+        $packageId = $package->getId();
+
+        $this->client->loginUser($mod);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $form = $crawler->filter('#freeze-package-modal form')->form();
+        $form['reason'] = 'spam';
+        $this->client->submit($form);
+        self::assertResponseStatusCodeSame(302);
+
+        $em = self::getEM();
+        $em->clear();
+        $package = $em->find(Package::class, $packageId);
+        self::assertSame(PackageFreezeReason::Spam, $package->getFreezeReason());
+
+        // Freezing goes through the entity, so PackageListener records the transition.
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::PackageFrozen->value, 'packageId' => $packageId]);
+        self::assertNotNull($record, 'a PackageFrozen audit record should be created');
+
+        // Spam suppresses the package, so a purge is scheduled.
+        $job = $em->getRepository(Job::class)->findOneBy(['type' => 'package:purge']);
+        self::assertNotNull($job, 'a package:purge job should be scheduled for a suppressing freeze');
+        self::assertSame('test/pkg', $job->getPayload()['name']);
+    }
+
+    public function testFreezePackageDeniedWithoutRole(): void
+    {
+        $user = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($user, $package);
+        $packageId = $package->getId();
+
+        $this->client->loginUser($user);
+        $this->client->request('POST', '/package/test/pkg/freeze', ['reason' => 'spam', 'token' => 'x']);
+        self::assertResponseStatusCodeSame(403);
+
+        self::getEM()->clear();
+        self::assertFalse(self::getEM()->getRepository(Package::class)->find($packageId)->isFrozen());
     }
 
     public function testSpamListingShowsClassifierScoresWhenModelAvailable(): void
