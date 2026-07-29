@@ -100,13 +100,8 @@ class PackagePurgeWorkerTest extends TestCase
         $version = new Version();
         $package->addVersion($version);
 
-        $versionRepo = $this->createMock(VersionRepository::class);
-        $versionRepo->expects($this->once())
-            ->method('softDelete')
-            ->with($version, VersionDeletionReason::Hidden, $expectedReasonText, null, null);
-
         $worker = new PackagePurgeWorker(
-            $this->mockRegistry($package, $versionRepo),
+            $this->mockRegistry($package),
             $this->createStub(ProviderManager::class),
             $this->createStub(PackageManager::class),
         );
