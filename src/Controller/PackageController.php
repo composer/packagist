@@ -26,6 +26,7 @@ use App\Entity\PackageRepository;
 use App\Entity\PhpStat;
 use App\Entity\SecurityAdvisory;
 use App\Entity\SecurityAdvisoryRepository;
+use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;

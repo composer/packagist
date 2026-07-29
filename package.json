@@ -16,6 +16,9 @@
         "esbuild": "^0.15",
         "esbuild-plugin-sass": "^1.0.1"
     },
+    "engines": {
+        "npm": ">=11.10"
+    },
     "scripts": {
         "dev": "node esbuild.js --dev",
         "build": "node esbuild.js",
