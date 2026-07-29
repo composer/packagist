@@ -159,7 +159,6 @@ class UserControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/users/bob/');
         $form = $crawler->filter('#freeze-user-modal form')->form();
         $form['freeze[reason]'] = 'spam';
-        $form['freeze[purgePackages]']->tick();
         $this->client->submit($form);
         $this->assertResponseStatusCodeSame(302);
 
