@@ -45,7 +45,7 @@
             {% for sponsor in sponsors %}
             <div class="col-xs-6 col-sm-4 col-md-3 sponsor-logo-item">
                 <a href="{{ sponsor.url }}" target="_blank" rel="noopener sponsored">
-                    <img src="{{ asset('img/' ~ sponsor.logo) }}" alt="{{ sponsor.name }}" width="180" height="60" />
+                    <img src="{{ asset('img/sponsors/' ~ sponsor.logo) }}" alt="{{ sponsor.name }}" width="180" height="60" />
                 </a>
             </div>
             {% endfor %}
