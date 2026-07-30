@@ -20,23 +20,23 @@ use Symfony\Component\Uid\Ulid;
 
 class OrganizationInvitationRepositoryTest extends IntegrationTestCase
 {
-    public function testFindVisibleByOrgKeepsPendingAndRecentlyResolvedOnly(): void
+    public function testFindPendingByOrgKeepsPendingOnly(): void
     {
         $orgId = new Ulid();
         $now = new \DateTimeImmutable('2026-01-15 12:00:00');
-        $cutoff = $now->sub(new \DateInterval('P7D'));
 
         $pending = $this->invitation($orgId, 'pending@example.org', InvitationStatus::Pending, null);
-        $recentlyResolved = $this->invitation($orgId, 'recent@example.org', InvitationStatus::Accepted, $now->sub(new \DateInterval('P2D')));
-        $longResolved = $this->invitation($orgId, 'old@example.org', InvitationStatus::Declined, $now->sub(new \DateInterval('P30D')));
+        $accepted = $this->invitation($orgId, 'accepted@example.org', InvitationStatus::Accepted, $now->sub(new \DateInterval('P2D')));
+        $declined = $this->invitation($orgId, 'declined@example.org', InvitationStatus::Declined, $now->sub(new \DateInterval('P30D')));
+        $expired = $this->invitation($orgId, 'expired@example.org', InvitationStatus::Expired, $now->sub(new \DateInterval('P1D')));
         // A different org's pending invitation must never leak into this org's list.
         $otherOrg = $this->invitation(new Ulid(), 'other@example.org', InvitationStatus::Pending, null);
-        $this->store($pending, $recentlyResolved, $longResolved, $otherOrg);
+        $this->store($pending, $accepted, $declined, $expired, $otherOrg);
 
-        $visible = static::getService(OrganizationInvitationRepository::class)->findVisibleByOrg($orgId, $cutoff);
+        $rows = static::getService(OrganizationInvitationRepository::class)->findPendingByOrg($orgId);
 
-        $emails = array_map(static fn (OrganizationInvitation $invitation): string => $invitation->email, $visible);
-        self::assertEqualsCanonicalizing(['pending@example.org', 'recent@example.org'], $emails);
+        $emails = array_map(static fn (OrganizationInvitation $invitation): string => $invitation->email, $rows);
+        self::assertSame(['pending@example.org'], $emails);
     }
 
     private function invitation(Ulid $orgId, string $email, InvitationStatus $status, ?\DateTimeImmutable $resolvedAt): OrganizationInvitation

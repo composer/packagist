@@ -153,6 +153,12 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $rows = static::getService(OrganizationInvitationRepository::class)->findByOrg($organization->id);
         self::assertCount(1, $rows);
         self::assertSame(InvitationStatus::Revoked, $rows[0]->status);
+
+        // Once resolved it leaves the list, which only tracks invitations still awaiting an answer. The
+        // address is matched per row, as the revoke flash names it on this very page.
+        $crawler = $this->client->request('GET', '/organizations/acme/members');
+        self::assertCount(0, $crawler->filter('tr:contains("alice@example.org")'));
+        self::assertStringContainsString('no pending invitations', $crawler->text());
     }
 
     public function testExpiredInvitationLinkWithValidTokenReturns410(): void

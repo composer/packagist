@@ -43,20 +43,20 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Invitations for the owner's management view, newest first: every pending one plus those resolved on
-     * or after $resolvedCutoff. Long-resolved invitations (accepted/declined/revoked/expired) drop off so
-     * the list does not grow without bound.
+     * Invitations for the owner's management view, newest first: the pending ones, i.e. everything still
+     * awaiting an answer. Resolved invitations (accepted/declined/revoked/expired) are left to the audit
+     * log, so the list stays a to-do list and does not grow without bound. Expiry is swept lazily, so a
+     * pending row past its expiry is still returned and renders as expired.
      *
      * @return list<OrganizationInvitation>
      */
-    public function findVisibleByOrg(Ulid $orgId, \DateTimeImmutable $resolvedCutoff): array
+    public function findPendingByOrg(Ulid $orgId): array
     {
         return $this->createQueryBuilder('i')
             ->where('i.orgId = :orgId')
-            ->andWhere('i.status = :pending OR i.resolvedAt >= :cutoff')
+            ->andWhere('i.status = :pending')
             ->setParameter('orgId', $orgId, 'ulid')
             ->setParameter('pending', InvitationStatus::Pending->value)
-            ->setParameter('cutoff', $resolvedCutoff)
             ->orderBy('i.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
