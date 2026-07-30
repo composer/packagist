@@ -404,8 +404,10 @@ class OrganizationController extends Controller
         $usersById = $this->usersById($rows);
 
         $teamsById = [];
+        $teamNamesById = [];
         foreach ($this->organizationTeamRepo->findByOrg($organization->id) as $team) {
             $teamsById[$team->teamId->toRfc4122()] = $team;
+            $teamNamesById[$team->teamId->toRfc4122()] = $team->name;
         }
 
         $teamsByUser = [];
@@ -428,7 +430,7 @@ class OrganizationController extends Controller
         // Invitations are owner-only, but any member may view the members list; only load them when
         // the viewer is allowed to see them so the template can render the invitations section.
         $invitations = $this->isGranted(OrganizationActions::ViewInvitations->value, $organization)
-            ? $this->loadInvitations($organization)
+            ? $this->loadInvitations($organization, $teamNamesById)
             : null;
 
         return $this->render('organization/members.html.twig', [
@@ -440,15 +442,11 @@ class OrganizationController extends Controller
     }
 
     /**
+     * @param array<string, string> $teamNamesById
      * @return list<array{invitation: OrganizationInvitation, teamNames: list<string>}>
      */
-    private function loadInvitations(Organization $organization): array
+    private function loadInvitations(Organization $organization, array $teamNamesById): array
     {
-        $teamNamesById = [];
-        foreach ($this->organizationTeamRepo->findByOrg($organization->id) as $team) {
-            $teamNamesById[$team->teamId->toRfc4122()] = $team->name;
-        }
-
         $resolvedCutoff = $this->clock->now()->sub(new \DateInterval('P'.self::RESOLVED_INVITATION_VISIBILITY_DAYS.'D'));
         $invitationRows = $this->organizationInvitationRepo->findVisibleByOrg($organization->id, $resolvedCutoff);
         $teamIdsByInvitation = $this->organizationInvitationTeamRepo->findTeamIdsByInvitation(
