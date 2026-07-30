@@ -1,0 +1,16 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Invitation expired - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <h2 class="title">Invitation expired</h2>
+
+    <div class="alert alert-warning">
+        This invitation expired on {{ expiresAt|date('Y-m-d H:i') }} and can no longer be accepted.
+    </div>
+
+    <p>
+        Ask one of the organization's owners to send you a new invitation. A newer invitation to the same
+        address also replaces the link you followed, so check your inbox for a more recent email first.
+    </p>
+{% endblock %}

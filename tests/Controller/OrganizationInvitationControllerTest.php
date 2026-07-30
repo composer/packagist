@@ -21,6 +21,7 @@ use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Organization\Domain\InvitationStatus;
+use App\Organization\InvitationTokenGenerator;
 use App\Organization\OrganizationManager;
 use App\Organization\OrganizationMembershipManager;
 use App\Tests\IntegrationTestCase;
@@ -154,13 +155,36 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         self::assertSame(InvitationStatus::Revoked, $rows[0]->status);
     }
 
-    public function testExpiredInvitationLinkReturns404(): void
+    public function testExpiredInvitationLinkWithValidTokenReturns410(): void
+    {
+        [$owner, $organization, $backend] = $this->orgWithTeam();
+        $alice = self::createUser('alice', 'alice@example.org');
+        $this->store($alice);
+
+        $this->client->loginUser($owner);
+        $this->submitInvite($backend, 'alice@example.org');
+        $path = $this->acceptUrlPath();
+
+        $invitation = $this->pendingInvitation($organization);
+        $invitation->expiresAt = new \DateTimeImmutable('-1 day');
+        static::getEM()->flush();
+
+        // The token proves the visitor holds the emailed link, so tell them it ran out instead of 404ing.
+        $this->client->loginUser($alice);
+        $crawler = $this->client->request('GET', $path);
+
+        self::assertResponseStatusCodeSame(410);
+        self::assertStringContainsString('Invitation expired', $crawler->filter('h2.title')->text());
+        self::assertStringContainsString('send you a new invitation', $crawler->text());
+    }
+
+    public function testExpiredInvitationLinkWithUnknownTokenReturns404(): void
     {
         [, $organization] = $this->orgWithTeam();
         $alice = self::createUser('alice', 'alice@example.org');
         $this->store($alice);
 
-        // A pending-but-expired invitation is no longer active, so the resolver rejects the link.
+        // The token does not match, so the expired invitation stays hidden behind a 404.
         $invitation = new OrganizationInvitation(
             new Ulid(),
             $organization->id,
@@ -240,7 +264,8 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $this->client->loginUser($alice);
         $this->client->request('GET', $tampered);
 
-        // A bad token is indistinguishable from a missing/expired invitation: both are 404.
+        // A bad token is indistinguishable from a missing invitation: both are 404, and unlike a valid
+        // token on an expired invitation it never gets the 410.
         self::assertResponseStatusCodeSame(404);
     }
 
@@ -264,17 +289,18 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
 
     public function testLinkRequiresAuthentication(): void
     {
-        // The invitee link requires a logged-in user; security runs before any token validation, so an
-        // anonymous visitor is redirected to log in regardless of the (here dummy) token. The organization
-        // and invitation are resolved into the action before the auth check runs, so both must exist.
+        // The invitee link requires a logged-in user, so an anonymous visitor is redirected to log in. The
+        // organization, invitation and token are resolved before the auth check runs, so all three must be
+        // valid for the redirect to be what the visitor sees.
         [, $organization] = $this->orgWithTeam();
+        $token = str_repeat('a', 64);
         $invitation = new OrganizationInvitation(
             new Ulid(),
             $organization->id,
             'alice@example.org',
             'alice@example.org',
             InvitationStatus::Pending,
-            'hash',
+            static::getService(InvitationTokenGenerator::class)->hash($token),
             new \DateTimeImmutable(),
             new \DateTimeImmutable('+7 days'),
             new \DateTimeImmutable(),
@@ -282,7 +308,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         );
         $this->store($invitation);
 
-        $path = sprintf('/organizations/acme/invitations/%s/%s', $invitation->id->toBase32(), str_repeat('a', 64));
+        $path = sprintf('/organizations/acme/invitations/%s/%s', $invitation->id->toBase32(), $token);
         $this->client->request('GET', $path);
 
         self::assertResponseRedirects();

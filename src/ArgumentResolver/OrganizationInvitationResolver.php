@@ -14,6 +14,9 @@ namespace App\ArgumentResolver;
 
 use App\Entity\OrganizationInvitation;
 use App\Entity\OrganizationInvitationRepository;
+use App\Organization\Domain\InvitationStatus;
+use App\Organization\Http\InvitationExpiredException;
+use App\Organization\InvitationTokenGenerator;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
@@ -27,11 +30,17 @@ use Symfony\Component\Uid\Ulid;
  * expiry. Anything else (unknown id, another organization's invitation, or one that is resolved or
  * expired) resolves to a 404, so an owner can only act on an active invitation and nothing leaks across
  * org boundaries.
+ *
+ * The invitee-facing routes also carry the emailed `token`; where present it is verified here, so the
+ * controller can assume both a valid token and an actionable invitation. A token that matches proves the
+ * visitor holds the emailed link, so rather than hiding an expired invitation behind a 404 it raises an
+ * {@see InvitationExpiredException} for {@see \App\EventListener\InvitationExpiredListener} to explain.
  */
 final readonly class OrganizationInvitationResolver implements ValueResolverInterface
 {
     public function __construct(
         private OrganizationInvitationRepository $organizationInvitationRepo,
+        private InvitationTokenGenerator $tokens,
         private ClockInterface $clock,
     ) {
     }
@@ -55,7 +64,18 @@ final readonly class OrganizationInvitationResolver implements ValueResolverInte
             throw new NotFoundHttpException('Invitation not found.');
         }
 
-        if (!$invitation->isActive($this->clock->now())) {
+        $token = $request->attributes->getString('token');
+        if ('' !== $token && !$this->tokens->matches($token, $invitation->tokenHash)) {
+            throw new NotFoundHttpException('Invitation not found.');
+        }
+
+        $now = $this->clock->now();
+        if (!$invitation->isActive($now)) {
+            // Effective status, so the answer does not change once the lazy sweep flips the row to expired.
+            if ('' !== $token && $invitation->effectiveStatus($now) === InvitationStatus::Expired) {
+                throw new InvitationExpiredException($invitation->expiresAt);
+            }
+
             throw new NotFoundHttpException('Invitation not found.');
         }
 
