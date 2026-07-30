@@ -416,6 +416,38 @@ class PackageController extends Controller
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
+    #[IsGranted('ROLE_DISABLE_PACKAGES')]
+    #[Route(path: '/package/{name}/freeze', name: 'freeze_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'html'], methods: ['POST'])]
+    public function freezePackageAction(Request $req, string $name, #[CurrentUser] User $user): Response
+    {
+        if (!$this->isCsrfTokenValid('freeze', $req->request->getString('token'))) {
+            throw new BadRequestHttpException('Invalid CSRF token');
+        }
+
+        $package = $this->getPackageByName($req, $name);
+        if ($package instanceof Response) {
+            return $package;
+        }
+
+        $reason = PackageFreezeReason::tryFrom($req->request->getString('reason'));
+        if ($reason === null || !\in_array($reason, PackageFreezeReason::casesForRole(true), true)) {
+            $this->addFlash('error', 'Invalid freeze reason.');
+
+            return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+        }
+
+        if ($package->isFrozen()) {
+            $this->addFlash('warning', 'This package is already frozen.');
+
+            return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+        }
+
+        $this->packageManager->freeze($package, $reason, $user->getId());
+        $this->addFlash('success', $package->getName().' has been frozen.');
+
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+    }
+
     #[Route(path: '/packages/{name}.{_format}', name: 'view_package', requirements: ['name' => Package::LENIENT_PACKAGE_NAME_REGEX, '_format' => '(json)'], defaults: ['_format' => 'html'], methods: ['GET'])]
     public function viewPackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] ?User $user = null): Response
     {
@@ -690,8 +722,7 @@ class PackageController extends Controller
 
         if ($this->isGranted('ROLE_DISABLE_PACKAGES')) {
             $data['markSafeCsrfToken'] = $csrfTokenManager->getToken('mark_safe');
-        }
-        if ($this->isGranted('ROLE_ADMIN')) {
+            $data['freezeCsrfToken'] = $csrfTokenManager->getToken('freeze');
             $data['unfreezeCsrfToken'] = $csrfTokenManager->getToken('unfreeze');
         }
 
