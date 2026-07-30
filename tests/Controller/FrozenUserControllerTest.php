@@ -40,14 +40,22 @@ class FrozenUserControllerTest extends IntegrationTestCase
 
         $this->client->loginUser($mod);
 
-        $html = $this->client->request('GET', '/admin/frozen-users')->html();
+        // Default view is the Temporary review queue.
+        $default = $this->client->request('GET', '/admin/frozen-users')->html();
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('spammer', $html);
-        self::assertStringContainsString('temphold', $html);
+        self::assertStringContainsString('temphold', $default);
+        self::assertStringNotContainsString('spammer', $default);
 
-        $filtered = $this->client->request('GET', '/admin/frozen-users?reason=temporary')->html();
+        // "All" (explicit empty reason) lists every frozen account.
+        $all = $this->client->request('GET', '/admin/frozen-users?reason=')->html();
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('temphold', $filtered);
-        self::assertStringNotContainsString('spammer', $filtered);
+        self::assertStringContainsString('spammer', $all);
+        self::assertStringContainsString('temphold', $all);
+
+        // Filtering to spam shows only spam-frozen accounts.
+        $spamOnly = $this->client->request('GET', '/admin/frozen-users?reason=spam')->html();
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('spammer', $spamOnly);
+        self::assertStringNotContainsString('temphold', $spamOnly);
     }
 }

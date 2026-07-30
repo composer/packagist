@@ -30,10 +30,12 @@ class UserTest extends TestCase
         $user->freeze(UserFreezeReason::Spam);
         self::assertTrue($user->isFrozen());
         self::assertSame(UserFreezeReason::Spam, $user->getFreezeReason());
+        self::assertNotNull($user->getFrozenAt(), 'freezing stamps frozenAt for the review queue ordering');
 
         $user->unfreeze();
         self::assertFalse($user->isFrozen());
         self::assertNull($user->getFreezeReason());
+        self::assertNull($user->getFrozenAt());
     }
 
     public function testIsAccountActiveRequiresEnabledAndNotFrozen(): void

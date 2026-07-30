@@ -12,7 +12,6 @@
 
 namespace App\Entity;
 
-use App\Audit\AuditRecordType;
 use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -32,16 +31,15 @@ class UserRepository extends ServiceEntityRepository
 
     /**
      * Currently-frozen accounts for the admin review queue, optionally filtered by reason and ordered
-     * most-recently-frozen first. The freeze time is derived from the latest UserFrozen audit record
-     * (the audit log stays canonical for who/when/notes — there is no frozenAt column on User).
+     * most-recently-frozen first. Ordering uses the denormalized frozenAt column (backed by the
+     * user_frozen_idx index); who/notes are looked up per displayed page from the UserFrozen audit log,
+     * which stays canonical.
      */
     public function getFrozenUsersQueryBuilder(?UserFreezeReason $reason = null): QueryBuilder
     {
         $qb = $this->createQueryBuilder('u')
-            ->addSelect('(SELECT MAX(a.datetime) FROM App\Entity\AuditRecord a WHERE a.userId = u.id AND a.type = :frozenType) AS HIDDEN frozenAt')
             ->where('u.frozen IS NOT NULL')
-            ->setParameter('frozenType', AuditRecordType::UserFrozen->value)
-            ->orderBy('frozenAt', 'DESC')
+            ->orderBy('u.frozenAt', 'DESC')
             ->addOrderBy('u.id', 'DESC');
 
         if ($reason !== null) {

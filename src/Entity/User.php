@@ -48,6 +48,7 @@ enum UserFreezeReason: string
 
 #[ORM\Entity(repositoryClass: 'App\Entity\UserRepository')]
 #[ORM\Table(name: 'fos_user')]
+#[ORM\Index(name: 'user_frozen_idx', columns: ['frozen', 'frozenAt'])]
 #[UniqueEntity(fields: ['usernameCanonical'], message: 'There is already an account with this username', errorPath: 'username')]
 #[UniqueEntity(fields: ['emailCanonical'], message: 'There is already an account with this email', errorPath: 'email')]
 class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, EquatableInterface, PasswordAuthenticatedUserInterface, LegacyPasswordAuthenticatedUserInterface
@@ -87,6 +88,13 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
      */
     #[ORM\Column(nullable: true)]
     private ?UserFreezeReason $frozen = null;
+
+    /**
+     * When the account was frozen (null when not frozen). Denormalized purely so the admin review
+     * queue can order/paginate cheaply; the UserFrozen audit log stays canonical for who/why.
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $frozenAt = null;
 
     /**
      * @var array<string>
@@ -521,11 +529,18 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function freeze(UserFreezeReason $reason): void
     {
         $this->frozen = $reason;
+        $this->frozenAt = new \DateTimeImmutable();
     }
 
     public function unfreeze(): void
     {
         $this->frozen = null;
+        $this->frozenAt = null;
+    }
+
+    public function getFrozenAt(): ?\DateTimeImmutable
+    {
+        return $this->frozenAt;
     }
 
     public function setPassword(string $password): void

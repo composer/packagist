@@ -20,13 +20,14 @@
             <form class="form-inline" method="GET" action="{{ path('admin_frozen_users') }}">
                 <div class="form-group">
                     <label for="reason-filter">Filter by reason:</label>
-                    <select name="reason" id="reason-filter" class="form-control" onchange="this.form.submit()">
-                        <option value="">All</option>
+                    <select name="reason" id="reason-filter" class="form-control">
+                        <option value=""{{ selectedReason is null ? ' selected' : '' }}>All</option>
                         {% for reason in reasons %}
                             <option value="{{ reason.value }}"{{ selectedReason == reason ? ' selected' : '' }}>{{ ('user_freeze_reasons.' ~ reason.value)|trans }}</option>
                         {% endfor %}
                     </select>
                 </div>
+                <button type="submit" class="btn btn-default">Filter</button>
             </form>
         </div>
     </div>

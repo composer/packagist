@@ -48,6 +48,25 @@ class UserRepositoryTest extends IntegrationTestCase
         self::assertSame(['temphold'], $temporaryOnly);
     }
 
+    public function testGetFrozenUsersQueryBuilderOrdersByMostRecentlyFrozen(): void
+    {
+        $older = self::createUser('olderfreeze', 'older@example.org');
+        $older->freeze(UserFreezeReason::Temporary);
+        $newer = self::createUser('newerfreeze', 'newer@example.org');
+        $newer->freeze(UserFreezeReason::Temporary);
+        // DATETIME has no sub-second precision, so pin explicit distinct freeze times.
+        new \ReflectionProperty(User::class, 'frozenAt')->setValue($older, new \DateTimeImmutable('2026-01-01 00:00:00'));
+        new \ReflectionProperty(User::class, 'frozenAt')->setValue($newer, new \DateTimeImmutable('2026-06-01 00:00:00'));
+        $this->store($older, $newer);
+
+        $names = array_map(
+            static fn (User $u): string => $u->getUsername(),
+            $this->userRepository->getFrozenUsersQueryBuilder()->getQuery()->getResult(),
+        );
+
+        self::assertSame(['newerfreeze', 'olderfreeze'], $names);
+    }
+
     public function testFindUsersByUsernameWithMultipleValidUsernames(): void
     {
         $alice = self::createUser('Alice', 'alice@example.org');

@@ -35,12 +35,13 @@ class FrozenUserController extends Controller
     #[Route(path: '/admin/frozen-users', name: 'admin_frozen_users', methods: ['GET'])]
     public function index(Request $req): Response
     {
-        $reason = UserFreezeReason::tryFrom($req->query->getString('reason'));
+        // Default to the Temporary review queue (the holds meant to be revisited); an explicit empty
+        // reason ("All") lists every frozen account.
+        $reason = UserFreezeReason::tryFrom($req->query->getString('reason', UserFreezeReason::Temporary->value));
 
         $qb = $this->getEM()->getRepository(User::class)->getFrozenUsersQueryBuilder($reason);
 
-        // Output walkers keep the count query valid despite the HIDDEN ordering subquery.
-        $users = new Pagerfanta(new QueryAdapter($qb, false, true));
+        $users = new Pagerfanta(new QueryAdapter($qb, false));
         $users->setNormalizeOutOfRangePages(true);
         $users->setMaxPerPage(20);
         $users->setCurrentPage(max(1, $req->query->getInt('page', 1)));
