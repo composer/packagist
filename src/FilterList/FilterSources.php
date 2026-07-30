@@ -24,7 +24,7 @@ enum FilterSources: string
     public function logo(): ?string
     {
         return match ($this) {
-            self::AIKIDO => 'img/aikido-dark.svg',
+            self::AIKIDO => 'img/sponsors/aikido-dark.svg',
             self::PACKAGIST => null,
         };
     }

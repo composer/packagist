@@ -49,13 +49,9 @@ class WebController extends Controller
     }
 
     #[Route('/sponsor/', name: 'sponsor')]
-    public function sponsor(Request $req): Response
+    public function sponsor(): Response
     {
-        if ($req->query->get('preview') === 'a11b5a9f') {
-            return $this->render('web/sponsor.html.twig');
-        }
-
-        return $this->render('web/sponsor-legacy.html.twig');
+        return $this->render('web/sponsor.html.twig');
     }
 
     #[Route('/sponsors/', name: 'sponsors_redirect')]
