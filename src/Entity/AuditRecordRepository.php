@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Audit\AuditRecordType;
+use App\Audit\VersionDeletionReason;
 use App\Service\AuditRecordsManager;
 use App\Util\IpAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -49,6 +50,39 @@ class AuditRecordRepository extends ServiceEntityRepository
             ])
             ->setParameter('publicId', $publicId)
             ->orderBy('a.datetime', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * The most recent manual admin moderation actions for the admin dashboard. Account/package
+     * freezes and user deletions are always admin-initiated; version soft-deletes and recoveries are
+     * only included when the (previous) deletion reason is an admin one (Hidden / DeletedByAdmin) —
+     * maintainer version pulls and the Updater's automatic missing-version handling are excluded.
+     *
+     * @return list<AuditRecord>
+     */
+    public function getRecentAdminModeration(int $limit): array
+    {
+        return $this->createQueryBuilder('a')
+            ->where('a.type IN (:alwaysTypes)')
+            ->orWhere("(a.type = :softDeleted AND JSON_EXTRACT(a.attributes, '$.reason') IN (:adminVersionReasons))")
+            ->orWhere("(a.type = :recovered AND JSON_EXTRACT(a.attributes, '$.previousReason') IN (:adminVersionReasons))")
+            ->setParameter('alwaysTypes', [
+                AuditRecordType::UserFrozen->value,
+                AuditRecordType::UserUnfrozen->value,
+                AuditRecordType::UserDeleted->value,
+                AuditRecordType::PackageFrozen->value,
+                AuditRecordType::PackageUnfrozen->value,
+            ])
+            ->setParameter('softDeleted', AuditRecordType::VersionSoftDeleted->value)
+            ->setParameter('recovered', AuditRecordType::VersionRecovered->value)
+            ->setParameter('adminVersionReasons', [
+                VersionDeletionReason::DeletedByAdmin->value,
+                VersionDeletionReason::Hidden->value,
+            ])
+            ->orderBy('a.id', 'DESC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }

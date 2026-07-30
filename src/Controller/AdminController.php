@@ -12,7 +12,6 @@
 
 namespace App\Controller;
 
-use App\Audit\AuditRecordType;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use Symfony\Component\HttpFoundation\Response;
@@ -35,15 +34,8 @@ class AdminController extends Controller
     {
         $this->denyAccessUnlessAdmin();
 
-        $recentModeration = $auditRecordRepository->createQueryBuilder('a')
-            ->where('a.type IN (:types)')
-            ->setParameter('types', array_map(static fn (AuditRecordType $type): string => $type->value, AuditRecordType::moderationActionCases()))
-            ->orderBy('a.id', 'DESC')
-            ->setMaxResults(20)
-            ->getQuery()->getResult();
-
         return $this->render('admin/index.html.twig', [
-            'recentModerationActivity' => $displayFactory->build($recentModeration),
+            'recentModerationActivity' => $displayFactory->build($auditRecordRepository->getRecentAdminModeration(20)),
         ]);
     }
 

@@ -12,12 +12,49 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
+use App\Entity\Package;
 use App\Entity\UserFreezeReason;
+use App\Entity\Version;
 use App\Tests\IntegrationTestCase;
 
 class AdminControllerTest extends IntegrationTestCase
 {
+    public function testIndexModerationFeedExcludesNonAdminVersionActions(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $adminPkg = self::createPackage('vendor/adminpkg', 'https://example.org/adminpkg');
+        $maintPkg = self::createPackage('vendor/maintpkg', 'https://example.org/maintpkg');
+        $autoPkg = self::createPackage('vendor/autopkg', 'https://example.org/autopkg');
+        $this->store($admin, $adminPkg, $maintPkg, $autoPkg);
+
+        $version = static function (Package $package): Version {
+            $v = new Version();
+            $v->setPackage($package);
+            $v->setName($package->getName());
+            $v->setVersion('1.0.0');
+            $v->setNormalizedVersion('1.0.0.0');
+
+            return $v;
+        };
+
+        $repo = self::getEM()->getRepository(AuditRecord::class);
+        // Admin takedown — should appear.
+        $repo->insert(AuditRecord::versionSoftDeleted($version($adminPkg), VersionDeletionReason::Hidden, null, null, $admin));
+        // Maintainer pull and the Updater's auto missing-version handling — must not appear.
+        $repo->insert(AuditRecord::versionSoftDeleted($version($maintPkg), VersionDeletionReason::DeletedByMaintainer, null, null, null));
+        $repo->insert(AuditRecord::versionRecovered($version($autoPkg), VersionDeletionReason::AutoDeletedMissing, null));
+
+        $this->client->loginUser($admin);
+        $feed = $this->client->request('GET', '/admin/')->filter('.audit-log-table')->text();
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('vendor/adminpkg', $feed);
+        static::assertStringNotContainsString('vendor/maintpkg', $feed);
+        static::assertStringNotContainsString('vendor/autopkg', $feed);
+    }
+
     public function testIndexShowsRecentModerationActivity(): void
     {
         $admin = self::createUser('admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
