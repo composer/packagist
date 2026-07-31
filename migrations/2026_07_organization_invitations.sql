@@ -1,8 +1,10 @@
 -- Organizations: membership invitations.
 -- Read-model projections for the invitation aggregate (organization_invitation and its
 -- companion organization_invitation_team) plus the org-level membership record
--- (organization_member) introduced with the invitation-acceptance flow. Column names match
--- the Doctrine entity mappings so a doctrine:schema:create produces the same schema.
+-- (organization_member) introduced with the invitation-acceptance flow. Columns, index names
+-- and foreign keys match the Doctrine entity mappings so doctrine:schema:update reports no
+-- changes. Only mapped relations get a foreign key; orgId, teamId and invitationId are plain
+-- ULID columns on these projections, as on organization_team_member.
 --
 -- The invitation aggregate is a separate ULID stream persisted in the shared organization_event
 -- table; no new event table is needed. Pre-membership invitation events (sent/resent/revoked/
@@ -16,7 +18,7 @@ CREATE TABLE organization_invitation (
     status VARCHAR(16) NOT NULL,
     -- SHA-256 hex of the single-use link token. Only the hash is stored; the raw token lives
     -- solely in the emailed link and is never persisted, here or in the event stream.
-    tokenHash CHAR(64) NOT NULL,
+    tokenHash VARCHAR(64) NOT NULL,
     createdAt DATETIME NOT NULL,
     expiresAt DATETIME NOT NULL,
     lastSentAt DATETIME NOT NULL,
@@ -26,20 +28,19 @@ CREATE TABLE organization_invitation (
     KEY org_invitation_org_idx (orgId),
     KEY org_invitation_pending_idx (orgId, emailCanonical, status),
     KEY org_invitation_expiry_idx (status, expiresAt),
-    CONSTRAINT FK_organization_invitation_org FOREIGN KEY (orgId) REFERENCES organization (id) ON DELETE CASCADE,
+    KEY IDX_1846F34DB319F9DE (invitedByUserId),
     CONSTRAINT FK_organization_invitation_invited_by FOREIGN KEY (invitedByUserId) REFERENCES fos_user (id) ON DELETE SET NULL
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
 
 -- Target teams the invitee joins on acceptance. A many-to-one companion to the invitation.
--- Intentionally has NO foreign key to organization_team: a team may be deleted after the
+-- teamId is deliberately unconstrained beyond the mapping: a team may be deleted after the
 -- invitation is sent, and the historical target set must be preserved so acceptance can detect
--- "target team no longer exists" rather than silently losing the row to a cascade.
+-- "target team no longer exists" rather than silently losing the row.
 CREATE TABLE organization_invitation_team (
     invitationId BINARY(16) NOT NULL,
     teamId BINARY(16) NOT NULL,
-    PRIMARY KEY (invitationId, teamId),
-    CONSTRAINT FK_organization_invitation_team_invitation FOREIGN KEY (invitationId) REFERENCES organization_invitation (id) ON DELETE CASCADE
-) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
+    PRIMARY KEY (invitationId, teamId)
+) DEFAULT CHARACTER SET utf8mb4;
 
 -- Org-level membership record. A member's team memberships (organization_team_member) still drive
 -- access; this row carries the org-scoped facts that are not derivable from team rows (joinedAt).
@@ -47,8 +48,6 @@ CREATE TABLE organization_member (
     orgId BINARY(16) NOT NULL,
     userId INT NOT NULL,
     joinedAt DATETIME NOT NULL,
-    PRIMARY KEY (orgId, userId),
-    KEY org_member_user_idx (userId),
-    CONSTRAINT FK_organization_member_org FOREIGN KEY (orgId) REFERENCES organization (id) ON DELETE CASCADE,
-    CONSTRAINT FK_organization_member_user FOREIGN KEY (userId) REFERENCES fos_user (id) ON DELETE CASCADE
-) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
+    INDEX org_member_user_idx (userId),
+    PRIMARY KEY (orgId, userId)
+) DEFAULT CHARACTER SET utf8mb4;
