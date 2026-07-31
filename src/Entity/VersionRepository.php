@@ -69,6 +69,9 @@ class VersionRepository extends ServiceEntityRepository
         $package->getVersions()->removeElement($version);
         $package->setCrawledAt(new \DateTimeImmutable());
         $package->setUpdatedAt(new \DateTimeImmutable());
+        // removing a version changes the dumped metadata => mark for re-dump
+        $package->setDumpedAt(null);
+        $package->setDumpedAtV2(null);
         $em->persist($package);
 
         $this->versionIdCache->deleteVersion($package, $version);
@@ -109,9 +112,12 @@ class VersionRepository extends ServiceEntityRepository
         $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $internalReasonText, $actor));
 
         if (!$version->getPackage()->isFrozen()) {
-            $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover');
+            $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover', forceDump: true);
         } else {
             $version->getPackage()->setCrawledAt(new \DateTimeImmutable());
+            // frozen packages are skipped by the Updater, so mark for re-dump directly
+            $version->getPackage()->setDumpedAt(null);
+            $version->getPackage()->setDumpedAtV2(null);
             $this->getEntityManager()->persist($version->getPackage());
         }
     }
@@ -132,7 +138,7 @@ class VersionRepository extends ServiceEntityRepository
 
         $em->persist(AuditRecord::versionRecovered($version, $previousReason, $actor));
 
-        $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover');
+        $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover', forceDump: true);
     }
 
     /**

@@ -315,6 +315,12 @@ class Updater
         $processedVersions = [];
         $idsToMarkUpdated = [];
 
+        // Track whether this crawl actually changed dumpable content, so the dump timestamps are nulled
+        // precisely on real changes instead of on every crawl. Version removals go through
+        // VersionRepository::remove(), which nulls the timestamps itself; this flag covers the in-place
+        // create/mutate and the raw-SQL recover/soft-delete paths below.
+        $dumpableChanged = false;
+
         /** @var int|null $dependentSuggesterSource Version id to use as dependent/suggester source */
         $dependentSuggesterSource = null;
         foreach ($versions as $version) {
@@ -348,6 +354,10 @@ class Updater
             // entity and returns a VersionUpdatedResult so it is flushed + detached here rather than
             // leaning on the catch-all flush at the end of update(). Such rewrites carry no events.
             if ($result instanceof VersionUpdatedResult) {
+                // a version row was created or mutated (incl. default-branch toggle, source/dist rewrite
+                // and the abandoned-state change, which all route through this result) => dumpable change
+                $dumpableChanged = true;
+
                 foreach ($result->events as $event) {
                     $this->eventDispatcher->dispatch($event);
                 }
@@ -395,7 +405,7 @@ class Updater
 
         // auto-recover versions still present upstream that had been auto-soft-deleted as missing.
         // Admin/maintainer-pulled rows (deletionReason in (admin, maintainer)) stay soft-deleted.
-        $em->getConnection()->executeStatement(
+        $recovered = (int) $em->getConnection()->executeStatement(
             'UPDATE package_version
                 SET updatedAt = :now, softDeletedAt = NULL, deletionReason = NULL, deletionReasonText = NULL, internalDeletionReasonText = NULL
                 WHERE id IN (:ids)
@@ -404,6 +414,10 @@ class Updater
             ['now' => date('Y-m-d H:i:s'), 'autoReason' => VersionDeletionReason::AutoDeletedMissing->value, 'ids' => $idsToMarkUpdated],
             ['ids' => ArrayParameterType::INTEGER]
         );
+        if ($recovered > 0) {
+            // a soft-deleted version reappeared upstream and is back in the dump => dumpable change
+            $dumpableChanged = true;
+        }
 
         // remove or soft-mark versions that disappeared from upstream
         foreach ($existingVersions as $version) {
@@ -440,6 +454,8 @@ class Updater
                     'UPDATE package_version SET softDeletedAt = :now, deletionReason = :reason WHERE id = :id',
                     ['now' => date('Y-m-d H:i:s'), 'reason' => VersionDeletionReason::AutoDeletedMissing->value, 'id' => $version['id']]
                 );
+                // a version disappeared upstream and is now excluded from the dump => dumpable change
+                $dumpableChanged = true;
             }
         }
 
@@ -469,7 +485,9 @@ class Updater
         $package->setUpdatedAt(new \DateTimeImmutable());
         $package->setCrawledAt(new \DateTimeImmutable());
 
-        if ($flags & self::FORCE_DUMP) {
+        // Null the dump timestamps only when this crawl actually changed dumpable content (or a dump was
+        // explicitly forced) — an unchanged re-crawl must not re-stale the metadata.
+        if (($flags & self::FORCE_DUMP) || $dumpableChanged) {
             $package->setDumpedAt(null);
             $package->setDumpedAtV2(null);
         }
