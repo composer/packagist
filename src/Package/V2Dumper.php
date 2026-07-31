@@ -510,8 +510,12 @@ class V2Dumper
         } finally {
             // instrumentation only: per-file duration + outcome counter, and a warning log for the slow outliers
             $fileMs = round((microtime(true) - $fileStart) * 1000, 4);
+            // gap-detector: `written` with `forced:false` means the crawledAt clause (not a nulled
+            // dumpedAtV2) caught a content change — i.e. a change path that did not mark the package for
+            // re-dump. This should trend to 0 before we drop the crawledAt clause from the stale query.
+            $forcedTag = ['forced' => $forceDump ? 'true' : 'false'];
             $this->statsd->timing('packagist.metadata_dump.file_time', $fileMs, ['result' => $result] + $workerTag);
-            $this->statsd->increment('packagist.metadata_dump.file', 1, 1, ['result' => $result] + $workerTag);
+            $this->statsd->increment('packagist.metadata_dump.file', 1, 1, ['result' => $result] + $forcedTag + $workerTag);
             if ($result === 'written' && $fileMs > 2000) {
                 $this->logger->warning('Slow v2 metadata file dump', ['file' => $path, 'duration_ms' => $fileMs, 'ops_ms' => $opTimings, 'worker' => $this->workerId]);
             }
