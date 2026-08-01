@@ -169,6 +169,11 @@ class V2Dumper
         while ($packageIds) {
             $this->statsd->gauge('packagist.metadata_dump_queue', \count($packageIds), ['worker' => (string) $workerId]);
 
+            // Captured before the hydration below, and load-bearing: it is what makes the dumpedAtV2
+            // write at the end of the run race-free. A markForDump() landing after this point leaves
+            // dumpRequestedAt >= the dumpedAtV2 we are about to record, so the package stays stale and
+            // is simply picked up again next run. Moving this below the hydration silently loses those
+            // marks instead.
             $dumpTime = new \DateTime();
             $idBatch = array_splice($packageIds, 0, $step);
             $this->logger->debug('Dumping package ids', ['ids' => $idBatch]);
@@ -204,7 +209,7 @@ class V2Dumper
 
                 // instrumentation only: count processed packages and how many need a full (forced) dump vs. a cheap early-return
                 $processedPackages++;
-                if ($package->getDumpedAtV2() === null) {
+                if ($package->isDumpRequested()) {
                     $forceDumpPackages++;
                 }
 
@@ -338,7 +343,6 @@ class V2Dumper
     private function dumpPackageToV2File(string $dir, Package $package, array $versionData, array $advisories, ?array $filterLists): void
     {
         $name = strtolower($package->getName());
-        $forceDump = $package->getDumpedAtV2() === null;
 
         // Soft-deleted versions stay in the DB so the UI can list them grayed out, but they must not
         // appear in metadata — Composer should not be able to resolve a pulled version.
@@ -358,8 +362,8 @@ class V2Dumper
             }
         }
 
-        $this->dumpVersionsToV2File($package, $name, $dir, $name.'.json', $name, $tags, $versionData, $forceDump, $advisories, $filterLists);
-        $this->dumpVersionsToV2File($package, $name, $dir, $name.'~dev.json', $name, $branches, $versionData, $forceDump);
+        $this->dumpVersionsToV2File($package, $name, $dir, $name.'.json', $name, $tags, $versionData, $advisories, $filterLists);
+        $this->dumpVersionsToV2File($package, $name, $dir, $name.'~dev.json', $name, $branches, $versionData);
     }
 
     /**
@@ -368,7 +372,7 @@ class V2Dumper
      * @param array<Version>                                                  $versions
      * @param VersionData                                                     $versionData
      */
-    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, bool $forceDump, ?array $advisories = null, ?array $fitlerLists = null): void
+    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, ?array $advisories = null, ?array $fitlerLists = null): void
     {
         $versionArrays = [];
         foreach ($versions as $version) {
@@ -393,10 +397,10 @@ class V2Dumper
         }
 
         $json = json_encode($metadata, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR);
-        $this->writeV2File($package, $name, $path, $json, $forceDump);
+        $this->writeV2File($package, $name, $path, $json);
     }
 
-    private function writeV2File(Package $package, string $name, string $path, string $contents, bool $forceDump = false): void
+    private function writeV2File(Package $package, string $name, string $path, string $contents): void
     {
         // instrumentation only: time the whole per-file cost and each network op, and classify the outcome
         // (skipped early-return / deleted-guard / full written) so we can see where the dump loop spends time
@@ -427,20 +431,24 @@ class V2Dumper
             // so that stuff gets purged in case it is outdated on the CDN still for some reason
             $this->writtenFiles[] = $relativePath;
 
-            if (
-                !$forceDump
-                && file_exists($path)
-                && file_get_contents($path) === $contents
-                // files dumped before then are susceptible to be out of sync, so force them all to be dumped once more at least
-                && filemtime($path) >= 1606210609
-            ) {
+            $fileExists = file_exists($path);
+            if (!$fileExists) {
+                // instrumentation only: distinguish a first write from a re-write, so a missing local file
+                // does not land in the result:written bucket that gates dropping the crawledAt clause
+                $result = 'created';
+            } elseif (!$package->isDumpForced() && file_get_contents($path) === $contents) {
+                // Note this deliberately keys off isDumpForced(), not isDumpRequested(). Every package
+                // the stale query hands us is "requested", so honouring that here would make the
+                // comparison dead code and turn every dump into a real CDN write. Only the explicit
+                // Package::forceDump() paths bypass it, which is what makes result:skipped a useful
+                // signal — see the counter below.
                 $result = 'skipped';
 
                 return;
             }
 
             // fetch the file to ensure the region we hit after has a hot cache so we can verify correctly that the purge worked
-            if (file_exists($path)) {
+            if ($fileExists) {
                 $opStart = microtime(true);
                 try {
                     $this->cdnClient->fetchPublicMetadata($relativePath);
@@ -510,13 +518,20 @@ class V2Dumper
         } finally {
             // instrumentation only: per-file duration + outcome counter, and a warning log for the slow outliers
             $fileMs = round((microtime(true) - $fileStart) * 1000, 4);
-            // gap-detector: `written` with `forced:false` means the crawledAt clause (not a nulled
-            // dumpedAtV2) caught a content change — i.e. a change path that did not mark the package for
-            // re-dump. This should trend to 0 before we drop the crawledAt clause from the stale query.
-            $forcedTag = ['forced' => $forceDump ? 'true' : 'false'];
+            // Two signals, both keyed on whether the package was marked for re-dump or was merely swept
+            // up by the crawledAt clause:
+            //  - {written, requested:false} is the gap-detector: a content change that only crawledAt
+            //    caught, i.e. a change path that fails to mark. Must sit at ~0 before we drop the
+            //    crawledAt clause from the stale query. result:created keeps first-time writes out of
+            //    this bucket; note --force runs select everything, so they land here too.
+            //  - {skipped, requested:true} is the inverse: something marked the package but its content
+            //    did not actually change, i.e. a path marking more eagerly than it needs to. Deliberate
+            //    Package::forceDump() paths bypass the comparison, so they never land here.
+            // ({skipped, requested:false} is just the crawledAt flood that Phase 2 exists to remove.)
+            $gapTags = ['requested' => $package->isDumpRequested() ? 'true' : 'false'];
             $this->statsd->timing('packagist.metadata_dump.file_time', $fileMs, ['result' => $result] + $workerTag);
-            $this->statsd->increment('packagist.metadata_dump.file', 1, 1, ['result' => $result] + $forcedTag + $workerTag);
-            if ($result === 'written' && $fileMs > 2000) {
+            $this->statsd->increment('packagist.metadata_dump.file', 1, 1, ['result' => $result] + $gapTags + $workerTag);
+            if (($result === 'written' || $result === 'created') && $fileMs > 2000) {
                 $this->logger->warning('Slow v2 metadata file dump', ['file' => $path, 'duration_ms' => $fileMs, 'ops_ms' => $opTimings, 'worker' => $this->workerId]);
             }
         }
