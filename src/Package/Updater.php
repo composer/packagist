@@ -315,10 +315,11 @@ class Updater
         $processedVersions = [];
         $idsToMarkUpdated = [];
 
-        // Track whether this crawl actually changed dumpable content, so the dump timestamps are nulled
-        // precisely on real changes instead of on every crawl. Version removals go through
-        // VersionRepository::remove(), which nulls the timestamps itself; this flag covers the in-place
-        // create/mutate and the raw-SQL recover/soft-delete paths below.
+        // Track whether this crawl actually changed dumpable content, so the package is marked for
+        // re-dump precisely on real changes instead of on every crawl. Version removals go through
+        // VersionRepository::remove(), which marks by itself (and only when the row was still visible
+        // in the metadata); this flag covers the in-place create/mutate and the raw-SQL
+        // recover/soft-delete paths below.
         $dumpableChanged = false;
 
         /** @var int|null $dependentSuggesterSource Version id to use as dependent/suggester source */
@@ -735,12 +736,22 @@ class Updater
         }
 
         if ($existingVersion) {
+            // The abandoned conditions exist only to route into the package-level reconciliation below,
+            // which runs for the default branch and stores the *normalized* replacement. Both have to be
+            // scoped and normalized identically or the condition stays true and rebuilds this version on
+            // every crawl, bumping published-time — i.e. a real CDN write each time — without ever
+            // converging. Version rows carry no abandoned state of their own: Version::toV2Array() reads
+            // it off the package at dump time.
+            $abandonedNeedsReconciling = $data->isAbandoned() && $data->isDefaultBranch() && (
+                !$package->isAbandoned()
+                || $this->normalizeReplacementPackage($data->getReplacementPackage()) !== $package->getReplacementPackage()
+            );
+
             // Dev-version flow (existing version). Update on reference change, or abandoned flags & default-branch status changes.
             if (
                 ($existingVersion['source']['reference'] ?? null) !== $newSourceRef
                 || ($flags & self::UPDATE_SOURCE_DIST_URL)
-                || ($data->isAbandoned() && !$package->isAbandoned())
-                || ($data->isAbandoned() && $data->getReplacementPackage() !== $package->getReplacementPackage())
+                || $abandonedNeedsReconciling
             ) {
                 $version = $versionRepo->find($existingVersion['id']);
                 if (null === $version) {
@@ -799,11 +810,10 @@ class Updater
                 // Reconcile the replacement even when the package was already abandoned. The rebuild
                 // condition above keys off exactly this comparison, so writing it only while
                 // transitioning to abandoned leaves a standing mismatch — from a manual abandon, or
-                // from composer.json naming a different replacement than before — that re-triggers a
-                // full rebuild of every dev version on every crawl and never converges. composer.json
-                // wins here: a package abandoned only through the UI never reaches this branch.
-                $replacement = $data->getReplacementPackage();
-                $package->setReplacementPackage($replacement === null ? null : $this->sanitize($replacement));
+                // from composer.json naming a different replacement than before — that rebuilds this
+                // version on every crawl and never converges. composer.json wins here: a package
+                // abandoned only through the UI never reaches this branch.
+                $package->setReplacementPackage($this->normalizeReplacementPackage($data->getReplacementPackage()));
             }
         }
 
@@ -1239,6 +1249,19 @@ class Updater
         }
 
         return ConsoleIO::sanitize($str, false);
+    }
+
+    /**
+     * Normalizes an upstream "abandoned" replacement exactly as Package::setReplacementPackage() stores
+     * it. The rebuild trigger in updateInformation() compares the declared value against the stored one,
+     * so every transformation the storage applies — a stripped control char, '' collapsing to null — has
+     * to be applied here too, or the two can never agree and the version is rebuilt on every crawl.
+     */
+    private function normalizeReplacementPackage(?string $replacement): ?string
+    {
+        $replacement = $this->sanitize($replacement);
+
+        return $replacement === '' ? null : $replacement;
     }
 
     /**

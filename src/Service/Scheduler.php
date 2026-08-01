@@ -43,10 +43,18 @@ class Scheduler
             // force_dump is not part of the dedup key, so a plain job queued by e.g. a webhook push would
             // otherwise swallow the request entirely. Carry the intent over to the pending job, which
             // runs no later than ours would, rather than queueing a second job for the same package.
-            if ($forceDump && ($pendingJob->getPayload()['force_dump'] ?? false) !== true) {
+            // Best-effort: the worker may already have start()ed and read the payload, in which case the
+            // upgrade lands on a job that will never re-read it. The direct markForDump() calls in
+            // VersionRepository are what make that survivable — only the forcing itself is lost.
+            $pendingForced = ($pendingJob->getPayload()['force_dump'] ?? false) === true;
+            if ($forceDump && !$pendingForced) {
                 $pendingJob->setPayload(['force_dump' => true] + $pendingJob->getPayload());
                 $this->getEM()->flush();
             }
+
+            // and carry a force the pending job already had onto the replacement job that the
+            // cancel-and-recreate path below creates, which otherwise only sees the caller's intent
+            $forceDump = $forceDump || $pendingForced;
 
             // pending job will execute before the one we are trying to schedule so skip scheduling
             if (

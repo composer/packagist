@@ -743,10 +743,6 @@ class Package
     }
 
     /**
-     * Whether the package's dumped metadata is out of date, mirroring the staleness predicate in
-     * PackageRepository::getStalePackagesForDumpingV2(). Keep the two in sync.
-     */
-    /**
      * Whether the next dump must re-write the files even if their content is unchanged. See forceDump().
      */
     public function isDumpForced(): bool
@@ -754,6 +750,14 @@ class Package
         return $this->dumpedAtV2 === null;
     }
 
+    /**
+     * Whether something requested a re-dump since the package was last dumped.
+     *
+     * Deliberately NOT a mirror of PackageRepository::getStalePackagesForDumpingV2(): the stale query
+     * also sweeps in packages whose crawledAt is newer than their dump, and this must not, or the
+     * metadata_dump.file{requested} gap-detector could no longer tell a package that was marked apart
+     * from one that transitional clause merely caught. See metadata-dump-followups.md.
+     */
     public function isDumpRequested(): bool
     {
         return $this->dumpedAtV2 === null
@@ -902,8 +906,10 @@ class Package
         }
         $this->frozen = null;
         $this->setCrawledAt(null);
-        // A suppressing freeze purges the package's published metadata, so the files have to be written
-        // out again even though nothing about their content changed.
+        // Forcing regardless of the freeze reason, on purpose: a suppressing freeze purges the
+        // package's published metadata, so the files have to be written out again even though nothing
+        // about their content changed, and for the gentle reasons — which never stopped the dump — a
+        // redundant re-write of a handful of unfrozen packages is cheap insurance.
         $this->forceDump();
     }
 

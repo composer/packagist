@@ -209,7 +209,7 @@ class V2Dumper
 
                 // instrumentation only: count processed packages and how many need a full (forced) dump vs. a cheap early-return
                 $processedPackages++;
-                if ($package->isDumpRequested()) {
+                if ($package->isDumpForced()) {
                     $forceDumpPackages++;
                 }
 

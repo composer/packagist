@@ -1110,6 +1110,94 @@ class UpdaterTest extends IntegrationTestCase
         );
     }
 
+    public function testAbandonmentDeclaredOnANonDefaultBranchDoesNotRebuildItOnEveryCrawl(): void
+    {
+        $em = self::getEM();
+        $default = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        $default->setIsDefaultBranch(true);
+        $em->persist($default);
+        $legacy = $this->seedDevVersion($this->package, 'dev-legacy', 'dev-legacy', 'legacyref12345678');
+        $legacyId = $legacy->getId();
+        // a distinctly old timestamp, so a rebuild during the crawl cannot hide in the same second
+        $legacyUpdatedAt = new \DateTimeImmutable('2026-01-01 00:00:00');
+        $legacy->setUpdatedAt($legacyUpdatedAt);
+        $em->flush();
+        $this->markPackageAsDumped();
+
+        // only the non-default branch declares abandonment. The package-level reconciliation runs for
+        // the default branch only, so the package stays unabandoned — and the trigger has to be scoped
+        // the same way, or it can never agree with the package and rebuilds dev-legacy forever.
+        $upstreamDefault = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890');
+        $upstreamDefault->setIsDefaultBranch(true);
+        $upstreamLegacy = $this->buildCompletePackage('test/pkg', 'dev-legacy', 'dev-legacy', 'legacyref12345678');
+        $upstreamLegacy->setAbandoned('some/replacement');
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstreamDefault, $upstreamLegacy]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertFalse($package->isAbandoned(), 'only the default branch composer.json may abandon a package');
+        self::assertFalse($package->isDumpRequested(), 'nothing dumpable changed, so the crawl must not re-stale the metadata');
+        self::assertEquals(
+            $legacyUpdatedAt,
+            $em->getRepository(Version::class)->find($legacyId)?->getUpdatedAt(),
+            'the non-default branch must not be rebuilt, which would bump published-time and force a real CDN write'
+        );
+    }
+
+    public function testAReplacementThatNeedsSanitizingStillConverges(): void
+    {
+        $em = self::getEM();
+        $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        $existing->setIsDefaultBranch(true);
+        $em->persist($existing);
+        $versionId = $existing->getId();
+        $this->markPackageAsDumped();
+
+        // the control char is stripped on the way into the DB, so comparing the stored value against the
+        // raw upstream one could never agree — the trigger has to normalize before comparing
+        $upstream = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890');
+        $upstream->setIsDefaultBranch(true);
+        $upstream->setAbandoned("new/replace\x08ment");
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertSame('new/replacement', $package->getReplacementPackage());
+
+        $updatedAtAfterFirstCrawl = $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt();
+        self::assertNotNull($updatedAtAfterFirstCrawl);
+
+        // second crawl against the very same upstream must now be a no-op
+        $package->setDumpedAtV2(new \DateTimeImmutable('+1 minute'));
+        $em->flush();
+
+        $repo2 = $this->createStub(VcsRepository::class);
+        $repo2->method('getPackages')->willReturn([$upstream]);
+        $repo2->method('getDriver')->willReturn($this->stableDriver());
+        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertFalse($package->isDumpRequested(), 'a sanitized replacement must converge like any other');
+        self::assertEquals(
+            $updatedAtAfterFirstCrawl,
+            $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt(),
+            'the version must not be rebuilt again on an unchanged crawl'
+        );
+    }
+
     /**
      * Puts the package in a "freshly dumped, nothing pending" state, i.e. isDumpRequested() === false.
      */
