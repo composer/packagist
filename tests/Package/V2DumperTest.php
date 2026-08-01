@@ -271,6 +271,199 @@ class V2DumperTest extends IntegrationTestCase
         $this->assertStringEndsWith('/lists/all/summary.json', $data['filter']['summary-url']);
     }
 
+    public function testANormalDumpRunClearsStaleness(): void
+    {
+        $this->primeBuildDir();
+        $package = self::createPackage('acme/package', 'https://example.com/acme/package');
+        $this->store($package, $this->createVersion($package, '1.0.0'));
+        $packageId = $package->getId();
+        $this->requestDumpAt($packageId, '-1 minute');
+
+        self::assertContains($packageId, $this->stalePackageIds(), 'a marked package must be selected for dumping');
+
+        $this->dumper->dump([$packageId]);
+
+        self::assertNotContains($packageId, $this->stalePackageIds(), 'a completed dump must clear the package from the stale set');
+    }
+
+    public function testAMarkInTheSameSecondAsTheDumpIsRedumpedOnceThenConverges(): void
+    {
+        // Both columns hold whole seconds, so a mark stamped in the same second the dumper captured its
+        // dump time is genuinely ambiguous — it may have landed before or after the package was
+        // hydrated. The staleness predicate uses >= so that ambiguity resolves towards re-dumping,
+        // which costs one cheap content-comparison pass rather than risking a lost change.
+        $this->primeBuildDir();
+        $package = self::createPackage('acme/package', 'https://example.com/acme/package');
+        $this->store($package, $this->createVersion($package, '1.0.0'));
+        $packageId = $package->getId();
+        $this->requestDumpAt($packageId, 'now');
+
+        $this->dumper->dump([$packageId]);
+        self::assertContains($packageId, $this->stalePackageIds(), 'a same-second mark must be re-dumped rather than assumed covered');
+
+        // The ambiguity only lasts as long as that one second: the next run to start in a later second
+        // records a strictly greater dump time and clears it. Re-stamping the request one second back
+        // stands in for the clock advancing, so the test does not have to sleep for it.
+        $this->requestDumpAt($packageId, '-1 second');
+        $this->dumper->dump([$packageId]);
+        self::assertNotContains($packageId, $this->stalePackageIds(), 'the ambiguity must settle within a second, not repeat forever');
+    }
+
+    public function testAMarkLandingDuringADumpRunSurvivesIt(): void
+    {
+        // The dumper records dumpedAtV2 for the whole run only at the very end — after the batch loop,
+        // the CDN verification and the bulk purge. Anything marking the package in that window used to
+        // have its mark overwritten and lost outright; the advisory and filter-list listeners, which
+        // never touch crawledAt, had nothing to rescue them. Fire a mark from inside the CDN upload,
+        // which happens exactly in that window, and assert the package stays stale.
+        $this->primeBuildDir();
+        $package = self::createPackage('acme/package', 'https://example.com/acme/package');
+        $package->markForDump();
+        $this->store($package, $this->createVersion($package, '1.0.0'));
+        $packageId = $package->getId();
+
+        $conn = self::getEM()->getConnection();
+        $this->rebuildDumperWithUploadHook(static function () use ($conn, $packageId): void {
+            $conn->executeStatement(
+                'UPDATE package SET dumpRequestedAt = :now WHERE id = :id',
+                ['now' => date('Y-m-d H:i:s'), 'id' => $packageId]
+            );
+        });
+
+        $this->dumper->dump([$packageId]);
+
+        self::assertContains($packageId, $this->stalePackageIds(), 'a mark landing mid-run must survive the dump run that did not include it');
+    }
+
+    public function testUnchangedContentIsNotRewrittenForAnOrdinaryMark(): void
+    {
+        // An ordinary markForDump() must not bypass the content comparison: every package the stale
+        // query hands us is "requested", so honouring that here would make the comparison dead code and
+        // turn every dump into a real CDN write. It also keeps result:skipped meaningful — a skipped
+        // file that was requested means something marked the package it did not need to.
+        // The deliberate force path is covered by testForceDumpRewritesUnchangedContent().
+        $this->primeBuildDir();
+        $package = self::createPackage('acme/package', 'https://example.com/acme/package');
+        $this->store($package, $this->createVersion($package, '1.0.0'));
+        $packageId = $package->getId();
+        $this->requestDumpAt($packageId, '-1 minute');
+
+        $uploads = 0;
+        $this->rebuildDumperWithUploadHook(static function () use (&$uploads): void {
+            $uploads++;
+        });
+
+        $this->dumper->dump([$packageId]);
+        self::assertSame(2, $uploads, 'the first dump writes both the release and the ~dev file');
+
+        // second pass with nothing marked and byte-identical content must early-return
+        $this->dumper->dump([$packageId]);
+        self::assertSame(2, $uploads, 'an unrequested package with unchanged content must not be rewritten');
+
+        // ... and so must a freshly marked one, as long as the content really is unchanged
+        $this->requestDumpAt($packageId, 'now');
+
+        $this->dumper->dump([$packageId]);
+        self::assertSame(2, $uploads, 'a marked package with unchanged content must still not be rewritten');
+    }
+
+    public function testForceDumpRewritesUnchangedContent(): void
+    {
+        // The deliberate escape hatch: forceDump() nulls dumpedAtV2, which the dumper reads as "write
+        // this no matter what". That is what busts the CDN cache and re-runs the replica write for the
+        // manual update button and for unfreeze, where nothing about the content has changed.
+        $this->primeBuildDir();
+        $package = self::createPackage('acme/package', 'https://example.com/acme/package');
+        $this->store($package, $this->createVersion($package, '1.0.0'));
+        $packageId = $package->getId();
+        $this->requestDumpAt($packageId, '-1 minute');
+
+        $uploads = 0;
+        $this->rebuildDumperWithUploadHook(static function () use (&$uploads): void {
+            $uploads++;
+        });
+
+        $this->dumper->dump([$packageId]);
+        self::assertSame(2, $uploads);
+
+        $em = self::getEM();
+        $package = $em->getRepository(Package::class)->find($packageId);
+        self::assertNotNull($package);
+        $package->forceDump();
+        $em->flush();
+        self::assertTrue($package->isDumpForced());
+        $em->clear();
+
+        $this->dumper->dump([$packageId]);
+        self::assertSame(4, $uploads, 'a forced dump must re-write byte-identical content');
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function stalePackageIds(): array
+    {
+        self::getEM()->clear();
+
+        // the command int-casts these too, the driver hands back numeric strings
+        return array_map('intval', self::getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2());
+    }
+
+    /**
+     * Lets dump() run without --force, which is what exercises the real staleness bookkeeping — the
+     * dumper otherwise refuses a first run against an empty build dir.
+     */
+    private function primeBuildDir(): void
+    {
+        mkdir($this->buildDir.'/p2', 0o777, true);
+    }
+
+    /**
+     * Stamps a dump request at a controlled time. markForDump() would always land in the current
+     * second, which is exactly the ambiguous case, so tests that are not about that boundary need
+     * to place the request unambiguously in the past.
+     */
+    private function requestDumpAt(int $packageId, string $when): void
+    {
+        self::getEM()->getConnection()->executeStatement(
+            'UPDATE package SET dumpRequestedAt = :when WHERE id = :id',
+            ['when' => date('Y-m-d H:i:s', (int) strtotime($when)), 'id' => $packageId]
+        );
+        self::getEM()->clear();
+    }
+
+    /**
+     * Rebuilds the dumper with a CDN client whose uploadMetadata() runs $hook, which lands between a
+     * package's hydration and the end-of-run dumpedAtV2 write.
+     */
+    private function rebuildDumperWithUploadHook(\Closure $hook): void
+    {
+        $cdnClient = $this->createStub(CdnClient::class);
+        $cdnClient->method('uploadMetadata')->willReturnCallback(static function () use ($hook): int {
+            $hook();
+
+            // a filemtime that does not end in '0000' so the Redis counter branch is skipped
+            return 16062106090001;
+        });
+        $cdnClient->method('purgeMetadataCache')->willReturn(true);
+
+        $this->dumper = new V2Dumper(
+            static::getContainer()->get(ManagerRegistry::class),
+            new Filesystem(),
+            $this->createStub(RedisClient::class),
+            $this->webDir,
+            $this->buildDir,
+            $this->createStub(StatsDClient::class),
+            $this->createStub(ProviderManager::class),
+            new Logger('test'),
+            $cdnClient,
+            $this->createStub(ReplicaClient::class),
+            static::getContainer()->get(UrlGeneratorInterface::class),
+            new MockHttpClient(),
+            static::getContainer()->get(FilterListDumperProvider::class),
+        );
+    }
+
     private function createVersion(Package $package, string $version): Version
     {
         $versionParser = new VersionParser();

@@ -64,9 +64,12 @@ class SecurityAdvisoryUpdateListener
     public function flushChangesToPackages(): void
     {
         $packageNames = array_keys($this->packagesToMarkStale);
-        $pkg = $this->getEM()->getConnection()->executeStatement(
-            'UPDATE package SET dumpedAtV2 = null WHERE name IN (:names)',
-            ['names' => $packageNames],
+        // Records the request rather than nulling dumpedAtV2, so a dumper run already in flight cannot
+        // overwrite the mark when it writes its dump times at the end. Timestamped from the app clock
+        // to match the one V2Dumper compares against.
+        $this->getEM()->getConnection()->executeStatement(
+            'UPDATE package SET dumpRequestedAt = :now WHERE name IN (:names)',
+            ['now' => date('Y-m-d H:i:s'), 'names' => $packageNames],
             ['names' => ArrayParameterType::STRING]
         );
 

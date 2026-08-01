@@ -69,8 +69,12 @@ class VersionRepository extends ServiceEntityRepository
         $package->getVersions()->removeElement($version);
         $package->setCrawledAt(new \DateTimeImmutable());
         $package->setUpdatedAt(new \DateTimeImmutable());
-        // removing a version changes the dumped metadata => mark for re-dump
-        $package->setDumpedAtV2(null);
+        // An already-soft-deleted row was excluded from the dumped metadata, so hard-deleting it does
+        // not change a byte. Skipping the mark matters because the dominant caller — Updater's prune
+        // loop — hard-purges dev rows a day after they were soft-deleted, which is routine branch churn.
+        if (!$version->isSoftDeleted()) {
+            $package->markForDump();
+        }
         $em->persist($package);
 
         $this->versionIdCache->deleteVersion($package, $version);
@@ -110,12 +114,17 @@ class VersionRepository extends ServiceEntityRepository
 
         $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $internalReasonText, $actor));
 
+        // Mark directly rather than leaning on the scheduled job: pulling a version is the security
+        // path, and the job's force_dump only takes effect if a crawl actually succeeds — a package
+        // whose repository 404s or errors never reaches the end of Updater::update(), which would
+        // leave the pulled version published indefinitely. The dumper excludes soft-deleted versions
+        // itself, so dumping immediately is correct and need not wait for the crawl.
+        $version->getPackage()->markForDump();
+
         if (!$version->getPackage()->isFrozen()) {
-            $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover', forceDump: true);
+            // still schedule the crawl so dependents/suggesters get recomputed without this version
+            $this->scheduler->scheduleUpdate($version->getPackage(), 'version_soft_delete', forceDump: true);
         } else {
-            $version->getPackage()->setCrawledAt(new \DateTimeImmutable());
-            // frozen packages are skipped by the Updater, so mark for re-dump directly
-            $version->getPackage()->setDumpedAtV2(null);
             $this->getEntityManager()->persist($version->getPackage());
         }
     }
@@ -136,6 +145,9 @@ class VersionRepository extends ServiceEntityRepository
 
         $em->persist(AuditRecord::versionRecovered($version, $previousReason, $actor));
 
+        // marked directly for the same reason as softDelete(): the re-dump must not depend on a
+        // successful crawl, or on the job surviving Scheduler dedup
+        $version->getPackage()->markForDump();
         $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover', forceDump: true);
     }
 

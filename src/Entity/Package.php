@@ -103,7 +103,7 @@ enum PackageFreezeReason: string
 #[ORM\Index(name: 'dumped2_idx', columns: ['dumpedAtV2'])]
 #[ORM\Index(name: 'repository_idx', columns: ['repository'])]
 #[ORM\Index(name: 'remoteid_idx', columns: ['remoteId'])]
-#[ORM\Index(name: 'dumped2_crawled_frozen_idx', columns: ['dumpedAtV2', 'crawledAt', 'frozen'])]
+#[ORM\Index(name: 'dumped2_requested_crawled_frozen_idx', columns: ['dumpedAtV2', 'dumpRequestedAt', 'crawledAt', 'frozen'])]
 #[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
 #[ORM\Index(name: 'frozen_idx', columns: ['frozen'])]
 #[ORM\Index(name: 'type_frozen_idx', columns: ['type', 'frozen'])]
@@ -190,6 +190,9 @@ class Package
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $dumpedAtV2 = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $dumpRequestedAt = null;
 
     /**
      * @var Collection<int, Download>&Selectable<int, Download>
@@ -689,6 +692,11 @@ class Package
         return $this->indexedAt;
     }
 
+    /**
+     * Only V2Dumper legitimately records a dump time, and it does so in bulk SQL — this setter exists
+     * for tests. Production code goes through markForDump() / forceDump(), never writing either
+     * timestamp by hand.
+     */
     public function setDumpedAtV2(?\DateTimeImmutable $dumpedAt): void
     {
         $this->dumpedAtV2 = $dumpedAt;
@@ -697,6 +705,59 @@ class Package
     public function getDumpedAtV2(): ?\DateTimeImmutable
     {
         return $this->dumpedAtV2;
+    }
+
+    /**
+     * Request a fresh metadata dump.
+     *
+     * Deliberately does not touch dumpedAtV2: V2Dumper writes that once at the end of a run, so nulling
+     * it here would let a dump that predates this change overwrite the mark and lose it entirely.
+     * Recording the request separately keeps marking monotonic, so a mark landing mid-run survives.
+     */
+    public function markForDump(): void
+    {
+        $this->dumpRequestedAt = new \DateTimeImmutable();
+    }
+
+    /**
+     * Request a dump that re-writes the files even if their content is byte-identical, which busts the
+     * CDN cache and can shake a stuck storage replication loose. Use it for the deliberate "make it
+     * publish again" paths — the manual update button, an unfreeze — not for ordinary content changes,
+     * which markForDump() covers at a fraction of the cost.
+     *
+     * A null dumpedAtV2 is what V2Dumper reads as "write this no matter what". Nulling it is
+     * destructive, so this always marks as well: without that, a dump run already in flight would
+     * overwrite the null when it records its dump times and the request would vanish. (The one thing
+     * that race can still cost is the forcing itself — the package stays stale and is re-dumped, but as
+     * an ordinary content-compared dump.)
+     */
+    public function forceDump(): void
+    {
+        $this->dumpedAtV2 = null;
+        $this->markForDump();
+    }
+
+    public function getDumpRequestedAt(): ?\DateTimeImmutable
+    {
+        return $this->dumpRequestedAt;
+    }
+
+    /**
+     * Whether the package's dumped metadata is out of date, mirroring the staleness predicate in
+     * PackageRepository::getStalePackagesForDumpingV2(). Keep the two in sync.
+     */
+    /**
+     * Whether the next dump must re-write the files even if their content is unchanged. See forceDump().
+     */
+    public function isDumpForced(): bool
+    {
+        return $this->dumpedAtV2 === null;
+    }
+
+    public function isDumpRequested(): bool
+    {
+        return $this->dumpedAtV2 === null
+            || ($this->dumpRequestedAt !== null && $this->dumpRequestedAt >= $this->dumpedAtV2);
     }
 
     public function addMaintainer(User $maintainer): void
@@ -841,6 +902,9 @@ class Package
         }
         $this->frozen = null;
         $this->setCrawledAt(null);
+        // A suppressing freeze purges the package's published metadata, so the files have to be written
+        // out again even though nothing about their content changed.
+        $this->forceDump();
     }
 
     public function isFrozen(): bool

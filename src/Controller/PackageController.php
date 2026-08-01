@@ -1189,13 +1189,16 @@ class PackageController extends Controller
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $package->setAbandoned(true);
-            $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData()));
+            // normalize a blank form value to null: storing '' would permanently disagree with the null
+            // an upstream `"abandoned": true` yields, which the Updater treats as a change to reconcile
+            $replacement = str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData());
+            $package->setReplacementPackage($replacement === '' ? null : $replacement);
             $this->eventDispatcher->dispatch(new PackageAbandonedEvent($package, AbandonmentReason::Manual));
 
             $package->setIndexedAt(null);
             $package->setCrawledAt(new \DateTimeImmutable());
             $package->setUpdatedAt(new \DateTimeImmutable());
-            $package->setDumpedAtV2(null);
+            $package->markForDump();
 
             $em = $this->getEM();
             $em->flush();
@@ -1221,7 +1224,7 @@ class PackageController extends Controller
         $package->setIndexedAt(null);
         $package->setCrawledAt(new \DateTimeImmutable());
         $package->setUpdatedAt(new \DateTimeImmutable());
-        $package->setDumpedAtV2(null);
+        $package->markForDump();
 
         $em = $this->getEM();
         $em->flush();

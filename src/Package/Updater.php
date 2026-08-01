@@ -485,10 +485,14 @@ class Updater
         $package->setUpdatedAt(new \DateTimeImmutable());
         $package->setCrawledAt(new \DateTimeImmutable());
 
-        // Null the dump timestamps only when this crawl actually changed dumpable content (or a dump was
-        // explicitly forced) — an unchanged re-crawl must not re-stale the metadata.
-        if (($flags & self::FORCE_DUMP) || $dumpableChanged) {
-            $package->setDumpedAtV2(null);
+        // Mark for re-dump only when this crawl actually changed dumpable content — an unchanged
+        // re-crawl must not re-stale the metadata. FORCE_DUMP (the manual update button, an unfreeze,
+        // a repo URL rewrite) escalates to a full re-write even when nothing changed, so the CDN cache
+        // is busted and the files are republished.
+        if ($flags & self::FORCE_DUMP) {
+            $package->forceDump();
+        } elseif ($dumpableChanged) {
+            $package->markForDump();
         }
 
         $em->flush();
@@ -786,13 +790,20 @@ class Updater
         if ($data->isDefaultBranch()) {
             $package->setDescription($descr);
             $package->setType($this->sanitize($data->getType()));
-            if ($data->isAbandoned() && !$package->isAbandoned()) {
-                $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
-                $package->setAbandoned(true);
-                $postUpdateEvents[] = new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier));
-                if ($data->getReplacementPackage()) {
-                    $package->setReplacementPackage($this->sanitize($data->getReplacementPackage()));
+            if ($data->isAbandoned()) {
+                if (!$package->isAbandoned()) {
+                    $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
+                    $package->setAbandoned(true);
+                    $postUpdateEvents[] = new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier));
                 }
+                // Reconcile the replacement even when the package was already abandoned. The rebuild
+                // condition above keys off exactly this comparison, so writing it only while
+                // transitioning to abandoned leaves a standing mismatch — from a manual abandon, or
+                // from composer.json naming a different replacement than before — that re-triggers a
+                // full rebuild of every dev version on every crawl and never converges. composer.json
+                // wins here: a package abandoned only through the UI never reaches this branch.
+                $replacement = $data->getReplacementPackage();
+                $package->setReplacementPackage($replacement === null ? null : $this->sanitize($replacement));
             }
         }
 

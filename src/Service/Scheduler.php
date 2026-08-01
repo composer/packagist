@@ -40,6 +40,14 @@ class Scheduler
 
         $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateSourceDistUrl, $deleteBefore);
         if ($pendingJobId && ($pendingJob = $this->getEM()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId])) !== null) {
+            // force_dump is not part of the dedup key, so a plain job queued by e.g. a webhook push would
+            // otherwise swallow the request entirely. Carry the intent over to the pending job, which
+            // runs no later than ours would, rather than queueing a second job for the same package.
+            if ($forceDump && ($pendingJob->getPayload()['force_dump'] ?? false) !== true) {
+                $pendingJob->setPayload(['force_dump' => true] + $pendingJob->getPayload());
+                $this->getEM()->flush();
+            }
+
             // pending job will execute before the one we are trying to schedule so skip scheduling
             if (
                 (!$pendingJob->getExecuteAfter() && $executeAfter)

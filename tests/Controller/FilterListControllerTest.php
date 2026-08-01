@@ -303,7 +303,7 @@ class FilterListControllerTest extends IntegrationTestCase
         $this->store($admin, $package);
 
         $em = self::getEM();
-        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = NOW() WHERE name = :name', ['name' => 'vendor/manual-new']);
+        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = :dumped WHERE name = :name', ['dumped' => date('Y-m-d H:i:s'), 'name' => 'vendor/manual-new']);
         $em->clear();
 
         $this->client->loginUser($admin);
@@ -341,8 +341,7 @@ class FilterListControllerTest extends IntegrationTestCase
         static::assertSame('filter-admin', $audit->attributes['actor']['username'], 'The admin who added the manual entry must be recorded as the author.');
         static::assertSame($admin->getId(), $audit->actorId, 'The added audit record must carry the actor id like the other filter-list events.');
 
-        $dumpedAt = $em->getConnection()->fetchOne('SELECT dumpedAtV2 FROM package WHERE name = :name', ['name' => 'vendor/manual-new']);
-        static::assertNull($dumpedAt, 'Package must be marked for re-dump when a manual entry is created.');
+        $this->assertPackageMarkedForRedump('vendor/manual-new', 'Package must be marked for re-dump when a manual entry is created.');
     }
 
     public function testNewRejectsDuplicateSlot(): void
@@ -586,7 +585,7 @@ class FilterListControllerTest extends IntegrationTestCase
         $this->store($admin, $package, $entry);
 
         $em = self::getEM();
-        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = NOW() WHERE name = :name', ['name' => 'vendor/stale']);
+        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = :dumped WHERE name = :name', ['dumped' => date('Y-m-d H:i:s'), 'name' => 'vendor/stale']);
         $em->clear();
 
         $this->client->loginUser($admin);
@@ -599,8 +598,7 @@ class FilterListControllerTest extends IntegrationTestCase
 
         static::assertResponseRedirects('/admin/filter-lists/');
 
-        $dumpedAt = $em->getConnection()->fetchOne('SELECT dumpedAtV2 FROM package WHERE name = :name', ['name' => 'vendor/stale']);
-        static::assertNull($dumpedAt, 'Package must be marked for re-dump when its filter list entry is disabled.');
+        $this->assertPackageMarkedForRedump('vendor/stale', 'Package must be marked for re-dump when its filter list entry is disabled.');
     }
 
     public function testEditMarksPackageStaleForRedump(): void
@@ -611,7 +609,7 @@ class FilterListControllerTest extends IntegrationTestCase
         $this->store($admin, $package, $entry);
 
         $em = self::getEM();
-        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = NOW() WHERE name = :name', ['name' => 'vendor/stale-edit']);
+        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = :dumped WHERE name = :name', ['dumped' => date('Y-m-d H:i:s'), 'name' => 'vendor/stale-edit']);
         $em->clear();
 
         $this->client->loginUser($admin);
@@ -622,8 +620,7 @@ class FilterListControllerTest extends IntegrationTestCase
 
         static::assertResponseRedirects('/admin/filter-lists/');
 
-        $dumpedAt = $em->getConnection()->fetchOne('SELECT dumpedAtV2 FROM package WHERE name = :name', ['name' => 'vendor/stale-edit']);
-        static::assertNull($dumpedAt, 'Package must be marked for re-dump when its filter list entry is edited.');
+        $this->assertPackageMarkedForRedump('vendor/stale-edit', 'Package must be marked for re-dump when its filter list entry is edited.');
     }
 
     public function testEnableMarksPackageStaleForRedump(): void
@@ -635,7 +632,7 @@ class FilterListControllerTest extends IntegrationTestCase
         $this->store($admin, $package, $entry);
 
         $em = self::getEM();
-        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = NOW() WHERE name = :name', ['name' => 'vendor/stale-enable']);
+        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = :dumped WHERE name = :name', ['dumped' => date('Y-m-d H:i:s'), 'name' => 'vendor/stale-enable']);
         $em->clear();
 
         $this->client->loginUser($admin);
@@ -648,8 +645,7 @@ class FilterListControllerTest extends IntegrationTestCase
 
         static::assertResponseRedirects('/admin/filter-lists/');
 
-        $dumpedAt = $em->getConnection()->fetchOne('SELECT dumpedAtV2 FROM package WHERE name = :name', ['name' => 'vendor/stale-enable']);
-        static::assertNull($dumpedAt, 'Package must be marked for re-dump when its filter list entry is re-enabled.');
+        $this->assertPackageMarkedForRedump('vendor/stale-enable', 'Package must be marked for re-dump when its filter list entry is re-enabled.');
     }
 
     public function testBulkDisableDisablesSelectedEntriesAndRecordsAudit(): void
@@ -747,7 +743,7 @@ class FilterListControllerTest extends IntegrationTestCase
         $this->store($admin, $package, $entry);
 
         $em = self::getEM();
-        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = NOW() WHERE name = :name', ['name' => 'vendor/bulk-stale']);
+        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = :dumped WHERE name = :name', ['dumped' => date('Y-m-d H:i:s'), 'name' => 'vendor/bulk-stale']);
         $em->clear();
 
         $this->client->loginUser($admin);
@@ -762,8 +758,7 @@ class FilterListControllerTest extends IntegrationTestCase
 
         static::assertResponseRedirects('/admin/filter-lists/');
 
-        $dumpedAt = $em->getConnection()->fetchOne('SELECT dumpedAtV2 FROM package WHERE name = :name', ['name' => 'vendor/bulk-stale']);
-        static::assertNull($dumpedAt, 'Bulk changes must mark affected packages for re-dump.');
+        $this->assertPackageMarkedForRedump('vendor/bulk-stale', 'Bulk changes must mark affected packages for re-dump.');
     }
 
     public function testBulkRequiresCsrfToken(): void
@@ -844,5 +839,21 @@ class FilterListControllerTest extends IntegrationTestCase
         $request->link = $link;
 
         return FilterListEntry::createManual($request);
+    }
+
+    /**
+     * Marking records a dump request rather than nulling dumpedAtV2, so that a dumper run already in
+     * flight cannot overwrite it when it writes its dump times at the end of the run.
+     */
+    private function assertPackageMarkedForRedump(string $packageName, string $message): void
+    {
+        $row = self::getEM()->getConnection()->fetchAssociative(
+            'SELECT dumpedAtV2, dumpRequestedAt FROM package WHERE name = :name',
+            ['name' => $packageName]
+        );
+
+        static::assertIsArray($row);
+        static::assertNotNull($row['dumpRequestedAt'], $message);
+        static::assertGreaterThanOrEqual($row['dumpedAtV2'], $row['dumpRequestedAt'], $message);
     }
 }
