@@ -63,6 +63,25 @@ class SchedulerTest extends IntegrationTestCase
         self::assertTrue($reloaded->getPayload()['force_dump']);
     }
 
+    public function testAForcedJobScheduledForLaterKeepsForcingWhenCancelledForAnImmediateOne(): void
+    {
+        // A forced job carrying an executeAfter is not hypothetical: UpdaterWorker reschedules on lock
+        // contention, which re-queues the job *with* an executeAfter. A plain webhook push then takes
+        // the cancel-and-recreate path below — and used to recreate the job with the caller's plain
+        // payload, silently dropping the force.
+        $pending = $this->scheduler->scheduleUpdate($this->package, 'version_soft_delete', executeAfter: new \DateTimeImmutable('+1 hour'), forceDump: true);
+
+        $returned = $this->scheduler->scheduleUpdate($this->package, 'webhook');
+
+        self::assertNotSame($pending->getId(), $returned->getId(), 'the scheduled-for-later job should be replaced by an immediate one');
+        self::assertTrue($returned->getPayload()['force_dump'], 'the replacement job must inherit the force the cancelled job was carrying');
+
+        self::getEM()->clear();
+        $cancelled = self::getEM()->getRepository(Job::class)->find($pending->getId());
+        self::assertNotNull($cancelled);
+        self::assertSame(Job::STATUS_COMPLETED, $cancelled->getStatus());
+    }
+
     /**
      * @return array<Job<array<string, mixed>>>
      */

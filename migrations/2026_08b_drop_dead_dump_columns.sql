@@ -1,0 +1,11 @@
+-- Run AFTER the code is deployed: everything dropped here is still referenced by the previously
+-- deployed code. It reads and nulls package.dumpedAt, and its stale-package query names
+-- dumped2_crawled_frozen_idx in a USE INDEX hint, which errors out the moment the index is gone.
+-- The additive half runs before the deploy, see 2026_08_package_dump_requested_at.sql.
+--
+-- The v1 metadata dumper was removed; package.dumpedAt is dead. Nothing writes it a non-null value
+-- anymore (every setDumpedAt() call only ever nulled it), and its only readers --
+-- PackageRepository::getStalePackagesForDumping() and getPackageNamesUpdatedSince() -- had no callers.
+-- v2 dump staleness is driven by dumpedAtV2 / dumpRequestedAt (dumped2_idx and the wider
+-- dumped2_requested_crawled_frozen_idx, which supersedes dumped2_crawled_frozen_idx).
+ALTER TABLE package DROP INDEX dumped_idx, DROP COLUMN dumpedAt, DROP INDEX dumped2_crawled_frozen_idx;

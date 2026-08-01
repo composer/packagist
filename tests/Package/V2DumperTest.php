@@ -405,8 +405,7 @@ class V2DumperTest extends IntegrationTestCase
     {
         self::getEM()->clear();
 
-        // the command int-casts these too, the driver hands back numeric strings
-        return array_map('intval', self::getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2());
+        return self::getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2();
     }
 
     /**
