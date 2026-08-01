@@ -80,23 +80,6 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return array<string>
      */
-    public function getPackageNamesUpdatedSince(\DateTimeInterface $date): array
-    {
-        $query = $this->getEntityManager()
-            ->createQuery('
-                SELECT p.name FROM App\Entity\Package p
-                WHERE p.dumpedAt >= :date AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
-            ')
-            ->setParameters(['date' => $date, 'suppressed' => PackageFreezeReason::suppressingCases()]);
-
-        $names = $this->getPackageNamesForQuery($query);
-
-        return array_map('strtolower', $names);
-    }
-
-    /**
-     * @return array<string>
-     */
     public function getPackageNames(): array
     {
         $query = $this->getEntityManager()
@@ -286,24 +269,6 @@ class PackageRepository extends ServiceEntityRepository
         $conn = $this->getEntityManager()->getConnection();
 
         return $conn->fetchAllAssociative('SELECT p.id FROM package p WHERE p.indexedAt IS NULL OR p.indexedAt <= p.crawledAt ORDER BY p.id ASC');
-    }
-
-    /**
-     * @return list<int>
-     */
-    public function getStalePackagesForDumping(): array
-    {
-        $conn = $this->getEntityManager()->getConnection();
-
-        return $conn->fetchFirstColumn('
-            SELECT p.id
-            FROM package p
-            LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
-            WHERE (p.dumpedAt IS NULL OR (p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW()))
-            AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
-            AND (d.total > 1000 OR d.lastUpdated > :date)
-            ORDER BY p.crawledAt ASC
-        ', ['date' => date('Y-m-d H:i:s', strtotime('-4months')), 'suppressed' => PackageFreezeReason::suppressingValues()], ['suppressed' => ArrayParameterType::STRING]);
     }
 
     /**

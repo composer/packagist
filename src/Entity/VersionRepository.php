@@ -70,7 +70,6 @@ class VersionRepository extends ServiceEntityRepository
         $package->setCrawledAt(new \DateTimeImmutable());
         $package->setUpdatedAt(new \DateTimeImmutable());
         // removing a version changes the dumped metadata => mark for re-dump
-        $package->setDumpedAt(null);
         $package->setDumpedAtV2(null);
         $em->persist($package);
 
@@ -116,7 +115,6 @@ class VersionRepository extends ServiceEntityRepository
         } else {
             $version->getPackage()->setCrawledAt(new \DateTimeImmutable());
             // frozen packages are skipped by the Updater, so mark for re-dump directly
-            $version->getPackage()->setDumpedAt(null);
             $version->getPackage()->setDumpedAtV2(null);
             $this->getEntityManager()->persist($version->getPackage());
         }

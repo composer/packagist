@@ -488,7 +488,6 @@ class Updater
         // Null the dump timestamps only when this crawl actually changed dumpable content (or a dump was
         // explicitly forced) — an unchanged re-crawl must not re-stale the metadata.
         if (($flags & self::FORCE_DUMP) || $dumpableChanged) {
-            $package->setDumpedAt(null);
             $package->setDumpedAtV2(null);
         }
 

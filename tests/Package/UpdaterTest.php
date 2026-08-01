@@ -943,7 +943,6 @@ class UpdaterTest extends IntegrationTestCase
 
     public function testNullsDumpTimestampsWhenAVersionChanges(): void
     {
-        $this->package->setDumpedAt(new \DateTimeImmutable('2020-01-01'));
         $this->package->setDumpedAtV2(new \DateTimeImmutable('2020-01-01'));
         $this->store($this->package);
 
@@ -957,14 +956,12 @@ class UpdaterTest extends IntegrationTestCase
 
         $this->getEM()->refresh($this->package);
         self::assertNull($this->package->getDumpedAtV2(), 'a created version must mark the package for re-dump');
-        self::assertNull($this->package->getDumpedAt());
     }
 
     public function testDoesNotNullDumpTimestampsOnUnchangedRecrawl(): void
     {
         // an existing stable version already present with a reference matching the upstream below
         $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
-        $this->package->setDumpedAt(new \DateTimeImmutable('2020-01-01'));
         $this->package->setDumpedAtV2(new \DateTimeImmutable('2020-01-01'));
         $this->store($this->package);
 
@@ -978,7 +975,6 @@ class UpdaterTest extends IntegrationTestCase
 
         $this->getEM()->refresh($this->package);
         self::assertNotNull($this->package->getDumpedAtV2(), 'an unchanged re-crawl must not re-stale the metadata');
-        self::assertNotNull($this->package->getDumpedAt());
     }
 
     private function stableDriver(): VcsDriverInterface&Stub

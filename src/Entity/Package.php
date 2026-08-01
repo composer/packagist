@@ -100,7 +100,6 @@ enum PackageFreezeReason: string
 #[ORM\UniqueConstraint(name: 'package_name_idx', columns: ['name'])]
 #[ORM\Index(name: 'indexed_idx', columns: ['indexedAt'])]
 #[ORM\Index(name: 'crawled_idx', columns: ['crawledAt'])]
-#[ORM\Index(name: 'dumped_idx', columns: ['dumpedAt'])]
 #[ORM\Index(name: 'dumped2_idx', columns: ['dumpedAtV2'])]
 #[ORM\Index(name: 'repository_idx', columns: ['repository'])]
 #[ORM\Index(name: 'remoteid_idx', columns: ['remoteId'])]
@@ -188,9 +187,6 @@ class Package
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $indexedAt = null;
-
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $dumpedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $dumpedAtV2 = null;
@@ -691,16 +687,6 @@ class Package
     public function getIndexedAt(): ?\DateTimeImmutable
     {
         return $this->indexedAt;
-    }
-
-    public function setDumpedAt(?\DateTimeImmutable $dumpedAt): void
-    {
-        $this->dumpedAt = $dumpedAt;
-    }
-
-    public function getDumpedAt(): ?\DateTimeImmutable
-    {
-        return $this->dumpedAt;
     }
 
     public function setDumpedAtV2(?\DateTimeImmutable $dumpedAt): void
