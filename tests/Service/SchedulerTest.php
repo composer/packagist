@@ -31,29 +31,23 @@ class SchedulerTest extends IntegrationTestCase
         $this->store($this->package);
     }
 
-    public function testForceDumpIsCarriedOverToAnAlreadyPendingJob(): void
+    public function testAForcedRequestIsNotSwallowedByAPendingPlainJob(): void
     {
-        // force_dump is not part of the dedup key, so without carrying it over a plain job queued by
-        // e.g. a webhook push would swallow the request entirely — which is how a soft-deleted version
-        // or an unfreeze could silently fail to be re-dumped.
+        // force_dump is part of the dedup key, so a plain job queued by e.g. a webhook push cannot
+        // absorb a forced request and silently drop the forcing.
         $pending = $this->scheduler->scheduleUpdate($this->package, 'webhook');
         self::assertFalse($pending->getPayload()['force_dump']);
 
-        $returned = $this->scheduler->scheduleUpdate($this->package, 'version_soft_delete', forceDump: true);
+        $returned = $this->scheduler->scheduleUpdate($this->package, 'button/api', forceDump: true);
 
-        self::assertSame($pending->getId(), $returned->getId(), 'the pending job should be reused, not duplicated');
-        self::assertCount(1, $this->queuedUpdateJobs(), 'no second job should be queued for the same package');
-
-        self::getEM()->clear();
-        $reloaded = self::getEM()->getRepository(Job::class)->find($pending->getId());
-        self::assertNotNull($reloaded);
-        self::assertTrue($reloaded->getPayload()['force_dump'], 'the pending job must be upgraded to force a re-dump');
-        self::assertSame('webhook', $reloaded->getPayload()['source'], 'the rest of the payload must be left alone');
+        self::assertNotSame($pending->getId(), $returned->getId());
+        self::assertTrue($returned->getPayload()['force_dump']);
+        self::assertCount(2, $this->queuedUpdateJobs(), 'forced schedules are rare, so a second crawl is an acceptable price');
     }
 
     public function testAPendingForcedJobIsNotDowngradedByALaterPlainRequest(): void
     {
-        $pending = $this->scheduler->scheduleUpdate($this->package, 'version_soft_delete', forceDump: true);
+        $pending = $this->scheduler->scheduleUpdate($this->package, 'button/api', forceDump: true);
 
         $this->scheduler->scheduleUpdate($this->package, 'webhook');
 
@@ -61,24 +55,34 @@ class SchedulerTest extends IntegrationTestCase
         $reloaded = self::getEM()->getRepository(Job::class)->find($pending->getId());
         self::assertNotNull($reloaded);
         self::assertTrue($reloaded->getPayload()['force_dump']);
+        self::assertSame(Job::STATUS_QUEUED, $reloaded->getStatus(), 'the forced job must not be cancelled by the plain one');
     }
 
-    public function testAForcedJobScheduledForLaterKeepsForcingWhenCancelledForAnImmediateOne(): void
+    public function testTwoPlainRequestsStillDedupe(): void
     {
-        // Not hypothetical: UpdaterWorker reschedules on lock contention, re-queueing the job *with* an
-        // executeAfter. A plain webhook push then takes the cancel-and-recreate path, which used to
-        // recreate the job with the caller's plain payload and silently drop the force.
-        $pending = $this->scheduler->scheduleUpdate($this->package, 'version_soft_delete', executeAfter: new \DateTimeImmutable('+1 hour'), forceDump: true);
+        $pending = $this->scheduler->scheduleUpdate($this->package, 'webhook');
 
         $returned = $this->scheduler->scheduleUpdate($this->package, 'webhook');
 
-        self::assertNotSame($pending->getId(), $returned->getId(), 'the scheduled-for-later job should be replaced by an immediate one');
-        self::assertTrue($returned->getPayload()['force_dump'], 'the replacement job must inherit the force the cancelled job was carrying');
+        self::assertSame($pending->getId(), $returned->getId());
+        self::assertCount(1, $this->queuedUpdateJobs(), 'the common push path must not start duplicating crawls');
+    }
+
+    public function testAForcedJobScheduledForLaterIsNotCancelledByAnImmediatePlainOne(): void
+    {
+        // UpdaterWorker reschedules on lock contention, re-queueing the job *with* an executeAfter. A
+        // plain push must not take the cancel-and-recreate path against it, or the forcing is lost.
+        $pending = $this->scheduler->scheduleUpdate($this->package, 'button/api', executeAfter: new \DateTimeImmutable('+1 hour'), forceDump: true);
+
+        $returned = $this->scheduler->scheduleUpdate($this->package, 'webhook');
+
+        self::assertNotSame($pending->getId(), $returned->getId());
 
         self::getEM()->clear();
-        $cancelled = self::getEM()->getRepository(Job::class)->find($pending->getId());
-        self::assertNotNull($cancelled);
-        self::assertSame(Job::STATUS_COMPLETED, $cancelled->getStatus());
+        $reloaded = self::getEM()->getRepository(Job::class)->find($pending->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame(Job::STATUS_QUEUED, $reloaded->getStatus(), 'the forced job must survive to run at its scheduled time');
+        self::assertTrue($reloaded->getPayload()['force_dump']);
     }
 
     /**

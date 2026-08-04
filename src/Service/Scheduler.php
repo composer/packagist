@@ -30,9 +30,6 @@ class Scheduler
     }
 
     /**
-     * Note this can flush even when it returns an already-pending job instead of creating one, as
-     * upgrading that job's payload to carry force_dump has to be committed.
-     *
      * @return Job<PackageUpdateJob>
      */
     public function scheduleUpdate(Package|int $packageOrId, string $source, bool $updateSourceDistUrl = false, bool $deleteBefore = false, ?\DateTimeImmutable $executeAfter = null, bool $forceDump = false): Job
@@ -41,37 +38,20 @@ class Scheduler
             $packageOrId = $packageOrId->getId();
         }
 
-        $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateSourceDistUrl, $deleteBefore);
+        $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateSourceDistUrl, $deleteBefore, $forceDump);
         if ($pendingJobId && ($pendingJob = $this->getEM()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId])) !== null) {
-            $pendingForced = ($pendingJob->getPayload()['force_dump'] ?? false) === true;
-
-            // the pending job runs no later than ours, so it stands in for it
-            $pendingJobWins =
-                // pending job will execute before the one we are trying to schedule
+            // pending job will execute before the one we are trying to schedule so skip scheduling
+            if (
                 (!$pendingJob->getExecuteAfter() && $executeAfter)
                 || ($pendingJob->getExecuteAfter() && $executeAfter && $pendingJob->getExecuteAfter() < $executeAfter)
-                // neither has executeAfter, so the two are equivalent
-                || (!$pendingJob->getExecuteAfter() && !$executeAfter);
-
-            if ($pendingJobWins) {
-                // force_dump is not part of the dedup key, so a plain job queued by e.g. a webhook push
-                // would otherwise swallow the request. Carry the intent over instead of queueing a
-                // second job. Best-effort: the worker may already have read the payload, in which case
-                // the forcing is lost — the direct markForDump() calls in VersionRepository are what
-                // make that survivable.
-                if ($forceDump && !$pendingForced) {
-                    $payload = $pendingJob->getPayload();
-                    $payload['force_dump'] = true;
-                    $pendingJob->setPayload($payload);
-                    $this->getEM()->flush();
-                }
-
+            ) {
                 return $pendingJob;
             }
 
-            // carry a force the pending job already had onto the replacement job created below, which
-            // otherwise only sees the caller's intent
-            $forceDump = $forceDump || $pendingForced;
+            // neither job has executeAfter, so the pending one is equivalent to the one we are trying to schedule and we can skip scheduling
+            if (!$pendingJob->getExecuteAfter() && !$executeAfter) {
+                return $pendingJob;
+            }
 
             // pending job would execute after the one we are scheduling so we mark it complete and schedule a new job to run immediately
             $pendingJob->start();
@@ -124,7 +104,7 @@ class Scheduler
         return $this->createJob('package:purge', $payload, $package->getId());
     }
 
-    private function getPendingUpdateJob(int $packageId, bool $updateSourceDistUrl = false, bool $deleteBefore = false): ?string
+    private function getPendingUpdateJob(int $packageId, bool $updateSourceDistUrl = false, bool $deleteBefore = false, bool $forceDump = false): ?string
     {
         $result = $this->getEM()->getConnection()->fetchAssociative(
             'SELECT id, payload FROM job WHERE packageId = :package AND status = :status AND type = :type LIMIT 1',
@@ -137,7 +117,14 @@ class Scheduler
 
         if ($result) {
             $payload = json_decode($result['payload'], true);
-            if (($payload['update_source_dist_url'] ?? false) === $updateSourceDistUrl && $payload['delete_before'] === $deleteBefore) {
+            // force_dump is part of the key: a pending plain job must not swallow a forced request, as
+            // the forcing would be lost outright. Forced schedules are rare enough that the occasional
+            // duplicate crawl this allows is cheaper than reconciling payloads.
+            if (
+                ($payload['update_source_dist_url'] ?? false) === $updateSourceDistUrl
+                && $payload['delete_before'] === $deleteBefore
+                && ($payload['force_dump'] ?? false) === $forceDump
+            ) {
                 return $result['id'];
             }
         }
