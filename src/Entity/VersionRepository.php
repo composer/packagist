@@ -125,6 +125,11 @@ class VersionRepository extends ServiceEntityRepository
             // still schedule the crawl so dependents/suggesters get recomputed without this version
             $this->scheduler->scheduleUpdate($version->getPackage(), 'version_soft_delete', forceDump: true);
         } else {
+            // A frozen package gets no crawl, and the mark above deliberately replaces the crawledAt
+            // bump this used to do. That also means no search reindex, since
+            // PackageRepository::getStalePackagesForIndexing() keys off indexedAt <= crawledAt — which
+            // is fine, as the search document is package-level and does not change when one version is
+            // pulled.
             $this->getEntityManager()->persist($version->getPackage());
         }
     }

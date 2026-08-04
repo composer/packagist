@@ -282,8 +282,10 @@ class PackageRepository extends ServiceEntityRepository
         // is deliberate: both columns hold whole seconds, so a request landing in the same second as
         // the dump is ambiguous and must count as stale — the redundant pass costs a content comparison
         // in V2Dumper::writeV2File() and reports result:skipped, whereas a missed one is a lost change.
-        // The crawledAt clause is the transitional safety net kept until the gap-detector proves every
-        // content change marks the package; see metadata-dump-followups.md.
+        // The crawledAt clause is the transitional safety net that keeps re-dumping on every crawl. It
+        // can be dropped once the gap-detector proves every content change marks its package, i.e. once
+        // metadata_dump.file{result:written, requested:false} sits at ~0 outside --force runs (those
+        // select everything, so they land in that bucket too).
         // Note this scans the index rather than seeking it (both clauses compare column to column),
         // which is why USE INDEX and covering all four columns matter.
         $sql = 'SELECT p.id FROM package p USE INDEX (dumped2_requested_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR p.dumpRequestedAt >= p.dumpedAtV2 OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';

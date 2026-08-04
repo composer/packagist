@@ -754,9 +754,10 @@ class Package
      * Whether something requested a re-dump since the package was last dumped.
      *
      * Deliberately NOT a mirror of PackageRepository::getStalePackagesForDumpingV2(): the stale query
-     * also sweeps in packages whose crawledAt is newer than their dump, and this must not, or the
-     * metadata_dump.file{requested} gap-detector could no longer tell a package that was marked apart
-     * from one that transitional clause merely caught. See metadata-dump-followups.md.
+     * also sweeps in packages whose crawledAt is newer than their dump, and this must not. The
+     * metadata_dump.file{requested} tag is what tells a package something actually marked apart from
+     * one that transitional clause merely caught, and folding the clause in here would make every
+     * package "requested" and the tag useless.
      */
     public function isDumpRequested(): bool
     {

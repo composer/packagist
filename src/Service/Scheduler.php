@@ -30,6 +30,9 @@ class Scheduler
     }
 
     /**
+     * Note this can flush even when it returns an already-pending job instead of creating one, as
+     * upgrading that job's payload to carry force_dump has to be committed.
+     *
      * @return Job<PackageUpdateJob>
      */
     public function scheduleUpdate(Package|int $packageOrId, string $source, bool $updateSourceDistUrl = false, bool $deleteBefore = false, ?\DateTimeImmutable $executeAfter = null, bool $forceDump = false): Job
@@ -40,34 +43,37 @@ class Scheduler
 
         $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateSourceDistUrl, $deleteBefore);
         if ($pendingJobId && ($pendingJob = $this->getEM()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId])) !== null) {
-            // force_dump is not part of the dedup key, so a plain job queued by e.g. a webhook push would
-            // otherwise swallow the request entirely. Carry the intent over to the pending job, which
-            // runs no later than ours would, rather than queueing a second job for the same package.
-            // Best-effort: the worker may already have start()ed and read the payload, in which case the
-            // upgrade lands on a job that will never re-read it. The direct markForDump() calls in
-            // VersionRepository are what make that survivable — only the forcing itself is lost.
             $pendingForced = ($pendingJob->getPayload()['force_dump'] ?? false) === true;
-            if ($forceDump && !$pendingForced) {
-                $pendingJob->setPayload(['force_dump' => true] + $pendingJob->getPayload());
-                $this->getEM()->flush();
-            }
 
-            // and carry a force the pending job already had onto the replacement job that the
-            // cancel-and-recreate path below creates, which otherwise only sees the caller's intent
-            $forceDump = $forceDump || $pendingForced;
-
-            // pending job will execute before the one we are trying to schedule so skip scheduling
-            if (
+            // The pending job runs no later than the one we are trying to schedule, so it stands in for
+            // it, either because it executes first or because the two are equivalent.
+            $pendingJobWins =
+                // pending job will execute before the one we are trying to schedule
                 (!$pendingJob->getExecuteAfter() && $executeAfter)
                 || ($pendingJob->getExecuteAfter() && $executeAfter && $pendingJob->getExecuteAfter() < $executeAfter)
-            ) {
+                // neither job has executeAfter, so the pending one is equivalent to the one we are trying to schedule
+                || (!$pendingJob->getExecuteAfter() && !$executeAfter);
+
+            if ($pendingJobWins) {
+                // force_dump is not part of the dedup key, so a plain job queued by e.g. a webhook push
+                // would otherwise swallow the request entirely. Carry the intent over to the pending job
+                // rather than queueing a second job for the same package. Best-effort: the worker may
+                // already have start()ed and read the payload, in which case the upgrade lands on a job
+                // that will never re-read it. The direct markForDump() calls in VersionRepository are
+                // what make that survivable — only the forcing itself is lost.
+                if ($forceDump && !$pendingForced) {
+                    $payload = $pendingJob->getPayload();
+                    $payload['force_dump'] = true;
+                    $pendingJob->setPayload($payload);
+                    $this->getEM()->flush();
+                }
+
                 return $pendingJob;
             }
 
-            // neither job has executeAfter, so the pending one is equivalent to the one we are trying to schedule and we can skip scheduling
-            if (!$pendingJob->getExecuteAfter() && !$executeAfter) {
-                return $pendingJob;
-            }
+            // carry a force the pending job already had onto the replacement job created below, which
+            // otherwise only sees the caller's intent
+            $forceDump = $forceDump || $pendingForced;
 
             // pending job would execute after the one we are scheduling so we mark it complete and schedule a new job to run immediately
             $pendingJob->start();

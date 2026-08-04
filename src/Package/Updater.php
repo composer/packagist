@@ -811,8 +811,10 @@ class Updater
                 // condition above keys off exactly this comparison, so writing it only while
                 // transitioning to abandoned leaves a standing mismatch — from a manual abandon, or
                 // from composer.json naming a different replacement than before — that rebuilds this
-                // version on every crawl and never converges. composer.json wins here: a package
-                // abandoned only through the UI never reaches this branch.
+                // version on every crawl and never converges. composer.json wins over the stored value
+                // here, but only while it declares abandonment: this whole branch is skipped otherwise,
+                // so dropping "abandoned" from composer.json does not un-abandon the package, and
+                // nothing here overwrites a package abandoned purely through the UI.
                 $package->setReplacementPackage($this->normalizeReplacementPackage($data->getReplacementPackage()));
             }
         }
@@ -1254,14 +1256,19 @@ class Updater
     /**
      * Normalizes an upstream "abandoned" replacement exactly as Package::setReplacementPackage() stores
      * it. The rebuild trigger in updateInformation() compares the declared value against the stored one,
-     * so every transformation the storage applies — a stripped control char, '' collapsing to null — has
-     * to be applied here too, or the two can never agree and the version is rebuilt on every crawl.
+     * so every transformation the storage applies — a stripped control char, '' collapsing to null, the
+     * column's own 255 char limit — has to be applied here too, or the two can never agree and the
+     * version is rebuilt on every crawl. Capping here also keeps an over-long upstream value from
+     * failing the flush outright under MySQL's strict mode, which would fail every crawl of the package.
      */
     private function normalizeReplacementPackage(?string $replacement): ?string
     {
         $replacement = $this->sanitize($replacement);
+        if ($replacement === null || $replacement === '') {
+            return null;
+        }
 
-        return $replacement === '' ? null : $replacement;
+        return mb_substr($replacement, 0, 255);
     }
 
     /**

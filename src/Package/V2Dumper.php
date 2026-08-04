@@ -207,7 +207,10 @@ class V2Dumper
                 $versionData = $versionRepo->getVersionData($versionIds);
                 $this->statsd->timing('packagist.metadata_dump.db_time', round((microtime(true) - $versionDataStart) * 1000, 4), ['op' => 'versiondata', 'worker' => (string) $workerId]);
 
-                // instrumentation only: count processed packages and how many need a full (forced) dump vs. a cheap early-return
+                // instrumentation only: count processed packages and how many need a full (forced) dump vs. a cheap early-return.
+                // Note isDumpForced() is "dumpedAtV2 IS NULL", which a never-dumped package satisfies just as a
+                // deliberately forced one does, so newly submitted packages inflate run_forcedump too — read it as
+                // "full writes", not "forceDump() calls".
                 $processedPackages++;
                 if ($package->isDumpForced()) {
                     $forceDumpPackages++;
@@ -368,11 +371,11 @@ class V2Dumper
 
     /**
      * @param array<array{advisoryId: string, affectedVersions: string}>|null $advisories
-     * @param array<string, list<DumpableFilterList>>|null                    $fitlerLists
+     * @param array<string, list<DumpableFilterList>>|null                    $filterLists
      * @param array<Version>                                                  $versions
      * @param VersionData                                                     $versionData
      */
-    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, ?array $advisories = null, ?array $fitlerLists = null): void
+    private function dumpVersionsToV2File(Package $package, string $name, string $dir, string $filename, string $packageName, array $versions, array $versionData, ?array $advisories = null, ?array $filterLists = null): void
     {
         $versionArrays = [];
         foreach ($versions as $version) {
@@ -392,8 +395,8 @@ class V2Dumper
             $metadata['security-advisories'] = $advisories;
         }
 
-        if ($fitlerLists !== null) {
-            $metadata['filter'] = $fitlerLists;
+        if ($filterLists !== null) {
+            $metadata['filter'] = $filterLists;
         }
 
         $json = json_encode($metadata, \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR);
@@ -515,6 +518,13 @@ class V2Dumper
 
             $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
             $this->statsd->increment('packagist.metadata_dump_v2');
+        } catch (\Throwable $e) {
+            // $result is set optimistically before the CDN upload, replica write and purge run, so
+            // without this a write that threw would be counted as a successful one — and the
+            // written/created split below is what gates dropping the crawledAt clause
+            $result = 'failed';
+
+            throw $e;
         } finally {
             // instrumentation only: per-file duration + outcome counter, and a warning log for the slow outliers
             $fileMs = round((microtime(true) - $fileStart) * 1000, 4);
@@ -526,7 +536,10 @@ class V2Dumper
             //    this bucket; note --force runs select everything, so they land here too.
             //  - {skipped, requested:true} is the inverse: something marked the package but its content
             //    did not actually change, i.e. a path marking more eagerly than it needs to. Deliberate
-            //    Package::forceDump() paths bypass the comparison, so they never land here.
+            //    Package::forceDump() paths bypass the comparison, so they never land here. This one has
+            //    a permanent noise floor rather than a zero baseline: by the >= rule every mark landing
+            //    in a run's $dumpTime second is re-dumped once on purpose, so watch it for a step change,
+            //    not for the absolute value.
             // ({skipped, requested:false} is just the crawledAt flood that Phase 2 exists to remove.)
             $gapTags = ['requested' => $package->isDumpRequested() ? 'true' : 'false'];
             $this->statsd->timing('packagist.metadata_dump.file_time', $fileMs, ['result' => $result] + $workerTag);
