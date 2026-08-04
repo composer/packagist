@@ -1275,10 +1275,9 @@ class UpdaterTest extends IntegrationTestCase
         $versionId = $existing->getId();
         $this->markPackageAsDumped();
 
-        // replacementPackage is a 255 char column: an over-long upstream value has to be capped before
-        // it is stored, or the flush fails outright under strict mode — and were it merely truncated by
-        // the DB, the stored value could never equal the declared one and the default-branch version
-        // would be rebuilt (bumping published-time, so a real CDN write) on every single crawl
+        // replacementPackage is a 255 char column, so an over-long value has to be capped before it is
+        // stored or the flush fails under strict mode — and truncating it in the DB instead would leave
+        // stored and declared forever unequal, rebuilding the version on every crawl
         $overlong = 'new/'.str_repeat('a', 300);
         $upstream = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890');
         $upstream->setIsDefaultBranch(true);

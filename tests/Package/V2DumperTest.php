@@ -288,10 +288,9 @@ class V2DumperTest extends IntegrationTestCase
 
     public function testAMarkInTheSameSecondAsTheDumpIsRedumpedOnceThenConverges(): void
     {
-        // Both columns hold whole seconds, so a mark stamped in the same second the dumper captured its
-        // dump time is genuinely ambiguous — it may have landed before or after the package was
-        // hydrated. The staleness predicate uses >= so that ambiguity resolves towards re-dumping,
-        // which costs one cheap content-comparison pass rather than risking a lost change.
+        // Both columns hold whole seconds, so a mark stamped in the same second as the dumper's dump
+        // time may have landed before or after hydration. The >= resolves that towards re-dumping,
+        // which costs one content comparison rather than risking a lost change.
         $this->primeBuildDir();
         $package = self::createPackage('acme/package', 'https://example.com/acme/package');
         $this->store($package, $this->createVersion($package, '1.0.0'));
@@ -311,19 +310,16 @@ class V2DumperTest extends IntegrationTestCase
 
     public function testAMarkLandingDuringADumpRunSurvivesIt(): void
     {
-        // The dumper records dumpedAtV2 for the whole run only at the very end — after the batch loop,
-        // the CDN verification and the bulk purge. Anything marking the package in that window used to
-        // have its mark overwritten and lost outright; the advisory and filter-list listeners, which
-        // never touch crawledAt, had nothing to rescue them. Fire a mark from inside the CDN upload,
-        // which happens exactly in that window, and assert the package stays stale.
+        // dumpedAtV2 is recorded for the whole run only at the very end, so anything marking the package
+        // in that window used to have its mark overwritten and lost. Fire a mark from inside the CDN
+        // upload, which happens exactly in that window, and assert the package stays stale.
         $this->primeBuildDir();
         $package = self::createPackage('acme/package', 'https://example.com/acme/package');
         $this->store($package, $this->createVersion($package, '1.0.0'));
         $packageId = $package->getId();
-        // Unambiguously in the past, so the run below clears it and the mid-run mark is the only
-        // thing that can keep the package stale. Marking here instead would land in the same second
-        // as the dumper's $dumpTime, which the >= rule counts as stale on its own — the assertion
-        // would then hold whether or not the hook ever fired.
+        // Unambiguously in the past, so the run below clears it and only the mid-run mark can keep the
+        // package stale. markForDump() here would land in the dumper's $dumpTime second, which the >=
+        // rule counts as stale on its own, and the assertion would hold even if the hook never fired.
         $this->requestDumpAt($packageId, '-1 minute');
 
         $conn = self::getEM()->getConnection();
@@ -342,9 +338,7 @@ class V2DumperTest extends IntegrationTestCase
     public function testUnchangedContentIsNotRewrittenForAnOrdinaryMark(): void
     {
         // An ordinary markForDump() must not bypass the content comparison: every package the stale
-        // query hands us is "requested", so honouring that here would make the comparison dead code and
-        // turn every dump into a real CDN write. It also keeps result:skipped meaningful — a skipped
-        // file that was requested means something marked the package it did not need to.
+        // query hands us is "requested", so honouring that would turn every dump into a real CDN write.
         // The deliberate force path is covered by testForceDumpRewritesUnchangedContent().
         $this->primeBuildDir();
         $package = self::createPackage('acme/package', 'https://example.com/acme/package');

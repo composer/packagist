@@ -169,11 +169,10 @@ class V2Dumper
         while ($packageIds) {
             $this->statsd->gauge('packagist.metadata_dump_queue', \count($packageIds), ['worker' => (string) $workerId]);
 
-            // Captured before the hydration below, and load-bearing: it is what makes the dumpedAtV2
-            // write at the end of the run race-free. A markForDump() landing after this point leaves
-            // dumpRequestedAt >= the dumpedAtV2 we are about to record, so the package stays stale and
-            // is simply picked up again next run. Moving this below the hydration silently loses those
-            // marks instead.
+            // Captured before the hydration below, and load-bearing: a markForDump() landing after this
+            // point leaves dumpRequestedAt >= the dumpedAtV2 we are about to record, so the package
+            // stays stale and is picked up next run. Move it below the hydration and those marks are
+            // silently lost.
             $dumpTime = new \DateTime();
             $idBatch = array_splice($packageIds, 0, $step);
             $this->logger->debug('Dumping package ids', ['ids' => $idBatch]);
@@ -207,10 +206,9 @@ class V2Dumper
                 $versionData = $versionRepo->getVersionData($versionIds);
                 $this->statsd->timing('packagist.metadata_dump.db_time', round((microtime(true) - $versionDataStart) * 1000, 4), ['op' => 'versiondata', 'worker' => (string) $workerId]);
 
-                // instrumentation only: count processed packages and how many need a full (forced) dump vs. a cheap early-return.
-                // Note isDumpForced() is "dumpedAtV2 IS NULL", which a never-dumped package satisfies just as a
-                // deliberately forced one does, so newly submitted packages inflate run_forcedump too — read it as
-                // "full writes", not "forceDump() calls".
+                // instrumentation only: count processed packages and how many need a full (forced) dump vs. a cheap
+                // early-return. isDumpForced() is "dumpedAtV2 IS NULL", which never-dumped packages satisfy too, so
+                // read run_forcedump as "full writes", not "forceDump() calls".
                 $processedPackages++;
                 if ($package->isDumpForced()) {
                     $forceDumpPackages++;
@@ -440,11 +438,9 @@ class V2Dumper
                 // does not land in the result:written bucket that gates dropping the crawledAt clause
                 $result = 'created';
             } elseif (!$package->isDumpForced() && file_get_contents($path) === $contents) {
-                // Note this deliberately keys off isDumpForced(), not isDumpRequested(). Every package
-                // the stale query hands us is "requested", so honouring that here would make the
-                // comparison dead code and turn every dump into a real CDN write. Only the explicit
-                // Package::forceDump() paths bypass it, which is what makes result:skipped a useful
-                // signal — see the counter below.
+                // Deliberately isDumpForced(), not isDumpRequested(): every package the stale query hands
+                // us is "requested", so honouring that would make this comparison dead code and turn
+                // every dump into a real CDN write.
                 $result = 'skipped';
 
                 return;
@@ -519,28 +515,20 @@ class V2Dumper
             $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
             $this->statsd->increment('packagist.metadata_dump_v2');
         } catch (\Throwable $e) {
-            // $result is set optimistically before the CDN upload, replica write and purge run, so
-            // without this a write that threw would be counted as a successful one — and the
-            // written/created split below is what gates dropping the crawledAt clause
+            // $result is set optimistically before the upload/replica/purge run, so without this a write
+            // that threw would count as a successful one in the gate below
             $result = 'failed';
 
             throw $e;
         } finally {
             // instrumentation only: per-file duration + outcome counter, and a warning log for the slow outliers
             $fileMs = round((microtime(true) - $fileStart) * 1000, 4);
-            // Two signals, both keyed on whether the package was marked for re-dump or was merely swept
-            // up by the crawledAt clause:
-            //  - {written, requested:false} is the gap-detector: a content change that only crawledAt
-            //    caught, i.e. a change path that fails to mark. Must sit at ~0 before we drop the
-            //    crawledAt clause from the stale query. result:created keeps first-time writes out of
-            //    this bucket; note --force runs select everything, so they land here too.
-            //  - {skipped, requested:true} is the inverse: something marked the package but its content
-            //    did not actually change, i.e. a path marking more eagerly than it needs to. Deliberate
-            //    Package::forceDump() paths bypass the comparison, so they never land here. This one has
-            //    a permanent noise floor rather than a zero baseline: by the >= rule every mark landing
-            //    in a run's $dumpTime second is re-dumped once on purpose, so watch it for a step change,
-            //    not for the absolute value.
-            // ({skipped, requested:false} is just the crawledAt flood that Phase 2 exists to remove.)
+            // Two signals, keyed on whether the package was marked or merely swept up by the crawledAt
+            // clause:
+            //  - {written, requested:false} is the gap-detector: a change path that failed to mark. Must
+            //    sit at ~0 before the crawledAt clause can be dropped (--force runs land here too).
+            //  - {skipped, requested:true} is the inverse, a path marking more eagerly than it needs to.
+            //    The >= rule gives this a permanent noise floor, so watch it for a step change.
             $gapTags = ['requested' => $package->isDumpRequested() ? 'true' : 'false'];
             $this->statsd->timing('packagist.metadata_dump.file_time', $fileMs, ['result' => $result] + $workerTag);
             $this->statsd->increment('packagist.metadata_dump.file', 1, 1, ['result' => $result] + $gapTags + $workerTag);

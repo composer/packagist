@@ -65,10 +65,9 @@ class SchedulerTest extends IntegrationTestCase
 
     public function testAForcedJobScheduledForLaterKeepsForcingWhenCancelledForAnImmediateOne(): void
     {
-        // A forced job carrying an executeAfter is not hypothetical: UpdaterWorker reschedules on lock
-        // contention, which re-queues the job *with* an executeAfter. A plain webhook push then takes
-        // the cancel-and-recreate path below — and used to recreate the job with the caller's plain
-        // payload, silently dropping the force.
+        // Not hypothetical: UpdaterWorker reschedules on lock contention, re-queueing the job *with* an
+        // executeAfter. A plain webhook push then takes the cancel-and-recreate path, which used to
+        // recreate the job with the caller's plain payload and silently drop the force.
         $pending = $this->scheduler->scheduleUpdate($this->package, 'version_soft_delete', executeAfter: new \DateTimeImmutable('+1 hour'), forceDump: true);
 
         $returned = $this->scheduler->scheduleUpdate($this->package, 'webhook');
