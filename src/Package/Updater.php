@@ -460,6 +460,29 @@ class Updater
             }
         }
 
+        // Mark the package as ready for dump, pinned between two constraints.
+        //
+        // Late enough: marking tells a concurrently running dumper the package is ready, and every
+        // version write of this crawl is done by now. Marking per version instead lets a dumper dump a
+        // half-written package and stamp dumpedAtV2 past the mark, so the rows written after it never
+        // get dumped at all.
+        //
+        // Early enough: update() is not transactional, so a mark left until after the network-bound
+        // tail below (GitHub/GitLab metadata, readme, provider list) is lost whenever that throws while
+        // the change it describes stays committed — and the next crawl, finding the rows already
+        // matching upstream, marks nothing. Nothing below here changes dumpable content.
+        //
+        // FORCE_DUMP (manual update button, unfreeze, repo URL rewrite) escalates to a full re-write
+        // even when nothing changed, busting the CDN cache. The flush is unconditional as it also
+        // commits the marks VersionRepository::remove() set while pruning above.
+        if ($flags & self::FORCE_DUMP) {
+            $package->forceDump();
+        } elseif ($dumpableChanged) {
+            $package->markForDump();
+        }
+
+        $em->flush();
+
         if (null !== ($match = $package->getGitHubComponents())) {
             $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver);
         } elseif (null !== ($match = $package->getGitLabComponents())) {
@@ -485,16 +508,6 @@ class Updater
 
         $package->setUpdatedAt(new \DateTimeImmutable());
         $package->setCrawledAt(new \DateTimeImmutable());
-
-        // Mark for re-dump only when this crawl actually changed dumpable content — an unchanged
-        // re-crawl must not re-stale the metadata. FORCE_DUMP (the manual update button, an unfreeze,
-        // a repo URL rewrite) escalates to a full re-write even when nothing changed, so the CDN cache
-        // is busted and the files are republished.
-        if ($flags & self::FORCE_DUMP) {
-            $package->forceDump();
-        } elseif ($dumpableChanged) {
-            $package->markForDump();
-        }
 
         $em->flush();
         if ($repository->hadInvalidBranches()) {
