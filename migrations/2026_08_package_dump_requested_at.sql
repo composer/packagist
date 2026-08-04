@@ -7,7 +7,7 @@
 -- was silently overwritten and the change never dumped. The crawledAt clause masked this for the
 -- Updater, but not for the advisory / filter-list listeners, which never touch crawledAt.
 -- dumpRequestedAt records the request instead, and staleness compares the two, so a mark can no
--- longer be lost. See metadata-dump-followups.md.
+-- longer be lost.
 --
 -- Two statements on purpose: on its own the ADD COLUMN can run ALGORITHM=INSTANT, whereas folding it
 -- into the index DDL drags it down to an INPLACE rebuild of the whole package table.

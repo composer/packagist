@@ -957,6 +957,41 @@ class UpdaterTest extends IntegrationTestCase
         self::assertTrue($this->package->isDumpRequested(), 'a created version must mark the package for re-dump');
     }
 
+    public function testMarksForDumpEvenWhenTheCrawlFailsAfterTheVersionWasWritten(): void
+    {
+        // Version writes are committed as they happen, well before the crawl's network-bound tail
+        // (GitHub/GitLab metadata, readme, the provider list). A failure in that tail must not lose
+        // the mark: the next crawl finds the row already matching upstream and has nothing left to
+        // notice, so the change would stay unpublished. Only the transitional crawledAt clause in the
+        // stale query rescues that today — and only via a *later* successful crawl.
+        $this->markPackageAsDumped();
+
+        $providerManager = $this->createStub(ProviderManager::class);
+        $providerManager->method('packageExists')->willThrowException(new \RuntimeException('provider list unreachable'));
+        $this->rebuildUpdater($this->createStub(PackageManager::class), $providerManager);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        try {
+            $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+            self::fail('the crawl was expected to fail after the version had been written');
+        } catch (\RuntimeException $e) {
+            self::assertSame('provider list unreachable', $e->getMessage());
+        }
+
+        self::assertNotNull(
+            $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']),
+            'the version must have been committed before the failure, or this test proves nothing'
+        );
+
+        $this->getEM()->refresh($this->package);
+        self::assertTrue($this->package->isDumpRequested(), 'a committed version change must stay marked when the rest of the crawl fails');
+    }
+
     public function testDoesNotMarkForDumpOnUnchangedStableRecrawl(): void
     {
         // an existing stable version already present with a reference matching the upstream below
@@ -1198,6 +1233,57 @@ class UpdaterTest extends IntegrationTestCase
         );
     }
 
+    public function testAnOverlongReplacementIsCappedAndStillConverges(): void
+    {
+        $em = self::getEM();
+        $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        $existing->setIsDefaultBranch(true);
+        $em->persist($existing);
+        $versionId = $existing->getId();
+        $this->markPackageAsDumped();
+
+        // replacementPackage is a 255 char column: an over-long upstream value has to be capped before
+        // it is stored, or the flush fails outright under strict mode — and were it merely truncated by
+        // the DB, the stored value could never equal the declared one and the default-branch version
+        // would be rebuilt (bumping published-time, so a real CDN write) on every single crawl
+        $overlong = 'new/'.str_repeat('a', 300);
+        $upstream = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890');
+        $upstream->setIsDefaultBranch(true);
+        $upstream->setAbandoned($overlong);
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertSame(mb_substr($overlong, 0, 255), $package->getReplacementPackage());
+
+        $updatedAtAfterFirstCrawl = $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt();
+        self::assertNotNull($updatedAtAfterFirstCrawl);
+
+        // second crawl against the very same upstream must now be a no-op
+        $package->setDumpedAtV2(new \DateTimeImmutable('+1 minute'));
+        $em->flush();
+
+        $repo2 = $this->createStub(VcsRepository::class);
+        $repo2->method('getPackages')->willReturn([$upstream]);
+        $repo2->method('getDriver')->willReturn($this->stableDriver());
+        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertFalse($package->isDumpRequested(), 'a capped replacement must converge like any other');
+        self::assertEquals(
+            $updatedAtAfterFirstCrawl,
+            $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt(),
+            'the version must not be rebuilt again on an unchanged crawl'
+        );
+    }
+
     /**
      * Puts the package in a "freshly dumped, nothing pending" state, i.e. isDumpRequested() === false.
      */
@@ -1256,10 +1342,10 @@ class UpdaterTest extends IntegrationTestCase
         return $p;
     }
 
-    private function rebuildUpdater(PackageManager $packageManager): void
+    private function rebuildUpdater(PackageManager $packageManager, ?ProviderManager $providerManager = null): void
     {
         $registry = static::getContainer()->get(ManagerRegistry::class);
-        $providerManagerMock = $this->createStub(ProviderManager::class);
+        $providerManagerMock = $providerManager ?? $this->createStub(ProviderManager::class);
         $versionIdCache = $this->createStub(VersionIdCache::class);
         $mailerMock = $this->createStub(MailerInterface::class);
         $routerMock = $this->createStub(UrlGeneratorInterface::class);

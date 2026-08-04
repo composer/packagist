@@ -318,9 +318,13 @@ class V2DumperTest extends IntegrationTestCase
         // which happens exactly in that window, and assert the package stays stale.
         $this->primeBuildDir();
         $package = self::createPackage('acme/package', 'https://example.com/acme/package');
-        $package->markForDump();
         $this->store($package, $this->createVersion($package, '1.0.0'));
         $packageId = $package->getId();
+        // Unambiguously in the past, so the run below clears it and the mid-run mark is the only
+        // thing that can keep the package stale. Marking here instead would land in the same second
+        // as the dumper's $dumpTime, which the >= rule counts as stale on its own — the assertion
+        // would then hold whether or not the hook ever fired.
+        $this->requestDumpAt($packageId, '-1 minute');
 
         $conn = self::getEM()->getConnection();
         $this->rebuildDumperWithUploadHook(static function () use ($conn, $packageId): void {
