@@ -692,10 +692,8 @@ class Package
     }
 
     /**
-     * Only V2Dumper legitimately records a dump time, and it does so in bulk SQL — this setter exists
-     * for tests. Production code goes through markForDump() / forceDump(), never writing either
-     * timestamp by hand. Not nullable on purpose: a null dumpedAtV2 means "re-write no matter what",
-     * which is forceDump()'s job to set, not something to arrive at by accident.
+     * For tests only — V2Dumper records dump times in bulk SQL, production code marks via
+     * markForDump() / forceDump(). Not nullable as a null dumpedAtV2 means "re-write no matter what".
      */
     public function setDumpedAtV2(\DateTimeImmutable $dumpedAt): void
     {
@@ -710,9 +708,9 @@ class Package
     /**
      * Request a fresh metadata dump.
      *
-     * Deliberately does not touch dumpedAtV2: V2Dumper writes that once at the end of a run, so nulling
-     * it here would let a dump that predates this change overwrite the mark and lose it entirely.
-     * Recording the request separately keeps marking monotonic, so a mark landing mid-run survives.
+     * Deliberately does not touch dumpedAtV2, which V2Dumper writes once at the end of a run: nulling
+     * it here would let an in-flight dump overwrite the mark and lose it. Recording the request
+     * separately keeps marking monotonic, so a mark landing mid-run survives.
      */
     public function markForDump(): void
     {
@@ -725,11 +723,9 @@ class Package
      * publish again" paths — a manual update, an unfreeze, a version being pulled or restored, and so
      * on — not for ordinary content changes, which markForDump() covers at a fraction of the cost.
      *
-     * A null dumpedAtV2 is what V2Dumper reads as "write this no matter what". Nulling it is
-     * destructive, so this always marks as well: without that, a dump run already in flight would
-     * overwrite the null when it records its dump times and the request would vanish. (The one thing
-     * that race can still cost is the forcing itself — the package stays stale and is re-dumped, but as
-     * an ordinary content-compared dump.)
+     * The null dumpedAtV2 is what V2Dumper reads as "write this no matter what". Nulling is
+     * destructive, so this marks as well, or an in-flight dump run would overwrite the null and lose
+     * the request. That race can still cost the forcing itself, but never the re-dump.
      */
     public function forceDump(): void
     {
@@ -753,11 +749,9 @@ class Package
     /**
      * Whether something requested a re-dump since the package was last dumped.
      *
-     * Deliberately NOT a mirror of PackageRepository::getStalePackagesForDumpingV2(): the stale query
-     * also sweeps in packages whose crawledAt is newer than their dump, and this must not. The
-     * metadata_dump.file{requested} tag is what tells a package something actually marked apart from
-     * one that transitional clause merely caught, and folding the clause in here would make every
-     * package "requested" and the tag useless.
+     * Deliberately NOT a mirror of PackageRepository::getStalePackagesForDumpingV2(), which also sweeps
+     * in packages whose crawledAt is newer than their dump. Folding that clause in here would make
+     * every package "requested" and the metadata_dump.file{requested} tag useless.
      */
     public function isDumpRequested(): bool
     {
@@ -907,10 +901,9 @@ class Package
         }
         $this->frozen = null;
         $this->setCrawledAt(null);
-        // Forcing regardless of the freeze reason, on purpose: a suppressing freeze purges the
-        // package's published metadata, so the files have to be written out again even though nothing
-        // about their content changed, and for the gentle reasons — which never stopped the dump — a
-        // redundant re-write of a handful of unfrozen packages is cheap insurance.
+        // Forcing regardless of the freeze reason: a suppressing freeze purged the published metadata,
+        // so it has to be written out again even though the content did not change. For the gentle
+        // reasons the re-write is redundant, but cheap insurance on a handful of packages.
         $this->forceDump();
     }
 

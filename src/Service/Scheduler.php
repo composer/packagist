@@ -45,22 +45,20 @@ class Scheduler
         if ($pendingJobId && ($pendingJob = $this->getEM()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId])) !== null) {
             $pendingForced = ($pendingJob->getPayload()['force_dump'] ?? false) === true;
 
-            // The pending job runs no later than the one we are trying to schedule, so it stands in for
-            // it, either because it executes first or because the two are equivalent.
+            // the pending job runs no later than ours, so it stands in for it
             $pendingJobWins =
                 // pending job will execute before the one we are trying to schedule
                 (!$pendingJob->getExecuteAfter() && $executeAfter)
                 || ($pendingJob->getExecuteAfter() && $executeAfter && $pendingJob->getExecuteAfter() < $executeAfter)
-                // neither job has executeAfter, so the pending one is equivalent to the one we are trying to schedule
+                // neither has executeAfter, so the two are equivalent
                 || (!$pendingJob->getExecuteAfter() && !$executeAfter);
 
             if ($pendingJobWins) {
                 // force_dump is not part of the dedup key, so a plain job queued by e.g. a webhook push
-                // would otherwise swallow the request entirely. Carry the intent over to the pending job
-                // rather than queueing a second job for the same package. Best-effort: the worker may
-                // already have start()ed and read the payload, in which case the upgrade lands on a job
-                // that will never re-read it. The direct markForDump() calls in VersionRepository are
-                // what make that survivable — only the forcing itself is lost.
+                // would otherwise swallow the request. Carry the intent over instead of queueing a
+                // second job. Best-effort: the worker may already have read the payload, in which case
+                // the forcing is lost — the direct markForDump() calls in VersionRepository are what
+                // make that survivable.
                 if ($forceDump && !$pendingForced) {
                     $payload = $pendingJob->getPayload();
                     $payload['force_dump'] = true;

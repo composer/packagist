@@ -69,9 +69,9 @@ class VersionRepository extends ServiceEntityRepository
         $package->getVersions()->removeElement($version);
         $package->setCrawledAt(new \DateTimeImmutable());
         $package->setUpdatedAt(new \DateTimeImmutable());
-        // An already-soft-deleted row was excluded from the dumped metadata, so hard-deleting it does
-        // not change a byte. Skipping the mark matters because the dominant caller — Updater's prune
-        // loop — hard-purges dev rows a day after they were soft-deleted, which is routine branch churn.
+        // A soft-deleted row was already excluded from the metadata, so hard-deleting it changes
+        // nothing. Worth skipping: the dominant caller is Updater's prune loop purging dev rows a day
+        // after soft-deleting them, i.e. routine branch churn.
         if (!$version->isSoftDeleted()) {
             $package->markForDump();
         }
@@ -115,21 +115,18 @@ class VersionRepository extends ServiceEntityRepository
         $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $internalReasonText, $actor));
 
         // Mark directly rather than leaning on the scheduled job: pulling a version is the security
-        // path, and the job's force_dump only takes effect if a crawl actually succeeds — a package
-        // whose repository 404s or errors never reaches the end of Updater::update(), which would
-        // leave the pulled version published indefinitely. The dumper excludes soft-deleted versions
-        // itself, so dumping immediately is correct and need not wait for the crawl.
+        // path, and the job's force_dump only lands if the crawl succeeds, so a repository that 404s
+        // would leave the pulled version published indefinitely. The dumper excludes soft-deleted
+        // versions by itself, so there is nothing to wait for.
         $version->getPackage()->markForDump();
 
         if (!$version->getPackage()->isFrozen()) {
             // still schedule the crawl so dependents/suggesters get recomputed without this version
             $this->scheduler->scheduleUpdate($version->getPackage(), 'version_soft_delete', forceDump: true);
         } else {
-            // A frozen package gets no crawl, and the mark above deliberately replaces the crawledAt
-            // bump this used to do. That also means no search reindex, since
-            // PackageRepository::getStalePackagesForIndexing() keys off indexedAt <= crawledAt — which
-            // is fine, as the search document is package-level and does not change when one version is
-            // pulled.
+            // The mark above replaces the crawledAt bump this used to do, which also means no search
+            // reindex (getStalePackagesForIndexing() keys off indexedAt <= crawledAt). Fine, as the
+            // search document is package-level and unaffected by pulling one version.
             $this->getEntityManager()->persist($version->getPackage());
         }
     }
