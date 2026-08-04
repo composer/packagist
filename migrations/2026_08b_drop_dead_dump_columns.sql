@@ -6,6 +6,8 @@
 -- The v1 metadata dumper was removed; package.dumpedAt is dead. Nothing writes it a non-null value
 -- anymore (every setDumpedAt() call only ever nulled it), and its only readers --
 -- PackageRepository::getStalePackagesForDumping() and getPackageNamesUpdatedSince() -- had no callers.
--- v2 dump staleness is driven by dumpedAtV2 / dumpRequestedAt (dumped2_idx and the wider
--- dumped2_requested_crawled_frozen_idx, which supersedes dumped2_crawled_frozen_idx).
-ALTER TABLE package DROP INDEX dumped_idx, DROP COLUMN dumpedAt, DROP INDEX dumped2_crawled_frozen_idx;
+-- v2 dump staleness is driven by dumpedAtV2 / dumpRequestedAt through
+-- dumped2_requested_crawled_frozen_idx, which supersedes both dumped2_crawled_frozen_idx and the
+-- single-column dumped2_idx -- dumpedAtV2 leads it, so the planner covers that prefix from the wider
+-- index and the narrow one is pure write cost.
+ALTER TABLE package DROP INDEX dumped_idx, DROP COLUMN dumpedAt, DROP INDEX dumped2_crawled_frozen_idx, DROP INDEX dumped2_idx;

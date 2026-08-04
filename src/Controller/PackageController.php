@@ -1189,11 +1189,7 @@ class PackageController extends Controller
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $package->setAbandoned(true);
-            // '' means "no replacement" here; setReplacementPackage() maps it to null anyway, but being
-            // explicit keeps the stored value obviously identical to the null an upstream
-            // `"abandoned": true` yields, which is what the Updater reconciles against
-            $replacement = str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData());
-            $package->setReplacementPackage($replacement === '' ? null : $replacement);
+            $package->setReplacementPackage(str_replace('https://packagist.org/packages/', '', (string) $form->get('replacement')->getData()));
             $this->eventDispatcher->dispatch(new PackageAbandonedEvent($package, AbandonmentReason::Manual));
 
             $package->setIndexedAt(null);

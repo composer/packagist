@@ -100,7 +100,6 @@ enum PackageFreezeReason: string
 #[ORM\UniqueConstraint(name: 'package_name_idx', columns: ['name'])]
 #[ORM\Index(name: 'indexed_idx', columns: ['indexedAt'])]
 #[ORM\Index(name: 'crawled_idx', columns: ['crawledAt'])]
-#[ORM\Index(name: 'dumped2_idx', columns: ['dumpedAtV2'])]
 #[ORM\Index(name: 'repository_idx', columns: ['repository'])]
 #[ORM\Index(name: 'remoteid_idx', columns: ['remoteId'])]
 #[ORM\Index(name: 'dumped2_requested_crawled_frozen_idx', columns: ['dumpedAtV2', 'dumpRequestedAt', 'crawledAt', 'frozen'])]
@@ -695,9 +694,10 @@ class Package
     /**
      * Only V2Dumper legitimately records a dump time, and it does so in bulk SQL — this setter exists
      * for tests. Production code goes through markForDump() / forceDump(), never writing either
-     * timestamp by hand.
+     * timestamp by hand. Not nullable on purpose: a null dumpedAtV2 means "re-write no matter what",
+     * which is forceDump()'s job to set, not something to arrive at by accident.
      */
-    public function setDumpedAtV2(?\DateTimeImmutable $dumpedAt): void
+    public function setDumpedAtV2(\DateTimeImmutable $dumpedAt): void
     {
         $this->dumpedAtV2 = $dumpedAt;
     }
@@ -722,8 +722,8 @@ class Package
     /**
      * Request a dump that re-writes the files even if their content is byte-identical, which busts the
      * CDN cache and can shake a stuck storage replication loose. Use it for the deliberate "make it
-     * publish again" paths — the manual update button, an unfreeze — not for ordinary content changes,
-     * which markForDump() covers at a fraction of the cost.
+     * publish again" paths — a manual update, an unfreeze, a version being pulled or restored, and so
+     * on — not for ordinary content changes, which markForDump() covers at a fraction of the cost.
      *
      * A null dumpedAtV2 is what V2Dumper reads as "write this no matter what". Nulling it is
      * destructive, so this always marks as well: without that, a dump run already in flight would
