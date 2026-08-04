@@ -141,14 +141,6 @@ class Job
     }
 
     /**
-     * @param T $payload
-     */
-    public function setPayload(array $payload): void
-    {
-        $this->payload = $payload;
-    }
-
-    /**
      * @param self::STATUS_* $status
      */
     public function setStatus(string $status): void
