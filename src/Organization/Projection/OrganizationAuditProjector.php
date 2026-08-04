@@ -50,10 +50,10 @@ final readonly class OrganizationAuditProjector implements Projector
 {
     public function __construct(
         private AuditRecordRepository $auditRecordRepo,
-        private UserRepository $users,
+        private UserRepository $userRepo,
         private OrganizationRepository $organizationRepo,
         private OrganizationTeamRepository $organizationTeamRepo,
-        private OrganizationInvitationRepository $invitations,
+        private OrganizationInvitationRepository $organizationInvitationRepo,
     ) {
     }
 
@@ -129,7 +129,7 @@ final readonly class OrganizationAuditProjector implements Projector
 
     private function invitationOrganizationId(Ulid $invitationId): Ulid
     {
-        $invitation = $this->invitations->find($invitationId);
+        $invitation = $this->organizationInvitationRepo->find($invitationId);
         if ($invitation === null) {
             throw new \LogicException('Organization invitation read model not found for '.$invitationId->toRfc4122().'.');
         }
@@ -151,7 +151,7 @@ final readonly class OrganizationAuditProjector implements Projector
 
     private function user(?int $userId): ?User
     {
-        return $userId !== null ? $this->users->find($userId) : null;
+        return $userId !== null ? $this->userRepo->find($userId) : null;
     }
 
     private function organization(Ulid $id): Organization

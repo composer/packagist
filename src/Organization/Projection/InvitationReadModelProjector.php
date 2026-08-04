@@ -44,8 +44,8 @@ final readonly class InvitationReadModelProjector implements Projector
 
     public function __construct(
         private ManagerRegistry $doctrine,
-        private OrganizationInvitationRepository $invitations,
-        private UserRepository $users,
+        private OrganizationInvitationRepository $organizationInvitationRepo,
+        private UserRepository $userRepo,
     ) {
     }
 
@@ -107,7 +107,7 @@ final readonly class InvitationReadModelProjector implements Projector
 
     private function invitation(Ulid $id): OrganizationInvitation
     {
-        $invitation = $this->invitations->find($id);
+        $invitation = $this->organizationInvitationRepo->find($id);
         if ($invitation === null) {
             throw new \LogicException('Organization invitation read model not found for '.$id->toRfc4122().'.');
         }
@@ -117,6 +117,6 @@ final readonly class InvitationReadModelProjector implements Projector
 
     private function user(?int $userId): ?User
     {
-        return $userId !== null ? $this->users->find($userId) : null;
+        return $userId !== null ? $this->userRepo->find($userId) : null;
     }
 }

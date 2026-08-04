@@ -47,9 +47,9 @@ final class InvitationManager
 
     public function __construct(
         private readonly EventStore $eventStore,
-        private readonly OrganizationInvitationRepository $invitations,
-        private readonly OrganizationTeamRepository $teams,
-        private readonly OrganizationTeamMemberRepository $teamMembers,
+        private readonly OrganizationInvitationRepository $organizationInvitationRepo,
+        private readonly OrganizationTeamRepository $organizationTeamRepo,
+        private readonly OrganizationTeamMemberRepository $organizationTeamMemberRepo,
         private readonly InvitationTokenGenerator $tokens,
         private readonly MailerInterface $mailer,
         private readonly UrlGeneratorInterface $urlGenerator,
@@ -78,7 +78,7 @@ final class InvitationManager
         // Rate limiting (per-org pending cap, per-user/24h, per-IP) is intentionally not enforced yet;
         // the concrete limits are an open question. See .task/open-questions.md. This is the seam.
 
-        if ($this->invitations->findActiveForEmail($organization->id, $emailVo->canonical, $now) !== null) {
+        if ($this->organizationInvitationRepo->findActiveForEmail($organization->id, $emailVo->canonical, $now) !== null) {
             throw new DuplicatePendingInvitationException(sprintf('There is already a pending invitation for "%s".', $emailVo->value));
         }
 
@@ -238,7 +238,7 @@ final class InvitationManager
         }
 
         $existing = [];
-        foreach ($this->teams->findByOrg($organization->id) as $team) {
+        foreach ($this->organizationTeamRepo->findByOrg($organization->id) as $team) {
             $existing[$team->teamId->toRfc4122()] = true;
         }
 
@@ -255,7 +255,7 @@ final class InvitationManager
      */
     private function ownerActor(User $actor, OrganizationReadModel $organization): Actor
     {
-        if ($this->teamMembers->isOwner($organization->ownersTeamId, $actor->getId())) {
+        if ($this->organizationTeamMemberRepo->isOwner($organization->ownersTeamId, $actor->getId())) {
             return Actor::member($actor);
         }
 

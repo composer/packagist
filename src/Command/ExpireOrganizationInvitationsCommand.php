@@ -35,7 +35,7 @@ class ExpireOrganizationInvitationsCommand extends Command
     private const int MAX_PER_RUN = 1000;
 
     public function __construct(
-        private readonly OrganizationInvitationRepository $invitations,
+        private readonly OrganizationInvitationRepository $organizationInvitationRepo,
         private readonly InvitationManager $invitationManager,
         private readonly ClockInterface $clock,
         private readonly Locker $locker,
@@ -63,7 +63,7 @@ class ExpireOrganizationInvitationsCommand extends Command
         }
 
         try {
-            $due = $this->invitations->findPendingExpired($this->clock->now(), self::MAX_PER_RUN);
+            $due = $this->organizationInvitationRepo->findPendingExpired($this->clock->now(), self::MAX_PER_RUN);
 
             if ($due === []) {
                 $output->writeln('No pending invitations past expiry.');
