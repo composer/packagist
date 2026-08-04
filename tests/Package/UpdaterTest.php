@@ -957,13 +957,46 @@ class UpdaterTest extends IntegrationTestCase
         self::assertTrue($this->package->isDumpRequested(), 'a created version must mark the package for re-dump');
     }
 
+    public function testDoesNotMarkForDumpWhileVersionsAreStillBeingWritten(): void
+    {
+        // Marking mid-loop lets a dumper dump a half-written package and stamp dumpedAtV2 past the
+        // mark, and the crawl has no reason to mark twice, so the rows written after it never get
+        // dumped. insertVersion() runs once per stored version, i.e. exactly in the window that must
+        // stay unmarked.
+        $this->markPackageAsDumped();
+
+        $package = $this->package;
+        $marksSeenWhileWriting = [];
+        $versionIdCache = $this->createStub(VersionIdCache::class);
+        $versionIdCache->method('insertVersion')->willReturnCallback(
+            static function () use ($package, &$marksSeenWhileWriting): void {
+                $marksSeenWhileWriting[] = $package->getDumpRequestedAt();
+            }
+        );
+        $this->rebuildUpdater($this->createStub(PackageManager::class), versionIdCache: $versionIdCache);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890'),
+            $this->buildCompletePackage('test/pkg', '1.1.0', '1.1.0.0', 'abcdef1234567891'),
+            $this->buildCompletePackage('test/pkg', '1.2.0', '1.2.0.0', 'abcdef1234567892'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        self::assertCount(3, $marksSeenWhileWriting, 'all three versions must have been stored');
+        self::assertSame([null, null, null], $marksSeenWhileWriting, 'the package must stay unmarked until the version loop is done');
+
+        $this->getEM()->refresh($this->package);
+        self::assertTrue($this->package->isDumpRequested(), 'the mark still has to land once the crawl is done writing');
+    }
+
     public function testMarksForDumpEvenWhenTheCrawlFailsAfterTheVersionWasWritten(): void
     {
-        // Version writes are committed as they happen, well before the crawl's network-bound tail
-        // (GitHub/GitLab metadata, readme, the provider list). A failure in that tail must not lose
-        // the mark: the next crawl finds the row already matching upstream and has nothing left to
-        // notice, so the change would stay unpublished. Only the transitional crawledAt clause in the
-        // stale query rescues that today — and only via a *later* successful crawl.
+        // Version writes are committed as they happen, so a failure in the crawl's network-bound tail
+        // must not lose the mark: the next crawl finds the row already matching upstream and marks
+        // nothing, leaving the change unpublished until some later crawl trips the crawledAt clause.
         $this->markPackageAsDumped();
 
         $providerManager = $this->createStub(ProviderManager::class);
@@ -1342,11 +1375,11 @@ class UpdaterTest extends IntegrationTestCase
         return $p;
     }
 
-    private function rebuildUpdater(PackageManager $packageManager, ?ProviderManager $providerManager = null): void
+    private function rebuildUpdater(PackageManager $packageManager, ?ProviderManager $providerManager = null, ?VersionIdCache $versionIdCache = null): void
     {
         $registry = static::getContainer()->get(ManagerRegistry::class);
         $providerManagerMock = $providerManager ?? $this->createStub(ProviderManager::class);
-        $versionIdCache = $this->createStub(VersionIdCache::class);
+        $versionIdCache ??= $this->createStub(VersionIdCache::class);
         $mailerMock = $this->createStub(MailerInterface::class);
         $routerMock = $this->createStub(UrlGeneratorInterface::class);
         $eventDispatcherMock = $this->createStub(EventDispatcher::class);
