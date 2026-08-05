@@ -13,6 +13,7 @@
 namespace App\Controller;
 
 use App\Audit\AbandonmentReason;
+use App\Audit\Display\Transparency\TransparencyLogDisplayFactory;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
@@ -24,6 +25,7 @@ use App\Entity\JobRepository;
 use App\Entity\Package;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
+use App\Entity\PackageTransparencyLogRepository;
 use App\Entity\PhpStat;
 use App\Entity\SecurityAdvisory;
 use App\Entity\SecurityAdvisoryRepository;
@@ -2031,6 +2033,28 @@ class PackageController extends Controller
         $data['count'] = \count($securityAdvisories);
 
         return $this->render('package/security_advisories.html.twig', $data);
+    }
+
+    #[Route(path: '/packages/{name}/transparency', name: 'view_package_transparency', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX])]
+    public function transparencyLogAction(Request $req, string $name, PackageTransparencyLogRepository $repo, TransparencyLogDisplayFactory $displayFactory): Response
+    {
+        $package = $this->getPackageByName($req, $name);
+        if ($package instanceof Response) {
+            return $package;
+        }
+
+        $qb = $repo->getQueryBuilderForPackage($package->getId());
+
+        $paginator = new Pagerfanta(new QueryAdapter($qb, false, false));
+        $paginator->setNormalizeOutOfRangePages(true);
+        $paginator->setMaxPerPage(20);
+        $paginator->setCurrentPage(max(1, $req->query->getInt('page', 1)));
+
+        return $this->render('package/transparency_log.html.twig', [
+            'name' => $package->getName(),
+            'transparencyLogDisplays' => $displayFactory->build($paginator),
+            'paginator' => $paginator,
+        ]);
     }
 
     #[Route(path: '/security-advisories/', name: 'security_advisories')]

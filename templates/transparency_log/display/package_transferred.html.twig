@@ -1,0 +1,6 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+Previous maintainers: {{ display.previousMaintainers|column('username')|join(', ') }}<br>
+Current maintainers: {{ display.currentMaintainers|column('username')|join(', ') }}<br>
+Transferred by: {{ display.actor.username }}
