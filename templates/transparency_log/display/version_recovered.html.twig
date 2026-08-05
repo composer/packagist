@@ -1,0 +1,5 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
+Recovered from previous soft-delete ({{ display.previousReason }})<br>
+By: {{ display.actor.username }}
