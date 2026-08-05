@@ -185,6 +185,32 @@ user_freeze_reasons:
     bad_actor: Bad actor
     temporary: Temporary
 
+transparency_log:
+    type:
+        maintainer_added: Maintainer added
+        maintainer_removed: Maintainer removed
+        package_transferred: Package transferred
+        package_created: Package created
+        canonical_url_changed: Canonical URL changed
+        package_abandoned: Package abandoned
+        package_unabandoned: Package unabandoned
+        package_frozen: Package frozen
+        package_unfrozen: Package unfrozen
+        package_deleted: Package deleted
+        version_created: Version created
+        version_reference_change_blocked: Version reference change blocked
+        version_deleted: Version deleted
+        version_soft_deleted: Version soft-deleted
+        version_recovered: Version recovered
+        two_fa_activated: Maintainer enabled two-factor authentication
+        two_fa_deactivated: Maintainer disabled two-factor authentication
+        password_reset: Maintainer password reset
+        password_changed: Maintainer password changed
+        password_reset_requested: Maintainer password reset requested
+        email_changed: Maintainer email address changed
+        github_linked_with_user: Maintainer linked a GitHub account
+        github_disconnected_from_user: Maintainer disconnected their GitHub account
+
 audit_log:
     type:
         canonical_url_changed: Canonical URL changed

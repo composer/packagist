@@ -478,6 +478,7 @@ class AuditRecord
                 'reason' => $reason,
             ],
             actorId: $actor->getId(),
+            userId: $user->getId(),
         );
     }
 

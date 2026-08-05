@@ -176,6 +176,32 @@ class PackageRepository extends ServiceEntityRepository
         return (bool) $query->getOneOrNullResult();
     }
 
+    /**
+     * All packages is direct maintainer of and packages owned by an
+     * organization the user is a member of. Returns package id + vendor, ordered by id for deterministic fan-out.
+     *
+     * @return list<array{id: int, vendor: string}>
+     */
+    public function getPackageRefsByMaintainer(int $userId): array
+    {
+        /** @var list<array{id: int|string, vendor: string}> $rows */
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT DISTINCT p.id AS id, p.vendor AS vendor
+                FROM package p
+                LEFT JOIN maintainers_packages mp ON mp.package_id = p.id AND mp.user_id = :userId
+                LEFT JOIN organization o ON o.slug = p.vendor AND o.deletedAt IS NULL
+                LEFT JOIN organization_team_member otm ON otm.orgId = o.id AND otm.userId = :userId
+                WHERE mp.user_id IS NOT NULL OR otm.userId IS NOT NULL
+                ORDER BY p.id ASC',
+            ['userId' => $userId],
+        );
+
+        return array_map(
+            static fn (array $row): array => ['id' => (int) $row['id'], 'vendor' => (string) $row['vendor']],
+            $rows,
+        );
+    }
+
     public function getPackageIdByName(string $name): ?int
     {
         $id = $this->createQueryBuilder('p')
