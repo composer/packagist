@@ -32,17 +32,21 @@ class AuditLogDisplayFactory
      *
      * @return array<AuditLogDisplayInterface>
      */
-    public function build(iterable $auditRecords): array
+    public function build(iterable $auditRecords, bool $revealEmails = false): array
     {
         $displays = [];
         foreach ($auditRecords as $record) {
-            $displays[] = $this->buildSingle($record);
+            $displays[] = $this->buildSingle($record, $revealEmails);
         }
 
         return $displays;
     }
 
-    public function buildSingle(AuditRecord $record): AuditLogDisplayInterface
+    /**
+     * $revealEmails skips obfuscation for viewers already authorized to see them (e.g. the
+     * organization-internal audit log, gated by ViewAuditLog), unlike the public transparency log.
+     */
+    public function buildSingle(AuditRecord $record, bool $revealEmails = false): AuditLogDisplayInterface
     {
         return match ($record->type) {
             AuditRecordType::MaintainerAdded => new MaintainerAddedDisplay(
@@ -404,6 +408,12 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
+            AuditRecordType::OrganizationMemberJoined => new OrganizationMemberJoinedDisplay(
+                $record->datetime,
+                OrganizationDisplay::fromRecord($record->attributes['organization']),
+                $this->buildActor($record->attributes['user']),
+                $record->ip,
+            ),
             AuditRecordType::OrganizationMemberRemoved => new OrganizationMemberRemovedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
@@ -415,6 +425,19 @@ class AuditLogDisplayFactory
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $this->buildActor($record->attributes['user']),
+                $this->buildActor($record->attributes['actor']),
+                $record->ip,
+            ),
+            AuditRecordType::OrganizationInvitationSent,
+            AuditRecordType::OrganizationInvitationResent,
+            AuditRecordType::OrganizationInvitationRevoked,
+            AuditRecordType::OrganizationInvitationDeclined,
+            AuditRecordType::OrganizationInvitationAccepted,
+            AuditRecordType::OrganizationInvitationExpired => new OrganizationInvitationDisplay(
+                $record->type,
+                $record->datetime,
+                OrganizationDisplay::fromRecord($record->attributes['organization']),
+                $this->obfuscateEmail($record->attributes['email'], revealEmails: $revealEmails),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
@@ -449,9 +472,9 @@ class AuditLogDisplayFactory
         return $this->security->isGranted('ROLE_AUDITOR') ? $reason : null;
     }
 
-    private function obfuscateEmail(string $email, ?int $userId = null): string
+    private function obfuscateEmail(string $email, ?int $userId = null, bool $revealEmails = false): string
     {
-        if ($this->security->isGranted('ROLE_AUDITOR')) {
+        if ($revealEmails || $this->security->isGranted('ROLE_AUDITOR')) {
             return $email;
         }
 

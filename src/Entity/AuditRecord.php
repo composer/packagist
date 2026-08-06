@@ -288,6 +288,28 @@ class AuditRecord
         );
     }
 
+    /**
+     * A user became a member of the org (by accepting an invitation, or as the founding owner at
+     * creation). The teams they landed in are logged separately as organization_team_member_added
+     * entries. This member-facing entry identifies the member by username; the invitation lifecycle
+     * itself (sent/resent/revoked/declined/accepted/expired, which carries the invited email) is logged
+     * separately by the organization_invitation_* records.
+     */
+    public static function organizationMemberJoined(Ulid $organizationId, string $slug, string $displayName, ?User $member): self
+    {
+        return new self(
+            AuditRecordType::OrganizationMemberJoined,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'user' => self::getUserData($member),
+                'actor' => self::getUserData($member),
+            ],
+            $member?->getId(),
+            organizationId: $organizationId,
+            userId: $member?->getId(),
+        );
+    }
+
     public static function organizationMemberRemoved(Ulid $organizationId, string $slug, string $displayName, ?User $member, ?User $actor): self
     {
         return new self(
@@ -315,6 +337,61 @@ class AuditRecord
             $member?->getId(),
             organizationId: $organizationId,
             userId: $member?->getId(),
+        );
+    }
+
+    /**
+     * An owner invited an email address to the organization. The invited email is stored so members and
+     * auditors can see who was invited; the display layer obfuscates it from everyone else.
+     */
+    public static function organizationInvitationSent(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
+    {
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationSent, $organizationId, $slug, $displayName, $email, $actor);
+    }
+
+    public static function organizationInvitationResent(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
+    {
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationResent, $organizationId, $slug, $displayName, $email, $actor);
+    }
+
+    public static function organizationInvitationRevoked(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
+    {
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationRevoked, $organizationId, $slug, $displayName, $email, $actor);
+    }
+
+    public static function organizationInvitationDeclined(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
+    {
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationDeclined, $organizationId, $slug, $displayName, $email, $actor);
+    }
+
+    /**
+     * The invitee accepted; $actor is the joining member. A companion organization_member_joined entry
+     * records the resulting membership by username, while this entry preserves the invited email.
+     */
+    public static function organizationInvitationAccepted(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
+    {
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationAccepted, $organizationId, $slug, $displayName, $email, $actor);
+    }
+
+    /**
+     * A pending invitation lapsed; recorded by automation with no acting user.
+     */
+    public static function organizationInvitationExpired(Ulid $organizationId, string $slug, string $displayName, string $email): self
+    {
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationExpired, $organizationId, $slug, $displayName, $email, null);
+    }
+
+    private static function organizationInvitation(AuditRecordType $type, Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
+    {
+        return new self(
+            $type,
+            [
+                'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
+                'email' => $email,
+                'actor' => self::getUserData($actor, 'automation'),
+            ],
+            $actor?->getId(),
+            organizationId: $organizationId,
         );
     }
 

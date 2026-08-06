@@ -1,0 +1,49 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Organization invitation - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <h2 class="title">Organization invitation</h2>
+
+    <p>
+        You have been invited to join
+        <strong>{{ organization.displayName }}</strong>
+        on Packagist.org.
+    </p>
+
+    {% if not emailMatches %}
+        <div class="alert alert-warning">
+            This invitation was sent to a different email address than the one your account uses. To accept,
+            sign in with (or change your account email to) the invited address, or ask an owner to re-invite
+            the address you use.
+        </div>
+    {% elseif alreadyMember %}
+        <div class="alert alert-info">
+            You are already a member of <strong>{{ organization.displayName }}</strong>, so there is nothing to accept.
+            An owner can add you to further teams from the organization's team management.
+        </div>
+
+        <div class="btn-toolbar">
+            {{ form_start(declineForm, { action: path('organization_invitation_decline', { organization: organization.slug, invitation: invitation.id, token: token }), attr: { style: 'display:inline' } }) }}
+                <button class="btn btn-default" type="submit">Dismiss invitation</button>
+            {{ form_end(declineForm) }}
+        </div>
+    {% else %}
+        {% if needsTwoFactor %}
+            <div class="alert alert-warning">
+                This invitation makes you an owner, which requires two-factor authentication.
+                Please <a href="{{ path('user_2fa_configure', { name: app.user.username }) }}">enable two-factor authentication</a>,
+                then return to this page to accept.
+            </div>
+        {% endif %}
+
+        <div class="btn-toolbar">
+            {{ form_start(acceptForm, { action: path('organization_invitation_accept', { organization: organization.slug, invitation: invitation.id, token: token }), attr: { style: 'display:inline' } }) }}
+                <button class="btn btn-success" type="submit">Accept invitation</button>
+            {{ form_end(acceptForm) }}
+            {{ form_start(declineForm, { action: path('organization_invitation_decline', { organization: organization.slug, invitation: invitation.id, token: token }), attr: { style: 'display:inline' } }) }}
+                <button class="btn btn-default" type="submit">Decline</button>
+            {{ form_end(declineForm) }}
+        </div>
+    {% endif %}
+{% endblock %}

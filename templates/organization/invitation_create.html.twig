@@ -1,0 +1,37 @@
+{% extends 'organization/layout.html.twig' %}
+
+{% block title %}Invite a member - {{ organization.displayName }} - {{ parent() }}{% endblock %}
+
+{% block org_content %}
+    <h3 class="title">Invite a member</h3>
+
+    {{ form_start(form, { 'attr': { 'class': 'organization_invitation_create' } }) }}
+        {{ form_errors(form) }}
+        <div class="form-group clearfix">
+            {{ form_label(form.email) }}
+            {{ form_errors(form.email) }}
+            {{ form_widget(form.email) }}
+            {{ form_help(form.email) }}
+        </div>
+        <div class="form-group clearfix">
+            {{ form_label(form.teamIds) }}
+            {{ form_errors(form.teamIds) }}
+            {% for team in form.teamIds %}
+                <div class="checkbox">
+                    <label>{{ form_widget(team) }} {{ team.vars.label }}</label>
+                </div>
+                {# Mirror the teams page order: the automatically-managed all-members team sits right
+                   after Owners. It is shown checked and disabled rather than as a real choice, since
+                   every invitee joins it on acceptance. #}
+                {% if team.vars.value == organization.ownersTeamId.toRfc4122() %}
+                    <div class="checkbox disabled">
+                        <label><input type="checkbox" checked disabled> {{ allMembersTeamName }} <i class="glyphicon glyphicon-info-sign text-muted" data-toggle="tooltip" data-placement="top" data-container="body" title="Every member is added to this team automatically."></i></label>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            {{ form_help(form.teamIds) }}
+        </div>
+        <input class="btn btn-success" type="submit" value="Send invitation" />
+        <a class="btn btn-default" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}
