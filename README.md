@@ -61,9 +61,29 @@ These steps are provided for development purposes only.
 
 7. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
 
-8. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files. When using Docker run `docker compose run node npm run dev` to watch css/js files.
+8. Run a CRON job `bin/console packagist:project-transparency-log` to project audit log entries into the public package transparency log. See [Transparency log backfill](#transparency-log-backfill) before enabling this on an existing database.
+
+9. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files. When using Docker run `docker compose run node npm run dev` to watch css/js files.
 
 You should now be able to access the site, create a user, etc.
+
+### Transparency log backfill
+
+`package_transparency_log` is projected from `audit_log` by `packagist:project-transparency-log`. On a
+database that already has audit history, run the one-off backfill **before** enabling the cron:
+
+```bash
+bin/console packagist:project-transparency-log --skip-account-events
+```
+
+Repeat until it reports nothing new, then enable the cron without the flag.
+
+The order matters. Package, version and ownership events carry their own package, so they backfill
+correctly. Account events (2FA, password, email, GitHub link) carry no package and fan out to whoever
+maintains the package *at projection time*, so backfilling them would publish old events against
+today's maintainer set. `--skip-account-events` leaves them behind the projection cursor, which only
+moves forward, so they stay unpublished. If the cron runs without the flag while history is still
+unprojected, those old account events get published and there is no way to retract them.
 
 ### Fixtures
 

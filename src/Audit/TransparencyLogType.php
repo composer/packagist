@@ -113,4 +113,18 @@ enum TransparencyLogType: string
             static fn (AuditRecordType $type): bool => self::fromAuditRecordType($type) !== null,
         ));
     }
+
+    /**
+     * The subset of {@see self::projectedAuditRecordTypes()} whose source row already carries the
+     * package it belongs to, so it projects 1:1 with no fan-out. These events can be safely backfilled from audit log
+     *
+     * @return list<AuditRecordType>
+     */
+    public static function packageNativeAuditRecordTypes(): array
+    {
+        return array_values(array_filter(
+            self::projectedAuditRecordTypes(),
+            static fn (AuditRecordType $type): bool => self::fromAuditRecordType($type)?->fansOutToMaintainedPackages() === false,
+        ));
+    }
 }
