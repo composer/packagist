@@ -201,11 +201,89 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
     }
 
-    private function runProjector(?string $minAge = null): CommandTester
+    public function testSkipAccountEventsProjectsPackageNativeEventsOnly(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $user = self::createUser('backfill', 'backfill@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $pkg = self::createPackage('acme/backfill', 'https://github.com/acme/backfill', null, [$user]);
+        $em->persist($pkg);
+        $em->flush();
+
+        $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
+
+        $this->runProjector('0', skipAccountEvents: true);
+
+        self::assertSame(1, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'package_created'"));
+        self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
+    }
+
+    public function testAccountEventsBelowTheCursorStaySkippedOnLaterRuns(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $user = self::createUser('below', 'below@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        // The account event comes first, so the later package_created row carries a higher ULID and
+        // drags the cursor past it.
+        $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
+
+        $pkg = self::createPackage('acme/below', 'https://github.com/acme/below', null, [$user]);
+        $em->persist($pkg);
+        $em->flush();
+
+        $this->runProjector('0', skipAccountEvents: true);
+        // A normal run afterwards must not resurrect it: the cursor is already past it.
+        $this->runProjector('0');
+
+        self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
+    }
+
+    /**
+     * The flipside of the cursor rule, and the reason the cron must only be enabled once the backfill
+     * has caught up: an account event above the last projected row is still eligible afterwards.
+     */
+    public function testAccountEventsAboveTheCursorAreStillProjectedOnLaterRuns(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $user = self::createUser('above', 'above@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $pkg = self::createPackage('acme/above', 'https://github.com/acme/above', null, [$user]);
+        $em->persist($pkg);
+        $em->flush();
+
+        // Inserted after the package, so its ULID is above the cursor the backfill leaves behind.
+        $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
+
+        $this->runProjector('0', skipAccountEvents: true);
+        self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
+
+        $this->runProjector('0');
+        self::assertSame(1, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
+    }
+
+    private function runProjector(?string $minAge = null, bool $skipAccountEvents = false): CommandTester
     {
         $command = self::getService(ProjectTransparencyLogCommand::class);
         $tester = new CommandTester($command);
-        $tester->execute($minAge !== null ? ['--min-event-age-to-project' => $minAge] : []);
+
+        $input = $minAge !== null ? ['--min-event-age-to-project' => $minAge] : [];
+        if ($skipAccountEvents) {
+            $input['--skip-account-events'] = true;
+        }
+
+        $tester->execute($input);
         $tester->assertCommandIsSuccessful();
 
         return $tester;

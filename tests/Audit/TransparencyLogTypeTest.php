@@ -86,4 +86,17 @@ class TransparencyLogTypeTest extends TestCase
             self::assertNotNull(TransparencyLogType::fromAuditRecordType($auditType));
         }
     }
+
+    public function testPackageNativeAuditRecordTypesIsTheProjectedSetWithoutAccountEvents(): void
+    {
+        $packageNative = TransparencyLogType::packageNativeAuditRecordTypes();
+
+        self::assertCount(\count(TransparencyLogType::projectedAuditRecordTypes()) - \count(self::accountAuditTypes()), $packageNative);
+        foreach ($packageNative as $auditType) {
+            self::assertFalse(TransparencyLogType::fromAuditRecordType($auditType)?->fansOutToMaintainedPackages());
+        }
+        foreach (self::accountAuditTypes() as $accountType) {
+            self::assertNotContains($accountType, $packageNative, $accountType->value.' must not be backfillable');
+        }
+    }
 }

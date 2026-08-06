@@ -52,6 +52,12 @@ class ProjectTransparencyLogCommand extends Command
                 'Safety-lag window in seconds: only project audit records older than this many seconds. Must exceed the longest audit_log-writing transaction.',
                 (string) self::DEFAULT_MIN_AGE_SECONDS,
             )
+            ->addOption(
+                'skip-account-events',
+                null,
+                InputOption::VALUE_NONE,
+                'Project package-native events only. Use this for the one-off historical backfill: account events fan out to the maintainers of today, which is the wrong set for an old event.',
+            )
         ;
     }
 
@@ -73,6 +79,11 @@ class ProjectTransparencyLogCommand extends Command
             return Command::SUCCESS;
         }
 
+        $includeAccountEvents = !$input->getOption('skip-account-events');
+        if (!$includeAccountEvents) {
+            $output->writeln('Projecting package-native events only, account events are skipped and stay skipped');
+        }
+
         $signal = SignalHandler::create(null, $this->logger);
 
         try {
@@ -82,6 +93,7 @@ class ProjectTransparencyLogCommand extends Command
                 static function (int $projected, int $leafIndex) use ($output): void {
                     $output->writeln(\sprintf('%d projected (up to leaf index %d)', $projected, $leafIndex));
                 },
+                $includeAccountEvents,
             );
 
             $output->writeln('Done');

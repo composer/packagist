@@ -36,6 +36,10 @@ use Symfony\Component\Uid\Ulid;
  * project rows older than the given window so that, by the time the cursor advances past a row, every
  * smaller-ULID row is guaranteed committed and visible. This is correct only if no audit_log-writing
  * transaction stays open longer than the window.
+ *
+ * Backfill: the cursor only moves forward, so a run that excludes account events leaves the
+ * historical ones below the cursor for good. That is intentional — fan-out resolves maintainers at
+ * projection time, so an old account event would be published against today's maintainer set.
  */
 class TransparencyLogProjector
 {
@@ -55,13 +59,14 @@ class TransparencyLogProjector
     /**
      * Projects every eligible audit_log row older than the safety-lag window.
      *
-     * @param int                                                   $minEventAgeSeconds safety-lag window in seconds (rows younger than this are left for a later run)
-     * @param SignalHandler|null                                    $signal             checked between batches for graceful shutdown
-     * @param (callable(int $projected, int $leafIndex): void)|null $onProgress         called after each non-empty batch
+     * @param int                                                   $minEventAgeSeconds   safety-lag window in seconds (rows younger than this are left for a later run)
+     * @param SignalHandler|null                                    $signal               checked between batches for graceful shutdown
+     * @param (callable(int $projected, int $leafIndex): void)|null $onProgress           called after each non-empty batch
+     * @param bool                                                  $includeAccountEvents pass false to project package-native events only, as the historical backfill does
      *
      * @return int the number of transparency-log rows created
      */
-    public function project(int $minEventAgeSeconds, ?SignalHandler $signal = null, ?callable $onProgress = null): int
+    public function project(int $minEventAgeSeconds, ?SignalHandler $signal = null, ?callable $onProgress = null, bool $includeAccountEvents = true): int
     {
         $cutoff = (new \DateTimeImmutable())->modify(\sprintf('-%d seconds', $minEventAgeSeconds));
         $em = $this->getEM();
@@ -71,7 +76,7 @@ class TransparencyLogProjector
         $projected = 0;
 
         do {
-            $records = $this->fetchBatch($cutoff, $cursor);
+            $records = $this->fetchBatch($cutoff, $cursor, $includeAccountEvents);
 
             foreach ($records as $record) {
                 $cursor = $record->id;
@@ -98,12 +103,12 @@ class TransparencyLogProjector
     /**
      * @return list<AuditRecord>
      */
-    private function fetchBatch(\DateTimeImmutable $cutoff, ?Ulid $cursor): array
+    private function fetchBatch(\DateTimeImmutable $cutoff, ?Ulid $cursor, bool $includeAccountEvents): array
     {
         $qb = $this->auditRecordRepository->createQueryBuilder('a')
             ->where('a.type IN (:types)')
             ->andWhere('a.datetime <= :cutoff')
-            ->setParameter('types', $this->inScopeTypeValues())
+            ->setParameter('types', $this->inScopeTypeValues($includeAccountEvents))
             ->setParameter('cutoff', $cutoff, Types::DATETIME_IMMUTABLE)
             ->orderBy('a.id', 'ASC')
             ->setMaxResults(self::BATCH_SIZE);
@@ -209,11 +214,13 @@ class TransparencyLogProjector
     /**
      * @return list<string>
      */
-    private function inScopeTypeValues(): array
+    private function inScopeTypeValues(bool $includeAccountEvents): array
     {
         return array_map(
             static fn (AuditRecordType $type): string => $type->value,
-            TransparencyLogType::projectedAuditRecordTypes(),
+            $includeAccountEvents
+                ? TransparencyLogType::projectedAuditRecordTypes()
+                : TransparencyLogType::packageNativeAuditRecordTypes(),
         );
     }
 }
