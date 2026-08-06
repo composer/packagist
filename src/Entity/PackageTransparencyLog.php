@@ -28,8 +28,14 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Table(name: 'package_transparency_log')]
 #[ORM\UniqueConstraint(name: 'source_package_uniq', columns: ['sourceAuditLogId', 'packageId'])]
 #[ORM\UniqueConstraint(name: 'leaf_index_uniq', columns: ['leafIndex'])]
-#[ORM\Index(name: 'package_idx', columns: ['packageId'])]
-#[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
+// Every public read filters on one of these columns and then sorts by leafIndex, so the sort column
+// is part of each index: without it MySQL filesorts every matching row of a package that may hold one
+// entry per version ever published.
+#[ORM\Index(name: 'package_leaf_idx', columns: ['packageId', 'leafIndex'])]
+#[ORM\Index(name: 'vendor_leaf_idx', columns: ['vendor', 'leafIndex'])]
+#[ORM\Index(name: 'user_leaf_idx', columns: ['userId', 'leafIndex'])]
+#[ORM\Index(name: 'type_leaf_idx', columns: ['type', 'leafIndex'])]
+#[ORM\Index(name: 'datetime_idx', columns: ['datetime'])]
 class PackageTransparencyLog
 {
     #[ORM\Id]
