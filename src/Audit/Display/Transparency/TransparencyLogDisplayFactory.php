@@ -126,7 +126,7 @@ class TransparencyLogDisplayFactory
                 $this->buildActor($attributes['actor'] ?? null),
             ),
             TransparencyLogType::TwoFaActivated, TransparencyLogType::TwoFaDeactivated,
-            TransparencyLogType::PasswordReset, TransparencyLogType::PasswordChanged, TransparencyLogType::PasswordResetRequested,
+            TransparencyLogType::PasswordReset, TransparencyLogType::PasswordChanged,
             TransparencyLogType::EmailChanged, TransparencyLogType::GitHubLinkedWithUser, TransparencyLogType::GitHubDisconnectedFromUser => new MaintainerAccountEventDisplay(
                 $entry->type,
                 $entry->datetime,
