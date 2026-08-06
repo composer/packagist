@@ -115,6 +115,14 @@ enum TransparencyLogType: string
     }
 
     /**
+     * @return list<self>
+     */
+    public static function temporarilyHiddenTypes(): array
+    {
+        return [self::TwoFaActivated, self::TwoFaDeactivated];
+    }
+
+    /**
      * The subset of {@see self::projectedAuditRecordTypes()} whose source row already carries the
      * package it belongs to, so it projects 1:1 with no fan-out. These events can be safely backfilled from audit log
      *
