@@ -80,23 +80,6 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return array<string>
      */
-    public function getPackageNamesUpdatedSince(\DateTimeInterface $date): array
-    {
-        $query = $this->getEntityManager()
-            ->createQuery('
-                SELECT p.name FROM App\Entity\Package p
-                WHERE p.dumpedAt >= :date AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
-            ')
-            ->setParameters(['date' => $date, 'suppressed' => PackageFreezeReason::suppressingCases()]);
-
-        $names = $this->getPackageNamesForQuery($query);
-
-        return array_map('strtolower', $names);
-    }
-
-    /**
-     * @return array<string>
-     */
     public function getPackageNames(): array
     {
         $query = $this->getEntityManager()
@@ -291,29 +274,18 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return list<int>
      */
-    public function getStalePackagesForDumping(): array
-    {
-        $conn = $this->getEntityManager()->getConnection();
-
-        return $conn->fetchFirstColumn('
-            SELECT p.id
-            FROM package p
-            LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
-            WHERE (p.dumpedAt IS NULL OR (p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW()))
-            AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
-            AND (d.total > 1000 OR d.lastUpdated > :date)
-            ORDER BY p.crawledAt ASC
-        ', ['date' => date('Y-m-d H:i:s', strtotime('-4months')), 'suppressed' => PackageFreezeReason::suppressingValues()], ['suppressed' => ArrayParameterType::STRING]);
-    }
-
-    /**
-     * @return list<int>
-     */
     public function getStalePackagesForDumpingV2(int $workerId = 0, int $numWorkers = 1): array
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        $sql = 'SELECT p.id FROM package p USE INDEX (dumped2_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
+        // The >= is deliberate: both columns hold whole seconds, so a request landing in the same second
+        // as the dump is ambiguous and must count as stale — a redundant pass only costs a content
+        // comparison, a missed one is a lost change.
+        // The crawledAt clause is a transitional safety net, droppable once
+        // metadata_dump.file{result:written, requested:false} sits at ~0 outside --force runs.
+        // Both clauses compare column to column, so this scans the index rather than seeking it — hence
+        // the hint, and covering all four columns.
+        $sql = 'SELECT p.id FROM package p USE INDEX (dumped2_requested_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR p.dumpRequestedAt >= p.dumpedAtV2 OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
         $params = ['suppressed' => PackageFreezeReason::suppressingValues()];
         $types = ['suppressed' => ArrayParameterType::STRING];
 

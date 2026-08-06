@@ -38,7 +38,7 @@ class Scheduler
             $packageOrId = $packageOrId->getId();
         }
 
-        $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateSourceDistUrl, $deleteBefore);
+        $pendingJobId = $this->getPendingUpdateJob($packageOrId, $updateSourceDistUrl, $deleteBefore, $forceDump);
         if ($pendingJobId && ($pendingJob = $this->getEM()->getRepository(Job::class)->findOneBy(['id' => $pendingJobId])) !== null) {
             // pending job will execute before the one we are trying to schedule so skip scheduling
             if (
@@ -104,7 +104,7 @@ class Scheduler
         return $this->createJob('package:purge', $payload, $package->getId());
     }
 
-    private function getPendingUpdateJob(int $packageId, bool $updateSourceDistUrl = false, bool $deleteBefore = false): ?string
+    private function getPendingUpdateJob(int $packageId, bool $updateSourceDistUrl = false, bool $deleteBefore = false, bool $forceDump = false): ?string
     {
         $result = $this->getEM()->getConnection()->fetchAssociative(
             'SELECT id, payload FROM job WHERE packageId = :package AND status = :status AND type = :type LIMIT 1',
@@ -117,7 +117,14 @@ class Scheduler
 
         if ($result) {
             $payload = json_decode($result['payload'], true);
-            if (($payload['update_source_dist_url'] ?? false) === $updateSourceDistUrl && $payload['delete_before'] === $deleteBefore) {
+            // force_dump is part of the key: a pending plain job must not swallow a forced request, as
+            // the forcing would be lost outright. Forced schedules are rare enough that the occasional
+            // duplicate crawl this allows is cheaper than reconciling payloads.
+            if (
+                ($payload['update_source_dist_url'] ?? false) === $updateSourceDistUrl
+                && $payload['delete_before'] === $deleteBefore
+                && ($payload['force_dump'] ?? false) === $forceDump
+            ) {
                 return $result['id'];
             }
         }

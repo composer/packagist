@@ -100,11 +100,9 @@ enum PackageFreezeReason: string
 #[ORM\UniqueConstraint(name: 'package_name_idx', columns: ['name'])]
 #[ORM\Index(name: 'indexed_idx', columns: ['indexedAt'])]
 #[ORM\Index(name: 'crawled_idx', columns: ['crawledAt'])]
-#[ORM\Index(name: 'dumped_idx', columns: ['dumpedAt'])]
-#[ORM\Index(name: 'dumped2_idx', columns: ['dumpedAtV2'])]
 #[ORM\Index(name: 'repository_idx', columns: ['repository'])]
 #[ORM\Index(name: 'remoteid_idx', columns: ['remoteId'])]
-#[ORM\Index(name: 'dumped2_crawled_frozen_idx', columns: ['dumpedAtV2', 'crawledAt', 'frozen'])]
+#[ORM\Index(name: 'dumped2_requested_crawled_frozen_idx', columns: ['dumpedAtV2', 'dumpRequestedAt', 'crawledAt', 'frozen'])]
 #[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
 #[ORM\Index(name: 'frozen_idx', columns: ['frozen'])]
 #[ORM\Index(name: 'type_frozen_idx', columns: ['type', 'frozen'])]
@@ -190,10 +188,10 @@ class Package
     private ?\DateTimeImmutable $indexedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $dumpedAt = null;
+    private ?\DateTimeImmutable $dumpedAtV2 = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $dumpedAtV2 = null;
+    private ?\DateTimeImmutable $dumpRequestedAt = null;
 
     /**
      * @var Collection<int, Download>&Selectable<int, Download>
@@ -693,17 +691,11 @@ class Package
         return $this->indexedAt;
     }
 
-    public function setDumpedAt(?\DateTimeImmutable $dumpedAt): void
-    {
-        $this->dumpedAt = $dumpedAt;
-    }
-
-    public function getDumpedAt(): ?\DateTimeImmutable
-    {
-        return $this->dumpedAt;
-    }
-
-    public function setDumpedAtV2(?\DateTimeImmutable $dumpedAt): void
+    /**
+     * For tests only — V2Dumper records dump times in bulk SQL, production code marks via
+     * markForDump() / forceDump(). Not nullable as a null dumpedAtV2 means "re-write no matter what".
+     */
+    public function setDumpedAtV2(\DateTimeImmutable $dumpedAt): void
     {
         $this->dumpedAtV2 = $dumpedAt;
     }
@@ -711,6 +703,60 @@ class Package
     public function getDumpedAtV2(): ?\DateTimeImmutable
     {
         return $this->dumpedAtV2;
+    }
+
+    /**
+     * Request a fresh metadata dump.
+     *
+     * Deliberately does not touch dumpedAtV2, which V2Dumper writes once at the end of a run: nulling
+     * it here would let an in-flight dump overwrite the mark and lose it. Recording the request
+     * separately keeps marking monotonic, so a mark landing mid-run survives.
+     */
+    public function markForDump(): void
+    {
+        $this->dumpRequestedAt = new \DateTimeImmutable();
+    }
+
+    /**
+     * Request a dump that re-writes the files even if their content is byte-identical, which busts the
+     * CDN cache and can shake a stuck storage replication loose. Use it for the deliberate "make it
+     * publish again" paths — a manual update, an unfreeze, a version being pulled or restored, and so
+     * on — not for ordinary content changes, which markForDump() covers at a fraction of the cost.
+     *
+     * The null dumpedAtV2 is what V2Dumper reads as "write this no matter what". Nulling is
+     * destructive, so this marks as well, or an in-flight dump run would overwrite the null and lose
+     * the request. That race can still cost the forcing itself, but never the re-dump.
+     */
+    public function forceDump(): void
+    {
+        $this->dumpedAtV2 = null;
+        $this->markForDump();
+    }
+
+    public function getDumpRequestedAt(): ?\DateTimeImmutable
+    {
+        return $this->dumpRequestedAt;
+    }
+
+    /**
+     * Whether the next dump must re-write the files even if their content is unchanged. See forceDump().
+     */
+    public function isDumpForced(): bool
+    {
+        return $this->dumpedAtV2 === null;
+    }
+
+    /**
+     * Whether something requested a re-dump since the package was last dumped.
+     *
+     * Deliberately NOT a mirror of PackageRepository::getStalePackagesForDumpingV2(), which also sweeps
+     * in packages whose crawledAt is newer than their dump. Folding that clause in here would make
+     * every package "requested" and the metadata_dump.file{requested} tag useless.
+     */
+    public function isDumpRequested(): bool
+    {
+        return $this->dumpedAtV2 === null
+            || ($this->dumpRequestedAt !== null && $this->dumpRequestedAt >= $this->dumpedAtV2);
     }
 
     public function addMaintainer(User $maintainer): void
@@ -855,6 +901,10 @@ class Package
         }
         $this->frozen = null;
         $this->setCrawledAt(null);
+        // Forcing regardless of the freeze reason: a suppressing freeze purged the published metadata,
+        // so it has to be written out again even though the content did not change. For the gentle
+        // reasons the re-write is redundant, but cheap insurance on a handful of packages.
+        $this->forceDump();
     }
 
     public function isFrozen(): bool

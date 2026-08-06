@@ -69,6 +69,12 @@ class VersionRepository extends ServiceEntityRepository
         $package->getVersions()->removeElement($version);
         $package->setCrawledAt(new \DateTimeImmutable());
         $package->setUpdatedAt(new \DateTimeImmutable());
+        // A soft-deleted row was already excluded from the metadata, so hard-deleting it changes
+        // nothing. Worth skipping: the dominant caller is Updater's prune loop purging dev rows a day
+        // after soft-deleting them, i.e. routine branch churn.
+        if (!$version->isSoftDeleted()) {
+            $package->markForDump();
+        }
         $em->persist($package);
 
         $this->versionIdCache->deleteVersion($package, $version);
@@ -108,10 +114,19 @@ class VersionRepository extends ServiceEntityRepository
 
         $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $internalReasonText, $actor));
 
+        // Mark directly rather than leaning on the scheduled job: pulling a version is the security
+        // path, and the job's force_dump only lands if the crawl succeeds, so a repository that 404s
+        // would leave the pulled version published indefinitely. The dumper excludes soft-deleted
+        // versions by itself, so there is nothing to wait for.
+        $version->getPackage()->markForDump();
+
         if (!$version->getPackage()->isFrozen()) {
-            $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover');
+            // still schedule the crawl so dependents/suggesters get recomputed without this version
+            $this->scheduler->scheduleUpdate($version->getPackage(), 'version_soft_delete', forceDump: true);
         } else {
-            $version->getPackage()->setCrawledAt(new \DateTimeImmutable());
+            // The mark above replaces the crawledAt bump this used to do, which also means no search
+            // reindex (getStalePackagesForIndexing() keys off indexedAt <= crawledAt). Fine, as the
+            // search document is package-level and unaffected by pulling one version.
             $this->getEntityManager()->persist($version->getPackage());
         }
     }
@@ -132,7 +147,10 @@ class VersionRepository extends ServiceEntityRepository
 
         $em->persist(AuditRecord::versionRecovered($version, $previousReason, $actor));
 
-        $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover');
+        // marked directly for the same reason as softDelete(): the re-dump must not depend on a
+        // successful crawl, or on the job surviving Scheduler dedup
+        $version->getPackage()->markForDump();
+        $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover', forceDump: true);
     }
 
     /**
