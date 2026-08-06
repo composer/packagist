@@ -1,0 +1,101 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}
+    Packagist - Transparency Log
+{% endblock %}
+
+{% block content %}
+    <h2 class="title">Transparency Log</h2>
+
+    <div class="audit-log-filters">
+        <form method="get" action="{{ path('view_transparency_log') }}" name="filters">
+            <div class="row">
+                <div class="col-md-3 col-sm-6">
+                    <div class="form-group">
+                        <label for="type-filter">Type</label>
+                        <select name="type[]" id="type-filter" class="form-control audit-log-type-select" multiple style="height: 185px;">
+                            {% for type in selectableTypes %}
+                                <option value="{{ type.value }}" {% if type.value in selectedFilters.type %}selected="selected"{% endif %}>
+                                    {{ ('transparency_log.type.' ~ type.value)|trans }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="help-block">Hold Ctrl/Cmd to select multiple</small>
+                    </div>
+                </div>
+                <div class="col-md-9 col-sm-6">
+                    <div class="row">
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label for="vendor-filter">Vendor</label>
+                                <input type="text" name="vendor" id="vendor-filter" class="form-control" value="{{ selectedFilters.vendor }}" placeholder="Filter by vendor">
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label for="package-filter">Package Name</label>
+                                <input type="text" name="package" id="package-filter" class="form-control" value="{{ selectedFilters.package }}" placeholder="Filter by package name">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label for="user-filter">Maintainer</label>
+                                <input type="text" name="user" id="user-filter" class="form-control" value="{{ selectedFilters.user }}" placeholder="Filter by username">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label for="datetime-from-filter">Date & Time From</label>
+                                <input type="datetime-local" name="datetime_from" id="datetime-from-filter" class="form-control" value="{{ selectedFilters.datetime_from }}" step="1">
+                                <small class="help-block">Filter logs from this time onwards (UTC)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-sm-12">
+                            <div class="form-group">
+                                <label for="datetime-to-filter">Date & Time To</label>
+                                <input type="datetime-local" name="datetime_to" id="datetime-to-filter" class="form-control" value="{{ selectedFilters.datetime_to }}" step="1">
+                                <small class="help-block">Filter logs up to this time (UTC)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="audit-log-filter-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-filter"></span> Apply Filters
+                        </button>
+                        <a href="{{ url('view_transparency_log') }}" class="btn btn-default">
+                            <span class="glyphicon glyphicon-remove-circle"></span> Clear All Filters
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if dateTimeFromFilter.dateTime or dateTimeToFilter.dateTime %}
+        <div class="alert alert-info audit-log-time-range">
+            <strong>Time range:</strong>
+            {% if dateTimeFromFilter.dateTime %}
+                <span>From: {{ dateTimeFromFilter.dateTime|date('Y-m-d H:i:s') }} UTC</span>
+            {% endif %}
+            {% if dateTimeToFilter.dateTime %}
+                <span>{% if dateTimeFromFilter.dateTime %} | {% endif %}To: {{ dateTimeToFilter.dateTime|date('Y-m-d H:i:s') }} UTC</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% include 'transparency_log/_table.html.twig' with {
+        displays: transparencyLogDisplays,
+    } only %}
+
+    {% if transparencyLogDisplays|length and paginator.haveToPaginate() %}
+        {{ pagerfanta(paginator, 'twitter_bootstrap', {'proximity': 2}) }}
+    {% endif %}
+{% endblock %}

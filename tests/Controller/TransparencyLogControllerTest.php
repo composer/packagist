@@ -12,148 +12,103 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\TransparencyLogType;
+use App\Command\ProjectTransparencyLogCommand;
 use App\Entity\AuditRecord;
 use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
-use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\Console\Tester\CommandTester;
 
 class TransparencyLogControllerTest extends IntegrationTestCase
 {
-    public function testViewOrganizationCreatedAuditLog(): void
+    public function testShowsProjectedEventsAnonymously(): void
     {
-        $user = self::createUser('orgcreator', 'orgcreator@example.com', roles: ['ROLE_USER']);
-        $organization = self::createOrganization('acme', 'ACME Corp');
-        $this->store($user, $organization);
+        $this->givenProjectedLog();
 
-        $this->store(AuditRecord::organizationCreated($organization->id, $organization->slug, $organization->displayName, $user));
-
-        $this->client->loginUser($user);
+        // No authentication set up: the request is anonymous.
         $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
-        static::assertContains('Organization created', $types);
-
-        $link = $crawler->filter('a[href="/organizations/acme"]');
-        static::assertCount(1, $link);
-        static::assertSame('ACME Corp', trim($link->text()));
+        $types = $crawler->filter('[data-test="transparency-log-type"]')->each(fn ($element) => trim($element->text()));
+        static::assertContains('Package created', $types);
     }
 
-    #[DataProvider('filterProvider')]
-    public function testViewAuditLogs(array $filters, array $expected): void
+    public function testUnprojectedAuditRecordsAreNotShown(): void
     {
-        $user = self::createUser('testuser', 'test@example.com', roles: ['ROLE_USER']);
-        $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$user]);
+        $user = self::createUser('unprojected', 'unprojected@example.com');
+        $organization = self::createOrganization('acme', 'ACME Corp');
+        $this->store($user, $organization);
 
-        $this->store($user, $package);
+        // organization_created is out of scope for the projection, so it never reaches this page.
+        $this->store(AuditRecord::organizationCreated($organization->id, $organization->slug, $organization->displayName, $user));
 
-        $auditRecord1 = AuditRecord::canonicalUrlChange($package, $user, 'https://github.com/vendor1/package1-new');
-        $auditRecord = AuditRecord::packageDeleted($package, $user);
+        $this->runProjector();
 
-        $this->store($auditRecord1, $auditRecord);
-
-        $this->client->loginUser($user);
-        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query($filters));
+        $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
-
-        $rows = $crawler->filter('[data-test=audit-log-type]');
-        static::assertSame($expected, $rows->each(fn ($element) => trim($element->text())));
+        static::assertCount(0, $crawler->filter('[data-test="transparency-log-type"]'));
     }
 
-    public function testViewAuditLogsFilteredByUsername(): void
+    public function testFiltersByPackageVendorAndType(): void
     {
-        $actor = self::createUser('actoruser', 'actor@example.com', roles: ['ROLE_USER']);
-        $maintainer = self::createUser('naderman', 'nader@example.com');
-        $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$actor]);
+        $this->givenProjectedLog();
 
-        $this->store($actor, $maintainer, $package);
-        $this->store(AuditRecord::maintainerAdded($package, $maintainer, $actor));
-
-        $this->client->loginUser($actor);
-
-        // The link on /users/naderman/ hits this exact path; it used to time out scanning the JSON.
-        // The search is case-insensitive and matches the record where naderman is the subject user.
-        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user' => 'NADERMAN']));
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'vendor1/package1']));
         static::assertResponseIsSuccessful();
-        $rowTexts = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
-        static::assertContains('Maintainer added', $rowTexts);
+        static::assertCount(1, $crawler->filter('[data-test="transparency-log-type"]'));
 
-        // A username with no records returns an empty, non-crashing result
-        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user' => 'nobody']));
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['vendor' => 'vendor1']));
         static::assertResponseIsSuccessful();
-        static::assertCount(0, $crawler->filter('[data-test=audit-log-type]'));
-    }
+        static::assertCount(1, $crawler->filter('[data-test="transparency-log-type"]'));
 
-    public static function filterProvider(): iterable
-    {
-        yield [
-            [],
-            ['Package deleted', 'Canonical URL changed', 'Package created', 'User created'],
-        ];
-
-        yield [
-            ['type' => [AuditLogEventType::CanonicalUrlChanged->value, AuditLogEventType::PackageDeleted->value]],
-            ['Package deleted', 'Canonical URL changed'],
-        ];
-    }
-
-    public function testPackageDeletionReasonsAreRoleGated(): void
-    {
-        $maintainer = self::createUser('maintainer', 'maintainer@example.com', roles: ['ROLE_USER']);
-        $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$maintainer]);
-
-        $this->store($maintainer, $package);
-
-        $auditRecord = AuditRecord::packageDeleted($package, $maintainer, 'PUBLIC-REASON-XYZ', 'INTERNAL-REASON-ABC');
-        $this->store($auditRecord);
-
-        // A plain user sees the public reason but never the admin-only internal reason.
-        $this->client->loginUser($maintainer);
-        $this->client->request('GET', '/transparency-log');
+        // A vendor with nothing projected returns an empty, non-crashing result.
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['vendor' => 'nobody']));
         static::assertResponseIsSuccessful();
-        $body = (string) $this->client->getResponse()->getContent();
-        static::assertStringContainsString('PUBLIC-REASON-XYZ', $body);
-        static::assertStringNotContainsString('INTERNAL-REASON-ABC', $body);
-
-        // An admin (implies ROLE_AUDITOR) sees both.
-        $admin = self::createUser('adminuser', 'admin@example.com', roles: ['ROLE_ADMIN']);
-        $this->store($admin);
-        $this->client->loginUser($admin);
-        $this->client->request('GET', '/transparency-log');
-        static::assertResponseIsSuccessful();
-        $body = (string) $this->client->getResponse()->getContent();
-        static::assertStringContainsString('PUBLIC-REASON-XYZ', $body);
-        static::assertStringContainsString('INTERNAL-REASON-ABC', $body);
-    }
-
-    public function testViewAuditLogsWithDateTimeFilter(): void
-    {
-        $user = self::createUser('testuser', 'test@example.com', roles: ['ROLE_USER']);
-        $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$user]);
-
-        $this->store($user, $package);
-
-        $auditRecord1 = AuditRecord::canonicalUrlChange($package, $user, 'https://github.com/vendor1/package1-new');
-        $auditRecord2 = AuditRecord::packageDeleted($package, $user);
-
-        $this->store($auditRecord1, $auditRecord2);
-
-        $this->client->loginUser($user);
-
-        $now = new \DateTimeImmutable();
-        $from = $now->modify('-1 hour')->format('Y-m-d\TH:i:s');
-        $to = $now->modify('+1 hour')->format('Y-m-d\TH:i:s');
+        static::assertCount(0, $crawler->filter('[data-test="transparency-log-type"]'));
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
-            'datetime_from' => $from,
-            'datetime_to' => $to,
+            'type' => [TransparencyLogType::VersionCreated->value],
+        ]));
+        static::assertResponseIsSuccessful();
+        static::assertCount(0, $crawler->filter('[data-test="transparency-log-type"]'));
+    }
+
+    public function testTwoFactorEventsAreHiddenEvenWhenRequestedExplicitly(): void
+    {
+        $user = self::createUser('hidden', 'hidden@example.com');
+        $this->store($user);
+        $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$user]);
+        $this->store($package);
+
+        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
+        $this->runProjector();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
+            'type' => [TransparencyLogType::TwoFaDeactivated->value],
         ]));
         static::assertResponseIsSuccessful();
 
-        $rows = $crawler->filter('[data-test=audit-log-type]');
-        static::assertSame(4, $rows->count(), 'Should have 4 results within the time range');
+        // The hidden type is dropped from the filter, so this falls back to the unfiltered list, which
+        // itself excludes it.
+        $types = $crawler->filter('[data-test="transparency-log-type"]')->each(fn ($element) => trim($element->text()));
+        static::assertNotContains('Maintainer disabled two-factor authentication', $types);
+        static::assertContains('Package created', $types);
+    }
 
-        $timeRangeAlert = $crawler->filter('.audit-log-time-range');
-        static::assertCount(1, $timeRangeAlert, 'Time range should be displayed');
+    private function givenProjectedLog(): void
+    {
+        $user = self::createUser('projected', 'projected@example.com');
+        $this->store($user);
+        $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$user]);
+        $this->store($package);
+
+        $this->runProjector();
+    }
+
+    private function runProjector(): void
+    {
+        $tester = new CommandTester(self::getService(ProjectTransparencyLogCommand::class));
+        $tester->execute(['--min-event-age-to-project' => '0']);
+        $tester->assertCommandIsSuccessful();
     }
 }
