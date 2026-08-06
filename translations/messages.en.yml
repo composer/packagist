@@ -220,7 +220,6 @@ transparency_log:
         two_fa_deactivated: Maintainer disabled two-factor authentication
         password_reset: Maintainer password reset
         password_changed: Maintainer password changed
-        password_reset_requested: Maintainer password reset requested
         email_changed: Maintainer email address changed
         github_linked_with_user: Maintainer linked a GitHub account
         github_disconnected_from_user: Maintainer disconnected their GitHub account

@@ -28,7 +28,6 @@ class TransparencyLogTypeTest extends TestCase
             AuditRecordType::TwoFaAuthenticationDeactivated,
             AuditRecordType::PasswordReset,
             AuditRecordType::PasswordChanged,
-            AuditRecordType::PasswordResetRequested,
             AuditRecordType::EmailChanged,
             AuditRecordType::GitHubLinkedWithUser,
             AuditRecordType::GitHubDisconnectedFromUser,
@@ -68,6 +67,9 @@ class TransparencyLogTypeTest extends TestCase
             AuditRecordType::UserFrozen,
             AuditRecordType::UserUnfrozen,
             AuditRecordType::UsernameChanged,
+            // a reset *request* comes from an unauthenticated visitor, so publishing it would leak
+            // account existence; only the completed reset is projected
+            AuditRecordType::PasswordResetRequested,
             // other out-of-scope domains
             AuditRecordType::SecurityAdvisoryCreated,
             AuditRecordType::FilterListEntryAdded,

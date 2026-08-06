@@ -48,7 +48,6 @@ enum TransparencyLogType: string
     case TwoFaDeactivated = 'two_fa_deactivated';
     case PasswordReset = 'password_reset';
     case PasswordChanged = 'password_changed';
-    case PasswordResetRequested = 'password_reset_requested';
     case EmailChanged = 'email_changed';
     case GitHubLinkedWithUser = 'github_linked_with_user';
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user';
@@ -79,7 +78,6 @@ enum TransparencyLogType: string
             AuditRecordType::TwoFaAuthenticationDeactivated => self::TwoFaDeactivated,
             AuditRecordType::PasswordReset => self::PasswordReset,
             AuditRecordType::PasswordChanged => self::PasswordChanged,
-            AuditRecordType::PasswordResetRequested => self::PasswordResetRequested,
             AuditRecordType::EmailChanged => self::EmailChanged,
             AuditRecordType::GitHubLinkedWithUser => self::GitHubLinkedWithUser,
             AuditRecordType::GitHubDisconnectedFromUser => self::GitHubDisconnectedFromUser,
@@ -95,7 +93,7 @@ enum TransparencyLogType: string
     {
         return match ($this) {
             self::TwoFaActivated, self::TwoFaDeactivated,
-            self::PasswordReset, self::PasswordChanged, self::PasswordResetRequested,
+            self::PasswordReset, self::PasswordChanged,
             self::EmailChanged, self::GitHubLinkedWithUser, self::GitHubDisconnectedFromUser => true,
             default => false,
         };
