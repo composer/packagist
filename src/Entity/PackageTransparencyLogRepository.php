@@ -94,13 +94,18 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
      */
     public function getQueryBuilderForPublicView(): QueryBuilder
     {
-        return $this->createQueryBuilder('t')
-            ->where('t.type NOT IN (:hiddenTypes)')
-            ->setParameter('hiddenTypes', array_map(
-                static fn (TransparencyLogType $type): string => $type->value,
-                TransparencyLogType::temporarilyHiddenTypes(),
-            ))
-            ->orderBy('t.leafIndex', 'DESC');
+        $qb = $this->createQueryBuilder('t')->orderBy('t.leafIndex', 'DESC');
+
+        $hiddenTypes = array_map(
+            static fn (TransparencyLogType $type): string => $type->value,
+            TransparencyLogType::temporarilyHiddenTypes(),
+        );
+        if ($hiddenTypes !== []) {
+            $qb->andWhere('t.type NOT IN (:hiddenTypes)')
+                ->setParameter('hiddenTypes', $hiddenTypes);
+        }
+
+        return $qb;
     }
 
     /**
