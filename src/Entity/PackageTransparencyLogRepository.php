@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Audit\TransparencyLogType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -89,12 +90,18 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
 
     /**
      * Entries for a package, newest first (leaf index is chronological), for the public read view.
+     * {@see TransparencyLogType::temporarilyHiddenTypes()} are projected but not shown.
      */
     public function getQueryBuilderForPackage(int $packageId): QueryBuilder
     {
         return $this->createQueryBuilder('t')
             ->where('t.packageId = :packageId')
+            ->andWhere('t.type NOT IN (:hiddenTypes)')
             ->setParameter('packageId', $packageId)
+            ->setParameter('hiddenTypes', array_map(
+                static fn (TransparencyLogType $type): string => $type->value,
+                TransparencyLogType::temporarilyHiddenTypes(),
+            ))
             ->orderBy('t.leafIndex', 'DESC');
     }
 }
