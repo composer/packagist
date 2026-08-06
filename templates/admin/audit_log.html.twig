@@ -1,14 +1,12 @@
-{% extends "layout.html.twig" %}
+{% extends "admin/layout.html.twig" %}
 
-{% block title %}
-    Packagist - Transparency Log
-{% endblock %}
+{% block title %}Audit Log - {{ parent() }}{% endblock %}
 
-{% block content %}
-    <h2 class="title">Transparency Log</h2>
+{% block admin_content %}
+    <h2 class="title">Audit Log</h2>
 
     <div class="audit-log-filters">
-        <form method="get" action="{{ path('view_transparency_log') }}" name="filters">
+        <form method="get" action="{{ path('admin_audit_log') }}" name="filters">
             <div class="row">
                 <div class="col-lg-3 col-md-6">
                     <div class="form-group">
@@ -80,7 +78,7 @@
                         <button type="submit" class="btn btn-primary">
                             <span class="bi bi-funnel-fill"></span> Apply Filters
                         </button>
-                        <a href="{{ url('view_transparency_log') }}" class="btn btn-secondary">
+                        <a href="{{ url('admin_audit_log') }}" class="btn btn-secondary">
                             <span class="bi bi-x-circle-fill"></span> Clear All Filters
                         </a>
                     </div>

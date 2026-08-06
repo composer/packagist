@@ -1,5 +1,5 @@
 {% set linkSurroundingLogs = linkSurroundingLogs ?? false %}
-{% set emptyMessage = emptyMessage ?? 'No transparency logs found.' %}
+{% set emptyMessage = emptyMessage ?? 'No audit log records found.' %}
 
 {% if displays|length %}
     <div class="audit-log-table-container">
@@ -21,7 +21,7 @@
                             {% if linkSurroundingLogs %}
                                 {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
                                 {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
-                                <a href="{{ path('view_transparency_log', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
+                                <a href="{{ path('admin_audit_log', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
                                     <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
                                 </a>
                             {% else %}
