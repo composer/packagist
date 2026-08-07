@@ -13,6 +13,7 @@
 namespace App\Tests\Audit;
 
 use App\Audit\TransparencyLogScrubber;
+use App\Audit\TransparencyLogType;
 use PHPUnit\Framework\TestCase;
 
 class TransparencyLogScrubberTest extends TestCase
@@ -35,7 +36,7 @@ class TransparencyLogScrubberTest extends TestCase
             'actor' => ['id' => 7, 'username' => 'bob'],
             'metadata' => ['source' => ['reference' => 'abc123']],
             'nested' => ['internalReason' => 'deep secret', 'keep' => 'ok'],
-        ]);
+        ], TransparencyLogType::PackageDeleted);
 
         // dropped
         self::assertArrayNotHasKey('internalReason', $scrubbed);
@@ -55,5 +56,35 @@ class TransparencyLogScrubberTest extends TestCase
         // denylisted keys are removed recursively, siblings preserved
         self::assertArrayNotHasKey('internalReason', $scrubbed['nested']);
         self::assertSame('ok', $scrubbed['nested']['keep']);
+    }
+
+    public function testDropsTheReasonOfAccountSecurityEvents(): void
+    {
+        $scrubber = new TransparencyLogScrubber();
+
+        // 'Backup code used' / 'Manually disabled' say how the account change happened, which is not
+        // public information, unlike a moderation reason on a package event.
+        $scrubbed = $scrubber->scrub([
+            'user' => ['id' => 7, 'username' => 'bob'],
+            'actor' => ['id' => 7, 'username' => 'bob'],
+            'reason' => 'Backup code used',
+        ], TransparencyLogType::TwoFaDeactivated);
+
+        self::assertArrayNotHasKey('reason', $scrubbed);
+        self::assertSame(['id' => 7, 'username' => 'bob'], $scrubbed['user']);
+    }
+
+    public function testKeepsTheReasonOfEveryPackageEvent(): void
+    {
+        $scrubber = new TransparencyLogScrubber();
+
+        foreach (TransparencyLogType::cases() as $type) {
+            if ($type->fansOutToMaintainedPackages()) {
+                continue;
+            }
+
+            $scrubbed = $scrubber->scrub(['reason' => 'public takedown notice'], $type);
+            self::assertSame('public takedown notice', $scrubbed['reason'] ?? null, $type->value.' should keep its public reason');
+        }
     }
 }
