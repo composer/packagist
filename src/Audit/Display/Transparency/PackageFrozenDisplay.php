@@ -14,6 +14,7 @@ namespace App\Audit\Display\Transparency;
 
 use App\Audit\Display\ActorDisplay;
 use App\Audit\TransparencyLogType;
+use App\Entity\PackageFreezeReason;
 
 readonly class PackageFrozenDisplay extends AbstractTransparencyDisplay
 {
@@ -25,6 +26,19 @@ readonly class PackageFrozenDisplay extends AbstractTransparencyDisplay
         ActorDisplay $actor,
     ) {
         parent::__construct($datetime, $actor);
+    }
+
+    /**
+     * Translation key for the reason label, or null when the projected value is not a reason we know
+     * how to name, so the row shows nothing rather than a raw enum value.
+     */
+    public function getReasonTranslationKey(): ?string
+    {
+        if ($this->reason === null || PackageFreezeReason::tryFrom($this->reason) === null) {
+            return null;
+        }
+
+        return 'transparency_log.freeze_reason.'.$this->reason;
     }
 
     public function getType(): TransparencyLogType
