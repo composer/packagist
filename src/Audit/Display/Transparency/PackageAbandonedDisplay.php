@@ -12,6 +12,7 @@
 
 namespace App\Audit\Display\Transparency;
 
+use App\Audit\AbandonmentReason;
 use App\Audit\Display\ActorDisplay;
 use App\Audit\TransparencyLogType;
 
@@ -26,6 +27,19 @@ readonly class PackageAbandonedDisplay extends AbstractTransparencyDisplay
         ActorDisplay $actor,
     ) {
         parent::__construct($datetime, $actor);
+    }
+
+    /**
+     * Translation key for the reason label, or null when the projected value is not a reason we know
+     * how to name, so the row shows nothing rather than a raw enum value.
+     */
+    public function getReasonTranslationKey(): ?string
+    {
+        if ($this->reason === null || AbandonmentReason::tryFrom($this->reason) === null) {
+            return null;
+        }
+
+        return 'transparency_log.abandonment_reason.'.$this->reason;
     }
 
     public function getType(): TransparencyLogType

@@ -200,6 +200,20 @@ user_freeze_reasons:
     temporary: Temporary
 
 transparency_log:
+    # Short labels for the log rows. freezing_reasons holds the same reasons as full sentences
+    # which is too verbose for a table display.
+    freeze_reason:
+        spam: Spam
+        malware: Malware
+        remote_id: Repository ID mismatch
+        gone: Repository gone
+        temporary: Temporary
+    abandonment_reason:
+        manual: Marked abandoned by the maintainer
+        repository_archived: Repository archived
+        composer_json: Marked abandoned in composer.json
+        repository_archived_and_composer_json: Repository archived and marked abandoned in composer.json
+        unknown: Unknown
     type:
         maintainer_added: Maintainer added
         maintainer_removed: Maintainer removed

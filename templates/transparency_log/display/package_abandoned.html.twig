@@ -2,5 +2,5 @@
 
 <strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
 {% if display.replacementPackage %}Replacement: {{ auditLog.packageLink(display.replacementPackage) }}<br>{% endif %}
-{% if display.reason %}Reason: {{ display.reason }}<br>{% endif %}
+{% if display.reasonTranslationKey %}Reason: {{ display.reasonTranslationKey|trans }}<br>{% endif %}
 Abandoned by: {{ display.actor.username }}
