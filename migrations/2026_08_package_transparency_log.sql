@@ -22,4 +22,4 @@ CREATE TABLE package_transparency_log (
     UNIQUE INDEX source_package_uniq (sourceAuditLogId, packageId),
     UNIQUE INDEX leaf_index_uniq (leafIndex),
     PRIMARY KEY (id)
-) DEFAULT CHARACTER SET utf8mb4;
+) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
