@@ -27,9 +27,11 @@ use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class TransparencyLogController extends Controller
 {
+    #[IsGranted('ROLE_USER')]
     #[Route(path: '/transparency-log', name: 'view_transparency_log', methods: ['GET'])]
     public function viewTransparencyLog(Request $request, PackageTransparencyLogRepository $repository, TransparencyLogDisplayFactory $displayFactory): Response
     {
