@@ -107,14 +107,4 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
 
         return $qb;
     }
-
-    /**
-     * As {@see self::getQueryBuilderForPublicView()}, narrowed to a single package.
-     */
-    public function getQueryBuilderForPackage(int $packageId): QueryBuilder
-    {
-        return $this->getQueryBuilderForPublicView()
-            ->andWhere('t.packageId = :packageId')
-            ->setParameter('packageId', $packageId);
-    }
 }

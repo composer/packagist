@@ -77,10 +77,13 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertSame('composer require test/pkg', $crawler->filter('.requireme input')->attr('value'));
 
-        // The package page links to its own transparency log, not to the admin audit log.
-        $transparencyLink = $crawler->filter('a[href="/packages/test/pkg/transparency"]');
+        // The package page deep-links into the transparency log filtered to this package, and does not
+        // expose the admin audit log to non-auditors.
+        $transparencyLink = $crawler->filter('a[href*="transparency-log"]');
         self::assertCount(1, $transparencyLink);
         self::assertSame('Transparency log', trim($transparencyLink->text()));
+        self::assertStringContainsString('package=test/pkg', (string) $transparencyLink->attr('href'));
+        self::assertStringContainsString('noindex', (string) $transparencyLink->attr('rel'));
         self::assertCount(0, $crawler->filter('a[href*="/admin/audit-log"]'));
     }
 

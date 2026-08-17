@@ -15,22 +15,41 @@ namespace App\Tests\Controller;
 use App\Audit\TransparencyLogType;
 use App\Command\ProjectTransparencyLogCommand;
 use App\Entity\AuditRecord;
+use App\Entity\PackageFreezeReason;
 use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
 class TransparencyLogControllerTest extends IntegrationTestCase
 {
-    public function testShowsProjectedEventsAnonymously(): void
+    public function testAnonymousVisitorsAreSentToLogin(): void
+    {
+        $this->client->request('GET', '/transparency-log');
+
+        static::assertResponseRedirects('/login/');
+    }
+
+    public function testShowsProjectedEvents(): void
     {
         $this->givenProjectedLog();
+        $this->givenLoggedInVisitor();
 
-        // No authentication set up: the request is anonymous.
         $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
 
         $types = $crawler->filter('[data-test="transparency-log-type"]')->each(fn ($element) => trim($element->text()));
         static::assertContains('Package created', $types);
+    }
+
+    public function testPageIsNotIndexable(): void
+    {
+        $this->givenProjectedLog();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log');
+
+        static::assertResponseIsSuccessful();
+        static::assertCount(1, $crawler->filter('meta[name="robots"][content="noindex"]'));
     }
 
     public function testUnprojectedAuditRecordsAreNotShown(): void
@@ -43,6 +62,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $this->store(AuditRecord::organizationCreated($organization->id, $organization->slug, $organization->displayName, $user));
 
         $this->runProjector();
+        $this->givenLoggedInVisitor();
 
         $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
@@ -52,6 +72,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
     public function testFiltersByPackageVendorAndType(): void
     {
         $this->givenProjectedLog();
+        $this->givenLoggedInVisitor();
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'vendor1/package1']));
         static::assertResponseIsSuccessful();
@@ -73,6 +94,28 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertCount(0, $crawler->filter('[data-test="transparency-log-type"]'));
     }
 
+    public function testFreezeReasonIsRenderedAsALabelNotARawEnumValue(): void
+    {
+        $admin = self::createUser('freezer', 'freezer@example.org', roles: ['ROLE_ADMIN']);
+        $this->store($admin);
+        $package = self::createPackage('acme/frozen-log', 'https://github.com/acme/frozen-log');
+        $this->store($package);
+
+        $this->getEM()->getRepository(AuditRecord::class)->insert(
+            AuditRecord::packageFrozen($package, $admin, PackageFreezeReason::RemoteIdMismatch),
+        );
+
+        $this->runProjector();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'acme/frozen-log']));
+
+        static::assertResponseIsSuccessful();
+        $details = $crawler->filter('td.audit-log-details')->text();
+        static::assertStringContainsString('Repository ID mismatch', $details);
+        static::assertStringNotContainsString('remote_id', $details);
+    }
+
     public function testTwoFactorEventsAreHiddenEvenWhenRequestedExplicitly(): void
     {
         $user = self::createUser('hidden', 'hidden@example.com');
@@ -82,6 +125,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
         $this->runProjector();
+        $this->givenLoggedInVisitor();
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
             'type' => [TransparencyLogType::TwoFaDeactivated->value],
@@ -89,7 +133,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertResponseIsSuccessful();
 
         // The hidden type is dropped from the filter, so this falls back to the unfiltered list, which
-        // itself excludes it.
+        // itself excludes it. The rows are still projected, see TransparencyLogProjectorTest.
         $types = $crawler->filter('[data-test="transparency-log-type"]')->each(fn ($element) => trim($element->text()));
         static::assertNotContains('Maintainer disabled two-factor authentication', $types);
         static::assertContains('Package created', $types);
@@ -103,6 +147,18 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $this->store($package);
 
         $this->runProjector();
+    }
+
+    /**
+     * The log is only readable by logged in users, and the reader is deliberately not involved in any of
+     * the events under test.
+     */
+    private function givenLoggedInVisitor(): void
+    {
+        $visitor = self::createUser('visitor', 'visitor@example.com');
+        $this->store($visitor);
+
+        $this->client->loginUser($visitor);
     }
 
     private function runProjector(): void
