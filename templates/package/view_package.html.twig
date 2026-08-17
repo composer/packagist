@@ -313,12 +313,12 @@
                                 Aikido package health analysis
                             </a>
                         </p>
-                        {% if is_granted('ROLE_AUDITOR') %}
-                            <p><a rel="nofollow noindex" href="{{ path('admin_audit_log', {package: package.name}) }}">Audit log</a></p>
-                        {% endif %}
                         <p>
                             <a href="{{ path('view_transparency_log', {package: package.name}) }}" rel="nofollow noindex">Transparency log</a>
                         </p>
+                        {% if is_granted('ROLE_AUDITOR') %}
+                            <p><a rel="nofollow noindex" href="{{ path('admin_audit_log', {package: package.name}) }}">Audit log</a></p>
+                        {% endif %}
                     </div>
                 </div>
 
