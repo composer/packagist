@@ -24,7 +24,7 @@ class TransparencyLogScrubber
     /**
      * Keys removed anywhere in the attribute tree: email addresses and admin-only moderation notes.
      */
-    private const DENYLIST = [
+    private const SCRUB_AT_ANY_DEPTH = [
         'email',
         'email_from',
         'email_to',
@@ -34,20 +34,20 @@ class TransparencyLogScrubber
     ];
 
     /**
-     * Top-level keys dropped because they are bulky and already public elsewhere (the full version
+     * Top-level keys scrubbed because they are bulky and already public elsewhere (the full version
      * metadata blob is available on the package version page).
      */
-    private const DROP_TOP_LEVEL = [
+    private const SCRUB_AT_TOP_LEVEL = [
         'metadata',
     ];
 
     /**
-     * Dropped from account-security events only. The `reason` says how the account change was made
+     * Scrubbed from account-security events only. The `reason` says how the account change was made
      * ('Backup code used', 'Manually disabled'), which is account-security detail and not the
      * supply-chain signal this log exists for. On package events the same key carries a moderation
      * reason that is meant to be published, so it can't go on the global denylist.
      */
-    private const DROP_FOR_ACCOUNT_EVENTS = [
+    private const SCRUB_ON_ACCOUNT_EVENTS = [
         'reason',
     ];
 
@@ -58,17 +58,17 @@ class TransparencyLogScrubber
      */
     public function scrub(array $attributes, TransparencyLogType $type): array
     {
-        foreach (self::DROP_TOP_LEVEL as $key) {
+        foreach (self::SCRUB_AT_TOP_LEVEL as $key) {
             unset($attributes[$key]);
         }
 
         if ($type->fansOutToMaintainedPackages()) {
-            foreach (self::DROP_FOR_ACCOUNT_EVENTS as $key) {
+            foreach (self::SCRUB_ON_ACCOUNT_EVENTS as $key) {
                 unset($attributes[$key]);
             }
         }
 
-        return $this->stripDenylisted($attributes);
+        return $this->scrubAtAnyDepth($attributes);
     }
 
     /**
@@ -76,15 +76,15 @@ class TransparencyLogScrubber
      *
      * @return array<array-key, mixed>
      */
-    private function stripDenylisted(array $value): array
+    private function scrubAtAnyDepth(array $value): array
     {
         $result = [];
         foreach ($value as $key => $item) {
-            if (\is_string($key) && \in_array($key, self::DENYLIST, true)) {
+            if (\is_string($key) && \in_array($key, self::SCRUB_AT_ANY_DEPTH, true)) {
                 continue;
             }
 
-            $result[$key] = \is_array($item) ? $this->stripDenylisted($item) : $item;
+            $result[$key] = \is_array($item) ? $this->scrubAtAnyDepth($item) : $item;
         }
 
         return $result;
