@@ -183,7 +183,7 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         self::assertSame(2, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
     }
 
-    public function testAccountEventFansOutToOrgOwnedPackages(): void
+    public function testAccountEventDoesNotFanOutToOrgOwnedPackages(): void
     {
         $em = $this->getEM();
         $conn = self::getService(Connection::class);
@@ -193,22 +193,19 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         $em->flush();
 
         // The user is a member of an org that owns a package (ownership = package.vendor === org.slug),
-        // but is NOT a direct maintainer of it.
+        // but is NOT a direct maintainer of it. Org membership alone is not maintainership, so nothing fans out.
         $org = self::createOrganization('acmeorg', 'Acme Org');
         self::store($org, ...self::createOwnerMembership($org, $user));
 
         $pkg = self::createPackage('acmeorg/lib', 'https://github.com/acmeorg/lib');
         $em->persist($pkg);
         $em->flush();
-        $pkgId = $pkg->getId();
 
         $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
 
         $this->runProjector('0');
 
-        $rows = $conn->fetchAllAssociative("SELECT packageId FROM package_transparency_log WHERE type = 'two_fa_deactivated'");
-        self::assertCount(1, $rows);
-        self::assertSame($pkgId, (int) $rows[0]['packageId']);
+        self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
     }
 
     public function testAccountEventForUserWithNoPackagesProducesNothing(): void
