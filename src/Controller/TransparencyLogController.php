@@ -12,7 +12,7 @@
 
 namespace App\Controller;
 
-use App\Audit\Display\Transparency\TransparencyLogDisplayFactory;
+use App\Log\Display\TransparencyLogDisplayFactory;
 use App\Audit\TransparencyLogType;
 use App\Entity\PackageTransparencyLogRepository;
 use App\QueryFilter\QueryFilterInterface;
@@ -61,7 +61,7 @@ class TransparencyLogController extends Controller
         $paginator->setMaxPerPage(20);
         $paginator->setCurrentPage(max(1, $request->query->getInt('page', 1)));
 
-        return $this->render('transparency_log/view.html.twig', [
+        return $this->render('log/transparency_log.html.twig', [
             'transparencyLogDisplays' => $displayFactory->build($paginator),
             'paginator' => $paginator,
             'selectableTypes' => $this->selectableTypes(),

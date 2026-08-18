@@ -16,7 +16,6 @@ use App\Audit\TransparencyLogType;
 use App\Command\ProjectTransparencyLogCommand;
 use App\Entity\AuditRecord;
 use App\Entity\PackageFreezeReason;
-use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -37,7 +36,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test="transparency-log-type"]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
         static::assertContains('Package created', $types);
     }
 
@@ -66,7 +65,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
-        static::assertCount(0, $crawler->filter('[data-test="transparency-log-type"]'));
+        static::assertCount(0, $crawler->filter('[data-test="log-type"]'));
     }
 
     public function testFiltersByPackageVendorAndType(): void
@@ -76,22 +75,22 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'vendor1/package1']));
         static::assertResponseIsSuccessful();
-        static::assertCount(1, $crawler->filter('[data-test="transparency-log-type"]'));
+        static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['vendor' => 'vendor1']));
         static::assertResponseIsSuccessful();
-        static::assertCount(1, $crawler->filter('[data-test="transparency-log-type"]'));
+        static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
 
         // A vendor with nothing projected returns an empty, non-crashing result.
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['vendor' => 'nobody']));
         static::assertResponseIsSuccessful();
-        static::assertCount(0, $crawler->filter('[data-test="transparency-log-type"]'));
+        static::assertCount(0, $crawler->filter('[data-test="log-type"]'));
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
             'type' => [TransparencyLogType::VersionCreated->value],
         ]));
         static::assertResponseIsSuccessful();
-        static::assertCount(0, $crawler->filter('[data-test="transparency-log-type"]'));
+        static::assertCount(0, $crawler->filter('[data-test="log-type"]'));
     }
 
     public function testFreezeReasonIsRenderedAsALabelNotARawEnumValue(): void
@@ -134,9 +133,36 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         // The hidden type is dropped from the filter, so this falls back to the unfiltered list, which
         // itself excludes it. The rows are still projected, see TransparencyLogProjectorTest.
-        $types = $crawler->filter('[data-test="transparency-log-type"]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
         static::assertNotContains('Maintainer disabled two-factor authentication', $types);
         static::assertContains('Package created', $types);
+    }
+
+    /**
+     * The display templates are shared with the internal audit log, which does render the internal
+     * moderation note, so make sure the public page keeps leaving it out.
+     */
+    public function testInternalModerationNoteNeverReachesThePublicLog(): void
+    {
+        $admin = self::createUser('deleter', 'deleter@example.org', roles: ['ROLE_ADMIN']);
+        $this->store($admin);
+        $package = self::createPackage('acme/deleted-log', 'https://github.com/acme/deleted-log');
+        $this->store($package);
+
+        $this->getEM()->getRepository(AuditRecord::class)->insert(
+            AuditRecord::packageDeleted($package, $admin, 'spam', 'reporter jane, ticket #42'),
+        );
+
+        $this->runProjector();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'acme/deleted-log']));
+
+        static::assertResponseIsSuccessful();
+        $details = $crawler->filter('td.audit-log-details')->text();
+        static::assertStringContainsString('Reason: spam', $details);
+        static::assertStringNotContainsString('Internal reason', $details);
+        static::assertStringNotContainsString('ticket #42', $details);
     }
 
     private function givenProjectedLog(): void

@@ -12,7 +12,7 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
+use App\Audit\AuditRecordType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 
@@ -31,9 +31,9 @@ readonly class SecurityAdvisoryWithdrawnDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): AuditRecordType
     {
-        return AuditLogEventType::SecurityAdvisoryWithdrawn;
+        return AuditRecordType::SecurityAdvisoryWithdrawn;
     }
 
     public function getTemplateName(): string

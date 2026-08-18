@@ -10,9 +10,11 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Log;
+namespace App\Audit;
 
-enum AuditLogEventType: string
+use App\Log\Display\LogEventType;
+
+enum AuditRecordType: string implements LogEventType
 {
     // package ownership
     case MaintainerAdded = 'maintainer_added';
@@ -83,6 +85,11 @@ enum AuditLogEventType: string
     case OrganizationInvitationAccepted = 'organization_invitation_accepted';
     case OrganizationInvitationDeclined = 'organization_invitation_declined';
     case OrganizationInvitationExpired = 'organization_invitation_expired';
+
+    public function translationPrefix(): string
+    {
+        return 'audit_log.';
+    }
 
     /**
      * @return list<self>

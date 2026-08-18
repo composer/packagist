@@ -12,11 +12,11 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Job;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
-use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -76,7 +76,7 @@ class UserControllerTest extends IntegrationTestCase
         $deletedUser = $em->getRepository(User::class)->findOneBy(['username' => 'bob']);
         $this->assertNull($deletedUser);
 
-        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::UserDeleted->value, 'userId' => $userId]);
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::UserDeleted->value, 'userId' => $userId]);
         $this->assertNotNull($record);
         $this->assertSame('bob', $record->attributes['user']['username'] ?? null);
         $this->assertSame($actorName, $record->attributes['actor']['username'] ?? null);
@@ -114,7 +114,7 @@ class UserControllerTest extends IntegrationTestCase
         $bob = $em->getRepository(User::class)->find($userId);
         $this->assertSame(UserFreezeReason::BadActor, $bob->getFreezeReason());
 
-        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::UserFrozen->value, 'userId' => $userId]);
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::UserFrozen->value, 'userId' => $userId]);
         $this->assertNotNull($record);
         $this->assertSame('bad_actor', $record->attributes['reason'] ?? null);
         $this->assertSame('malware author', $record->attributes['reasonText'] ?? null);
@@ -132,7 +132,7 @@ class UserControllerTest extends IntegrationTestCase
         $bob = $em->getRepository(User::class)->find($userId);
         $this->assertFalse($bob->isFrozen());
 
-        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::UserUnfrozen->value, 'userId' => $userId]);
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::UserUnfrozen->value, 'userId' => $userId]);
         $this->assertNotNull($record);
         $this->assertSame('appeal accepted', $record->attributes['reasonText'] ?? null);
     }
@@ -181,7 +181,7 @@ class UserControllerTest extends IntegrationTestCase
 
         // Freezing the package must be recorded in the audit log (it goes through the entity so
         // PackageListener records the transition).
-        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::PackageFrozen->value]);
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::PackageFrozen->value]);
         $this->assertNotNull($record, 'a PackageFrozen audit record should be created');
         $this->assertSame('test/bobpkg', $record->attributes['name'] ?? null);
         $this->assertSame('spam', $record->attributes['reason'] ?? null);

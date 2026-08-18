@@ -12,28 +12,30 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Log\Display\LogEventType;
 
 readonly class VersionSoftDeletedDisplay extends AbstractLogDisplay
 {
     public function __construct(
+        private LogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
         public string $version,
         public string $reason,
         public ?string $reasonText,
-        public ?string $internalReasonText,
         ActorDisplay $actor,
-        ?string $ip,
+        // audit-log only: the public log's rows are scrubbed of both at projection time
+        ?string $ip = null,
+        public ?string $internalReasonText = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): LogEventType
     {
-        return AuditLogEventType::VersionSoftDeleted;
+        return $this->type;
     }
 
     public function getTemplateName(): string

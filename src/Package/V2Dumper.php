@@ -12,6 +12,7 @@
 
 namespace App\Package;
 
+use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
@@ -20,7 +21,6 @@ use App\FilterList\Dump\DumpableFilterList;
 use App\FilterList\Dump\FilterListDumperProvider;
 use App\FilterList\Dump\FilterListSummaryDumper;
 use App\FilterList\FilterLists;
-use App\Log\AuditLogEventType;
 use App\Model\ProviderManager;
 use App\Service\CdnClient;
 use App\Service\ReplicaClient;
@@ -408,7 +408,7 @@ class V2Dumper
         try {
             // ensure we do not upload files to the cdn for packages that have been recently deleted to avoid race conditions
             $deletion = $this->redis->zscore('metadata-deletes', $name);
-            if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditLogEventType::PackageDeleted]) !== null) {
+            if ($deletion !== null && $this->doctrine->getRepository(AuditRecord::class)->findOneBy(['packageId' => $package->getId(), 'type' => AuditRecordType::PackageDeleted]) !== null) {
                 $this->logger->error('Skipped dumping a file as it is marked as having been deleted in the last 30seconds', ['file' => $path, 'deletion' => $deletion, 'time' => time()]);
 
                 $result = 'deleted';

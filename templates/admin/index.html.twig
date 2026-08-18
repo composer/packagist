@@ -10,8 +10,9 @@
             </div>
             {% include 'log/_table.html.twig' with {
                 displays: recentModerationActivity,
-                linkSurroundingLogs: true,
-                emptyMessage: 'No recent moderation activity.'
+                emptyMessage: 'No recent moderation activity.',
+                showIp: is_granted('ROLE_AUDITOR'),
+                surroundingLogsRoute: 'admin_audit_log',
             } only %}
         </div>
     </div>

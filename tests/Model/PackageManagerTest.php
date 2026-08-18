@@ -12,12 +12,12 @@
 
 namespace App\Tests\Model;
 
+use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\Entity\UserRepository;
-use App\Log\AuditLogEventType;
 use App\Model\PackageManager;
 use App\Package\Updater;
 use App\Tests\IntegrationTestCase;
@@ -109,7 +109,7 @@ class PackageManagerTest extends IntegrationTestCase
         $this->assertFalse($result);
 
         $record = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::PackageTransferred->value,
+            'type' => AuditRecordType::PackageTransferred->value,
             'packageId' => $package->getId(),
         ]);
 
@@ -123,7 +123,7 @@ class PackageManagerTest extends IntegrationTestCase
     private function assertAuditLogWasCreated(Package $package, array $oldMaintainers, array $newMaintainers): void
     {
         $record = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::PackageTransferred->value,
+            'type' => AuditRecordType::PackageTransferred->value,
             'packageId' => $package->getId(),
             'actorId' => null,
         ]);
