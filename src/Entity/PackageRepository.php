@@ -209,8 +209,8 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * All packages is direct maintainer of and packages owned by an
-     * organization the user is a member of. Returns package id + vendor, ordered by id for deterministic fan-out.
+     * All packages the user is a direct maintainer of. Returns package id + vendor, ordered by id for deterministic fan-out.
+     * In the future this will need to also take into account organization membership.
      *
      * @return list<array{id: int, vendor: string}>
      */
@@ -218,12 +218,9 @@ class PackageRepository extends ServiceEntityRepository
     {
         /** @var list<array{id: int|string, vendor: string}> $rows */
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT DISTINCT p.id AS id, p.vendor AS vendor
+            'SELECT p.id AS id, p.vendor AS vendor
                 FROM package p
-                LEFT JOIN maintainers_packages mp ON mp.package_id = p.id AND mp.user_id = :userId
-                LEFT JOIN organization o ON o.slug = p.vendor AND o.deletedAt IS NULL
-                LEFT JOIN organization_team_member otm ON otm.orgId = o.id AND otm.userId = :userId
-                WHERE mp.user_id IS NOT NULL OR otm.userId IS NOT NULL
+                JOIN maintainers_packages mp ON mp.package_id = p.id AND mp.user_id = :userId
                 ORDER BY p.id ASC',
             ['userId' => $userId],
         );
