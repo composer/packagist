@@ -12,10 +12,10 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\PackageFreezeReason;
 use App\Entity\User;
-use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Mime\Email;
 
@@ -61,7 +61,7 @@ class ProfileControllerTest extends IntegrationTestCase
         $this->assertNull($user->getConfirmationToken());
 
         $emailAuditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::EmailChanged,
+            'type' => AuditRecordType::EmailChanged,
             'userId' => $user->getId(),
         ]);
         $this->assertInstanceOf(AuditRecord::class, $emailAuditRecord);
@@ -71,7 +71,7 @@ class ProfileControllerTest extends IntegrationTestCase
         $this->assertSame($user->getUsernameCanonical(), $emailAuditRecord->attributes['actor']['username'] ?? null);
 
         $usernameAuditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::UsernameChanged,
+            'type' => AuditRecordType::UsernameChanged,
             'userId' => $user->getId(),
         ]);
         $this->assertInstanceOf(AuditRecord::class, $usernameAuditRecord);

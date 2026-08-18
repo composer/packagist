@@ -12,7 +12,7 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
+use App\Audit\AuditRecordType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 use App\Log\Display\OrganizationDisplay;
@@ -28,9 +28,9 @@ readonly class OrganizationCreatedDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): AuditRecordType
     {
-        return AuditLogEventType::OrganizationCreated;
+        return AuditRecordType::OrganizationCreated;
     }
 
     public function getTemplateName(): string

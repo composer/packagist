@@ -1,0 +1,61 @@
+{#
+    The filter form shared by every log page. Embed it and fill in the two blocks:
+
+    {% embed 'log/_filters.html.twig' with {route: 'admin_audit_log'} %}
+        {% block type_options %}...{% endblock %}
+        {% block fields %}...{% endblock %}
+    {% endembed %}
+
+    route            - the log page's own route, used for submitting and for "clear all filters"
+    routeParams      - extra route params (e.g. the organization slug)
+    typeSelectHeight - height of the type multiselect, which grows with the number of types
+#}
+{% set routeParams = routeParams ?? {} %}
+{% set typeSelectHeight = typeSelectHeight ?? '185px' %}
+
+<div class="audit-log-filters">
+    <form method="get" action="{{ path(route, routeParams) }}" name="filters">
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div class="form-group">
+                    <label for="type-filter">Type</label>
+                    <select name="type[]" id="type-filter" class="form-select audit-log-type-select" multiple style="height: {{ typeSelectHeight }};">
+                        {% block type_options %}{% endblock %}
+                    </select>
+                    <small class="help-block">Hold Ctrl/Cmd to select multiple</small>
+                </div>
+            </div>
+            <div class="col-lg-9 col-md-6">
+                {% block fields %}{% endblock %}
+                <div class="row">
+                    <div class="col-lg-6 col-md-12">
+                        <div class="form-group">
+                            <label for="datetime-from-filter">Date &amp; Time From</label>
+                            <input type="datetime-local" name="datetime_from" id="datetime-from-filter" class="form-control" value="{{ selectedFilters.datetime_from }}" step="1">
+                            <small class="help-block">Filter logs from this time onwards (UTC)</small>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-12">
+                        <div class="form-group">
+                            <label for="datetime-to-filter">Date &amp; Time To</label>
+                            <input type="datetime-local" name="datetime_to" id="datetime-to-filter" class="form-control" value="{{ selectedFilters.datetime_to }}" step="1">
+                            <small class="help-block">Filter logs up to this time (UTC)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="audit-log-filter-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="bi bi-funnel-fill"></span> Apply Filters
+                    </button>
+                    <a href="{{ url(route, routeParams) }}" class="btn btn-secondary">
+                        <span class="bi bi-x-circle-fill"></span> Clear All Filters
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

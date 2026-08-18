@@ -1,0 +1,4 @@
+{% import 'log/macros.html.twig' as log %}
+
+Maintainer: {{ log.userLink(display.maintainerUsername) }}
+{%- if display.actor.username != display.maintainerUsername %}<br>By: {{ display.actor.username }}{% endif %}

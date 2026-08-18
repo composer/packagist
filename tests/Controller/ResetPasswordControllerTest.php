@@ -12,10 +12,10 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
-use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
 use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
@@ -55,7 +55,7 @@ class ResetPasswordControllerTest extends IntegrationTestCase
         $this->assertNotNull($user->getPasswordRequestedAt(), 'Password requested at should be set');
 
         $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::PasswordResetRequested,
+            'type' => AuditRecordType::PasswordResetRequested,
             'userId' => $user->getId(),
         ]);
         $this->assertInstanceOf(AuditRecord::class, $auditRecord);
@@ -184,7 +184,7 @@ class ResetPasswordControllerTest extends IntegrationTestCase
     {
         $record = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
             'userId' => $user->getId(),
-            'type' => AuditLogEventType::PasswordReset->value,
+            'type' => AuditRecordType::PasswordReset->value,
         ]);
 
         $this->assertNotNull($record, 'No audit record was created');

@@ -1,6 +1,6 @@
 {% import 'log/macros.html.twig' as log %}
 
 <strong>{{ log.packageLink(display.packageName) }}</strong><br>
-Repository: {{ display.repository }}<br>
+{% if display.repository %}Repository: {{ display.repository }}<br>{% endif %}
 {% if display.maintainer %}Maintainer: {{ display.maintainer.username }}<br>{% endif %}
-Created by: {{ display.actor.username }}
+By: {{ display.actor.username }}

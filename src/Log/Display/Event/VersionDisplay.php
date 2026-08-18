@@ -10,18 +10,22 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Audit\Display\Transparency;
+namespace App\Log\Display\Event;
 
-use App\Audit\Display\ActorDisplay;
 use App\Audit\TransparencyLogType;
+use App\Log\Display\AbstractLogDisplay;
+use App\Log\Display\ActorDisplay;
 
-readonly class VersionRecoveredDisplay extends AbstractTransparencyDisplay
+/**
+ * Version events whose only detail is the version string: created / deleted.
+ */
+readonly class VersionDisplay extends AbstractLogDisplay
 {
     public function __construct(
+        private TransparencyLogType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
         public string $version,
-        public string $previousReason,
         ActorDisplay $actor,
     ) {
         parent::__construct($datetime, $actor);
@@ -29,11 +33,11 @@ readonly class VersionRecoveredDisplay extends AbstractTransparencyDisplay
 
     public function getType(): TransparencyLogType
     {
-        return TransparencyLogType::VersionRecovered;
+        return $this->type;
     }
 
     public function getTemplateName(): string
     {
-        return 'transparency_log/display/version_recovered.html.twig';
+        return 'log/display/version.html.twig';
     }
 }

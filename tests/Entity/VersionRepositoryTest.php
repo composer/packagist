@@ -12,6 +12,7 @@
 
 namespace App\Tests\Entity;
 
+use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\DevRequireLink;
@@ -23,7 +24,6 @@ use App\Entity\Tag;
 use App\Entity\Version;
 use App\Entity\VersionListItem;
 use App\Entity\VersionRepository;
-use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\TestWith;
 
@@ -69,7 +69,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         $this->assertNull($this->versionRepository->find($versionId), 'Version was not deleted');
 
         $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::VersionDeleted->value,
+            'type' => AuditRecordType::VersionDeleted->value,
             'packageId' => $package->getId(),
             'actorId' => null,
         ]);
@@ -98,7 +98,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertNull($reloaded->getInternalDeletionReasonText());
 
         $audit = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::VersionSoftDeleted->value,
+            'type' => AuditRecordType::VersionSoftDeleted->value,
             'packageId' => $reloaded->getPackage()->getId(),
         ]);
         self::assertNotNull($audit, 'softDelete() should write a VersionSoftDeleted audit row');
@@ -121,7 +121,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertSame('reporter john@example.com, ticket #42', $reloaded->getInternalDeletionReasonText());
 
         $audit = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::VersionSoftDeleted->value,
+            'type' => AuditRecordType::VersionSoftDeleted->value,
             'packageId' => $reloaded->getPackage()->getId(),
         ]);
         self::assertNotNull($audit);
@@ -165,7 +165,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertCount(1, $em->getRepository(Job::class)->findBy(['type' => 'package:updates', 'packageId' => $packageId]));
 
         $audits = $em->getRepository(AuditRecord::class)->findBy([
-            'type' => AuditLogEventType::VersionSoftDeleted->value,
+            'type' => AuditRecordType::VersionSoftDeleted->value,
             'packageId' => $packageId,
         ]);
         self::assertCount(2, $audits, 'The reason change should be audited as its own record');
@@ -195,7 +195,7 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertNull($reloaded->getInternalDeletionReasonText());
 
         $audit = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::VersionRecovered->value,
+            'type' => AuditRecordType::VersionRecovered->value,
             'packageId' => $reloaded->getPackage()->getId(),
         ]);
         self::assertNotNull($audit, 'recover() should write a VersionRecovered audit row');

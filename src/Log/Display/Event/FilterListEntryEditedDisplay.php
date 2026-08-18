@@ -12,9 +12,9 @@
 
 namespace App\Log\Display\Event;
 
+use App\Audit\AuditRecordType;
 use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
-use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 
@@ -40,9 +40,9 @@ readonly class FilterListEntryEditedDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): AuditRecordType
     {
-        return AuditLogEventType::FilterListEntryEdited;
+        return AuditRecordType::FilterListEntryEdited;
     }
 
     public function getTemplateName(): string

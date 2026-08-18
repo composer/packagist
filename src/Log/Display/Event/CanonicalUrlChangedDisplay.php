@@ -12,26 +12,27 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Log\Display\LogEventType;
 
 readonly class CanonicalUrlChangedDisplay extends AbstractLogDisplay
 {
     public function __construct(
+        private LogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
-        public string $repositoryFrom,
-        public string $repositoryTo,
+        public ?string $repositoryFrom,
+        public ?string $repositoryTo,
         ActorDisplay $actor,
-        ?string $ip,
+        ?string $ip = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): LogEventType
     {
-        return AuditLogEventType::CanonicalUrlChanged;
+        return $this->type;
     }
 
     public function getTemplateName(): string

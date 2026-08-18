@@ -13,7 +13,7 @@
 namespace App\Controller;
 
 use App\Audit\AuditRecordType;
-use App\Audit\Display\AuditLogDisplayFactory;
+use App\Log\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\QueryFilter\AuditLog\ActorFilter;
 use App\QueryFilter\AuditLog\AuditRecordTypeFilter;

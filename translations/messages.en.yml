@@ -199,7 +199,8 @@ user_freeze_reasons:
     bad_actor: Bad actor
     temporary: Temporary
 
-transparency_log:
+# Labels shared by both log tables (see templates/log/display).
+log:
     # Short labels for the log rows. freezing_reasons holds the same reasons as full sentences
     # which is too verbose for a table display.
     freeze_reason:
@@ -214,6 +215,8 @@ transparency_log:
         composer_json: Marked abandoned in composer.json
         repository_archived_and_composer_json: Repository archived and marked abandoned in composer.json
         unknown: Unknown
+
+transparency_log:
     type:
         maintainer_added: Maintainer added
         maintainer_removed: Maintainer removed

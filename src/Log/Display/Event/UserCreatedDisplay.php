@@ -12,8 +12,8 @@
 
 namespace App\Log\Display\Event;
 
+use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
-use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 
@@ -29,9 +29,9 @@ readonly class UserCreatedDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): AuditRecordType
     {
-        return AuditLogEventType::UserCreated;
+        return AuditRecordType::UserCreated;
     }
 
     public function getTemplateName(): string

@@ -14,10 +14,10 @@ namespace App\Entity;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\AuditLogSearchType;
+use App\Audit\AuditRecordType;
+use App\Log\Display\OrganizationDisplay;
 use App\Audit\UserRegistrationMethod;
 use App\Audit\VersionDeletionReason;
-use App\Log\AuditLogEventType;
-use App\Log\Display\OrganizationDisplay;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -50,7 +50,7 @@ class AuditRecord
 
     private function __construct(
         #[ORM\Column]
-        public readonly AuditLogEventType $type,
+        public readonly AuditRecordType $type,
 
         /**
          * Special attribute names have special meaning:
@@ -159,7 +159,7 @@ class AuditRecord
         }
 
         return new self(
-            AuditLogEventType::PackageCreated,
+            AuditRecordType::PackageCreated,
             $attributes,
             $actor?->getId(),
             $package->getVendor(),
@@ -171,7 +171,7 @@ class AuditRecord
     public static function packageDeleted(Package $package, ?User $actor, ?string $reason = null, ?string $internalReason = null): self
     {
         return new self(
-            AuditLogEventType::PackageDeleted,
+            AuditRecordType::PackageDeleted,
             ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason, 'internalReason' => $internalReason, 'actor' => self::getUserData($actor, 'automation')],
             $actor?->getId(),
             $package->getVendor(),
@@ -182,7 +182,7 @@ class AuditRecord
     public static function organizationCreated(Ulid $organizationId, string $slug, string $displayName, User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationCreated,
+            AuditRecordType::OrganizationCreated,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'actor' => self::getUserData($actor),
@@ -195,7 +195,7 @@ class AuditRecord
     public static function organizationNameChanged(Ulid $organizationId, string $slug, string $displayName, string $previousDisplayName, User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationNameChanged,
+            AuditRecordType::OrganizationNameChanged,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'org_name_from' => $previousDisplayName,
@@ -210,7 +210,7 @@ class AuditRecord
     public static function organizationSlugChanged(Ulid $organizationId, string $slug, string $displayName, string $previousSlug, User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationSlugChanged,
+            AuditRecordType::OrganizationSlugChanged,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'org_slug_from' => $previousSlug,
@@ -225,7 +225,7 @@ class AuditRecord
     public static function organizationTeamCreated(Ulid $organizationId, string $slug, string $displayName, string $teamName, ?User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationTeamCreated,
+            AuditRecordType::OrganizationTeamCreated,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'team_name' => $teamName,
@@ -239,7 +239,7 @@ class AuditRecord
     public static function organizationTeamRenamed(Ulid $organizationId, string $slug, string $displayName, string $previousName, string $newName, ?User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationTeamRenamed,
+            AuditRecordType::OrganizationTeamRenamed,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'team_name_from' => $previousName,
@@ -254,7 +254,7 @@ class AuditRecord
     public static function organizationTeamDeleted(Ulid $organizationId, string $slug, string $displayName, string $teamName, ?User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationTeamDeleted,
+            AuditRecordType::OrganizationTeamDeleted,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'team_name' => $teamName,
@@ -268,7 +268,7 @@ class AuditRecord
     public static function organizationTeamMemberAdded(Ulid $organizationId, string $slug, string $displayName, string $teamName, User $member, ?User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationTeamMemberAdded,
+            AuditRecordType::OrganizationTeamMemberAdded,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'team_name' => $teamName,
@@ -284,7 +284,7 @@ class AuditRecord
     public static function organizationTeamMemberRemoved(Ulid $organizationId, string $slug, string $displayName, string $teamName, User $member, ?User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationTeamMemberRemoved,
+            AuditRecordType::OrganizationTeamMemberRemoved,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'team_name' => $teamName,
@@ -307,7 +307,7 @@ class AuditRecord
     public static function organizationMemberJoined(Ulid $organizationId, string $slug, string $displayName, User $member, User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationMemberJoined,
+            AuditRecordType::OrganizationMemberJoined,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'user' => self::getUserData($member),
@@ -322,7 +322,7 @@ class AuditRecord
     public static function organizationMemberRemoved(Ulid $organizationId, string $slug, string $displayName, User $member, ?User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationMemberRemoved,
+            AuditRecordType::OrganizationMemberRemoved,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'user' => self::getUserData($member),
@@ -337,7 +337,7 @@ class AuditRecord
     public static function organizationMemberLeft(Ulid $organizationId, string $slug, string $displayName, User $member, User $actor): self
     {
         return new self(
-            AuditLogEventType::OrganizationMemberLeft,
+            AuditRecordType::OrganizationMemberLeft,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'user' => self::getUserData($member),
@@ -355,22 +355,22 @@ class AuditRecord
      */
     public static function organizationInvitationSent(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
     {
-        return self::organizationInvitation(AuditLogEventType::OrganizationInvitationSent, $organizationId, $slug, $displayName, $email, $actor);
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationSent, $organizationId, $slug, $displayName, $email, $actor);
     }
 
     public static function organizationInvitationResent(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
     {
-        return self::organizationInvitation(AuditLogEventType::OrganizationInvitationResent, $organizationId, $slug, $displayName, $email, $actor);
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationResent, $organizationId, $slug, $displayName, $email, $actor);
     }
 
     public static function organizationInvitationRevoked(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
     {
-        return self::organizationInvitation(AuditLogEventType::OrganizationInvitationRevoked, $organizationId, $slug, $displayName, $email, $actor);
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationRevoked, $organizationId, $slug, $displayName, $email, $actor);
     }
 
     public static function organizationInvitationDeclined(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
     {
-        return self::organizationInvitation(AuditLogEventType::OrganizationInvitationDeclined, $organizationId, $slug, $displayName, $email, $actor);
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationDeclined, $organizationId, $slug, $displayName, $email, $actor);
     }
 
     /**
@@ -379,7 +379,7 @@ class AuditRecord
      */
     public static function organizationInvitationAccepted(Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
     {
-        return self::organizationInvitation(AuditLogEventType::OrganizationInvitationAccepted, $organizationId, $slug, $displayName, $email, $actor);
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationAccepted, $organizationId, $slug, $displayName, $email, $actor);
     }
 
     /**
@@ -387,10 +387,10 @@ class AuditRecord
      */
     public static function organizationInvitationExpired(Ulid $organizationId, string $slug, string $displayName, string $email): self
     {
-        return self::organizationInvitation(AuditLogEventType::OrganizationInvitationExpired, $organizationId, $slug, $displayName, $email, null);
+        return self::organizationInvitation(AuditRecordType::OrganizationInvitationExpired, $organizationId, $slug, $displayName, $email, null);
     }
 
-    private static function organizationInvitation(AuditLogEventType $type, Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
+    private static function organizationInvitation(AuditRecordType $type, Ulid $organizationId, string $slug, string $displayName, string $email, ?User $actor): self
     {
         return new self(
             $type,
@@ -407,7 +407,7 @@ class AuditRecord
     public static function canonicalUrlChange(Package $package, ?User $actor, string $oldRepository): self
     {
         return new self(
-            AuditLogEventType::CanonicalUrlChanged,
+            AuditRecordType::CanonicalUrlChanged,
             ['name' => $package->getName(), 'repository_from' => $oldRepository, 'repository_to' => $package->getRepository(), 'actor' => self::getUserData($actor)],
             $actor?->getId(),
             $package->getVendor(),
@@ -425,7 +425,7 @@ class AuditRecord
         $current = array_values(array_map(self::getUserData(...), $currentMaintainers));
 
         return new self(
-            AuditLogEventType::PackageTransferred,
+            AuditRecordType::PackageTransferred,
             ['name' => $package->getName(), 'actor' => self::getUserData($actor, 'admin'), 'previous_maintainers' => $previous, 'current_maintainers' => $current],
             $actor?->getId(),
             $package->getVendor(),
@@ -441,7 +441,7 @@ class AuditRecord
         $package = $version->getPackage();
 
         return new self(
-            AuditLogEventType::VersionCreated,
+            AuditRecordType::VersionCreated,
             ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation'), 'metadata' => $metadata],
             $actor?->getId(),
             $package->getVendor(),
@@ -454,7 +454,7 @@ class AuditRecord
         $package = $version->getPackage();
 
         return new self(
-            AuditLogEventType::VersionDeleted,
+            AuditRecordType::VersionDeleted,
             ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation')],
             $actor?->getId(),
             $package->getVendor(),
@@ -467,7 +467,7 @@ class AuditRecord
         $package = $version->getPackage();
 
         return new self(
-            AuditLogEventType::VersionSoftDeleted,
+            AuditRecordType::VersionSoftDeleted,
             ['name' => $package->getName(), 'version' => $version->getVersion(), 'reason' => $reason->value, 'reasonText' => $reasonText, 'internalReasonText' => $internalReasonText, 'actor' => self::getUserData($actor, 'automation')],
             $actor?->getId(),
             $package->getVendor(),
@@ -480,7 +480,7 @@ class AuditRecord
         $package = $version->getPackage();
 
         return new self(
-            AuditLogEventType::VersionRecovered,
+            AuditRecordType::VersionRecovered,
             ['name' => $package->getName(), 'version' => $version->getVersion(), 'previousReason' => $previousReason->value, 'actor' => self::getUserData($actor, 'automation')],
             $actor?->getId(),
             $package->getVendor(),
@@ -491,7 +491,7 @@ class AuditRecord
     public static function versionReferenceChangeBlocked(Package $package, string $prettyVersion, ?string $oldRef, string $newRef): self
     {
         return new self(
-            AuditLogEventType::VersionReferenceChangeBlocked,
+            AuditRecordType::VersionReferenceChangeBlocked,
             ['name' => $package->getName(), 'version' => $prettyVersion, 'ref_from' => $oldRef, 'ref_to' => $newRef],
             vendor: $package->getVendor(),
             packageId: $package->getId()
@@ -500,38 +500,38 @@ class AuditRecord
 
     public static function maintainerAdded(Package $package, User $maintainer, ?User $actor): self
     {
-        return new self(AuditLogEventType::MaintainerAdded, ['name' => $package->getName(), 'user' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
+        return new self(AuditRecordType::MaintainerAdded, ['name' => $package->getName(), 'user' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
     }
 
     public static function maintainerRemoved(Package $package, User $maintainer, ?User $actor): self
     {
-        return new self(AuditLogEventType::MaintainerRemoved, ['name' => $package->getName(), 'user' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
+        return new self(AuditRecordType::MaintainerRemoved, ['name' => $package->getName(), 'user' => self::getUserData($maintainer), 'actor' => self::getUserData($actor)], $actor?->getId(), $package->getVendor(), $package->getId(), $maintainer->getId());
     }
 
     public static function packageAbandoned(Package $package, ?User $actor, ?string $replacementPackage, ?AbandonmentReason $reason = null): self
     {
-        return new self(AuditLogEventType::PackageAbandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'replacement_package' => $replacementPackage, 'reason' => $reason?->value, 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::PackageAbandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'replacement_package' => $replacementPackage, 'reason' => $reason?->value, 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function packageUnabandoned(Package $package, ?User $actor): self
     {
-        return new self(AuditLogEventType::PackageUnabandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::PackageUnabandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function packageFrozen(Package $package, ?User $actor, PackageFreezeReason $reason, string $fallbackActor = 'automation'): self
     {
-        return new self(AuditLogEventType::PackageFrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason->value, 'actor' => self::getUserData($actor, $fallbackActor)], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::PackageFrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason->value, 'actor' => self::getUserData($actor, $fallbackActor)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function packageUnfrozen(Package $package, ?User $actor, string $fallbackActor = 'automation'): self
     {
-        return new self(AuditLogEventType::PackageUnfrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, $fallbackActor)], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditRecordType::PackageUnfrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, $fallbackActor)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function userCreated(User $user, UserRegistrationMethod $method): self
     {
         return new self(
-            AuditLogEventType::UserCreated,
+            AuditRecordType::UserCreated,
             [
                 'user' => self::getUserData($user),
                 'method' => $method->value,
@@ -544,7 +544,7 @@ class AuditRecord
     public static function twoFactorAuthenticationActivated(User $user, User $actor): self
     {
         return new self(
-            AuditLogEventType::TwoFaAuthenticationActivated,
+            AuditRecordType::TwoFaAuthenticationActivated,
             [
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor),
@@ -557,7 +557,7 @@ class AuditRecord
     public static function twoFactorAuthenticationDeactivated(User $user, User $actor, string $reason): self
     {
         return new self(
-            AuditLogEventType::TwoFaAuthenticationDeactivated,
+            AuditRecordType::TwoFaAuthenticationDeactivated,
             [
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor),
@@ -570,23 +570,23 @@ class AuditRecord
 
     public static function passwordReset(User $user, User $actor): self
     {
-        return new self(type: AuditLogEventType::PasswordReset, attributes: ['user' => self::getUserData($user), 'actor' => self::getUserData($actor)], actorId: $user->getId(), userId: $user->getId());
+        return new self(type: AuditRecordType::PasswordReset, attributes: ['user' => self::getUserData($user), 'actor' => self::getUserData($actor)], actorId: $user->getId(), userId: $user->getId());
     }
 
     public static function passwordChanged(User $user, User $actor): self
     {
-        return new self(AuditLogEventType::PasswordChanged, ['user' => self::getUserData($user), 'actor' => self::getUserData($actor)], actorId: $actor->getId(), userId: $user->getId());
+        return new self(AuditRecordType::PasswordChanged, ['user' => self::getUserData($user), 'actor' => self::getUserData($actor)], actorId: $actor->getId(), userId: $user->getId());
     }
 
     public static function passwordResetRequested(User $user): self
     {
-        return new self(AuditLogEventType::PasswordResetRequested, ['user' => self::getUserData($user), 'actor' => 'anonymous'], userId: $user->getId());
+        return new self(AuditRecordType::PasswordResetRequested, ['user' => self::getUserData($user), 'actor' => 'anonymous'], userId: $user->getId());
     }
 
     public static function userDeleted(User $user, ?User $actor): self
     {
         return new self(
-            AuditLogEventType::UserDeleted,
+            AuditRecordType::UserDeleted,
             [
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor, 'automation'),
@@ -599,7 +599,7 @@ class AuditRecord
     public static function userFrozen(User $user, ?User $actor, UserFreezeReason $reason, ?string $reasonText = null, ?string $internalReason = null): self
     {
         return new self(
-            AuditLogEventType::UserFrozen,
+            AuditRecordType::UserFrozen,
             [
                 'user' => self::getUserData($user),
                 'reason' => $reason->value,
@@ -615,7 +615,7 @@ class AuditRecord
     public static function userUnfrozen(User $user, ?User $actor, ?string $reasonText = null, ?string $internalReason = null): self
     {
         return new self(
-            AuditLogEventType::UserUnfrozen,
+            AuditRecordType::UserUnfrozen,
             [
                 'user' => self::getUserData($user),
                 'reasonText' => $reasonText,
@@ -629,13 +629,13 @@ class AuditRecord
 
     public static function userVerified(User $user, User $actor, string $email): self
     {
-        return new self(AuditLogEventType::UserVerified, ['user' => self::getUserdata($user), 'email' => $email, 'actor' => self::getUserData($actor)], userId: $user->getId(), actorId: $actor->getId());
+        return new self(AuditRecordType::UserVerified, ['user' => self::getUserdata($user), 'email' => $email, 'actor' => self::getUserData($actor)], userId: $user->getId(), actorId: $actor->getId());
     }
 
     public static function usernameChanged(User $user, User $actor, string $oldUsername): self
     {
         return new self(
-            AuditLogEventType::UsernameChanged,
+            AuditRecordType::UsernameChanged,
             [
                 'username_from' => $oldUsername,
                 'username_to' => $user->getUsernameCanonical(),
@@ -650,7 +650,7 @@ class AuditRecord
     public static function emailChanged(User $user, User $actor, string $oldEmail): self
     {
         return new self(
-            AuditLogEventType::EmailChanged,
+            AuditRecordType::EmailChanged,
             [
                 'email_from' => $oldEmail,
                 'email_to' => $user->getEmail(),
@@ -665,7 +665,7 @@ class AuditRecord
     public static function gitHubLinkedWithUser(User $user, User $actor, string $githubUsername, int $githubId): self
     {
         return new self(
-            AuditLogEventType::GitHubLinkedWithUser,
+            AuditRecordType::GitHubLinkedWithUser,
             [
                 'user' => self::getUserData($user),
                 'github_username' => $githubUsername,
@@ -680,7 +680,7 @@ class AuditRecord
     public static function gitHubDisconnectedFromUser(User $user, User $actor): self
     {
         return new self(
-            AuditLogEventType::GitHubDisconnectedFromUser,
+            AuditRecordType::GitHubDisconnectedFromUser,
             [
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor),
@@ -693,7 +693,7 @@ class AuditRecord
     public static function filterListEntryAdded(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
-            AuditLogEventType::FilterListEntryAdded,
+            AuditRecordType::FilterListEntryAdded,
             [
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
@@ -708,7 +708,7 @@ class AuditRecord
     public static function filterListEntryDeleted(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
-            AuditLogEventType::FilterListEntryDeleted,
+            AuditRecordType::FilterListEntryDeleted,
             [
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
@@ -723,7 +723,7 @@ class AuditRecord
     public static function filterListEntryDisabled(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
-            AuditLogEventType::FilterListEntryDisabled,
+            AuditRecordType::FilterListEntryDisabled,
             [
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
@@ -738,7 +738,7 @@ class AuditRecord
     public static function filterListEntryEnabled(FilterListEntry $entry, ?User $actor, ?int $packageId): self
     {
         return new self(
-            AuditLogEventType::FilterListEntryEnabled,
+            AuditRecordType::FilterListEntryEnabled,
             [
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
@@ -756,7 +756,7 @@ class AuditRecord
     public static function filterListEntryEdited(FilterListEntry $entry, array $previous, ?User $actor, ?int $packageId): self
     {
         return new self(
-            AuditLogEventType::FilterListEntryEdited,
+            AuditRecordType::FilterListEntryEdited,
             [
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
@@ -772,7 +772,7 @@ class AuditRecord
     public static function securityAdvisoryCreated(SecurityAdvisory $advisory, ?User $actor, ?int $packageId): self
     {
         return new self(
-            AuditLogEventType::SecurityAdvisoryCreated,
+            AuditRecordType::SecurityAdvisoryCreated,
             self::getSecurityAdvisoryData($advisory, $actor),
             vendor: self::vendorFromPackageName($advisory->getPackageName()),
             actorId: $actor?->getId(),
@@ -786,7 +786,7 @@ class AuditRecord
     public static function securityAdvisoryEdited(SecurityAdvisory $advisory, ?User $actor, array $changeSet, ?int $packageId): self
     {
         return new self(
-            AuditLogEventType::SecurityAdvisoryEdited,
+            AuditRecordType::SecurityAdvisoryEdited,
             [...self::getSecurityAdvisoryData($advisory, $actor), 'changes' => self::getSecurityAdvisoryChanges($changeSet)],
             vendor: self::vendorFromPackageName($advisory->getPackageName()),
             actorId: $actor?->getId(),
@@ -797,7 +797,7 @@ class AuditRecord
     public static function securityAdvisoryWithdrawn(SecurityAdvisory $advisory, ?User $actor, ?int $packageId): self
     {
         return new self(
-            AuditLogEventType::SecurityAdvisoryWithdrawn,
+            AuditRecordType::SecurityAdvisoryWithdrawn,
             self::getSecurityAdvisoryData($advisory, $actor),
             vendor: self::vendorFromPackageName($advisory->getPackageName()),
             actorId: $actor?->getId(),
