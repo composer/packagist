@@ -12,29 +12,35 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Log\Display\LogEventType;
 
-readonly class PackageUnabandonedDisplay extends AbstractLogDisplay
+/**
+ * Package events whose only detail is the repository URL: created / unabandoned / unfrozen.
+ */
+readonly class PackageRepositoryDisplay extends AbstractLogDisplay
 {
     public function __construct(
+        private LogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
-        public string $repository,
+        public ?string $repository,
+        // null unless the package ended up with someone other than the actor
+        public ?ActorDisplay $maintainer,
         ActorDisplay $actor,
-        ?string $ip,
+        ?string $ip = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): LogEventType
     {
-        return AuditLogEventType::PackageUnabandoned;
+        return $this->type;
     }
 
     public function getTemplateName(): string
     {
-        return 'log/display/package_unabandoned.html.twig';
+        return 'log/display/package_repository.html.twig';
     }
 }

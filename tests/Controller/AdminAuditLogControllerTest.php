@@ -31,12 +31,33 @@ class AdminAuditLogControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/admin/audit-log');
         static::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test=log-type]')->each(fn ($element) => trim($element->text()));
         static::assertContains('Organization created', $types);
 
         $link = $crawler->filter('a[href="/organizations/acme"]');
         static::assertCount(1, $link);
         static::assertSame('ACME Corp', trim($link->text()));
+    }
+
+    /**
+     * The display templates are shared with the public transparency log, which has no internal
+     * moderation notes at all, so the note has to survive on this side.
+     */
+    public function testAuditLogShowsTheInternalModerationNote(): void
+    {
+        $auditor = self::createUser('auditor', 'auditor@example.com', roles: ['ROLE_AUDITOR']);
+        $package = self::createPackage('vendor1/deleted', 'https://github.com/vendor1/deleted');
+        $this->store($auditor, $package);
+
+        $this->store(AuditRecord::packageDeleted($package, $auditor, 'spam', 'reporter jane, ticket #42'));
+
+        $this->client->loginUser($auditor);
+        $crawler = $this->client->request('GET', '/admin/audit-log');
+        static::assertResponseIsSuccessful();
+
+        $details = $crawler->filter('td.audit-log-details')->text();
+        static::assertStringContainsString('Reason: spam', $details);
+        static::assertStringContainsString('Internal reason: reporter jane, ticket #42', $details);
     }
 
     #[DataProvider('filterProvider')]
@@ -56,7 +77,7 @@ class AdminAuditLogControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/admin/audit-log?'.http_build_query($filters));
         static::assertResponseIsSuccessful();
 
-        $rows = $crawler->filter('[data-test=audit-log-type]');
+        $rows = $crawler->filter('[data-test=log-type]');
         static::assertSame($expected, $rows->each(fn ($element) => trim($element->text())));
     }
 
@@ -75,13 +96,13 @@ class AdminAuditLogControllerTest extends IntegrationTestCase
         // The search is case-insensitive and matches the record where naderman is the subject user.
         $crawler = $this->client->request('GET', '/admin/audit-log?'.http_build_query(['user' => 'NADERMAN']));
         static::assertResponseIsSuccessful();
-        $rowTexts = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        $rowTexts = $crawler->filter('[data-test=log-type]')->each(fn ($element) => trim($element->text()));
         static::assertContains('Maintainer added', $rowTexts);
 
         // A username with no records returns an empty, non-crashing result
         $crawler = $this->client->request('GET', '/admin/audit-log?'.http_build_query(['user' => 'nobody']));
         static::assertResponseIsSuccessful();
-        static::assertCount(0, $crawler->filter('[data-test=audit-log-type]'));
+        static::assertCount(0, $crawler->filter('[data-test=log-type]'));
     }
 
     public static function filterProvider(): iterable
@@ -150,7 +171,7 @@ class AdminAuditLogControllerTest extends IntegrationTestCase
         ]));
         static::assertResponseIsSuccessful();
 
-        $rows = $crawler->filter('[data-test=audit-log-type]');
+        $rows = $crawler->filter('[data-test=log-type]');
         static::assertSame(4, $rows->count(), 'Should have 4 results within the time range');
 
         $timeRangeAlert = $crawler->filter('.audit-log-time-range');

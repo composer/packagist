@@ -12,8 +12,8 @@
 
 namespace App\Controller;
 
-use App\Entity\AuditRecordRepository;
 use App\Log\Display\AuditLogDisplayFactory;
+use App\Entity\AuditRecordRepository;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 

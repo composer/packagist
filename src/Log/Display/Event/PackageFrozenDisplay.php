@@ -12,27 +12,35 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
+use App\Entity\PackageFreezeReason;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Log\Display\LogEventType;
 
 readonly class PackageFrozenDisplay extends AbstractLogDisplay
 {
     public function __construct(
+        private LogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
-        public string $repository,
-        public string $reason,
-        public ?string $internalReason,
+        public ?string $repository,
+        public ?string $reason,
         ActorDisplay $actor,
-        ?string $ip,
+        // audit-log only: the public log's rows are scrubbed of both at projection time
+        ?string $ip = null,
+        public ?string $internalReason = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getReasonTranslationKey(): ?string
     {
-        return AuditLogEventType::PackageFrozen;
+        return $this->reasonTranslationKey($this->reason, PackageFreezeReason::class, 'freeze_reason');
+    }
+
+    public function getType(): LogEventType
+    {
+        return $this->type;
     }
 
     public function getTemplateName(): string

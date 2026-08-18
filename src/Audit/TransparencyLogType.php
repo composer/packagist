@@ -12,6 +12,8 @@
 
 namespace App\Audit;
 
+use App\Log\Display\LogEventType;
+
 /**
  * Holds two kinds of projected event:
  *  - package-native events (ownership / package / version): projected 1:1 from an audit row that
@@ -20,7 +22,7 @@ namespace App\Audit;
  *    projector fans each of these out to every package the user maintains, producing one entry per
  *    package.
  */
-enum TransparencyLogType: string
+enum TransparencyLogType: string implements LogEventType
 {
     // package ownership
     case MaintainerAdded = 'maintainer_added';
@@ -51,6 +53,11 @@ enum TransparencyLogType: string
     case EmailChanged = 'email_changed';
     case GitHubLinkedWithUser = 'github_linked_with_user';
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user';
+
+    public function translationPrefix(): string
+    {
+        return 'transparency_log.';
+    }
 
     /**
      * Maps an internal audit record type onto its public transparency-log type, or null when the

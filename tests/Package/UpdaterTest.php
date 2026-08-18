@@ -12,6 +12,7 @@
 
 namespace App\Tests\Package;
 
+use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
@@ -20,7 +21,7 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\RequireLink;
 use App\Entity\Version;
-use App\Log\AuditLogEventType;
+use App\Entity\VersionRepository;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
@@ -694,7 +695,7 @@ class UpdaterTest extends IntegrationTestCase
 
         $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
-        $blocked = $this->countAudits(AuditLogEventType::VersionReferenceChangeBlocked);
+        $blocked = $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked);
         self::assertSame(0, $blocked);
     }
 
@@ -722,7 +723,7 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame('9999999999999999', $reloaded->getLastBlockedReference());
 
         $audit = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::VersionReferenceChangeBlocked->value,
+            'type' => AuditRecordType::VersionReferenceChangeBlocked->value,
             'packageId' => $this->package->getId(),
         ]);
         self::assertNotNull($audit);
@@ -748,7 +749,7 @@ class UpdaterTest extends IntegrationTestCase
 
         $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
-        self::assertSame(0, $this->countAudits(AuditLogEventType::VersionReferenceChangeBlocked));
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
     }
 
     public function testStableRevertClearsLastBlockedReference(): void
@@ -775,7 +776,7 @@ class UpdaterTest extends IntegrationTestCase
         $reloaded = $em->getRepository(Version::class)->findOneBy(['name' => 'test/pkg']);
         self::assertNotNull($reloaded);
         self::assertNull($reloaded->getLastBlockedReference(), 'lastBlockedReference must be cleared when upstream reverts');
-        self::assertSame(0, $this->countAudits(AuditLogEventType::VersionReferenceChangeBlocked));
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
     }
 
     public function testIntentionallySoftDeletedStableIsNotRecreated(): void
@@ -917,7 +918,7 @@ class UpdaterTest extends IntegrationTestCase
         $dev = $versionRepo->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => 'dev-main']);
         self::assertNull($dev, 'dev row must be hard-deleted by DELETE_BEFORE');
 
-        self::assertSame(0, $this->countAudits(AuditLogEventType::VersionReferenceChangeBlocked));
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
     }
 
     public function testDependentSuggesterSourceUpdatedForUnchangedStableVersion(): void
@@ -997,7 +998,7 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame($ref, $reloaded->getDist()['reference'] ?? null, 'dist.reference must not change');
         self::assertSame($shasum, $reloaded->getDist()['shasum'] ?? null, 'dist.shasum must not be overwritten');
 
-        self::assertSame(0, $this->countAudits(AuditLogEventType::VersionReferenceChangeBlocked));
+        self::assertSame(0, $this->countAudits(AuditRecordType::VersionReferenceChangeBlocked));
     }
 
     public function testUpdateSourceDistUrlSkipsWhenDriverDistUrlDoesNotMatch(): void
@@ -1551,7 +1552,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock, $eventDispatcherMock, $packageManager, new NullLogger());
     }
 
-    private function countAudits(AuditLogEventType $type): int
+    private function countAudits(AuditRecordType $type): int
     {
         return \count(self::getEM()->getRepository(AuditRecord::class)->findBy([
             'type' => $type->value,

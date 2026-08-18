@@ -10,19 +10,22 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Audit\Display\Transparency;
+namespace App\Log\Display\Event;
 
-use App\Audit\Display\ActorDisplay;
 use App\Audit\TransparencyLogType;
+use App\Log\Display\AbstractLogDisplay;
+use App\Log\Display\ActorDisplay;
 
-readonly class VersionSoftDeletedDisplay extends AbstractTransparencyDisplay
+/**
+ * A user account-security event (2FA, password, email, GitHub link) fanned out onto a package the
+ * user maintains. The specific event is conveyed by the type label; the detail names the maintainer.
+ */
+readonly class MaintainerAccountEventDisplay extends AbstractLogDisplay
 {
     public function __construct(
+        private TransparencyLogType $type,
         \DateTimeImmutable $datetime,
-        public string $packageName,
-        public string $version,
-        public string $reason,
-        public ?string $reasonText,
+        public string $maintainerUsername,
         ActorDisplay $actor,
     ) {
         parent::__construct($datetime, $actor);
@@ -30,11 +33,11 @@ readonly class VersionSoftDeletedDisplay extends AbstractTransparencyDisplay
 
     public function getType(): TransparencyLogType
     {
-        return TransparencyLogType::VersionSoftDeleted;
+        return $this->type;
     }
 
     public function getTemplateName(): string
     {
-        return 'transparency_log/display/version_soft_deleted.html.twig';
+        return 'log/display/account_event.html.twig';
     }
 }

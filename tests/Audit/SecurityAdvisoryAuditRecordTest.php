@@ -12,8 +12,8 @@
 
 namespace App\Tests\Audit;
 
+use App\Audit\AuditRecordType;
 use App\Entity\SecurityAdvisory;
-use App\Log\AuditLogEventType;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Tests\Fixtures\Fixtures;
@@ -54,19 +54,19 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
         $em->persist($advisory);
         $em->flush();
 
-        self::assertSame(1, $this->auditCount(AuditLogEventType::SecurityAdvisoryCreated));
-        $attributes = $this->latestAttributes(AuditLogEventType::SecurityAdvisoryCreated);
+        self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisoryCreated));
+        $attributes = $this->latestAttributes(AuditRecordType::SecurityAdvisoryCreated);
         self::assertSame('acme/package', $attributes['name']);
         self::assertSame('GHSA-aaaa-bbbb-cccc', $attributes['remoteId']);
         self::assertSame('automation', $attributes['actor']);
-        self::assertSame($package->getId(), $this->latestPackageId(AuditLogEventType::SecurityAdvisoryCreated));
+        self::assertSame($package->getId(), $this->latestPackageId(AuditRecordType::SecurityAdvisoryCreated));
 
         // Edited
         $advisory->updateAdvisory($this->remoteAdvisory('GHSA-aaaa-bbbb-cccc', '^2.0'));
         $em->flush();
 
-        self::assertSame(1, $this->auditCount(AuditLogEventType::SecurityAdvisoryEdited));
-        $attributes = $this->latestAttributes(AuditLogEventType::SecurityAdvisoryEdited);
+        self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisoryEdited));
+        $attributes = $this->latestAttributes(AuditRecordType::SecurityAdvisoryEdited);
         self::assertArrayHasKey('affectedVersions', $attributes['changes']);
         self::assertSame('^1.0', $attributes['changes']['affectedVersions']['from']);
         self::assertSame('^2.0', $attributes['changes']['affectedVersions']['to']);
@@ -76,10 +76,10 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
         $em->remove($advisory);
         $em->flush();
 
-        self::assertSame(1, $this->auditCount(AuditLogEventType::SecurityAdvisoryWithdrawn));
+        self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisoryWithdrawn));
     }
 
-    private function auditCount(AuditLogEventType $type): int
+    private function auditCount(AuditRecordType $type): int
     {
         $connection = static::getContainer()->get(Connection::class);
         \assert($connection instanceof Connection);
@@ -90,7 +90,7 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
     /**
      * @return array<string, mixed>
      */
-    private function latestAttributes(AuditLogEventType $type): array
+    private function latestAttributes(AuditRecordType $type): array
     {
         $connection = static::getContainer()->get(Connection::class);
         \assert($connection instanceof Connection);
@@ -100,7 +100,7 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
         return json_decode((string) $attributes, true, flags: \JSON_THROW_ON_ERROR);
     }
 
-    private function latestPackageId(AuditLogEventType $type): ?int
+    private function latestPackageId(AuditRecordType $type): ?int
     {
         $connection = static::getContainer()->get(Connection::class);
         \assert($connection instanceof Connection);

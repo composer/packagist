@@ -12,32 +12,29 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Log\Display\LogEventType;
 
 readonly class PackageTransferredDisplay extends AbstractLogDisplay
 {
-    /**
-     * @param array<ActorDisplay> $previousMaintainers
-     * @param array<ActorDisplay> $currentMaintainers
-     */
     public function __construct(
+        private LogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
-        /** @var array<string> $previousMaintainers */
+        /** @var list<array{id: int|null, username: string}> $previousMaintainers */
         public array $previousMaintainers,
-        /** @var array<string> $currentMaintainers */
+        /** @var list<array{id: int|null, username: string}> $currentMaintainers */
         public array $currentMaintainers,
         ActorDisplay $actor,
-        ?string $ip,
+        ?string $ip = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): LogEventType
     {
-        return AuditLogEventType::PackageTransferred;
+        return $this->type;
     }
 
     public function getTemplateName(): string

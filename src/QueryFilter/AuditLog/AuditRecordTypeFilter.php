@@ -12,12 +12,12 @@
 
 namespace App\QueryFilter\AuditLog;
 
-use App\Log\AuditLogEventType;
+use App\Audit\AuditRecordType;
 use App\QueryFilter\QueryFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
 
-class EventTypeFilter implements QueryFilterInterface
+class AuditRecordTypeFilter implements QueryFilterInterface
 {
     /**
      * @param string[] $types
@@ -68,7 +68,7 @@ class EventTypeFilter implements QueryFilterInterface
 
     private static function isValid(string $value): bool
     {
-        $enum = AuditLogEventType::tryFrom($value);
+        $enum = AuditRecordType::tryFrom($value);
 
         return $enum !== null;
     }

@@ -12,14 +12,14 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
+use App\Audit\AuditRecordType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 
 readonly class GenericUserDisplay extends AbstractLogDisplay
 {
     public function __construct(
-        private AuditLogEventType $type,
+        private AuditRecordType $type,
         \DateTimeImmutable $datetime,
         public string $username,
         ActorDisplay $actor,
@@ -28,7 +28,7 @@ readonly class GenericUserDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): AuditRecordType
     {
         return $this->type;
     }
