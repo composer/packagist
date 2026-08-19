@@ -35,12 +35,15 @@ class TransparencyLogController extends Controller
     #[Route(path: '/transparency-log', name: 'view_transparency_log', methods: ['GET'])]
     public function viewTransparencyLog(Request $request, PackageTransparencyLogRepository $repository, TransparencyLogDisplayFactory $displayFactory): Response
     {
+        // Auditors see everything; the temporarily-hidden types stay hidden for everyone else.
+        $includeHiddenTypes = $this->isGranted('ROLE_AUDITOR');
+
         $dateTimeFromFilter = DateTimeFromFilter::fromQuery($request->query);
         $dateTimeToFilter = DateTimeToFilter::fromQuery($request->query);
 
         /** @var QueryFilterInterface[] $filters */
         $filters = [
-            TransparencyLogTypeFilter::fromQuery($request->query),
+            TransparencyLogTypeFilter::fromQuery($request->query, $includeHiddenTypes),
             UserFilter::fromQuery($request->query),
             VendorFilter::fromQuery($request->query),
             PackageNameFilter::fromQuery($request->query),
@@ -48,7 +51,7 @@ class TransparencyLogController extends Controller
             $dateTimeToFilter,
         ];
 
-        $qb = $repository->getQueryBuilderForPublicView();
+        $qb = $repository->getQueryBuilderForPublicView($includeHiddenTypes);
 
         $selectedFilters = [];
         foreach ($filters as $filter) {
@@ -64,7 +67,7 @@ class TransparencyLogController extends Controller
         return $this->render('log/transparency_log.html.twig', [
             'transparencyLogDisplays' => $displayFactory->build($paginator),
             'paginator' => $paginator,
-            'selectableTypes' => $this->selectableTypes(),
+            'selectableTypes' => $this->selectableTypes($includeHiddenTypes),
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,
             'dateTimeToFilter' => $dateTimeToFilter,
@@ -73,12 +76,16 @@ class TransparencyLogController extends Controller
 
     /**
      * Types offered in the filter, minus the temporarily hidden ones so the form can't ask for rows the
-     * read query excludes anyway.
+     * read query excludes anyway. Auditors ($includeHiddenTypes) are offered every type.
      *
      * @return list<TransparencyLogType>
      */
-    private function selectableTypes(): array
+    private function selectableTypes(bool $includeHiddenTypes): array
     {
+        if ($includeHiddenTypes) {
+            return TransparencyLogType::cases();
+        }
+
         $hidden = TransparencyLogType::temporarilyHiddenTypes();
 
         return array_values(array_filter(

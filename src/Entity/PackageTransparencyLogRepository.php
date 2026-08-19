@@ -90,11 +90,16 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
 
     /**
      * All entries, newest first (leaf index is chronological), for the public read view.
-     * {@see TransparencyLogType::temporarilyHiddenTypes()} are projected but not shown.
+     * {@see TransparencyLogType::temporarilyHiddenTypes()} are projected but not shown, unless
+     * $includeHiddenTypes is set (auditors see everything).
      */
-    public function getQueryBuilderForPublicView(): QueryBuilder
+    public function getQueryBuilderForPublicView(bool $includeHiddenTypes = false): QueryBuilder
     {
         $qb = $this->createQueryBuilder('t')->orderBy('t.leafIndex', 'DESC');
+
+        if ($includeHiddenTypes) {
+            return $qb;
+        }
 
         $hiddenTypes = array_map(
             static fn (TransparencyLogType $type): string => $type->value,
