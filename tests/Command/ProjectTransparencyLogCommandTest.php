@@ -111,7 +111,7 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         self::assertArrayNotHasKey('internalReason', $attributes);
     }
 
-    public function testAccountEventReasonNeverReachesTheProjection(): void
+    public function testAccountEventKeepsItsReason(): void
     {
         $em = $this->getEM();
         $conn = self::getService(Connection::class);
@@ -131,10 +131,7 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         /** @var string|false $attributesJson */
         $attributesJson = $conn->fetchOne("SELECT attributes FROM package_transparency_log WHERE type = 'two_fa_deactivated'");
         self::assertIsString($attributesJson);
-        self::assertArrayNotHasKey('reason', json_decode($attributesJson, true));
-        // scrubbing happens at write time and the table is append-only, so a row that captured the
-        // reason could never be corrected
-        self::assertStringNotContainsString('Backup code used', $attributesJson);
+        self::assertSame('Backup code used', json_decode($attributesJson, true)['reason']);
     }
 
     public function testNonNumericMinAgeIsRejected(): void

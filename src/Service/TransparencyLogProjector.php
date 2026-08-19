@@ -137,7 +137,7 @@ class TransparencyLogProjector
             return 0;
         }
 
-        $scrubbedAttributes = $this->scrubber->scrub($record->attributes, $type);
+        $scrubbedAttributes = $this->scrubber->scrub($record->attributes);
         $connection = $this->getEM()->getConnection();
 
         // A fan-out must be all-or-nothing: a partial insert would let the cursor
