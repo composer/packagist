@@ -86,11 +86,6 @@ enum AuditRecordType: string implements LogEventType
     case OrganizationInvitationDeclined = 'organization_invitation_declined';
     case OrganizationInvitationExpired = 'organization_invitation_expired';
 
-    public function translationPrefix(): string
-    {
-        return 'audit_log.';
-    }
-
     /**
      * @return list<self>
      */

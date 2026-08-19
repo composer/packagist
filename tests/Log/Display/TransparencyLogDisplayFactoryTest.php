@@ -59,7 +59,7 @@ class TransparencyLogDisplayFactoryTest extends TestCase
         $display = (new TransparencyLogDisplayFactory())->buildSingle($this->entry($type));
 
         self::assertSame($type, $display->getType());
-        self::assertSame('transparency_log.type.'.$type->value, $display->getTypeTranslationKey());
+        self::assertSame('log.type.'.$type->value, $display->getTypeTranslationKey());
         self::assertSame('moderator', $display->getActor()->username);
         self::assertFileExists(
             __DIR__.'/../../../templates/'.$display->getTemplateName(),

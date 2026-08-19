@@ -54,11 +54,6 @@ enum TransparencyLogType: string implements LogEventType
     case GitHubLinkedWithUser = 'github_linked_with_user';
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user';
 
-    public function translationPrefix(): string
-    {
-        return 'transparency_log.';
-    }
-
     /**
      * Maps an internal audit record type onto its public transparency-log type, or null when the
      * event is out of scope for the package transparency log.
