@@ -42,30 +42,14 @@ class TransparencyLogScrubber
     ];
 
     /**
-     * Scrubbed from account-security events only. The `reason` says how the account change was made
-     * ('Backup code used', 'Manually disabled'), which is account-security detail and not the
-     * supply-chain signal this log exists for. On package events the same key carries a moderation
-     * reason that is meant to be published, so it can't go on the global denylist.
-     */
-    private const SCRUB_ON_ACCOUNT_EVENTS = [
-        'reason',
-    ];
-
-    /**
      * @param array<string, mixed> $attributes
      *
      * @return array<string, mixed>
      */
-    public function scrub(array $attributes, TransparencyLogType $type): array
+    public function scrub(array $attributes): array
     {
         foreach (self::SCRUB_AT_TOP_LEVEL as $key) {
             unset($attributes[$key]);
-        }
-
-        if ($type->fansOutToMaintainedPackages()) {
-            foreach (self::SCRUB_ON_ACCOUNT_EVENTS as $key) {
-                unset($attributes[$key]);
-            }
         }
 
         return $this->scrubAtAnyDepth($attributes);
