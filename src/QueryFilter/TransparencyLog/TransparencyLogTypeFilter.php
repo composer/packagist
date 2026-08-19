@@ -50,9 +50,9 @@ class TransparencyLogTypeFilter implements QueryFilterInterface
     /**
      * @param InputBag<string> $bag
      */
-    public static function fromQuery(InputBag $bag): self
+    public static function fromQuery(InputBag $bag, bool $allowHiddenTypes = false): self
     {
-        $hidden = array_map(
+        $hidden = $allowHiddenTypes ? [] : array_map(
             static fn (TransparencyLogType $type): string => $type->value,
             TransparencyLogType::temporarilyHiddenTypes(),
         );
