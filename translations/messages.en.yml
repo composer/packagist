@@ -216,7 +216,6 @@ log:
         repository_archived_and_composer_json: Repository archived and marked abandoned in composer.json
         unknown: Unknown
 
-transparency_log:
     type:
         maintainer_added: Maintainer added
         maintainer_removed: Maintainer removed
@@ -240,38 +239,13 @@ transparency_log:
         email_changed: Maintainer email address changed
         github_linked_with_user: Maintainer linked a GitHub account
         github_disconnected_from_user: Maintainer disconnected their GitHub account
-
-audit_log:
-    type:
-        canonical_url_changed: Canonical URL changed
-        email_changed: Email changed
-        github_disconnected_from_user: GitHub disconnected from user
-        github_linked_with_user: GitHub linked to user
-        maintainer_added: Maintainer added
-        maintainer_removed: Maintainer removed
-        package_abandoned: Package abandoned
-        package_created: Package created
-        package_deleted: Package deleted
-        package_transferred: Package transferred
-        package_unabandoned: Package unabandoned
-        package_frozen: Package frozen
-        package_unfrozen: Package unfrozen
-        password_changed: Password changed
-        password_reset: Password reset
         password_reset_requested: Password reset requested
-        two_fa_activated: 2FA activated
-        two_fa_deactivated: 2FA deactivated
         user_created: User created
         user_verified: User verified
         user_deleted: User deleted
         user_frozen: User frozen
         user_unfrozen: User unfrozen
         username_changed: Username changed
-        version_created: Version created
-        version_deleted: Version deleted
-        version_soft_deleted: Version soft-deleted
-        version_recovered: Version recovered
-        version_reference_change_blocked: Version reference change blocked
         filter_list_entry_added: Entry added
         filter_list_entry_deleted: Entry deleted
         filter_list_entry_disabled: Entry disabled
@@ -297,6 +271,8 @@ audit_log:
         organization_invitation_accepted: Invitation accepted
         organization_invitation_declined: Invitation declined
         organization_invitation_expired: Invitation expired
+
+audit_log:
     enums:
         user-registration-method:
             form: 'Registration form'

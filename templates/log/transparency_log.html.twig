@@ -13,7 +13,7 @@
         {% block type_options %}
             {% for type in selectableTypes %}
                 <option value="{{ type.value }}" {% if type.value in selectedFilters.type %}selected="selected"{% endif %}>
-                    {{ ('transparency_log.type.' ~ type.value)|trans }}
+                    {{ ('log.type.' ~ type.value)|trans }}
                 </option>
             {% endfor %}
         {% endblock %}

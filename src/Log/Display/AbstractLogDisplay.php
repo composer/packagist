@@ -43,15 +43,12 @@ abstract readonly class AbstractLogDisplay implements LogDisplayInterface
 
     public function getTypeTranslationKey(): string
     {
-        return $this->getType()->translationPrefix().'type.'.$this->getType()->value;
+        return 'log.type.'.$this->getType()->value;
     }
 
     /**
      * Translation key for a reason label, or null when the stored value is not a reason we know how to
      * name, so the row shows nothing rather than a raw enum value.
-     *
-     * Unlike the type labels, reason labels are shared by both logs: they are short restatements of a
-     * moderation enum, and there is no reason to word them differently per audience.
      *
      * @param class-string<\BackedEnum> $reasonEnum
      */
