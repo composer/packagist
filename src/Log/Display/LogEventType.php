@@ -17,13 +17,12 @@ namespace App\Log\Display;
  * audit log, {@see \App\Audit\TransparencyLogType} for the public transparency log.
  *
  * A display class is shared by both logs wherever the event carries the same detail in each, so the
- * type it was built with is what says which log's labels to use.
+ * type it was built with identifies the row.
+ *
+ * The two enums implement this common type only because each log projects a different subset of
+ * events; both render under the same shared 'log.' translation vocabulary (see
+ * {@see AbstractLogDisplay::getTypeTranslationKey()}).
  */
 interface LogEventType extends \BackedEnum
 {
-    /**
-     * Translation prefix of the log this type belongs to, e.g. 'audit_log.'. The two logs word the same
-     * event differently ('2FA activated' vs 'Maintainer enabled two-factor authentication').
-     */
-    public function translationPrefix(): string;
 }

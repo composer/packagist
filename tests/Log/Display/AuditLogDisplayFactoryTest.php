@@ -77,7 +77,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertNull($display->maintainer);
         self::assertSame(AuditRecordType::PackageCreated, $display->getType());
         self::assertSame('log/display/package_repository.html.twig', $display->getTemplateName());
-        self::assertSame('audit_log.type.package_created', $display->getTypeTranslationKey());
+        self::assertSame('log.type.package_created', $display->getTypeTranslationKey());
     }
 
     public function testBuildPackageCreatedWithSystemActor(): void
@@ -689,7 +689,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('automation', $display->actor->username);
         self::assertSame(AuditRecordType::SecurityAdvisoryCreated, $display->getType());
         self::assertSame('log/display/security_advisory_created.html.twig', $display->getTemplateName());
-        self::assertSame('audit_log.type.security_advisory_created', $display->getTypeTranslationKey());
+        self::assertSame('log.type.security_advisory_created', $display->getTypeTranslationKey());
     }
 
     public function testBuildSecurityAdvisoryEdited(): void
@@ -765,7 +765,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('admin', $display->actor->username);
         self::assertSame(AuditRecordType::UserFrozen, $display->getType());
         self::assertSame('log/display/user_freeze.html.twig', $display->getTemplateName());
-        self::assertSame('audit_log.type.user_frozen', $display->getTypeTranslationKey());
+        self::assertSame('log.type.user_frozen', $display->getTypeTranslationKey());
     }
 
     public function testBuildUserFrozenShowsInternalReasonForAuditor(): void
@@ -834,7 +834,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(OrganizationInvitationDisplay::class, $display);
         self::assertSame(AuditRecordType::OrganizationInvitationSent, $display->getType());
         self::assertSame('log/display/organization_invitation_sent.html.twig', $display->getTemplateName());
-        self::assertSame('audit_log.type.organization_invitation_sent', $display->getTypeTranslationKey());
+        self::assertSame('log.type.organization_invitation_sent', $display->getTypeTranslationKey());
         self::assertSame('acme', $display->organization->slug);
         self::assertSame('owner', $display->actor->username);
         // Not an auditor: on the public log the invited email is obfuscated.
