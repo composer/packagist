@@ -57,7 +57,7 @@ class PackageTransparencyLog
         #[ORM\Column(options: ['unsigned' => true])]
         public readonly int $leafIndex,
 
-        #[ORM\Column(length: 32)]
+        #[ORM\Column(length: 64)]
         public readonly TransparencyLogType $type,
 
         /**

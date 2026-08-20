@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use App\Audit\TransparencyLogType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Ulid;
@@ -61,31 +62,39 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * Idempotently appends a projected entry. Returns the number of affected rows: 0 means the source
-     * row was already projected (unique sourceAuditLogId) and the insert was ignored, so the caller
-     * must not consume the candidate leaf index.
+     * Idempotently appends a projected entry. Returns 1 when the row was appended, or 0 when this
+     * (sourceAuditLogId, packageId) pair was already projected, in which case the caller must not
+     * consume the candidate leaf index.
      */
     public function insertProjected(PackageTransparencyLog $entry): int
     {
-        return (int) $this->getEntityManager()->getConnection()->executeStatement(
-            'INSERT IGNORE INTO package_transparency_log
-                (id, sourceAuditLogId, leafIndex, type, attributes, datetime, actorId, vendor, packageId, userId, organizationId, leafHash)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-                $entry->id->toBinary(),
-                $entry->sourceAuditLogId->toBinary(),
-                $entry->leafIndex,
-                $entry->type->value,
-                json_encode($entry->attributes, \JSON_THROW_ON_ERROR),
-                $entry->datetime->format('Y-m-d H:i:s'),
-                $entry->actorId,
-                $entry->vendor,
-                $entry->packageId,
-                $entry->userId,
-                $entry->organizationId?->toBinary(),
-                null,
-            ],
-        );
+        try {
+            return (int) $this->getEntityManager()->getConnection()->executeStatement(
+                'INSERT INTO package_transparency_log
+                    (id, sourceAuditLogId, leafIndex, type, attributes, datetime, actorId, vendor, packageId, userId, organizationId, leafHash)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [
+                    $entry->id->toBinary(),
+                    $entry->sourceAuditLogId->toBinary(),
+                    $entry->leafIndex,
+                    $entry->type->value,
+                    json_encode($entry->attributes, \JSON_THROW_ON_ERROR),
+                    $entry->datetime->format('Y-m-d H:i:s'),
+                    $entry->actorId,
+                    $entry->vendor,
+                    $entry->packageId,
+                    $entry->userId,
+                    $entry->organizationId?->toBinary(),
+                    null,
+                ],
+            );
+        } catch (UniqueConstraintViolationException $e) {
+            if (str_contains($e->getMessage(), 'source_package_uniq')) {
+                return 0;
+            }
+
+            throw $e;
+        }
     }
 
     /**

@@ -5,7 +5,7 @@ CREATE TABLE package_transparency_log (
     id BINARY(16) NOT NULL,
     sourceAuditLogId BINARY(16) NOT NULL,
     leafIndex INT UNSIGNED NOT NULL,
-    type VARCHAR(32) NOT NULL,
+    type VARCHAR(64) NOT NULL,
     attributes JSON NOT NULL,
     datetime DATETIME NOT NULL,
     actorId INT DEFAULT NULL,
