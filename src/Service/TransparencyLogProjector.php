@@ -29,7 +29,8 @@ use Symfony\Component\Uid\Ulid;
 /**
  * Projects package-relevant audit_log rows into the public package_transparency_log, in ULID
  * (chronological) order, assigning a gapless append-only leaf index and scrubbing PII at write time.
- * The projection is idempotent (unique (sourceAuditLogId, packageId) + INSERT IGNORE).
+ * The projection is idempotent: unique (sourceAuditLogId, packageId), whose violation is the one
+ * error {@see PackageTransparencyLogRepository::insertProjected()} reports as an already-projected 0.
  *
  * Safety lag: because a row's ULID is assigned when the audit record is constructed but only becomes
  * visible when its transaction commits, a smaller-ULID row can appear *after* a larger one. We only
@@ -183,7 +184,7 @@ class TransparencyLogProjector
 
     /**
      * Inserts one entry per target, assigning sequential leaf indices. Only a real insert consumes a
-     * leaf index, so INSERT IGNORE on an already-projected (source, package) pair can't leave a gap.
+     * leaf index, so re-running over an already-projected (source, package) pair can't leave a gap.
      *
      * @param list<array{id: int|null, vendor: string|null}> $targets
      * @param array<string, mixed>                           $scrubbedAttributes
