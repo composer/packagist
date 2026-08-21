@@ -46,8 +46,6 @@ final class Invitation extends AbstractAggregate
 
     private string $email;
 
-    private string $emailCanonical;
-
     private InvitationStatus $status;
 
     private \DateTimeImmutable $expiresAt;
@@ -70,7 +68,7 @@ final class Invitation extends AbstractAggregate
         }
 
         $invitation = new self($id);
-        $invitation->record(new UserInvitationSent($id, $orgId, $email->value, $email->canonical, $teamIds, $tokenHash, $expiresAt));
+        $invitation->record(new UserInvitationSent($id, $orgId, $email->value, $teamIds, $tokenHash, $expiresAt));
 
         return $invitation;
     }
@@ -190,11 +188,6 @@ final class Invitation extends AbstractAggregate
         return $this->orgId;
     }
 
-    public function emailCanonical(): string
-    {
-        return $this->emailCanonical;
-    }
-
     public function status(): InvitationStatus
     {
         return $this->status;
@@ -220,7 +213,7 @@ final class Invitation extends AbstractAggregate
 
     private function assertEmailMatches(string $userEmailCanonical): void
     {
-        if ($userEmailCanonical !== $this->emailCanonical) {
+        if (!new Email($this->email)->isIdentical($userEmailCanonical)) {
             throw new EmailMismatchException('Your account email does not match the invited address.');
         }
     }
@@ -242,7 +235,6 @@ final class Invitation extends AbstractAggregate
     {
         $this->orgId = $event->organizationId;
         $this->email = $event->email;
-        $this->emailCanonical = $event->emailCanonical;
         $this->teamIds = $event->teamIds;
         $this->expiresAt = $event->expiresAt;
         $this->status = InvitationStatus::Pending;

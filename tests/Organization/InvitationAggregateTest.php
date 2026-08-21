@@ -46,7 +46,7 @@ class InvitationAggregateTest extends TestCase
         $events = $invitation->pullPendingEvents();
         self::assertCount(1, $events);
         self::assertInstanceOf(UserInvitationSent::class, $events[0]);
-        self::assertSame('alice@example.org', $events[0]->emailCanonical);
+        self::assertSame('Alice@example.org', $events[0]->email);
         self::assertSame(InvitationStatus::Pending, $invitation->status());
     }
 
@@ -61,6 +61,17 @@ class InvitationAggregateTest extends TestCase
         self::assertCount(1, $events);
         self::assertInstanceOf(UserInvitationAccepted::class, $events[0]);
         self::assertSame(42, $events[0]->userId);
+        self::assertSame(InvitationStatus::Accepted, $invitation->status());
+    }
+
+    public function testAcceptMatchesInvitedAddressCaseInsensitively(): void
+    {
+        $teamId = new Ulid();
+        $invitation = Invitation::send(new Ulid(), new Ulid(), new Email('Alice@Example.org'), [$teamId], 'hash', $this->future());
+        $invitation->pullPendingEvents();
+
+        $invitation->accept(42, 'alice@example.org', false, [$teamId], false, false, $this->now());
+
         self::assertSame(InvitationStatus::Accepted, $invitation->status());
     }
 

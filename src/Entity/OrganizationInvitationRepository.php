@@ -82,17 +82,17 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
     /**
      * The active (pending and unexpired at $now) invitation for an org/email pair, if any. Used to enforce
      * the "no duplicate pending invitation" precondition. A pending row whose expiry has passed is not
-     * active and does not block a fresh invitation.
+     * active and does not block a fresh invitation. The email match is case-insensitive by collation.
      */
-    public function findActiveForEmail(Ulid $orgId, string $emailCanonical, \DateTimeImmutable $now): ?OrganizationInvitation
+    public function findActiveForEmail(Ulid $orgId, string $email, \DateTimeImmutable $now): ?OrganizationInvitation
     {
         return $this->createQueryBuilder('i')
             ->where('i.orgId = :orgId')
-            ->andWhere('i.emailCanonical = :email')
+            ->andWhere('i.email = :email')
             ->andWhere('i.status = :pending')
             ->andWhere('i.expiresAt >= :now')
             ->setParameter('orgId', $orgId, 'ulid')
-            ->setParameter('email', $emailCanonical)
+            ->setParameter('email', $email)
             ->setParameter('pending', InvitationStatus::Pending->value)
             ->setParameter('now', $now)
             ->setMaxResults(1)

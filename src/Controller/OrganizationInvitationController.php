@@ -18,6 +18,7 @@ use App\Entity\OrganizationInvitationTeamRepository;
 use App\Entity\OrganizationMemberRepository;
 use App\Entity\User;
 use App\Form\Type\InvitationConfirmType;
+use App\Organization\Domain\Email;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Slug;
 use App\Organization\InvitationManager;
@@ -57,7 +58,7 @@ class OrganizationInvitationController extends Controller
             'organization' => $organization,
             'invitation' => $invitation,
             'token' => $token,
-            'emailMatches' => $user->getEmailCanonical() === $invitation->emailCanonical,
+            'emailMatches' => new Email($invitation->email)->isIdentical($user->getEmailCanonical()),
             'alreadyMember' => $this->organizationMemberRepo->findOneByOrgAndUser($organization->id, $user->getId()) !== null,
             'needsTwoFactor' => $targetsOwners && !$user->isTotpAuthenticationEnabled(),
             'acceptForm' => $this->createForm(InvitationConfirmType::class)->createView(),

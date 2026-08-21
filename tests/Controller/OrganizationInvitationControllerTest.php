@@ -195,7 +195,6 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
             new Ulid(),
             $organization->id,
             'alice@example.org',
-            'alice@example.org',
             InvitationStatus::Pending,
             'hash',
             new \DateTimeImmutable('-8 days'),
@@ -303,7 +302,6 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $invitation = new OrganizationInvitation(
             new Ulid(),
             $organization->id,
-            'alice@example.org',
             'alice@example.org',
             InvitationStatus::Pending,
             static::getService(InvitationTokenGenerator::class)->hash($token),

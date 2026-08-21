@@ -75,7 +75,6 @@ final readonly class InvitationReadModelProjector implements Projector
             $event->invitationId,
             $event->organizationId,
             $event->email,
-            $event->emailCanonical,
             InvitationStatus::Pending,
             $event->tokenHash,
             $recorded->occurredAt,

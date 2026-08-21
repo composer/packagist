@@ -14,7 +14,6 @@ CREATE TABLE organization_invitation (
     id BINARY(16) NOT NULL,
     orgId BINARY(16) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    emailCanonical VARCHAR(255) NOT NULL,
     status VARCHAR(16) NOT NULL,
     -- SHA-256 hex of the single-use link token. Only the hash is stored; the raw token lives
     -- solely in the emailed link and is never persisted, here or in the event stream.
@@ -26,7 +25,7 @@ CREATE TABLE organization_invitation (
     invitedByUserId INT DEFAULT NULL,
     PRIMARY KEY (id),
     KEY org_invitation_org_idx (orgId),
-    KEY org_invitation_pending_idx (orgId, emailCanonical, status),
+    KEY org_invitation_pending_idx (orgId, email, status),
     KEY org_invitation_expiry_idx (status, expiresAt),
     KEY IDX_1846F34DB319F9DE (invitedByUserId),
     CONSTRAINT FK_organization_invitation_invited_by FOREIGN KEY (invitedByUserId) REFERENCES fos_user (id) ON DELETE SET NULL

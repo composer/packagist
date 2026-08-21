@@ -31,7 +31,6 @@ final readonly class UserInvitationSent implements InvitationEvent
         public Ulid $invitationId,
         public Ulid $organizationId,
         public string $email,
-        public string $emailCanonical,
         public array $teamIds,
         public string $tokenHash,
         public \DateTimeImmutable $expiresAt,
@@ -58,7 +57,6 @@ final readonly class UserInvitationSent implements InvitationEvent
         return [
             'organizationId' => $this->organizationId->toRfc4122(),
             'email' => $this->email,
-            'emailCanonical' => $this->emailCanonical,
             'teamIds' => array_map(static fn (Ulid $id): string => $id->toRfc4122(), $this->teamIds),
             'tokenHash' => $this->tokenHash,
             'expiresAt' => $this->expiresAt->format(DATE_ATOM),
@@ -77,7 +75,6 @@ final readonly class UserInvitationSent implements InvitationEvent
             $invitationId,
             Ulid::fromString((string) $payload['organizationId']),
             (string) $payload['email'],
-            (string) $payload['emailCanonical'],
             array_map(static fn (string $id): Ulid => Ulid::fromString($id), $teamIds),
             (string) $payload['tokenHash'],
             new \DateTimeImmutable((string) $payload['expiresAt']),

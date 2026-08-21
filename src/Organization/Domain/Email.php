@@ -13,17 +13,15 @@
 namespace App\Organization\Domain;
 
 /**
- * An invited email address. Guards format only and exposes the canonical (lower-cased) form used to
- * match against a user's account email and to detect duplicate pending invitations. The original casing
- * is preserved in {@see self::$value} for display.
+ * An invited email address. Guards format only and keeps the casing it was given, for display. Matching
+ * it against a user's account email and detecting duplicate pending invitations are case-insensitive,
+ * so no lower-cased form is kept alongside it.
  */
 final readonly class Email
 {
     public const int MAX_LENGTH = 255;
 
     public string $value;
-
-    public string $canonical;
 
     public function __construct(string $value)
     {
@@ -34,7 +32,11 @@ final readonly class Email
         }
 
         $this->value = $value;
-        $this->canonical = mb_strtolower($value);
+    }
+
+    public function isIdentical(self|string $other): bool
+    {
+        return mb_strtolower($this->value) === mb_strtolower($other instanceof self ? $other->value : $other);
     }
 
     public function __toString(): string

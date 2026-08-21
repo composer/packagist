@@ -47,7 +47,6 @@ class OrganizationInvitationRepositoryTest extends IntegrationTestCase
             new Ulid(),
             $orgId,
             $email,
-            mb_strtolower($email),
             $status,
             str_repeat('a', 64),
             $createdAt,

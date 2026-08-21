@@ -30,7 +30,7 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Entity(repositoryClass: OrganizationInvitationRepository::class)]
 #[ORM\Table(name: 'organization_invitation')]
 #[ORM\Index(name: 'org_invitation_org_idx', columns: ['orgId'])]
-#[ORM\Index(name: 'org_invitation_pending_idx', columns: ['orgId', 'emailCanonical', 'status'])]
+#[ORM\Index(name: 'org_invitation_pending_idx', columns: ['orgId', 'email', 'status'])]
 #[ORM\Index(name: 'org_invitation_expiry_idx', columns: ['status', 'expiresAt'])]
 class OrganizationInvitation
 {
@@ -44,9 +44,6 @@ class OrganizationInvitation
 
         #[ORM\Column(length: 255)]
         public readonly string $email,
-
-        #[ORM\Column(length: 255)]
-        public readonly string $emailCanonical,
 
         #[ORM\Column(length: 16)]
         public InvitationStatus $status,
