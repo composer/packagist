@@ -24,12 +24,12 @@ CREATE TABLE organization_invitation (
     resolvedAt DATETIME DEFAULT NULL,
     invitedByUserId INT DEFAULT NULL,
     PRIMARY KEY (id),
-    KEY org_invitation_org_idx (orgId),
-    KEY org_invitation_pending_idx (orgId, email, status),
-    KEY org_invitation_expiry_idx (status, expiresAt),
-    KEY IDX_1846F34DB319F9DE (invitedByUserId),
-    CONSTRAINT FK_organization_invitation_invited_by FOREIGN KEY (invitedByUserId) REFERENCES fos_user (id) ON DELETE SET NULL
-) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
+    INDEX org_invitation_org_idx (orgId),
+    INDEX org_invitation_pending_idx (orgId, email, status),
+    INDEX org_invitation_expiry_idx (status, expiresAt),
+    INDEX IDX_1846F34DB319F9DE (invitedByUserId),
+    CONSTRAINT FK_1846F34DB319F9DE FOREIGN KEY (invitedByUserId) REFERENCES fos_user (id) ON DELETE SET NULL
+) DEFAULT CHARACTER SET utf8mb4;
 
 -- Org-level membership record. A member's team memberships (organization_team_member) still drive
 -- access; this row carries the org-scoped facts that are not derivable from team rows (joinedAt).
