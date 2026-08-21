@@ -11,13 +11,7 @@
         on Packagist.org.
     </p>
 
-    {% if not emailMatches %}
-        <div class="alert alert-warning">
-            This invitation was sent to a different email address than the one your account uses. To accept,
-            sign in with (or change your account email to) the invited address, or ask an owner to re-invite
-            the address you use.
-        </div>
-    {% elseif alreadyMember %}
+    {% if alreadyMember %}
         <div class="alert alert-info">
             You are already a member of <strong>{{ organization.displayName }}</strong>, so there is nothing to accept.
             An owner can add you to further teams from the organization's team management.

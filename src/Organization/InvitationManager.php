@@ -130,10 +130,9 @@ final class InvitationManager
 
     /**
      * The invitee accepts. Resolves the still-existing target teams, enforces the invitation invariants
-     * (email match, 2FA for owners) and adds the org membership, all in one transaction. The caller has
-     * already validated the link token.
+     * (2FA for owners) and adds the org membership, all in one transaction. The caller has already
+     * validated the link token.
      *
-     * @throws \App\Organization\Domain\Exception\EmailMismatchException
      * @throws \App\Organization\Domain\Exception\AlreadyMemberException
      * @throws \App\Organization\Domain\Exception\PolicyNotMetException
      * @throws \App\Organization\Domain\Exception\InvitationNotPendingException
@@ -152,7 +151,6 @@ final class InvitationManager
 
         $aggregate->accept(
             $user->getId(),
-            $user->getEmailCanonical(),
             $organization->isOrgMember($user->getId()),
             $acceptedTeamIds,
             $ownersAmongTeams,
@@ -166,13 +164,11 @@ final class InvitationManager
 
     /**
      * The invitee declines. A no-op if already resolved. The caller has already validated the link token.
-     *
-     * @throws \App\Organization\Domain\Exception\EmailMismatchException
      */
     public function decline(OrganizationInvitation $invitation, User $user, ?string $ip): void
     {
         $aggregate = $this->reconstituteInvitation($invitation->id);
-        $aggregate->decline($user->getEmailCanonical(), $this->clock->now());
+        $aggregate->decline($this->clock->now());
         $this->eventStore->append($aggregate, Actor::member($user), $ip);
     }
 

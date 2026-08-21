@@ -21,17 +21,4 @@ class EmailTest extends TestCase
     {
         self::assertSame('Alice@Example.org', (new Email('  Alice@Example.org  '))->value);
     }
-
-    public function testIsIdenticalIgnoresCasing(): void
-    {
-        $email = new Email('Alice@Example.org');
-
-        self::assertTrue($email->isIdentical('alice@example.org'));
-        self::assertTrue($email->isIdentical(new Email('ALICE@EXAMPLE.ORG')));
-    }
-
-    public function testIsIdenticalRejectsAnotherAddress(): void
-    {
-        self::assertFalse((new Email('alice@example.org'))->isIdentical('bob@example.org'));
-    }
 }

@@ -275,22 +275,22 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
-    public function testEmailMismatchHidesAcceptButton(): void
+    public function testAccountWithADifferentEmailCanAccept(): void
     {
         [$owner, , $backend] = $this->orgWithTeam();
-        $mallory = self::createUser('mallory', 'mallory@example.org');
-        $this->store($mallory);
+        $bob = self::createUser('bob', 'bob@example.org');
+        $this->store($bob);
 
         $this->client->loginUser($owner);
         $this->submitInvite($backend, 'alice@example.org');
         $path = $this->acceptUrlPath();
 
-        $this->client->loginUser($mallory);
+        $this->client->loginUser($bob);
         $crawler = $this->client->request('GET', $path);
 
+        // Holding the link is what authorises accepting; the invited address is not checked at all.
         self::assertResponseIsSuccessful();
-        self::assertCount(0, $crawler->selectButton('Accept invitation'));
-        self::assertStringContainsString('different email address', $crawler->text());
+        self::assertCount(1, $crawler->selectButton('Accept invitation'));
     }
 
     public function testLinkRequiresAuthentication(): void

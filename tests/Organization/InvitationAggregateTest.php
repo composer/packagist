@@ -18,7 +18,6 @@ use App\Organization\Domain\Event\UserInvitationDeclined;
 use App\Organization\Domain\Event\UserInvitationExpired;
 use App\Organization\Domain\Event\UserInvitationSent;
 use App\Organization\Domain\Exception\AlreadyMemberException;
-use App\Organization\Domain\Exception\EmailMismatchException;
 use App\Organization\Domain\Exception\NoPendingInvitationException;
 use App\Organization\Domain\Exception\NoTeamSpecifiedException;
 use App\Organization\Domain\Exception\PolicyNotMetException;
@@ -50,38 +49,18 @@ class InvitationAggregateTest extends TestCase
         self::assertSame(InvitationStatus::Pending, $invitation->status());
     }
 
-    public function testAcceptRecordsAcceptanceForMatchingEmail(): void
+    public function testAcceptRecordsAcceptance(): void
     {
         $teamId = new Ulid();
         $invitation = $this->pendingInvitation([$teamId]);
 
-        $invitation->accept(42, 'alice@example.org', false, [$teamId], false, false, $this->now());
+        $invitation->accept(42, false, [$teamId], false, false, $this->now());
 
         $events = $invitation->pullPendingEvents();
         self::assertCount(1, $events);
         self::assertInstanceOf(UserInvitationAccepted::class, $events[0]);
         self::assertSame(42, $events[0]->userId);
         self::assertSame(InvitationStatus::Accepted, $invitation->status());
-    }
-
-    public function testAcceptMatchesInvitedAddressCaseInsensitively(): void
-    {
-        $teamId = new Ulid();
-        $invitation = Invitation::send(new Ulid(), new Ulid(), new Email('Alice@Example.org'), [$teamId], 'hash', $this->future());
-        $invitation->pullPendingEvents();
-
-        $invitation->accept(42, 'alice@example.org', false, [$teamId], false, false, $this->now());
-
-        self::assertSame(InvitationStatus::Accepted, $invitation->status());
-    }
-
-    public function testAcceptRejectsMismatchedEmail(): void
-    {
-        $teamId = new Ulid();
-        $invitation = $this->pendingInvitation([$teamId]);
-
-        $this->expectException(EmailMismatchException::class);
-        $invitation->accept(42, 'bob@example.org', false, [$teamId], false, true, $this->now());
     }
 
     public function testAcceptRejectsUserWhoIsAlreadyAMember(): void
@@ -91,7 +70,7 @@ class InvitationAggregateTest extends TestCase
 
         // alreadyMember = true: an existing member has nothing to accept and is not re-joined.
         $this->expectException(AlreadyMemberException::class);
-        $invitation->accept(42, 'alice@example.org', true, [$teamId], false, true, $this->now());
+        $invitation->accept(42, true, [$teamId], false, true, $this->now());
     }
 
     public function testAcceptToOwnersRequiresTwoFactor(): void
@@ -101,7 +80,7 @@ class InvitationAggregateTest extends TestCase
 
         $this->expectException(PolicyNotMetException::class);
         // ownersAmongTeams = true, hasTwoFactor = false
-        $invitation->accept(42, 'alice@example.org', false, [$teamId], true, false, $this->now());
+        $invitation->accept(42, false, [$teamId], true, false, $this->now());
     }
 
     public function testAcceptFailsWhenNoTargetTeamRemains(): void
@@ -109,7 +88,7 @@ class InvitationAggregateTest extends TestCase
         $invitation = $this->pendingInvitation([new Ulid()]);
 
         $this->expectException(TeamNotFoundException::class);
-        $invitation->accept(42, 'alice@example.org', false, [], false, true, $this->now());
+        $invitation->accept(42, false, [], false, true, $this->now());
     }
 
     public function testAcceptFailsForExpiredInvitation(): void
@@ -119,14 +98,14 @@ class InvitationAggregateTest extends TestCase
         $invitation->pullPendingEvents();
 
         $this->expectException(NoPendingInvitationException::class);
-        $invitation->accept(42, 'alice@example.org', false, [$teamId], false, true, $this->now());
+        $invitation->accept(42, false, [$teamId], false, true, $this->now());
     }
 
-    public function testDeclineRecordsForMatchingEmail(): void
+    public function testDeclineRecordsDecline(): void
     {
         $invitation = $this->pendingInvitation([new Ulid()]);
 
-        $invitation->decline('alice@example.org', $this->now());
+        $invitation->decline($this->now());
 
         $events = $invitation->pullPendingEvents();
         self::assertCount(1, $events);
@@ -139,7 +118,7 @@ class InvitationAggregateTest extends TestCase
         $invitation = Invitation::send(new Ulid(), new Ulid(), new Email('alice@example.org'), [new Ulid()], 'hash', $this->past());
         $invitation->pullPendingEvents();
 
-        $invitation->decline('alice@example.org', $this->now());
+        $invitation->decline($this->now());
 
         self::assertSame([], $invitation->pullPendingEvents());
         self::assertSame(InvitationStatus::Pending, $invitation->status());
@@ -149,7 +128,7 @@ class InvitationAggregateTest extends TestCase
     {
         $teamId = new Ulid();
         $invitation = $this->pendingInvitation([$teamId]);
-        $invitation->accept(42, 'alice@example.org', false, [$teamId], false, true, $this->now());
+        $invitation->accept(42, false, [$teamId], false, true, $this->now());
         $invitation->pullPendingEvents();
 
         $invitation->revoke($this->now());

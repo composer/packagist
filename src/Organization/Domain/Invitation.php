@@ -20,7 +20,6 @@ use App\Organization\Domain\Event\UserInvitationResent;
 use App\Organization\Domain\Event\UserInvitationRevoked;
 use App\Organization\Domain\Event\UserInvitationSent;
 use App\Organization\Domain\Exception\AlreadyMemberException;
-use App\Organization\Domain\Exception\EmailMismatchException;
 use App\Organization\Domain\Exception\InvitationNotPendingException;
 use App\Organization\Domain\Exception\NoPendingInvitationException;
 use App\Organization\Domain\Exception\NoTeamSpecifiedException;
@@ -102,17 +101,13 @@ final class Invitation extends AbstractAggregate
 
     /**
      * The invitee declines. A no-op if it is no longer pending or has already expired; the caller has
-     * already validated the link token, and the invitee's account email must match the invited address.
-     *
-     * @throws EmailMismatchException
+     * already validated the link token, which is what authorises answering the invitation.
      */
-    public function decline(string $userEmailCanonical, \DateTimeImmutable $now): void
+    public function decline(\DateTimeImmutable $now): void
     {
         if (!$this->status->isPending() || $this->isExpired($now)) {
             return;
         }
-
-        $this->assertEmailMatches($userEmailCanonical);
 
         $this->record(new UserInvitationDeclined($this->id, $this->email));
     }
@@ -125,12 +120,11 @@ final class Invitation extends AbstractAggregate
      *
      * @throws InvitationNotPendingException
      * @throws NoPendingInvitationException the invitation has lapsed
-     * @throws EmailMismatchException
      * @throws AlreadyMemberException        the invitee already belongs to the organization
      * @throws TeamNotFoundException         none of the target teams exist any more
      * @throws PolicyNotMetException         joining owners requires 2FA
      */
-    public function accept(int $userId, string $userEmailCanonical, bool $alreadyMember, array $acceptedTeamIds, bool $ownersAmongTeams, bool $hasTwoFactor, \DateTimeImmutable $now): void
+    public function accept(int $userId, bool $alreadyMember, array $acceptedTeamIds, bool $ownersAmongTeams, bool $hasTwoFactor, \DateTimeImmutable $now): void
     {
         if (!$this->status->isPending()) {
             throw new InvitationNotPendingException('This invitation is no longer pending.');
@@ -139,8 +133,6 @@ final class Invitation extends AbstractAggregate
         if ($this->isExpired($now)) {
             throw new NoPendingInvitationException('This invitation has expired.');
         }
-
-        $this->assertEmailMatches($userEmailCanonical);
 
         if ($alreadyMember) {
             throw new AlreadyMemberException('You are already a member of this organization.');
@@ -209,13 +201,6 @@ final class Invitation extends AbstractAggregate
     public function isExpired(\DateTimeImmutable $now): bool
     {
         return $now > $this->expiresAt;
-    }
-
-    private function assertEmailMatches(string $userEmailCanonical): void
-    {
-        if (!new Email($this->email)->isIdentical($userEmailCanonical)) {
-            throw new EmailMismatchException('Your account email does not match the invited address.');
-        }
     }
 
     protected function apply(DomainEvent $event): void

@@ -13,9 +13,9 @@
 namespace App\Organization\Domain;
 
 /**
- * An invited email address. Guards format only and keeps the casing it was given, for display. Matching
- * it against a user's account email and detecting duplicate pending invitations are case-insensitive,
- * so no lower-cased form is kept alongside it.
+ * An invited email address. Guards format only and keeps the casing it was given, for display.
+ * Duplicate-invitation detection matches it case-insensitively in the database, so no lower-cased form
+ * is kept alongside it.
  */
 final readonly class Email
 {
@@ -32,11 +32,6 @@ final readonly class Email
         }
 
         $this->value = $value;
-    }
-
-    public function isIdentical(self|string $other): bool
-    {
-        return mb_strtolower($this->value) === mb_strtolower($other instanceof self ? $other->value : $other);
     }
 
     public function __toString(): string

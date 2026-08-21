@@ -21,7 +21,6 @@ use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\User;
 use App\Organization\Domain\Exception\AlreadyMemberException;
 use App\Organization\Domain\Exception\DuplicatePendingInvitationException;
-use App\Organization\Domain\Exception\EmailMismatchException;
 use App\Organization\Domain\Exception\PolicyNotMetException;
 use App\Organization\Domain\Exception\TeamNotFoundException;
 use App\Organization\Domain\InvitationStatus;
@@ -163,17 +162,23 @@ class InvitationTest extends IntegrationTestCase
         return $pending[0];
     }
 
-    public function testAcceptRejectsEmailMismatch(): void
+    public function testAcceptAllowsAnAccountWithADifferentEmail(): void
     {
+        // The link token is what authorises accepting, not the account's email: someone invited at a
+        // work address can accept with the account they actually sign in with.
         $owner = $this->persistUser('owner', 'owner@example.org', twoFactor: true);
         $organization = $this->createOrg($owner, 'acme');
-        $mallory = $this->persistUser('mallory', 'mallory@example.org', twoFactor: true);
+        $alice = $this->persistUser('alice', 'alice@personal.example.org', twoFactor: true);
 
-        $this->invitations()->invite($organization, $owner, 'alice@example.org', [$organization->ownersTeamId], null);
+        $this->invitations()->invite($organization, $owner, 'alice@work.example.org', [$organization->ownersTeamId], null);
         $invitation = $this->pendingInvitation($organization);
 
-        $this->expectException(EmailMismatchException::class);
-        $this->invitations()->accept($invitation, $mallory, null);
+        $this->invitations()->accept($invitation, $alice, null);
+
+        $reloaded = static::getService(OrganizationInvitationRepository::class)->find($invitation->id);
+        self::assertNotNull($reloaded);
+        self::assertSame(InvitationStatus::Accepted, $reloaded->status);
+        self::assertTrue(static::getService(OrganizationTeamMemberRepository::class)->isMemberOfOrg($organization->id, $alice->getId()));
     }
 
     public function testDeclineResolvesInvitationWithoutMembership(): void
