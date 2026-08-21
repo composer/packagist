@@ -47,6 +47,7 @@ class OrganizationInvitationRepositoryTest extends IntegrationTestCase
             new Ulid(),
             $orgId,
             $email,
+            [new Ulid()->toRfc4122()],
             $status,
             str_repeat('a', 64),
             $createdAt,

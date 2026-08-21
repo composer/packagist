@@ -18,7 +18,6 @@ use App\Entity\AuditRecordRepository;
 use App\Entity\Organization;
 use App\Entity\OrganizationInvitation;
 use App\Entity\OrganizationInvitationRepository;
-use App\Entity\OrganizationInvitationTeamRepository;
 use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeam;
@@ -77,7 +76,6 @@ class OrganizationController extends Controller
         private readonly OrganizationTeamRepository $organizationTeamRepo,
         private readonly OrganizationTeamMemberRepository $organizationTeamMemberRepo,
         private readonly OrganizationInvitationRepository $organizationInvitationRepo,
-        private readonly OrganizationInvitationTeamRepository $organizationInvitationTeamRepo,
         private readonly OrganizationMemberRepository $organizationMemberRepo,
         private readonly UserRepository $userRepo,
         private readonly ClockInterface $clock,
@@ -444,16 +442,11 @@ class OrganizationController extends Controller
      */
     private function loadInvitations(Organization $organization, array $teamNamesById): array
     {
-        $invitationRows = $this->organizationInvitationRepo->findPendingByOrg($organization->id);
-        $teamIdsByInvitation = $this->organizationInvitationTeamRepo->findTeamIdsByInvitation(
-            array_map(static fn (OrganizationInvitation $invitation): Ulid => $invitation->id, $invitationRows),
-        );
-
         $invitations = [];
-        foreach ($invitationRows as $invitation) {
+        foreach ($this->organizationInvitationRepo->findPendingByOrg($organization->id) as $invitation) {
             $teamNames = [];
-            foreach ($teamIdsByInvitation[$invitation->id->toRfc4122()] ?? [] as $teamId) {
-                $teamNames[] = $teamNamesById[$teamId->toRfc4122()] ?? '(deleted team)';
+            foreach ($invitation->teamIds as $teamId) {
+                $teamNames[] = $teamNamesById[$teamId] ?? '(deleted team)';
             }
 
             $invitations[] = ['invitation' => $invitation, 'teamNames' => $teamNames];

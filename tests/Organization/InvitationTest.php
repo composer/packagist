@@ -15,7 +15,6 @@ namespace App\Tests\Organization;
 use App\Entity\Organization as OrganizationReadModel;
 use App\Entity\OrganizationInvitation;
 use App\Entity\OrganizationInvitationRepository;
-use App\Entity\OrganizationInvitationTeamRepository;
 use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeamMemberRepository;
@@ -49,11 +48,9 @@ class InvitationTest extends IntegrationTestCase
         self::assertSame($owner->getId(), $rows[0]->invitedBy?->getId());
 
         // The invitation carries the selected team plus the automatically-managed all-members team.
-        $teamIds = static::getService(OrganizationInvitationTeamRepository::class)->findTeamIds($rows[0]->id);
-        $teamIdStrings = array_map(static fn (Ulid $id): string => $id->toRfc4122(), $teamIds);
         self::assertEqualsCanonicalizing(
             [$organization->ownersTeamId->toRfc4122(), $organization->allMembersTeamId->toRfc4122()],
-            $teamIdStrings,
+            $rows[0]->teamIds,
         );
 
         // Sending the invitation is recorded in the transparency log, keyed by the invited email.
@@ -67,7 +64,7 @@ class InvitationTest extends IntegrationTestCase
         $organization = $this->createOrg($owner, 'acme');
 
         $this->expectException(TeamNotFoundException::class);
-        $this->invitations()->invite($organization, $owner, 'alice@example.org', [new \Symfony\Component\Uid\Ulid()], null);
+        $this->invitations()->invite($organization, $owner, 'alice@example.org', [new Ulid()], null);
     }
 
     public function testInviteRejectsDuplicatePending(): void

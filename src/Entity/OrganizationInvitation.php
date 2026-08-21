@@ -45,6 +45,14 @@ class OrganizationInvitation
         #[ORM\Column(length: 255)]
         public readonly string $email,
 
+        /**
+         * The teams the invitee joins on acceptance, as RFC4122 strings.
+         *
+         * @var list<string>
+         */
+        #[ORM\Column(type: 'json')]
+        public readonly array $teamIds,
+
         #[ORM\Column(length: 16)]
         public InvitationStatus $status,
 

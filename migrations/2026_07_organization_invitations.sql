@@ -1,10 +1,9 @@
 -- Organizations: membership invitations.
--- Read-model projections for the invitation aggregate (organization_invitation and its
--- companion organization_invitation_team) plus the org-level membership record
--- (organization_member) introduced with the invitation-acceptance flow. Columns, index names
--- and foreign keys match the Doctrine entity mappings so doctrine:schema:update reports no
--- changes. Only mapped relations get a foreign key; orgId, teamId and invitationId are plain
--- ULID columns on these projections, as on organization_team_member.
+-- Read-model projections for the invitation aggregate (organization_invitation) plus the org-level
+-- membership record (organization_member) introduced with the invitation-acceptance flow. Columns,
+-- index names and foreign keys match the Doctrine entity mappings so doctrine:schema:update reports
+-- no changes. Only mapped relations get a foreign key; orgId is a plain ULID column on these
+-- projections, as on organization_team_member.
 --
 -- The invitation aggregate is a separate ULID stream persisted in the shared organization_event
 -- table; no new event table is needed. Pre-membership invitation events (sent/resent/revoked/
@@ -14,6 +13,7 @@ CREATE TABLE organization_invitation (
     id BINARY(16) NOT NULL,
     orgId BINARY(16) NOT NULL,
     email VARCHAR(255) NOT NULL,
+    teamIds JSON NOT NULL,
     status VARCHAR(16) NOT NULL,
     -- SHA-256 hex of the single-use link token. Only the hash is stored; the raw token lives
     -- solely in the emailed link and is never persisted, here or in the event stream.
@@ -30,16 +30,6 @@ CREATE TABLE organization_invitation (
     KEY IDX_1846F34DB319F9DE (invitedByUserId),
     CONSTRAINT FK_organization_invitation_invited_by FOREIGN KEY (invitedByUserId) REFERENCES fos_user (id) ON DELETE SET NULL
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
-
--- Target teams the invitee joins on acceptance. A many-to-one companion to the invitation.
--- teamId is deliberately unconstrained beyond the mapping: a team may be deleted after the
--- invitation is sent, and the historical target set must be preserved so acceptance can detect
--- "target team no longer exists" rather than silently losing the row.
-CREATE TABLE organization_invitation_team (
-    invitationId BINARY(16) NOT NULL,
-    teamId BINARY(16) NOT NULL,
-    PRIMARY KEY (invitationId, teamId)
-) DEFAULT CHARACTER SET utf8mb4;
 
 -- Org-level membership record. A member's team memberships (organization_team_member) still drive
 -- access; this row carries the org-scoped facts that are not derivable from team rows (joinedAt).

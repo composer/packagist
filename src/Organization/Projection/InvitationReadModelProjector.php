@@ -14,7 +14,6 @@ namespace App\Organization\Projection;
 
 use App\Entity\OrganizationInvitation;
 use App\Entity\OrganizationInvitationRepository;
-use App\Entity\OrganizationInvitationTeam;
 use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Organization\Domain\Event\InvitationEvent;
@@ -31,10 +30,10 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * Projects the invitation stream into the `organization_invitation` and `organization_invitation_team`
- * read-model tables. These events are internal only and never reach the public transparency log; the
- * org-side membership created on acceptance is projected by {@see OrganizationReadModelProjector} from
- * the org stream's MemberJoined event.
+ * Projects the invitation stream into the `organization_invitation` read-model table. These events are
+ * internal only and never reach the public transparency log; the org-side membership created on
+ * acceptance is projected by {@see OrganizationReadModelProjector} from the org stream's MemberJoined
+ * event.
  *
  * All projectors run for every event, so org-stream events are ignored here.
  */
@@ -75,6 +74,7 @@ final readonly class InvitationReadModelProjector implements Projector
             $event->invitationId,
             $event->organizationId,
             $event->email,
+            array_map(static fn (Ulid $teamId): string => $teamId->toRfc4122(), $event->teamIds),
             InvitationStatus::Pending,
             $event->tokenHash,
             $recorded->occurredAt,
@@ -83,10 +83,6 @@ final readonly class InvitationReadModelProjector implements Projector
             $this->user($recorded->actor->userId),
         );
         $this->getEM()->persist($invitation);
-
-        foreach ($event->teamIds as $teamId) {
-            $this->getEM()->persist(new OrganizationInvitationTeam($event->invitationId, $teamId));
-        }
     }
 
     private function resent(RecordedEvent $recorded, UserInvitationResent $event): void

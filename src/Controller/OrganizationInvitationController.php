@@ -14,7 +14,6 @@ namespace App\Controller;
 
 use App\Entity\Organization;
 use App\Entity\OrganizationInvitation;
-use App\Entity\OrganizationInvitationTeamRepository;
 use App\Entity\OrganizationMemberRepository;
 use App\Entity\User;
 use App\Form\Type\InvitationConfirmType;
@@ -28,7 +27,6 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Component\Uid\Ulid;
 
 /**
  * The invitee-facing side of membership invitations: the tokenized link and the accept/decline actions.
@@ -42,7 +40,6 @@ use Symfony\Component\Uid\Ulid;
 class OrganizationInvitationController extends Controller
 {
     public function __construct(
-        private readonly OrganizationInvitationTeamRepository $organizationInvitationTeamRepo,
         private readonly OrganizationMemberRepository $organizationMemberRepo,
         private readonly InvitationManager $invitationManager,
     ) {
@@ -51,8 +48,7 @@ class OrganizationInvitationController extends Controller
     #[Route(path: '/organizations/{organization}/invitations/{invitation}/{token}', name: 'organization_invitation_show', methods: ['GET'], requirements: ['organization' => Slug::PATTERN, 'invitation' => Requirement::ULID, 'token' => '[a-f0-9]{64}'])]
     public function show(Organization $organization, OrganizationInvitation $invitation, string $token, #[CurrentUser] User $user): Response
     {
-        $ownersTeamId = $organization->ownersTeamId;
-        $targetsOwners = \in_array($ownersTeamId->toRfc4122(), array_map(static fn (Ulid $id): string => $id->toRfc4122(), $this->organizationInvitationTeamRepo->findTeamIds($invitation->id)), true);
+        $targetsOwners = \in_array($organization->ownersTeamId->toRfc4122(), $invitation->teamIds, true);
 
         return $this->render('organization/invitation_show.html.twig', [
             'organization' => $organization,
