@@ -95,11 +95,11 @@ final readonly class OrganizationAuditProjector implements Projector
                 $event instanceof TeamCreated => AuditRecord::organizationTeamCreated($event->organizationId, $org->slug, $org->displayName, $event->name, $actor),
                 $event instanceof TeamRenamed => AuditRecord::organizationTeamRenamed($event->organizationId, $org->slug, $org->displayName, $event->previousName, $event->name, $actor),
                 $event instanceof TeamDeleted => AuditRecord::organizationTeamDeleted($event->organizationId, $org->slug, $org->displayName, $event->name, $actor),
-                $event instanceof TeamMemberAdded => AuditRecord::organizationTeamMemberAdded($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
-                $event instanceof MemberJoined => AuditRecord::organizationMemberJoined($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId)),
-                $event instanceof TeamMemberRemoved => AuditRecord::organizationTeamMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
-                $event instanceof MemberRemoved => AuditRecord::organizationMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId), $actor),
-                $event instanceof MemberLeft => AuditRecord::organizationMemberLeft($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId)),
+                $event instanceof TeamMemberAdded => AuditRecord::organizationTeamMemberAdded($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->requireUser($event->userId), $actor),
+                $event instanceof MemberJoined => AuditRecord::organizationMemberJoined($event->organizationId, $org->slug, $org->displayName, $this->requireUser($event->userId), $actor),
+                $event instanceof TeamMemberRemoved => AuditRecord::organizationTeamMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->requireUser($event->userId), $actor),
+                $event instanceof MemberRemoved => AuditRecord::organizationMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->requireUser($event->userId), $actor),
+                $event instanceof MemberLeft => AuditRecord::organizationMemberLeft($event->organizationId, $org->slug, $org->displayName, $this->requireUser($event->userId), $actor),
                 default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
             }
         );
@@ -152,6 +152,20 @@ final readonly class OrganizationAuditProjector implements Projector
     private function user(?int $userId): ?User
     {
         return $userId !== null ? $this->userRepo->find($userId) : null;
+    }
+
+    /**
+     * The user an event names by id. Projections run in the append transaction, so the row is there;
+     * a miss signals an inconsistent projection rather than a normal state.
+     */
+    private function requireUser(int $userId): User
+    {
+        $user = $this->user($userId);
+        if ($user === null) {
+            throw new \LogicException('User read model not found for '.$userId.'.');
+        }
+
+        return $user;
     }
 
     private function organization(Ulid $id): Organization

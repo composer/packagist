@@ -120,7 +120,7 @@ class OrganizationAuditRecordTest extends TestCase
         $member->setPassword('password');
         new \ReflectionProperty($member, 'id')->setValue($member, 7);
 
-        $record = AuditRecord::organizationMemberLeft(new Ulid(), 'acme', 'ACME Corp', $member);
+        $record = AuditRecord::organizationMemberLeft(new Ulid(), 'acme', 'ACME Corp', $member, $member);
 
         self::assertSame(AuditRecordType::OrganizationMemberLeft, $record->type);
         self::assertSame('alice', $record->attributes['user']['username']);
@@ -137,16 +137,34 @@ class OrganizationAuditRecordTest extends TestCase
         new \ReflectionProperty($member, 'id')->setValue($member, 7);
 
         $organizationId = new Ulid();
-        $record = AuditRecord::organizationMemberJoined($organizationId, 'acme', 'ACME Corp', $member);
+        $record = AuditRecord::organizationMemberJoined($organizationId, 'acme', 'ACME Corp', $member, $member);
 
         self::assertSame(AuditRecordType::OrganizationMemberJoined, $record->type);
         self::assertSame('organization', AuditRecordType::OrganizationMemberJoined->category());
         self::assertSame('alice', $record->attributes['user']['username']);
-        // The member joins on their own behalf, so they are also the actor. The invited email never appears.
+        // Accepting an invitation or founding the org: the member drove their own join. The invited
+        // email never appears.
         self::assertSame('alice', $record->attributes['actor']['username']);
         self::assertArrayNotHasKey('email', $record->attributes);
         self::assertSame(7, $record->userId);
         self::assertSame(7, $record->actorId);
+    }
+
+    public function testMemberJoinedKeepsTheActorSeparateFromTheMember(): void
+    {
+        $member = new User();
+        $member->setUsername('alice');
+        $member->setEmail('alice@example.com');
+        $member->setPassword('password');
+        new \ReflectionProperty($member, 'id')->setValue($member, 7);
+
+        // A join driven by someone else stays attributable to them, and to them alone as actor.
+        $record = AuditRecord::organizationMemberJoined(new Ulid(), 'acme', 'ACME Corp', $member, $this->actor());
+
+        self::assertSame('alice', $record->attributes['user']['username']);
+        self::assertSame('test', $record->attributes['actor']['username']);
+        self::assertSame(7, $record->userId);
+        self::assertSame(42, $record->actorId);
     }
 
     public function testInvitationSentCapturesEmailAndActor(): void

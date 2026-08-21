@@ -20,10 +20,10 @@ readonly class OrganizationMemberJoinedDisplay extends AbstractAuditLogDisplay
         \DateTimeImmutable $datetime,
         public OrganizationDisplay $organization,
         public ActorDisplay $member,
+        ActorDisplay $actor,
         ?string $ip,
     ) {
-        // The member joins on their own behalf, so they are also the actor.
-        parent::__construct($datetime, $member, $ip);
+        parent::__construct($datetime, $actor, $ip);
     }
 
     public function getType(): AuditRecordType

@@ -256,7 +256,7 @@ class AuditRecord
         );
     }
 
-    public static function organizationTeamMemberAdded(Ulid $organizationId, string $slug, string $displayName, string $teamName, ?User $member, ?User $actor): self
+    public static function organizationTeamMemberAdded(Ulid $organizationId, string $slug, string $displayName, string $teamName, User $member, ?User $actor): self
     {
         return new self(
             AuditRecordType::OrganizationTeamMemberAdded,
@@ -268,11 +268,11 @@ class AuditRecord
             ],
             $actor?->getId(),
             organizationId: $organizationId,
-            userId: $member?->getId(),
+            userId: $member->getId(),
         );
     }
 
-    public static function organizationTeamMemberRemoved(Ulid $organizationId, string $slug, string $displayName, string $teamName, ?User $member, ?User $actor): self
+    public static function organizationTeamMemberRemoved(Ulid $organizationId, string $slug, string $displayName, string $teamName, User $member, ?User $actor): self
     {
         return new self(
             AuditRecordType::OrganizationTeamMemberRemoved,
@@ -284,7 +284,7 @@ class AuditRecord
             ],
             $actor?->getId(),
             organizationId: $organizationId,
-            userId: $member?->getId(),
+            userId: $member->getId(),
         );
     }
 
@@ -295,22 +295,22 @@ class AuditRecord
      * itself (sent/resent/revoked/declined/accepted/expired, which carries the invited email) is logged
      * separately by the organization_invitation_* records.
      */
-    public static function organizationMemberJoined(Ulid $organizationId, string $slug, string $displayName, ?User $member): self
+    public static function organizationMemberJoined(Ulid $organizationId, string $slug, string $displayName, User $member, User $actor): self
     {
         return new self(
             AuditRecordType::OrganizationMemberJoined,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'user' => self::getUserData($member),
-                'actor' => self::getUserData($member),
+                'actor' => self::getUserData($actor),
             ],
-            $member?->getId(),
+            $actor->getId(),
             organizationId: $organizationId,
-            userId: $member?->getId(),
+            userId: $member->getId(),
         );
     }
 
-    public static function organizationMemberRemoved(Ulid $organizationId, string $slug, string $displayName, ?User $member, ?User $actor): self
+    public static function organizationMemberRemoved(Ulid $organizationId, string $slug, string $displayName, User $member, ?User $actor): self
     {
         return new self(
             AuditRecordType::OrganizationMemberRemoved,
@@ -321,22 +321,22 @@ class AuditRecord
             ],
             $actor?->getId(),
             organizationId: $organizationId,
-            userId: $member?->getId(),
+            userId: $member->getId(),
         );
     }
 
-    public static function organizationMemberLeft(Ulid $organizationId, string $slug, string $displayName, ?User $member): self
+    public static function organizationMemberLeft(Ulid $organizationId, string $slug, string $displayName, User $member, User $actor): self
     {
         return new self(
             AuditRecordType::OrganizationMemberLeft,
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'user' => self::getUserData($member),
-                'actor' => self::getUserData($member),
+                'actor' => self::getUserData($actor),
             ],
-            $member?->getId(),
+            $actor->getId(),
             organizationId: $organizationId,
-            userId: $member?->getId(),
+            userId: $member->getId(),
         );
     }
 

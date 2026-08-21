@@ -412,6 +412,7 @@ class AuditLogDisplayFactory
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $this->buildActor($record->attributes['user']),
+                $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
             AuditRecordType::OrganizationMemberRemoved => new OrganizationMemberRemovedDisplay(
