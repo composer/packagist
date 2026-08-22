@@ -1,15 +1,48 @@
-import d3 from 'd3';
-import nv from 'nvd3';
+import * as echarts from 'echarts/core';
+import { LineChart } from 'echarts/charts';
+import {
+    DataZoomInsideComponent,
+    DataZoomSliderComponent,
+    GridComponent,
+    LegendComponent,
+    TooltipComponent,
+} from 'echarts/components';
+import { CanvasRenderer } from 'echarts/renderers';
 import jQuery from 'jquery';
-import 'nvd3/build/nv.d3.min.css';
 import '../css/charts.css';
+
+echarts.use([
+    LineChart,
+    GridComponent,
+    LegendComponent,
+    TooltipComponent,
+    DataZoomInsideComponent,
+    DataZoomSliderComponent,
+    CanvasRenderer,
+]);
 
 (function ($) {
     "use strict";
 
-    var colors = [
+    const DEFAULT_COLORS = [
         '#f28d1a',
         '#2d2d32'
+    ];
+
+    const MULTI_COLORS = [
+        '#f28d1a',
+        '#1765f4',
+        '#ee1e23',
+        '#c4f516',
+        '#b817f4',
+        '#804040',
+        '#008080',
+        '#ff8040',
+        '#ed1f96',
+        '#004080',
+        '#800040',
+        '#8080ff',
+        '#800000',
     ];
 
     const PHP_VERSION_COLORS = {
@@ -42,90 +75,231 @@ import '../css/charts.css';
         return b.name.localeCompare(a.name, undefined, {numeric: true});
     }
 
-    function initPackagistChart(svg, labels, series, withDatePicker, type) {
-        type = type || 'line';
-        var format = d3.time.format("%Y-%m-%d");
-        if (labels[0].match(/^\d+-\d+$/)) {
-            format = d3.time.format("%Y-%m");
+    function formatDate(value) {
+        if (!(value instanceof Date)) {
+            value = new Date(value);
         }
+        var month = ('0' + (value.getMonth() + 1)).slice(-2);
+        return value.getFullYear() + '-' + month;
+    }
 
-        var chartData = [];
-        series.map(function (serie, index) {
-            var points = [];
-            labels.map(function (label, index) {
-                points.push({x: format.parse(label), y: parseInt(serie.values[index]) || 0});
-            })
-            chartData.push({
-                values: points,
-                key: serie.name,
-                color: colors[serie.name] || colors[index],
-            });
-        })
+    function formatDay(value) {
+        if (!(value instanceof Date)) {
+            value = new Date(value);
+        }
+        var month = ('0' + (value.getMonth() + 1)).slice(-2);
+        var day = ('0' + value.getDate()).slice(-2);
+        return value.getFullYear() + '-' + month + '-' + day;
+    }
+
+    function formatDigit(value) {
+        if (!isFinite(value)) {
+            return value;
+        }
+        if (value > 1000000) {
+            return (value / 1000000).toFixed(1) + 'mio';
+        }
+        if (value > 1000) {
+            return (value / 1000).toFixed(1) + 'K';
+        }
+        return value;
+    }
+
+    const instances = new Set();
+
+    function trackInstance(chart) {
+        instances.add(chart);
+
+        chart.getZr().on('dispose', function () {
+            instances.delete(chart);
+        });
+
+        return chart;
+    }
+
+    $(window).on('resize', function () {
+        instances.forEach(function (chart) {
+            chart.resize();
+        });
+    });
+
+    function initPackagistChart(el, labels, series, withDatePicker, type, colorMap) {
+        type = type || 'line';
+        colorMap = colorMap || null;
+
+        if (!el || !labels.length || !series.length) {
+            return;
+        }
 
         if (withDatePicker && $(window).width() < 767) {
             withDatePicker = false;
         }
 
-        nv.addGraph(function() {
-            var chart;
-            if (type === 'line') {
-                if (withDatePicker) {
-                    chart = nv.models.lineWithFocusChart();
-                } else {
-                    chart = nv.models.lineChart();
-                }
-                chart.useInteractiveGuideline(true);
-            } else if (type === 'area') {
-                chart = nv.models.stackedAreaChart();
-                chart.showControls(false);
-                chart.useInteractiveGuideline(true);
-                chart.rightAlignYAxis(true);
-                chart.tooltip.valueFormatter((d) => d + '%')
-                chart.stacked.style('expand');
-            } else {
-                throw new Error('Unknown type: ' + type);
+        var isDaily = labels[0].indexOf('-') !== -1 && labels[0].split('-').length === 3;
+        var format = isDaily ? formatDay : formatDate;
+
+        // daily charts use a real time scale, monthly ones a category axis
+        // (a time axis generates sub-month ticks when zooming in, which would
+        // render as repeated identical month-only labels)
+        var xValues = labels.map(function (label) {
+            if (!isDaily) {
+                return label;
             }
-
-            function formatDate(a,b) {
-                if (!(a instanceof Date)) {
-                    a = new Date(a);
-                }
-                return format(a,b);
-            }
-            function formatDigit(a,b) {
-                if (a > 1000000) {
-                    return (a/1000000).toFixed(1) + 'mio';
-                }
-                if (a > 1000) {
-                    return (a/1000).toFixed(1) + 'K';
-                }
-                return a;
-            }
-
-            chart.xAxis
-                .showMaxMin(false)
-                .tickFormat(formatDate);
-            chart.yAxis.tickFormat(formatDigit);
-
-            if (withDatePicker) {
-                chart.x2Axis
-                    .showMaxMin(false)
-                    .tickFormat(formatDate);
-                chart.y2Axis.tickFormat(formatDigit);
-            }
-
-            d3.select(svg)
-                .datum(chartData)
-                .transition().duration(100)
-                .call(chart);
-
-            nv.utils.windowResize(chart.update);
-
-            return chart;
+            var parts = label.split('-');
+            return new Date(+parts[0], parts[1] - 1, +parts[2]).getTime();
         });
+
+        var colors = [];
+        var chartSeries;
+
+        if (type === 'area') {
+            var totals = xValues.map(function (_, index) {
+                return series.reduce(function (sum, serie) {
+                    return sum + (parseFloat(serie.values[index]) || 0);
+                }, 0);
+            });
+
+            chartSeries = series.map(function (serie) {
+                return {
+                    name: serie.name,
+                    type: 'line',
+                    stack: 'total',
+                    large: true,
+                    smooth: false,
+                    symbol: 'none',
+                    emphasis: {focus: 'series'},
+                    lineStyle: {width: 0},
+                    areaStyle: {opacity: 1.0},
+                    data: xValues.map(function (x, index) {
+                        var total = totals[index];
+                        var value = total ? Math.round((parseFloat(serie.values[index]) || 0) * 1000 / total) / 10 : 0;
+                        return [x, value];
+                    }),
+                };
+            });
+        } else {
+            chartSeries = series.map(function (serie) {
+                return {
+                    name: serie.name,
+                    type: 'line',
+                    smooth: false,
+                    symbol: 'none',
+                    emphasis: {focus: 'series'},
+                    lineStyle: {width: 2},
+                    data: xValues.map(function (x, index) {
+                        return [x, parseInt(serie.values[index], 10) || 0];
+                    }),
+                };
+            });
+        }
+
+        // name-based lookup first, then positional palette
+        colors = series.map(function (serie, index) {
+            if (colorMap && colorMap[serie.name] !== undefined) {
+                return colorMap[serie.name];
+            }
+            if (Array.isArray(colorMap) && colorMap[index] !== undefined) {
+                return colorMap[index];
+            }
+            return MULTI_COLORS[index % MULTI_COLORS.length];
+        });
+
+        var grid = {
+            left: 10,
+            right: 20,
+            top: 40,
+            bottom: withDatePicker ? 70 : 25,
+            containLabel: true
+        };
+
+        var option = {
+            animation: false,
+            color: colors,
+            legend: {
+                type: 'scroll',
+                top: 0,
+                icon: 'roundRect',
+                itemWidth: 12,
+                itemHeight: 6
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {type: 'line'},
+                backgroundColor: 'rgba(255, 255, 255, 0.96)',
+                borderColor: '#ddd',
+                textStyle: {color: '#2d2d32', fontSize: 12},
+                formatter: function (params) {
+                    if (!Array.isArray(params)) {
+                        params = [params];
+                    }
+
+                    var title = params[0].axisValueLabel || format(params[0].axisValue);
+                    var html = title + '<br>';
+                    html += params.map(function (param) {
+                        var value = Array.isArray(param.value) ? param.value[1] : param.value;
+                        if (type === 'area') {
+                            value = (isFinite(value) ? value.toFixed(1) : value) + '%';
+                        } else {
+                            value = formatDigit(value);
+                        }
+                        return param.marker + ' ' + param.seriesName + ': <strong>' + value + '</strong>';
+                    }).join('<br>');
+
+                    return html;
+                }
+            },
+            grid: grid,
+            xAxis: isDaily ? {
+                type: 'time',
+                axisLabel: {formatter: format, hideOverlap: true},
+                axisLine: {show: false},
+                splitLine: {show: false}
+            } : {
+                type: 'category',
+                data: labels,
+                boundaryGap: false,
+                axisLabel: {hideOverlap: true},
+                axisLine: {show: false},
+                splitLine: {show: false}
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: {
+                    formatter: type === 'area' ? '{value}%' : formatDigit
+                },
+                max: type === 'area' ? 100 : null,
+                splitLine: {lineStyle: {color: '#eee'}}
+            },
+            series: chartSeries
+        };
+
+        if (withDatePicker) {
+            option.dataZoom = [
+                {
+                    type: 'inside',
+                    throttle: 50
+                },
+                {
+                    type: 'slider',
+                    height: 30,
+                    bottom: 10,
+                    labelFormatter: isDaily ? format : undefined
+                }
+            ];
+        }
+
+        var existing = echarts.getInstanceByDom(el);
+        if (existing) {
+            existing.dispose();
+        }
+
+        var chart = echarts.init(el);
+        chart.setOption(option);
+
+        return trackInstance(chart);
     };
 
-    $('svg[data-labels]').each(function () {
+    $('[data-labels]').each(function () {
         initPackagistChart(
             this,
             $(this).attr('data-labels').split(','),
@@ -135,27 +309,14 @@ import '../css/charts.css';
                     name: values[0],
                     values: values[1].split(',')
                 };
-            })
+            }),
+            false,
+            'line',
+            DEFAULT_COLORS
         );
     });
 
     window.initPackageStats = function (average, date, statsUrl, versionStatsUrl) {
-        colors = [
-            '#f28d1a',
-            '#1765f4',
-            '#ee1e23',
-            '#c4f516',
-            '#b817f4',
-            '#804040',
-            '#008080',
-            '#ff8040',
-            '#ed1f96',
-            '#004080',
-            '#800040',
-            '#8080ff',
-            '#800000',
-        ];
-
         var match,
             hash = document.location.hash,
             versionCache = {},
@@ -181,7 +342,9 @@ import '../css/charts.css';
                 $('.js-'+type+'-dls')[0],
                 res.labels,
                 series,
-                true
+                true,
+                'line',
+                MULTI_COLORS
             );
         }
 
@@ -279,8 +442,6 @@ import '../css/charts.css';
     };
 
     window.initPhpStats = function (average, date, versionStatsUrl) {
-        colors = PHP_VERSION_COLORS;
-
         var match,
             hash = document.location.hash,
             versionCache = {},
@@ -302,7 +463,8 @@ import '../css/charts.css';
                 res.labels,
                 series,
                 true,
-                'area'
+                'area',
+                PHP_VERSION_COLORS
             );
         }
 
@@ -389,8 +551,6 @@ import '../css/charts.css';
     };
 
     window.initGlobalPhpStats = function (selector, res) {
-        colors = PHP_VERSION_COLORS;
-
         var key, series = [];
 
         for (key in res.values) {
@@ -406,7 +566,8 @@ import '../css/charts.css';
             res.labels,
             series,
             true,
-            'area'
+            'area',
+            PHP_VERSION_COLORS
         );
     };
 })(jQuery);
