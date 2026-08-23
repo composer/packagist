@@ -7,16 +7,16 @@
         {{ organization.displayName }}
         {# Groundwork for org deletion (not yet implemented). #}
         {% if organization.deleted %}
-            <span class="label label-warning">deleted</span>
+            <span class="badge bg-warning">deleted</span>
         {% endif %}
     </h2>
 
     <section class="row">
-        <div class="col-md-3">
+        <div class="col-lg-3">
             {{ knp_menu_render('organization_menu', {'currentClass': 'active', 'allow_safe_labels': true}) }}
         </div>
 
-        <div class="col-md-9">
+        <div class="col-lg-9">
             {% block org_content %}{% endblock %}
         </div>
     </section>

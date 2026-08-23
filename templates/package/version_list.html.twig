@@ -8,7 +8,7 @@
 
             <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}{% if softDeleted %} version-soft-deleted{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json', cacheBust: version.isSoftDeleted() ? '1' : null}) }}">
                 <div class="version-number">
-                    <a rel="nofollow noindex" href="#{{ version.version }}" {% if softDeleted %}data-toggle="tooltip" data-placement="top" title="{{ deletionTitle }}" data-container="body"{% endif %}>
+                    <a rel="nofollow noindex" href="#{{ version.version }}" {% if softDeleted %}data-bs-toggle="tooltip" data-bs-placement="top" title="{{ deletionTitle }}" data-bs-container="body"{% endif %}>
                         {{- version.version -}}
                         {% if version.hasVersionAlias() %}
                             / {{ version.versionAlias }}
@@ -18,29 +18,29 @@
 
                 {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
                     <a rel="nofollow noindex" class="action-alert advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
-                        <i class="glyphicon glyphicon-alert" data-toggle="tooltip" data-placement="top" title="Version has security advisories" data-container="body"></i>
+                        <i class="bi bi-bell-fill" data-bs-toggle="tooltip" data-bs-placement="top" title="Version has security advisories" data-bs-container="body"></i>
                     </a>
                 {% endif %}
 
                 {% if hasVersionsFlaggedAsMalware[version.id]|default(false) %}
                     <a rel="nofollow noindex" class="action-alert malware-alert" href="{{ path('view_package_filter_lists', {name: package.name, version: version.id, list: 'malware'}) }}">
-                        <i class="glyphicon glyphicon-fire" data-toggle="tooltip" data-placement="top" title="Version was flagged as malware" data-container="body"></i>
+                        <i class="bi bi-fire" data-bs-toggle="tooltip" data-bs-placement="top" title="Version was flagged as malware" data-bs-container="body"></i>
                     </a>
                 {% endif %}
 
                 {% if version.lastBlockedReference is not null and not softDeleted %}
-                    <a rel="nofollow noindex" class="action-alert retag-blocked-alert" href="{{ path('about_version_immutability') }}" data-toggle="tooltip" data-placement="top" title="Upstream re-tag blocked — Packagist may no longer match the VCS repo for this version" data-container="body">
-                        <i class="glyphicon glyphicon-warning-sign"></i>
+                    <a rel="nofollow noindex" class="action-alert retag-blocked-alert" href="{{ path('about_version_immutability') }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Upstream re-tag blocked — Packagist may no longer match the VCS repo for this version" data-bs-container="body">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
                     </a>
                 {% endif %}
 
                 {% if softDeleted %}
-                    {% set deletionIcon = 'glyphicon-trash' %}
+                    {% set deletionIcon = 'bi-trash-fill' %}
                     {% if reason == enum('App\\Audit\\VersionDeletionReason').Hidden %}
-                        {% set deletionIcon = 'glyphicon-eye-close' %}
+                        {% set deletionIcon = 'bi-eye-slash-fill' %}
                     {% endif %}
-                    <span class="action-alert deletion-alert" data-toggle="tooltip" data-placement="top" title="{{ deletionTitle }}" data-container="body">
-                        <i class="glyphicon {{ deletionIcon }}"></i>
+                    <span class="action-alert deletion-alert" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ deletionTitle }}" data-bs-container="body">
+                        <i class="bi {{ deletionIcon }}"></i>
                     </span>
                 {% endif %}
 
@@ -48,7 +48,7 @@
                     {% if canHideVersion|default(false) %}
                         <form class="hide-version" action="{{ path("admin_hide_version", {"versionId": version.id}) }}" method="POST">
                             <input type="hidden" name="_token" value="{{ manageVersionsCsrfToken }}" />
-                            <i class="submit glyphicon glyphicon-eye-close" data-toggle="tooltip" data-placement="top" title="Hide version from public" data-container="body"></i>
+                            <i class="submit bi bi-eye-slash-fill" data-bs-toggle="tooltip" data-bs-placement="top" title="Hide version from public" data-bs-container="body"></i>
                         </form>
                     {% endif %}
                     <form class="delete-version" action="{{ path("delete_version", {"versionId": version.id}) }}" method="DELETE"
@@ -58,7 +58,7 @@
                           {% endif %}
                           >
                         <input type="hidden" name="_token" value="{{ manageVersionsCsrfToken }}" />
-                        <i class="submit glyphicon glyphicon-remove" data-toggle="tooltip" data-placement="top" title="{% if version.isDevelopment() %}Hard-delete dev version permanently{% else %}Soft-delete stable version{% endif %}{% if canAdminDeleteVersion|default(false) %} (or remove with reason){% endif %}" data-container="body"></i>
+                        <i class="submit bi bi-x-lg" data-bs-toggle="tooltip" data-bs-placement="top" title="{% if version.isDevelopment() %}Hard-delete dev version permanently{% else %}Soft-delete stable version{% endif %}{% if canAdminDeleteVersion|default(false) %} (or remove with reason){% endif %}" data-bs-container="body"></i>
                     </form>
                 {% endif %}
 
@@ -71,14 +71,14 @@
                 {% if canRecover %}
                     <form class="recover-version" action="{{ path("recover_version", {"versionId": version.id}) }}" method="POST">
                         <input type="hidden" name="_token" value="{{ manageVersionsCsrfToken }}" />
-                        <i class="submit glyphicon glyphicon-repeat" data-toggle="tooltip" data-placement="top" title="Recover version" data-container="body"></i>
+                        <i class="submit bi bi-arrow-repeat" data-bs-toggle="tooltip" data-bs-placement="top" title="Recover version" data-bs-container="body"></i>
                     </form>
                 {% endif %}
             </li>
         {% endfor %}
     </ul>
-    <div class="hidden versions-expander">
-        <i class="glyphicon glyphicon-chevron-down"></i>
+    <div class="d-none versions-expander">
+        <i class="bi bi-chevron-down"></i>
     </div>
 </div>
 

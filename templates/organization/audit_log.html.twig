@@ -4,7 +4,7 @@
     <div class="audit-log-filters">
         <form method="get" action="{{ path('organization_audit_log', { organization: organization.slug }) }}" name="filters">
             <div class="row">
-                <div class="col-md-4 col-sm-6">
+                <div class="col-lg-4 col-md-6">
                     <div class="form-group">
                         <label for="type-filter">Type</label>
                         <select name="type[]" id="type-filter" class="form-control audit-log-type-select" multiple style="height: 120px;">
@@ -17,9 +17,9 @@
                         <small class="help-block">Hold Ctrl/Cmd to select multiple</small>
                     </div>
                 </div>
-                <div class="col-md-8 col-sm-6">
+                <div class="col-lg-8 col-md-6">
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-lg-12">
                             <div class="form-group">
                                 <label for="actor-filter">Actor</label>
                                 <input type="text" name="actor" id="actor-filter" class="form-control" value="{{ selectedFilters.actor }}" placeholder="Filter by username">
@@ -27,14 +27,14 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 col-sm-12">
+                        <div class="col-lg-6 col-md-12">
                             <div class="form-group">
                                 <label for="datetime-from-filter">Date & Time From</label>
                                 <input type="datetime-local" name="datetime_from" id="datetime-from-filter" class="form-control" value="{{ selectedFilters.datetime_from }}" step="1">
                                 <small class="help-block">Filter logs from this time onwards (UTC)</small>
                             </div>
                         </div>
-                        <div class="col-md-6 col-sm-12">
+                        <div class="col-lg-6 col-md-12">
                             <div class="form-group">
                                 <label for="datetime-to-filter">Date & Time To</label>
                                 <input type="datetime-local" name="datetime_to" id="datetime-to-filter" class="form-control" value="{{ selectedFilters.datetime_to }}" step="1">
@@ -45,13 +45,13 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-lg-12">
                     <div class="audit-log-filter-actions">
                         <button type="submit" class="btn btn-primary">
-                            <span class="glyphicon glyphicon-filter"></span> Apply Filters
+                            <span class="bi bi-funnel-fill"></span> Apply Filters
                         </button>
-                        <a href="{{ url('organization_audit_log', { organization: organization.slug }) }}" class="btn btn-default">
-                            <span class="glyphicon glyphicon-remove-circle"></span> Clear All Filters
+                        <a href="{{ url('organization_audit_log', { organization: organization.slug }) }}" class="btn btn-secondary">
+                            <span class="bi bi-x-circle-fill"></span> Clear All Filters
                         </a>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
                             {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
                             {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
                             <a href="{{ path('organization_audit_log', { organization: organization.slug, 'datetime_from': fromDate, 'datetime_to': toDate }) }}" title="Show surrounding logs">
-                                <span class="glyphicon glyphicon-time"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
+                                <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
                             </a>
                         </td>
                         <td class="audit-log-type" data-test="audit-log-type">{{ display.typeTranslationKey|trans }}</td>

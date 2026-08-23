@@ -10,7 +10,7 @@
     <div class="audit-log-filters">
         <form method="get" action="{{ path('view_transparency_log') }}" name="filters">
             <div class="row">
-                <div class="col-md-3 col-sm-6">
+                <div class="col-lg-3 col-md-6">
                     <div class="form-group">
                         <label for="type-filter">Type</label>
                         <select name="type[]" id="type-filter" class="form-control audit-log-type-select" multiple style="height: 185px;">
@@ -27,15 +27,15 @@
                         <small class="help-block">Hold Ctrl/Cmd to select multiple</small>
                     </div>
                 </div>
-                <div class="col-md-9 col-sm-6">
+                <div class="col-lg-9 col-md-6">
                     <div class="row">
-                        <div class="col-md-6 col-sm-12">
+                        <div class="col-lg-6 col-md-12">
                             <div class="form-group">
                                 <label for="actor-filter">Actor</label>
                                 <input type="text" name="actor" id="actor-filter" class="form-control" value="{{ selectedFilters.actor }}" placeholder="Filter by username">
                             </div>
                         </div>
-                        <div class="col-md-6 col-sm-12">
+                        <div class="col-lg-6 col-md-12">
                             <div class="form-group">
                                 <label for="user-filter">User</label>
                                 <input type="text" name="user" id="user-filter" class="form-control" value="{{ selectedFilters.user }}" placeholder="Filter by username">
@@ -43,13 +43,13 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 col-sm-12">
+                        <div class="col-lg-6 col-md-12">
                             <div class="form-group">
                                 <label for="vendor-filter">Vendor</label>
                                 <input type="text" name="vendor" id="vendor-filter" class="form-control" value="{{ selectedFilters.vendor }}" placeholder="Filter by vendor">
                             </div>
                         </div>
-                        <div class="col-md-6 col-sm-12">
+                        <div class="col-lg-6 col-md-12">
                             <div class="form-group">
                                 <label for="package-filter">Package Name</label>
                                 <input type="text" name="package" id="package-filter" class="form-control" value="{{ selectedFilters.package }}" placeholder="Filter by package name">
@@ -57,14 +57,14 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 col-sm-12">
+                        <div class="col-lg-6 col-md-12">
                             <div class="form-group">
                                 <label for="datetime-from-filter">Date & Time From</label>
                                 <input type="datetime-local" name="datetime_from" id="datetime-from-filter" class="form-control" value="{{ selectedFilters.datetime_from }}" step="1">
                                 <small class="help-block">Filter logs from this time onwards (UTC)</small>
                             </div>
                         </div>
-                        <div class="col-md-6 col-sm-12">
+                        <div class="col-lg-6 col-md-12">
                             <div class="form-group">
                                 <label for="datetime-to-filter">Date & Time To</label>
                                 <input type="datetime-local" name="datetime_to" id="datetime-to-filter" class="form-control" value="{{ selectedFilters.datetime_to }}" step="1">
@@ -75,13 +75,13 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-lg-12">
                     <div class="audit-log-filter-actions">
                         <button type="submit" class="btn btn-primary">
-                            <span class="glyphicon glyphicon-filter"></span> Apply Filters
+                            <span class="bi bi-funnel-fill"></span> Apply Filters
                         </button>
-                        <a href="{{ url('view_transparency_log') }}" class="btn btn-default">
-                            <span class="glyphicon glyphicon-remove-circle"></span> Clear All Filters
+                        <a href="{{ url('view_transparency_log') }}" class="btn btn-secondary">
+                            <span class="bi bi-x-circle-fill"></span> Clear All Filters
                         </a>
                     </div>
                 </div>

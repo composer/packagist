@@ -19,7 +19,7 @@
 
     <section class="row">
         {% if isActualUser %}
-            <section class="col-md-3">
+            <section class="col-lg-3">
                 {{ knp_menu_render('profile_menu', {currentClass: 'active', allow_safe_labels: true}) }}
             </section>
         {% endif %}
@@ -32,11 +32,11 @@
             <p>If you'd like to proceed anyway, simply click the button below.</p>
 
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-lg-6">
                     <a class="btn btn-lg btn-inverse" href="{{ path('user_2fa_configure', {name: user.username}) }}">Nevermind, keep my account secure</a>
                 </div>
-                <div class="col-md-6">
-                    <a href="{{ path('user_2fa_disable', {token: csrf_token('disable_2fa'), name: user.username}) }}" class="btn btn-block btn-danger btn-lg">
+                <div class="col-lg-6">
+                    <a href="{{ path('user_2fa_disable', {token: csrf_token('disable_2fa'), name: user.username}) }}" class="btn w-100 btn-danger btn-lg">
                         <span class="icon-lock-open"></span>
                         Disable two-factor authentication
                     </a>

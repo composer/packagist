@@ -906,7 +906,7 @@ class PackageController extends Controller
         $deletionTitle = 'Hidden by admin on '.gmdate('Y-m-d H:i:s').' UTC'
             .($reasonText !== null ? ': '.$reasonText : '');
 
-        return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'glyphicon-eye-close']);
+        return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'bi-eye-slash-fill']);
     }
 
     #[Route(path: '/versions/{versionId}/recover', name: 'recover_version', requirements: ['versionId' => '[0-9]+'], methods: ['POST'])]

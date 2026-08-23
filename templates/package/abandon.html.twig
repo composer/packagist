@@ -8,13 +8,13 @@
 </h2>
 
 <section class="row">
-    {{ form_start(form, { attr: { class: 'col-sm-6' } }) }}
+    {{ form_start(form, { attr: { class: 'col-md-6' } }) }}
         {{ form_widget(form) }}
 
-        <input class="btn btn-block btn-default btn-lg" type="submit" value="{{ 'abandon.submit'|trans }}" />
+        <input class="btn w-100 btn-secondary btn-lg" type="submit" value="{{ 'abandon.submit'|trans }}" />
     {{ form_end(form) }}
 
-    <div class="col-sm-6">
+    <div class="col-md-6">
         {{ 'abandon.warning'|trans|raw }}
     </div>
 </section>

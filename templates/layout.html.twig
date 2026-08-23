@@ -44,24 +44,22 @@
     </head>
     <body>
     <section class="wrap">
-        <header class="navbar-wrapper navbar-fixed-top">
+        <header class="navbar-wrapper fixed-top">
             {% if 'now'|date('Ymd') < '20251001' %}
-            <section class="banner alert-error hidden">
+            <section class="banner alert-error d-none">
                 Composer v1 support is <a href="https://blog.packagist.com/packagist-org-shutdown-of-composer-1-x-support-postponed-to-september-1st-2025/">coming to an end</a>
-                <i class="glyphicon glyphicon-remove banner-close" data-banner-id="composer1eol"></i>
+                <i class="bi bi-x-lg banner-close" data-banner-id="composer1eol"></i>
             </section>
             {% endif %}
             <nav class="container">
-                <div class="navbar" role="navigation">
-                    <div class="navbar-header">
-                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                            <span class="sr-only">{{ 'menu.togglenav'|trans }}</span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
-                        <h1 class="navbar-brand"><a href="{{ path('home') }}">{{ 'brandname'|trans }}</a> <em class="hidden-sm hidden-xs">{{ 'navclaim'|trans }}</em></h1>
-                    </div>
+                <div class="navbar navbar-expand-md" role="navigation">
+                    <h1 class="navbar-brand"><a href="{{ path('home') }}">{{ 'brandname'|trans }}</a> <em class="d-none d-lg-inline">{{ 'navclaim'|trans }}</em></h1>
+                    <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                        <span class="visually-hidden">{{ 'menu.togglenav'|trans }}</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
 
                     <div class="collapse navbar-collapse">
                         <ul class="nav navbar-nav">
@@ -81,7 +79,7 @@
                                     </section>
                                 </section>
                             </li>
-                            <li class="nav-user visible-xs-block">
+                            <li class="nav-user d-block d-md-none">
                                 <section>
                                     <a href="{{ logout_path() }}">Log out</a>
                                 </section>
@@ -97,18 +95,17 @@
                                     <section class="signin-box">
                                         <form action="{{ path('login') }}" method="POST" id="nav_login">
                                             <div class="input-group">
+                                                <span class="input-group-text"><span class="icon-user"></span></span>
                                                 <input class="form-control" type="text" id="_username" name="_username" placeholder="Username / Email">
-                                                <span class="input-group-addon"><span class="icon-user"></span></span>
                                             </div>
                                             <div class="input-group">
+                                                <span class="input-group-text"><span class="icon-lock"></span></span>
                                                 <input class="form-control" type="password" id="_password" name="_password" placeholder="Password">
-                                                <span class="input-group-addon"><span class="icon-lock"></span></span>
                                             </div>
 
-                                            <div class="checkbox">
-                                                <label for="_remember_me">
-                                                    <input type="checkbox" id="_remember_me" name="_remember_me" value="on" checked="checked" /> Remember me
-                                                </label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="_remember_me" name="_remember_me" value="on" checked="checked" />
+                                                <label class="form-check-label" for="_remember_me">Remember me</label>
                                             </div>
 
                                             {%- if packagist_host and ('://' ~ packagist_host ~ '/') in app.request.headers.get('Referer') %}
@@ -116,7 +113,7 @@
                                             {%- endif %}
 
                                             <div class="signin-box-buttons">
-                                                <a href="{{ path('login_github_start') }}" class="pull-right btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
+                                                <a href="{{ path('login_github_start') }}" class="float-end btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
                                                 <button type="submit" class="btn btn-success" id="_submit_mini" name="_submit">Log in</button>
                                             </div>
                                         </form>
@@ -157,11 +154,11 @@
         <section class="wrapper">
             <section class="container content" role="main">
                 {% block search_results %}
-                    <div id="search-container" class="hidden">
+                    <div id="search-container" class="d-none">
                         <div class="row">
-                            <div class="search-list col-md-9"></div>
+                            <div class="search-list col-lg-9"></div>
 
-                            <div class="search-facets col-md-3">
+                            <div class="search-facets col-lg-3">
                                 <div class="search-facets-active-filters-wrapper" style="display:none">
                                     <div class="search-facets-active-filters-header">
                                         <span>Active filters</span>
@@ -175,7 +172,7 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-9">
+                            <div class="col-lg-9">
                                 <div id="powered-by">
                                     Search by <a href="https://www.algolia.com/"><img src="{{ asset('img/sponsors/algolia-logo-light.svg') }}"></a>
                                 </div>
@@ -195,44 +192,44 @@
         <footer class="wrapper-footer">
             <nav class="container">
                 <div class="row">
-                    <ul class="social col-xs-7 col-sm-4 col-md-2 pull-right">
-                        <li><a href="http://github.com/composer/packagist" title="{{ 'menu.github'|trans }}"><span class="icon-github"></span></a></li>
-                        <li><a href="https://x.com/packagist" title="{{ 'menu.twitter'|trans }}"><span class="icon-twitter"></span></a></li>
-                        <li><a href="mailto:contact@packagist.org" title="{{ 'menu.contact'|trans }}"><span class="icon-mail"></span></a></li>
-                    </ul>
+                    <div class="col-8 col-md-9 col-lg-10">
+                        <div class="row">
+                            <ul class="col-6 col-md-3">
+                                <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
+                                <li><a href="{{ path('feeds') }}" rel="nofollow">{{ 'menu.rss_feeds'|trans }}</a></li>
+                            </ul>
 
-                    <ul class="col-xs-4 col-sm-4 col-md-2">
-                        <li><a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a></li>
-                        <li><a href="{{ path('feeds') }}" rel="nofollow">{{ 'menu.rss_feeds'|trans }}</a></li>
-                    </ul>
+                            <ul class="col-6 col-md-3">
+                                <li><a href="{{ path('stats') }}" rel="nofollow">{{ 'menu.stats'|trans }}</a></li>
+                                <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
+                            </ul>
 
-                    <div class="clearfix visible-xs-block"></div>
+                            <ul class="col-6 col-md-3">
+                                <li><a href="{{ path('api_doc') }}">{{ 'menu.api_doc'|trans }}</a></li>
+                                <li><a href="{{ path('mirrors') }}">{{ 'menu.mirrors'|trans }}</a></li>
+                            </ul>
 
-                    <ul class="col-xs-3 col-sm-4 col-md-2">
-                        <li><a href="{{ path('stats') }}" rel="nofollow">{{ 'menu.stats'|trans }}</a></li>
-                        <li><a href="{{ path('browse') }}">{{ 'menu.browse_packages'|trans }}</a></li>
-                    </ul>
+                            <ul class="col-6 col-md-3">
+                                <li><a href="https://status.packagist.org/">Status</a></li>
+                                <li><a href="https://p.datadoghq.com/sb/x98w56x71erzshui-4a54c45f82bacc991e83302548934b6a">Dashboard</a></li>
+                            </ul>
+                        </div>
+                    </div>
 
-                    <div class="clearfix visible-xs-block visible-sm-block"></div>
-
-                    <ul class="col-xs-3 col-sm-4 col-md-2">
-                        <li><a href="{{ path('api_doc') }}">{{ 'menu.api_doc'|trans }}</a></li>
-                        <li><a href="{{ path('mirrors') }}">{{ 'menu.mirrors'|trans }}</a></li>
-                    </ul>
-
-                    <div class="clearfix visible-xs-block"></div>
-
-                    <ul class="col-xs-3 col-sm-4 col-md-2">
-                        <li><a href="https://status.packagist.org/">Status</a></li>
-                        <li><a href="https://p.datadoghq.com/sb/x98w56x71erzshui-4a54c45f82bacc991e83302548934b6a">Dashboard</a></li>
-                    </ul>
+                    <div class="col-4 col-md-3 col-lg-2">
+                        <ul class="social">
+                            <li><a href="http://github.com/composer/packagist" title="{{ 'menu.github'|trans }}"><span class="icon-github"></span></a></li>
+                            <li><a href="https://x.com/packagist" title="{{ 'menu.twitter'|trans }}"><span class="icon-twitter"></span></a></li>
+                            <li><a href="mailto:contact@packagist.org" title="{{ 'menu.contact'|trans }}"><span class="icon-mail"></span></a></li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="row sponsor">
-                    <p class="col-xs-12 col-md-6"><a class="short" href="https://packagist.com/"><img alt="Private Packagist" src="{{ asset('img/sponsors/private-packagist.svg') }}" /></a> provides maintenance and hosting</p>
-                    <p class="col-xs-12 col-md-6"><a class="long" href="https://bunny.net/"><img alt="Bunny.net" src="{{ asset('img/sponsors/bunny-net.svg') }}" /></a> provides bandwidth and CDN</p>
-                    <p class="col-xs-12 col-md-6"><a class="short" href="https://www.aikido.dev/"><img alt="Aikido" src="{{ asset('img/sponsors/aikido.svg') }}" /></a> provides malware detection</p>
-                    <p class="col-xs-12 text-center"><a href="{{ path('sponsor') }}">Sponsor Packagist &amp; Composer</a></p>
+                    <p class="col-12 col-lg-6"><a class="short" href="https://packagist.com/"><img alt="Private Packagist" src="{{ asset('img/sponsors/private-packagist.svg') }}" /></a> provides maintenance and hosting</p>
+                    <p class="col-12 col-lg-6"><a class="long" href="https://bunny.net/"><img alt="Bunny.net" src="{{ asset('img/sponsors/bunny-net.svg') }}" /></a> provides bandwidth and CDN</p>
+                    <p class="col-12 col-lg-6"><a class="short" href="https://www.aikido.dev/"><img alt="Aikido" src="{{ asset('img/sponsors/aikido.svg') }}" /></a> provides malware detection</p>
+                    <p class="col-12 text-center"><a href="{{ path('sponsor') }}">Sponsor Packagist &amp; Composer</a></p>
                 </div>
             </nav>
         </footer>

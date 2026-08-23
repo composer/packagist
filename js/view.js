@@ -1,4 +1,5 @@
 import jQuery from "jquery";
+import { Modal } from 'bootstrap';
 import notifier from './notifier';
 
 const init = function ($) {
@@ -8,10 +9,10 @@ const init = function ($) {
         ongoingRequest = false;
 
     const togglePackageForm = function (selector) {
-        $('#remove-maintainer-form').addClass('hidden');
-        $('#add-maintainer-form').addClass('hidden');
-        $('#transfer-package-form').addClass('hidden');
-        $(selector).removeClass('hidden');
+        $('#remove-maintainer-form').addClass('d-none');
+        $('#add-maintainer-form').addClass('d-none');
+        $('#transfer-package-form').addClass('d-none');
+        $(selector).removeClass('d-none');
     }
 
     $('#add-maintainer').on('click', function (e) {
@@ -101,13 +102,14 @@ const init = function ($) {
         modal.find('.deletion-reason-confirm').text(opts.confirmLabel || 'Confirm');
         modal.find('.deletion-reason-public').val('');
         modal.find('.deletion-reason-internal').val('');
+        var modalInstance = Modal.getOrCreateInstance(modal.get(0));
         modal.find('.deletion-reason-confirm').off('click').on('click', function () {
             var publicReason = modal.find('.deletion-reason-public').val().trim();
             var internalReason = modal.find('.deletion-reason-internal').val().trim();
-            modal.modal('hide');
+            modalInstance.hide();
             onConfirm(publicReason, internalReason);
         });
-        modal.modal('show');
+        modalInstance.show();
     }
 
     function forceUpdatePackage(e, updateAll) {
@@ -245,8 +247,8 @@ const init = function ($) {
             notifier.log('Version soft-deleted. Reload the page to access the recovery action.', {timeout: 4000});
             row.addClass('version-soft-deleted');
             if (!row.find('.deletion-alert').length) {
-                var icon = data.deletionIcon || 'glyphicon-trash';
-                var alert = $('<span class="action-alert deletion-alert"><i class="glyphicon"></i></span>');
+                var icon = data.deletionIcon || 'bi-trash-fill';
+                var alert = $('<span class="action-alert deletion-alert"><i class="bi"></i></span>');
                 alert.find('i').addClass(icon);
                 alert.attr('title', data.deletionTitle || 'Deleted');
                 alert.insertBefore(row.find('form').first());
@@ -358,8 +360,8 @@ const init = function ($) {
 
     var versionsList = $('.package .versions')[0];
     if (versionsList && versionsList.offsetHeight < versionsList.scrollHeight) {
-        $('.package .versions-expander').removeClass('hidden').on('click', function () {
-            $(this).addClass('hidden');
+        $('.package .versions-expander').removeClass('d-none').on('click', function () {
+            $(this).addClass('d-none');
             $(versionsList).css('max-height', 'inherit');
         });
     }
@@ -383,7 +385,7 @@ const init = function ($) {
     });
 
     function addMaintainerRemoveButton(item) {
-        var removeButton = $('<button type="button" class="btn btn-danger btn-sm"><i class="glyphicon glyphicon-remove"></i></button>');
+        var removeButton = $('<button type="button" class="btn btn-danger btn-sm"><i class="bi bi-x-lg"></i></button>');
         removeButton.on('click', function(e) {
             e.preventDefault();
 

@@ -29,9 +29,9 @@
         {%- endif %}
         {%- if freezeForm is defined %}
             {%- if user.isFrozen() %}
-                <button type="button" class="btn btn-success action" data-toggle="modal" data-target="#unfreeze-user-modal">Unfreeze account</button>
+                <button type="button" class="btn btn-success action" data-bs-toggle="modal" data-bs-target="#unfreeze-user-modal">Unfreeze account</button>
             {%- else %}
-                <button type="button" class="btn btn-danger action" data-toggle="modal" data-target="#freeze-user-modal">Freeze account</button>
+                <button type="button" class="btn btn-danger action" data-bs-toggle="modal" data-bs-target="#freeze-user-modal">Freeze account</button>
             {%- endif %}
         {%- endif %}
     </small>
@@ -39,7 +39,7 @@
 
 {% if is_granted('ROLE_ADMIN') %}
     <div class="row" style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-        <div class="col-md-6">
+        <div class="col-lg-6">
             <h4>User Metadata</h4>
             <dl class="dl-horizontal">
                 <dt>Created At:</dt>
@@ -79,7 +79,7 @@
             </dl>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-lg-6">
             <h4>Update Email Address</h4>
             <p class="help-block">Current email: {{ user.email }}</p>
             {{ form_start(adminEmailForm) }}
@@ -93,7 +93,7 @@
 {% endif %}
 
 <section class="row">
-    <section class="col-md-12">
+    <section class="col-lg-12">
         {% embed "web/list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: isActualUser, showFrozen: true} %}
             {% block content_title %}
                 <h3 class="font-normal profile-title">{{ 'user.packages'|trans({ '%username%':user.username }) }}</h3>
@@ -108,21 +108,21 @@
             <div class="modal-dialog" role="document">
                 {{ form_start(unfreezeForm, {'action': path('unfreeze_user', {name: user.username}), 'attr': {'class': 'modal-content'}}) }}
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                         <h4 class="modal-title">Unfreeze {{ user.username }}</h4>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="form-group">
-                            <label>Public reason <small class="text-muted">(optional — shown in the transparency log)</small></label>
+                        <div class="mb-3">
+                            <label class="form-label">Public reason <small class="text-muted">(optional — shown in the transparency log)</small></label>
                             {{ form_widget(unfreezeForm.reasonText, {'attr': {'class': 'form-control', 'rows': 2}}) }}
                         </div>
-                        <div class="form-group">
-                            <label>Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
+                        <div class="mb-3">
+                            <label class="form-label">Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
                             {{ form_widget(unfreezeForm.internalReason, {'attr': {'class': 'form-control', 'rows': 2}}) }}
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-success">Unfreeze account</button>
                     </div>
                 {{ form_end(unfreezeForm) }}
@@ -133,35 +133,36 @@
             <div class="modal-dialog" role="document">
                 {{ form_start(freezeForm, {'action': path('freeze_user', {name: user.username}), 'attr': {'class': 'modal-content'}}) }}
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                         <h4 class="modal-title">Freeze {{ user.username }}</h4>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="form-group">
-                            <label>Reason</label>
+                        <div class="mb-3">
+                            <label class="form-label">Reason</label>
                             {{ form_widget(freezeForm.reason, {'attr': {'class': 'form-control'}}) }}
                         </div>
-                        <div class="form-group">
-                            <label>Public reason <small class="text-muted">(optional — shown in the transparency log)</small></label>
+                        <div class="mb-3">
+                            <label class="form-label">Public reason <small class="text-muted">(optional — shown in the transparency log)</small></label>
                             {{ form_widget(freezeForm.reasonText, {'attr': {'class': 'form-control', 'rows': 2}}) }}
                         </div>
-                        <div class="form-group">
-                            <label>Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
+                        <div class="mb-3">
+                            <label class="form-label">Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
                             {{ form_widget(freezeForm.internalReason, {'attr': {'class': 'form-control', 'rows': 2}}) }}
                         </div>
                         {% if freezeForm.freezePackages is defined %}
                             <hr>
-                            <div class="checkbox">
-                                <label>{{ form_widget(freezeForm.freezePackages) }} Also act on the user's packages</label>
+                            <div class="form-check">
+                                {{ form_widget(freezeForm.freezePackages, {'attr': {'class': 'form-check-input'}}) }}
+                                {{ form_label(freezeForm.freezePackages, "Also act on the user's packages", {'label_attr': {'class': 'form-check-label'}}) }}
                             </div>
-                            <div class="form-group">
-                                <label>Package freeze reason (For {% for r in enum('App\\Entity\\PackageFreezeReason').suppressingValues() %}{{ r }}{% if not loop.last %}/{% endif %}{% endfor %} the package will be hidden from the public and uninstallable)</label>
+                            <div class="mb-3">
+                                <label class="form-label">Package freeze reason (For {% for r in enum('App\\Entity\\PackageFreezeReason').suppressingValues() %}{{ r }}{% if not loop.last %}/{% endif %}{% endfor %} the package will be hidden from the public and uninstallable)</label>
                                 {{ form_widget(freezeForm.packageFreezeReason, {'attr': {'class': 'form-control'}}) }}
                             </div>
                         {% endif %}
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-danger">Freeze account</button>
                     </div>
                 {{ form_end(freezeForm) }}

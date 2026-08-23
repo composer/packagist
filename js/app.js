@@ -6,7 +6,7 @@ import './view';
 import './submitPackage';
 import './filterListAdmin';
 import '../css/app.scss';
-import 'bootstrap';
+import { Collapse, Tooltip } from 'bootstrap';
 
 (function ($) {
     "use strict";
@@ -66,7 +66,7 @@ import 'bootstrap';
 
     let currentBannerId = $('.banner .banner-close').data('banner-id');
     $('.banner .banner-close').click(function () {
-        $('.banner').addClass('hidden');
+        $('.banner').addClass('d-none');
         try {
             window.localStorage.setItem('banner-read', currentBannerId);
         } catch (e) {}
@@ -74,12 +74,14 @@ import 'bootstrap';
     if (currentBannerId !== undefined) {
         try {
             if (window.localStorage.getItem('banner-read') !== currentBannerId) {
-                $('.banner').removeClass('hidden');
+                $('.banner').removeClass('d-none');
             }
         } catch (e) {}
     }
 
-    $('[data-toggle="tooltip"]').tooltip();
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new Tooltip(el);
+    });
 })(jQuery);
 
 if (

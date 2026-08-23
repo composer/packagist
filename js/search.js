@@ -68,7 +68,7 @@ if (!isSearchPage && !hasQuery && hasFilters) {
     // Redirect to canonical /search/ URL with the filter params
     location.replace('/search/' + location.search);
 } else if (hasQuery || (isSearchPage && hasFilters)) {
-    document.querySelector('#search-container').classList.remove('hidden');
+    document.querySelector('#search-container').classList.remove('d-none');
 }
 
 var opts = {
@@ -84,9 +84,9 @@ var opts = {
         var hasSearch = hasQuery || (isSearchPage && hasFilters);
 
         if (!hasSearch) {
-            searchResults.classList.add('hidden');
+            searchResults.classList.add('d-none');
         } else {
-            searchResults.classList.remove('hidden');
+            searchResults.classList.remove('d-none');
         }
 
         // Force focus to prevent algolia from overwriting input with transformed value
@@ -272,7 +272,7 @@ search.addWidgets([
                     if (hit.replacementPackage) {
                         replacementHtml = ` See <a href="${hit.replacementPackageUrl}" rel="nofollow noindex">${hit.replacementPackage}</a>`;
                     }
-                    abandonedHtml = `<p class="abandoned"><i class="glyphicon glyphicon-exclamation-sign"></i> Abandoned!${replacementHtml}</p>`;
+                    abandonedHtml = `<p class="abandoned"><i class="bi bi-exclamation-circle-fill"></i> Abandoned!${replacementHtml}</p>`;
                 }
 
                 var virtualHtml = hit.virtual ? '<small>(Virtual Package)</small>' : '';
@@ -281,18 +281,18 @@ search.addWidgets([
                 var metaHtml = '';
                 if (hit.meta) {
                     metaHtml = `<p class="metadata">
-                        <span class="metadata-block"><i class="glyphicon glyphicon-download"></i> ${hit.meta.downloads_formatted}</span>
-                        <span class="metadata-block"><i class="glyphicon glyphicon-star"></i> ${hit.meta.favers_formatted}</span>
+                        <span class="metadata-block"><i class="bi bi-download"></i> ${hit.meta.downloads_formatted}</span>
+                        <span class="metadata-block"><i class="bi bi-star-fill"></i> ${hit.meta.favers_formatted}</span>
                     </p>`;
                 }
 
                 var nameHighlight = hit._highlightResult && hit._highlightResult.name ? hit._highlightResult.name.value : hit.name;
                 var descHighlight = hit._highlightResult && hit._highlightResult.description ? hit._highlightResult.description.value : (hit.description || '');
 
-                return `<div data-url="${hit.url}" class="col-xs-12 package-item">
+                return `<div data-url="${hit.url}" class="col-12 package-item">
                     <div class="row">
-                        <div class="col-sm-9 col-lg-10">
-                            <p class="pull-right language">${hit.language || ''}</p>
+                        <div class="col-md-9 col-xl-10">
+                            <p class="float-end language">${hit.language || ''}</p>
                             <h4 class="font-bold">
                                 <a href="${hit.url}" tabindex="2" rel="nofollow noindex">${nameHighlight}</a>${extensionHtml}
                                 ${virtualHtml}
@@ -300,7 +300,7 @@ search.addWidgets([
                             <p>${descHighlight}</p>
                             ${abandonedHtml}
                         </div>
-                        <div class="col-sm-3 col-lg-2">
+                        <div class="col-md-3 col-xl-2">
                             ${metaHtml}
                         </div>
                     </div>

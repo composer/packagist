@@ -2,7 +2,7 @@
 
 {% block org_content %}
     {% if is_granted(enum('App\\Security\\Voter\\OrganizationActions').Edit.value, organization) %}
-        <a href="{{ path('organization_settings', { organization: organization.slug }) }}" class="btn btn-default pull-right">Edit settings</a>
+        <a href="{{ path('organization_settings', { organization: organization.slug }) }}" class="btn btn-secondary float-end">Edit settings</a>
     {% endif %}
 
     {# Groundwork for org deletion (not yet implemented). #}

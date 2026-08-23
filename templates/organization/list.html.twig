@@ -24,14 +24,14 @@
                             <a href="{{ path('organization_show', { organization: organization.slug }) }}">{{ organization.displayName }}</a>
                             {# Groundwork for org deletion (not yet implemented). #}
                             {% if organization.deleted %}
-                                <span class="label label-warning">deleted</span>
+                                <span class="badge bg-warning">deleted</span>
                             {% endif %}
                         </td>
                         <td><code>{{ organization.slug }}</code></td>
                         <td>{{ organization.createdAt|date('Y-m-d') }}</td>
-                        <td class="text-right">
+                        <td class="text-end">
                             {% if is_granted(enum('App\\Security\\Voter\\OrganizationActions').Edit.value, organization) %}
-                                <a href="{{ path('organization_settings', { organization: organization.slug }) }}" class="btn btn-default btn-sm">Settings</a>
+                                <a href="{{ path('organization_settings', { organization: organization.slug }) }}" class="btn btn-secondary btn-sm">Settings</a>
                             {% endif %}
                         </td>
                     </tr>

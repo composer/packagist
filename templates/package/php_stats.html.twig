@@ -7,22 +7,22 @@
 
     {% if not versions %}
         <div class="row">
-            <div class="col-xs-12 package">
+            <div class="col-12 package">
                 <p>There are no download statistics available for this package yet.</p>
             </div>
         </div>
     {% else %}
         <section class="row package-installs">
-            <div class="col-lg-12">
+            <div class="col-xl-12">
                 <div class="row package version-stats">
-                    <div class="col-xs-12 col-md-9 version-stats-chart">
+                    <div class="col-12 col-lg-9 version-stats-chart">
                         <div style="position: relative">
                             <svg class="chart js-version-dls" width="500" height="200">
                                 Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
                             </svg>
                         </div>
                     </div>
-                    <div class="col-md-3 no-padding">
+                    <div class="col-lg-3 no-padding">
                         <div class="package-aside versions-wrapper">
                             <ul class="versions">
                                 {% set lastDepth = '' %}
@@ -39,8 +39,8 @@
                                     {% set lastDepth = version.depth %}
                                 {% endfor %}
                             </ul>
-                            <div class="hidden versions-expander">
-                                <i class="glyphicon glyphicon-chevron-down"></i>
+                            <div class="d-none versions-expander">
+                                <i class="bi bi-chevron-down"></i>
                             </div>
                         </div>
                     </div>
