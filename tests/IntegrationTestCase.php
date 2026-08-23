@@ -66,13 +66,15 @@ class IntegrationTestCase extends WebTestCase
         $formCrawler = $crawler->filter(\sprintf('[name="%s"]', $formName));
         // Match on the rendered text rather than a CSS `:contains("…")` selector, which breaks when
         // the message itself contains double quotes (e.g. '"composer" is a reserved name…').
-        $matching = $formCrawler->filter('.alert-danger')->reduce(
+        // `.alert-danger` covers whole-form errors, `.invalid-feedback` covers per-field errors
+        // rendered by the Bootstrap 5 form theme.
+        $matching = $formCrawler->filter('.alert-danger, .invalid-feedback')->reduce(
             static fn (Crawler $node): bool => str_contains($node->text(), $message),
         );
         $this->assertCount(
             1,
             $matching,
-            $formCrawler->html()."\nShould find an .alert-danger within the form with the message: '$message'",
+            $formCrawler->html()."\nShould find an error message within the form: '$message'",
         );
     }
 

@@ -117,7 +117,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('auto-safe', $listing, 'the metadata-safe package should be flagged auto-safe');
         self::assertStringContainsString('review', $listing, 'the spammy package should be flagged for review');
         self::assertStringContainsString('readme', $listing, 'the spam package has a README so its readme score should show');
-        self::assertGreaterThanOrEqual(2, $crawler->filter('.packages .label')->count());
+        self::assertGreaterThanOrEqual(2, $crawler->filter('.packages .label, .packages .badge')->count());
     }
 
     public function testViewVendor(): void
