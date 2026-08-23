@@ -1,21 +1,24 @@
 import * as echarts from 'echarts/core';
-import { LineChart } from 'echarts/charts';
+import { HeatmapChart, LineChart } from 'echarts/charts';
 import {
     DataZoomInsideComponent,
     DataZoomSliderComponent,
     GridComponent,
     LegendComponent,
     TooltipComponent,
+    VisualMapComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import jQuery from 'jquery';
 import '../css/charts.css';
 
 echarts.use([
+    HeatmapChart,
     LineChart,
     GridComponent,
     LegendComponent,
     TooltipComponent,
+    VisualMapComponent,
     DataZoomInsideComponent,
     DataZoomSliderComponent,
     CanvasRenderer,
@@ -431,13 +434,6 @@ echarts.use([
             target.addClass('open');
         });
 
-        $(window).on('scroll', function () {
-            var basePos = $('.version-stats').offset().top;
-            var footerPadding = $(document).height() - basePos - $('footer').height() - $('.version-stats-chart').height() - 50;
-            var headerPadding = 80;
-            $('.version-stats-chart').css('top', Math.max(0, Math.min(footerPadding, window.scrollY - basePos + headerPadding)) + 'px');
-        });
-
         initializeVersionListExpander();
     };
 
@@ -540,13 +536,6 @@ echarts.use([
             switchToChart(versionId);
         })
 
-        $(window).on('scroll', function () {
-            var basePos = $('.version-stats').offset().top;
-            var footerPadding = $(document).height() - basePos - $('footer').height() - $('.version-stats-chart').height() - 50;
-            var headerPadding = 80;
-            $('.version-stats-chart').css('top', Math.max(0, Math.min(footerPadding, window.scrollY - basePos + headerPadding)) + 'px');
-        });
-
         initializeVersionListExpander();
     };
 
@@ -569,5 +558,129 @@ echarts.use([
             'area',
             PHP_VERSION_COLORS
         );
+    };
+
+    window.initReleaseStats = function (selector, counts) {
+        var el = $(selector)[0];
+        if (!el || !counts) {
+            return;
+        }
+
+        var MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        var MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        var keys = Object.keys(counts).sort();
+        if (!keys.length) {
+            return;
+        }
+
+        var now = new Date();
+        var startYear = parseInt(keys[0].split('-')[0], 10);
+        var startMonth = parseInt(keys[0].split('-')[1], 10);
+        var endYear = Math.max(now.getFullYear(), startYear);
+        var endMonth = endYear === now.getFullYear() ? now.getMonth() + 1 : 12;
+        if (endYear === startYear && endMonth < startMonth) {
+            return;
+        }
+
+        var years = [];
+        for (var year = endYear; year >= startYear; year--) {
+            years.push(year);
+        }
+
+        // size the container for one row per year before initializing
+        el.style.height = (years.length * 34 + 90) + 'px';
+
+        var data = [];
+        var max = 0;
+        // years is sorted newest-first so the yAxis puts the latest year on top
+        years.slice().reverse().forEach(function (year, yearIndex) {
+            var firstMonth = year === startYear ? startMonth : 1;
+            var lastMonth = (year === endYear && endYear === now.getFullYear()) ? endMonth : 12;
+            for (var month = 1; month <= 12; month++) {
+                if (month < firstMonth || month > lastMonth) {
+                    continue;
+                }
+                var count = counts[year + '-' + ('0' + month).slice(-2)] || 0;
+                max = Math.max(max, count);
+                data.push([month - 1, years.length - 1 - yearIndex, count]);
+            }
+        });
+
+        var existing = echarts.getInstanceByDom(el);
+        if (existing) {
+            existing.dispose();
+        }
+
+        var chart = echarts.init(el);
+        chart.setOption({
+            animation: false,
+            tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.96)',
+                borderColor: '#ddd',
+                textStyle: {color: '#2d2d32', fontSize: 12},
+                formatter: function (params) {
+                    var value = params.value;
+                    var title = MONTHS_LONG[value[0]] + ' ' + years[years.length - 1 - value[1]];
+                    var releases = value[2] + (value[2] === 1 ? ' release' : ' releases');
+
+                    return title + '<br><strong>' + releases + '</strong>';
+                }
+            },
+            grid: {
+                left: 10,
+                right: 10,
+                top: 10,
+                bottom: 45,
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: MONTHS_SHORT,
+                axisLine: {show: false},
+                axisTick: {show: false},
+                splitArea: {show: false}
+            },
+            yAxis: {
+                type: 'category',
+                // years are sorted newest-first, inverted so the latest year renders on top
+                data: years.map(String),
+                inverse: true,
+                axisLine: {show: false},
+                axisTick: {show: false}
+            },
+            visualMap: {
+                min: 0,
+                max: Math.max(max, 1),
+                calculable: false,
+                orient: 'horizontal',
+                left: 'center',
+                bottom: 0,
+                itemWidth: 12,
+                itemHeight: 70,
+                text: [String(Math.max(max, 1)), '0'],
+                textStyle: {fontSize: 11},
+                inRange: {
+                    color: ['#f5f5f5', '#fbd9b0', '#f5a94e', '#f28d1a']
+                }
+            },
+            series: [{
+                type: 'heatmap',
+                data: data,
+                itemStyle: {
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                    borderRadius: 3
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 4,
+                        shadowColor: 'rgba(0, 0, 0, 0.3)'
+                    }
+                }
+            }]
+        });
+
+        return trackInstance(chart);
     };
 })(jQuery);

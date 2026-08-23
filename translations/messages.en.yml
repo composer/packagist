@@ -116,6 +116,7 @@ stats:
     daily: Daily installs
     daily_per_version: Daily installs per version
     averaged: "averaged %avg%"
+    releases_over_time: Releases over time
 
 statistics:
     title: Statistics

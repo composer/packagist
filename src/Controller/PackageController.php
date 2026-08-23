@@ -1257,11 +1257,21 @@ class PackageController extends Controller
         $versions = $package->getVersions()->toArray();
         usort($versions, Package::class.'::sortVersions');
         $date = $this->guessStatsStartDate($package);
+        $releaseChart = [];
+        foreach ($versions as $version) {
+            if ($version->isDevelopment() || null === $version->getReleasedAt()) {
+                continue;
+            }
+            $month = $version->getReleasedAt()->format('Y-m');
+            $releaseChart[$month] = ($releaseChart[$month] ?? 0) + 1;
+        }
+        ksort($releaseChart);
         $data = [
             'downloads' => $this->downloadManager->getDownloads($package),
             'versions' => $versions,
             'average' => $this->guessStatsAverage($date),
             'date' => $date->format('Y-m-d'),
+            'releaseChart' => $releaseChart,
         ];
 
         if ($req->getRequestFormat() === 'json') {

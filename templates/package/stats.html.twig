@@ -78,6 +78,16 @@
             </div>
         </div>
     </section>
+
+    {% if releaseChart %}
+        <section class="row">
+            <div class="col-lg-12">
+                <h3>{{ 'stats.releases_over_time'|trans }}</h3>
+                <div class="chart js-release-stats"></div>
+                <p>{{ 'statistics.last_partial'|trans }}</p>
+            </div>
+        </section>
+    {% endif %}
 {% endblock %}
 
 {% block stylesheets %}
@@ -92,6 +102,9 @@
             var date = {{ date|json_encode|raw }};
 
             initPackageStats(average, date, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }});
+            {% if releaseChart %}
+            initReleaseStats('.js-release-stats', {{ releaseChart|json_encode|raw }});
+            {% endif %}
         }());
     </script>
 {% endblock %}
