@@ -31,6 +31,16 @@
 
     --color-muted: #999;
     --color-text-dark: #333;
+
+    --heading-margin-top-lg: 20px;
+    --heading-margin-top-sm: 10px;
+    --heading-margin-bottom: 10px;
+    --heading-font-size-h1: 36px;
+    --heading-font-size-h2: 30px;
+    --heading-font-size-h3: 24px;
+    --heading-font-size-h4: 18px;
+    --heading-font-size-h5: 14px;
+    --heading-font-size-h6: 12px;
 }
 
 /** Open Sans from https://gwfh.mranftl.com/fonts/open-sans?subsets=latin */
@@ -153,6 +163,25 @@ a, .package .package-aside a {
 a:hover, .package .package-aside a:hover {
   color: var(--color-brand-dark);
 }
+
+.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
+  font-weight: 500;
+  line-height: 1.1;
+}
+.h1, .h2, .h3, h1, h2, h3 {
+  margin-top: var(--heading-margin-top-lg);
+  margin-bottom: var(--heading-margin-bottom);
+}
+.h4, .h5, .h6, h4, h5, h6 {
+  margin-top: var(--heading-margin-top-sm);
+  margin-bottom: var(--heading-margin-bottom);
+}
+.h1, h1 { font-size: var(--heading-font-size-h1); }
+.h2, h2 { font-size: var(--heading-font-size-h2); }
+.h3, h3 { font-size: var(--heading-font-size-h3); }
+.h4, h4 { font-size: var(--heading-font-size-h4); }
+.h5, h5 { font-size: var(--heading-font-size-h5); }
+.h6, h6 { font-size: var(--heading-font-size-h6); }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
