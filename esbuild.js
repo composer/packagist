@@ -4,7 +4,7 @@
 
     const result = await esbuild.build({
         logLevel: 'info',
-        entryPoints: ['js/app.js', 'js/charts.js'],
+        entryPoints: ['js/app.js', 'js/charts.js', 'js/package_downloads.js'],
         bundle: true,
         outdir: 'web/build',
         sourcemap: process.argv.includes('--dev'),

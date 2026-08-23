@@ -305,6 +305,9 @@
                     <div class="row package-aside">
                         <div class="facts col-12 col-md-6 col-lg-12">
                             <h5>Statistics</h5>
+                            {% if downloads.total is defined %}
+                                <div class="package-downloads-chart js-downloads-chart"></div>
+                            {% endif %}
                             <p>
                                 <span>
                                     <a href="{{ path('view_package_stats', {name: package.name}) }}" rel="nofollow">Installs</a>:
@@ -447,5 +450,17 @@
                 </form>
             </div>
         </div>
+    {% endif %}
+{% endblock %}
+
+{% block scripts %}
+    {% if downloads.total is defined %}
+        <script nonce="{{ csp_nonce('script') }}" src="{{ asset('build/package_downloads.js') }}"></script>
+        <script nonce="{{ csp_nonce('script') }}">
+            (function () {
+                var statsUrl = {{ path('package_stats', {name: package.name})|json_encode|raw }};
+                initPackageDownloads('.js-downloads-chart', statsUrl + '?average=weekly&from={{ '-1year'|date('Y-m-d') }}');
+            }());
+        </script>
     {% endif %}
 {% endblock %}
