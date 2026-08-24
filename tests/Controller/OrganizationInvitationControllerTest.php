@@ -323,8 +323,9 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
     public function testAlreadyMemberSeesNoticeInsteadOfAcceptButton(): void
     {
         // The owner is already a member; inviting their own address and following the link should not
-        // offer acceptance (which the aggregate would reject), only a way to dismiss the invitation.
-        [$owner, , $backend] = $this->orgWithTeam();
+        // offer acceptance (which the aggregate would reject) nor any other action: the page only
+        // explains the situation and links back to the organization.
+        [$owner, $organization, $backend] = $this->orgWithTeam();
 
         $this->client->loginUser($owner);
         $this->submitInvite($backend, 'owner@example.org');
@@ -335,6 +336,8 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertCount(0, $crawler->selectButton('Accept invitation'));
         self::assertStringContainsString('already a member', $crawler->text());
+        self::assertCount(0, $crawler->filter('form[action*="/accept"], form[action*="/decline"]'));
+        self::assertCount(1, $crawler->filter('a[href="/organizations/'.$organization->slug.'"]'));
     }
 
     public function testExpiredInvitationHidesResendAndRevokeInList(): void
