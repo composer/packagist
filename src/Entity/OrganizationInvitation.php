@@ -32,7 +32,6 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Index(name: 'org_invitation_org_idx', columns: ['orgId'])]
 #[ORM\Index(name: 'org_invitation_pending_idx', columns: ['orgId', 'email', 'status'])]
 #[ORM\Index(name: 'org_invitation_expiry_idx', columns: ['status', 'expiresAt'])]
-#[ORM\Index(name: 'org_invitation_expiry_idx', columns: ['status', 'expiresAt'])]
 class OrganizationInvitation
 {
     public function __construct(
@@ -80,21 +79,6 @@ class OrganizationInvitation
     ) {
     }
 
-    public function isPending(): bool
-    {
-        return $this->status === InvitationStatus::Pending;
-    }
-
-    /**
-     * Whether the invitation is past its expiry, regardless of whether the status has been swept to
-     * `expired` yet. Expiry is enforced lazily, so a still-`pending` row whose `expiresAt` has passed
-     * is treated as expired by every freshness check.
-     */
-    public function isExpired(\DateTimeImmutable $now): bool
-    {
-        return $now > $this->expiresAt;
-    }
-
     /**
      * A pending invitation that has not yet passed its expiry, i.e. one a valid link can still act on
      * and one that blocks a duplicate {@see \App\Organization\Domain\Event\UserInvitationSent}.
@@ -115,5 +99,19 @@ class OrganizationInvitation
         }
 
         return $this->status;
+    }
+
+    private function isPending(): bool
+    {
+        return $this->status === InvitationStatus::Pending;
+    }
+
+    /**
+     * Past its expiry, regardless of whether the status has been swept to `expired` yet. The sweep is
+     * lazy, so every freshness check treats a still-`pending` row past `expiresAt` as expired.
+     */
+    private function isExpired(\DateTimeImmutable $now): bool
+    {
+        return $now > $this->expiresAt;
     }
 }

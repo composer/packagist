@@ -79,7 +79,7 @@ final class Invitation extends AbstractAggregate
      */
     public function resend(string $newTokenHash, \DateTimeImmutable $newExpiresAt, \DateTimeImmutable $now): void
     {
-        if (!$this->status->isPending() || $this->isExpired($now)) {
+        if (!$this->isActive($now)) {
             throw new NoPendingInvitationException('There is no pending invitation to resend; send a new invitation instead.');
         }
 
@@ -92,7 +92,7 @@ final class Invitation extends AbstractAggregate
      */
     public function revoke(\DateTimeImmutable $now): void
     {
-        if (!$this->status->isPending() || $this->isExpired($now)) {
+        if (!$this->isActive($now)) {
             return;
         }
 
@@ -105,7 +105,7 @@ final class Invitation extends AbstractAggregate
      */
     public function decline(\DateTimeImmutable $now): void
     {
-        if (!$this->status->isPending() || $this->isExpired($now)) {
+        if (!$this->isActive($now)) {
             return;
         }
 
@@ -193,12 +193,17 @@ final class Invitation extends AbstractAggregate
         return $this->teamIds;
     }
 
-    public function isPending(): bool
+    /**
+     * Whether the invitation can still be answered: pending and not yet past its expiry. Expiry is
+     * enforced lazily, so a pending invitation whose $expiresAt has passed is no longer actionable even
+     * before {@see markExpired} records it.
+     */
+    private function isActive(\DateTimeImmutable $now): bool
     {
-        return $this->status->isPending();
+        return $this->status->isPending() && !$this->isExpired($now);
     }
 
-    public function isExpired(\DateTimeImmutable $now): bool
+    private function isExpired(\DateTimeImmutable $now): bool
     {
         return $now > $this->expiresAt;
     }
