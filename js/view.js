@@ -239,18 +239,22 @@ const init = function ($) {
         return $(form).closest('.version').find('.version-number').text().trim();
     }
 
-    function applyVersionDeleteResponse(form, data, deletedToast) {
+    function applyVersionDeleteResponse(form, data, deletedToast, softDeletedToast) {
         var row = $(form).closest('.version');
         if (data && data.softDeleted) {
-            notifier.log('Version soft-deleted. Reload the page to access the recovery action.', {timeout: 4000});
+            notifier.log(softDeletedToast || 'Version soft-deleted. Reload the page to access the recovery action.', {timeout: 4000});
             row.addClass('version-soft-deleted');
-            if (!row.find('.deletion-alert').length) {
-                var icon = data.deletionIcon || 'glyphicon-trash';
-                var alert = $('<span class="action-alert deletion-alert"><i class="glyphicon"></i></span>');
-                alert.find('i').addClass(icon);
-                alert.attr('title', data.deletionTitle || 'Deleted');
+            // The row may already carry a badge (hiding an already soft-deleted version), so reuse
+            // and refresh it rather than leaving the previous icon and title in place.
+            var alert = row.find('.deletion-alert');
+            if (!alert.length) {
+                alert = $('<span class="action-alert deletion-alert"><i class="glyphicon"></i></span>');
                 alert.insertBefore(row.find('form').first());
             }
+            alert.find('i').attr('class', 'glyphicon ' + (data.deletionIcon || 'glyphicon-trash'));
+            var title = data.deletionTitle || 'Deleted';
+            // server-rendered badges have an initialised BS3 tooltip, which reads data-original-title
+            alert.attr('title', title).attr('data-original-title', title);
             row.find('.delete-version, .hide-version').remove();
         } else {
             notifier.log(deletedToast, {timeout: 3000});
@@ -330,7 +334,7 @@ const init = function ($) {
             if (publicReason) data.push({name: 'reason', value: publicReason});
             if (internalReason) data.push({name: 'internalReason', value: internalReason});
             dispatchVersionAction(form, function (resp) {
-                applyVersionDeleteResponse(form, resp, 'Version hidden');
+                applyVersionDeleteResponse(form, resp, 'Version hidden.', 'Version hidden.');
             }, {data: data});
         });
     });

@@ -896,15 +896,24 @@ class PackageController extends Controller
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
+        // Admins may hide a version that is already soft-deleted as gone-from-upstream or
+        // maintainer-pulled, without recovering it first. Admin-pulled rows already carry a
+        // deliberate admin decision and Hidden rows are already hidden, so those go through recover.
+        $currentReason = $version->getDeletionReason() ?? VersionDeletionReason::AutoDeletedMissing;
+        if ($version->isSoftDeleted() && !$currentReason->isHideableByAdmin()) {
+            throw new AccessDeniedException('This version must be recovered before it can be hidden.');
+        }
+
         $reasonText = trim($req->request->getString('reason')) ?: null;
         $internalReasonText = trim($req->request->getString('internalReason')) ?: null;
 
         $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
-        $deletionTitle = 'Hidden by admin on '.gmdate('Y-m-d H:i:s').' UTC'
-            .($reasonText !== null ? ': '.$reasonText : '');
+        // Read before clear(), and from the entity so the date matches what a page reload renders —
+        // softDelete() keeps the original removal time when the version was already soft-deleted.
+        $deletionTitle = $version->getDeletionTitle();
+        $this->getEM()->clear();
 
         return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'glyphicon-eye-close']);
     }

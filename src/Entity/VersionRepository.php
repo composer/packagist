@@ -94,19 +94,33 @@ class VersionRepository extends ServiceEntityRepository
     }
 
     /**
-     * Soft-delete a version with a reason. Schedules a fresh Updater run so dependents/suggesters
-     * and the V2 dump get recomputed without the version (frozen packages only get marked for dump).
+     * Soft-delete a version with a reason. On a first soft-delete this schedules a fresh Updater run
+     * so dependents/suggesters and the V2 dump get recomputed without the version (frozen packages
+     * only get marked for dump). Changing the reason on an already soft-deleted version only
+     * rewrites the reason and audits it.
      */
     public function softDelete(Version $version, VersionDeletionReason $reason, ?string $reasonText, ?string $internalReasonText, ?User $actor): void
     {
         $em = $this->getEntityManager();
-        $version->setSoftDeletedAt(new \DateTimeImmutable());
+        $wasSoftDeleted = $version->isSoftDeleted();
+
+        // A reason change on an already soft-deleted version keeps the original removal time — the
+        // version really has been gone since then; the audit record carries when the reason changed.
+        if (!$wasSoftDeleted) {
+            $version->setSoftDeletedAt(new \DateTimeImmutable());
+        }
         $version->setDeletionReason($reason);
         $version->setDeletionReasonText($reasonText);
         $version->setInternalDeletionReasonText($internalReasonText);
         $em->persist($version);
 
         $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $internalReasonText, $actor));
+
+        // Dumps and dependent/suggester data key off isSoftDeleted() only, never the reason, so a
+        // reason change on an already-deleted row has nothing to recompute.
+        if ($wasSoftDeleted) {
+            return;
+        }
 
         if (!$version->getPackage()->isFrozen()) {
             $this->scheduler->scheduleUpdate($version->getPackage(), 'version_recover');
