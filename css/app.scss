@@ -2374,8 +2374,8 @@ body {
 }
 
 // Team labels wrap onto multiple lines when a member/invitation belongs to many teams; Bootstrap's
-// inline .label leaves wrapped rows touching, so give each one a little breathing room vertically.
-.team-labels .label {
+// inline .badge leaves wrapped rows touching, so give each one a little breathing room vertically.
+.team-labels .badge {
     display: inline-block;
     margin-right: 2px;
     margin-bottom: 2px;

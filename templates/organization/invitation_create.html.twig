@@ -7,31 +7,30 @@
 
     {{ form_start(form, { 'attr': { 'class': 'organization_invitation_create' } }) }}
         {{ form_errors(form) }}
-        <div class="form-group clearfix">
+        <div class="mb-3">
             {{ form_label(form.email) }}
             {{ form_errors(form.email) }}
             {{ form_widget(form.email) }}
             {{ form_help(form.email) }}
         </div>
-        <div class="form-group clearfix">
+        <div class="mb-3">
             {{ form_label(form.teamIds) }}
             {{ form_errors(form.teamIds) }}
             {% for team in form.teamIds %}
-                <div class="checkbox">
-                    <label>{{ form_widget(team) }} {{ team.vars.label }}</label>
-                </div>
+                {{ form_widget(team) }}
                 {# Mirror the teams page order: the automatically-managed all-members team sits right
                    after Owners. It is shown checked and disabled rather than as a real choice, since
                    every invitee joins it on acceptance. #}
                 {% if team.vars.value == organization.ownersTeamId.toRfc4122() %}
-                    <div class="checkbox disabled">
-                        <label><input type="checkbox" checked disabled> {{ allMembersTeamName }} <i class="glyphicon glyphicon-info-sign text-muted" data-toggle="tooltip" data-placement="top" data-container="body" title="Every member is added to this team automatically."></i></label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" checked disabled>
+                        <label class="form-check-label">{{ allMembersTeamName }} <i class="bi bi-info-circle-fill text-muted" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-container="body" title="Every member is added to this team automatically."></i></label>
                     </div>
                 {% endif %}
             {% endfor %}
             {{ form_help(form.teamIds) }}
         </div>
         <input class="btn btn-success" type="submit" value="Send invitation" />
-        <a class="btn btn-default" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
+        <a class="btn btn-secondary" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
     {{ form_end(form) }}
 {% endblock %}
