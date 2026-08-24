@@ -6,7 +6,7 @@
 {%- endblock textarea_widget %}
 
 {% block form_widget_simple -%}
-    {% if type is not defined or type not in ['file', 'hidden'] %}
+    {% if type is not defined or type not in ['file', 'hidden', 'checkbox', 'radio'] %}
         {%- set attr = attr|merge({class: (attr.class|default('') ~ ' form-control')|trim}) -%}
     {% endif %}
     {%- set type = type|default('text') -%}

@@ -34,6 +34,12 @@ enum OrganizationActions: string
     case ViewMembers = 'view-members';
     case RemoveMember = 'remove-member';
 
+    // Invitations, owner-only. Accepting and declining are invitee actions, not governed by this voter.
+    case ViewInvitations = 'view-invitations';
+    case InviteMember = 'invite-member';
+    case ResendInvitation = 'resend-invitation';
+    case RevokeInvitation = 'revoke-invitation';
+
     case View = 'view';
 
     // Any org member may leave on their own.

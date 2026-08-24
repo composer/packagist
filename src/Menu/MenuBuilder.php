@@ -156,6 +156,9 @@ class MenuBuilder
                     ['route' => 'organization_members', 'parameters' => ['organization' => $slug]],
                     ['route' => 'organization_member_remove', 'parameters' => ['organization' => $slug]],
                     ['route' => 'organization_member_leave', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_invitation_create', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_invitation_resend', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_invitation_revoke', 'parameters' => ['organization' => $slug]],
                 ],
             ],
         ]);
