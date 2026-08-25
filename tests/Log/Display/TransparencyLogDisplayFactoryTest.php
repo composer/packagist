@@ -79,7 +79,7 @@ class TransparencyLogDisplayFactoryTest extends TestCase
             $type,
             1,
             self::ATTRIBUTES,
-            null,
+            1,
             'acme',
         );
     }

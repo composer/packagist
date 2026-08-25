@@ -61,7 +61,7 @@ These steps are provided for development purposes only.
 
 7. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.
 
-8. Run a CRON job `bin/console packagist:project-transparency-log` to project audit log entries into the public package transparency log. See [Transparency log backfill](#transparency-log-backfill) before enabling this on an existing database.
+8. Run a CRON job `bin/console packagist:project-transparency-log` (e.g. every minute) to project audit log entries into the public package transparency log. See [Transparency log backfill](#transparency-log-backfill) before enabling this on an existing database.
 
 9. Run `npm run build` or `npm run dev` to build (or build&watch) css/js files. When using Docker run `docker compose run node npm run dev` to watch css/js files.
 
@@ -69,21 +69,29 @@ You should now be able to access the site, create a user, etc.
 
 ### Transparency log backfill
 
-`package_transparency_log` is projected from `audit_log` by `packagist:project-transparency-log`. On a
-database that already has audit history, run the one-off backfill **before** enabling the cron:
+`package_transparency_log` is projected from `audit_log` by `packagist:project-transparency-log`, which
+only publishes what is in the `package_transparency_log_queue` outbox. A queue row is written at the
+same time as the audit record itself, so nothing that predates the queue is ever published on its own
+and the cron is safe to enable on a database with existing audit history.
+
+To backfill the transparency log, use the following commands. On a database that already has audit history, run:
 
 ```bash
-bin/console packagist:project-transparency-log --skip-account-events
+bin/console packagist:seed-transparency-log-queue --dry-run
+bin/console packagist:seed-transparency-log-queue
 ```
 
-Repeat until it reports nothing new, then enable the cron without the flag.
+Then drain it with `bin/console packagist:project-transparency-log` before enabling the cron.
 
-The order matters. Package, version and ownership events carry their own package, so they backfill
-correctly. Account events (2FA, password, email, GitHub link) carry no package and fan out to whoever
-maintains the package *at projection time*, so backfilling them would publish old events against
-today's maintainer set. `--skip-account-events` leaves them behind the projection cursor, which only
-moves forward, so they stay unpublished. If the cron runs without the flag while history is still
-unprojected, those old account events get published and there is no way to retract them.
+The seed command only ever enqueues package, version and ownership events, which carry their own
+package and so backfill exactly as they happened. Account events (2FA, password, email, GitHub link)
+carry no package and fan out to whoever maintains the package *at projection time*, so backfilling
+them would publish old events against today's maintainer set, and a published entry cannot be
+retracted.
+
+Seeding is safe to re-run: it skips anything that already has a `package_transparency_log` entry or a
+queue row. Seeded records are appended at the end of `package_transparency_log`, since an append-only
+log cannot take insertions, so they appear as recent entries carrying old timestamps.
 
 ### Fixtures
 

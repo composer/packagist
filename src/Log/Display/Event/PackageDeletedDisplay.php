@@ -25,7 +25,7 @@ readonly class PackageDeletedDisplay extends AbstractLogDisplay
         public ?string $repository,
         public ?string $reason,
         ActorDisplay $actor,
-        // audit-log only: the public log's rows are scrubbed of both at projection time
+        // audit_log only: package_transparency_log rows are scrubbed of both at projection time
         ?string $ip = null,
         public ?string $internalReason = null,
     ) {
