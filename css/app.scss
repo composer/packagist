@@ -32,6 +32,10 @@
     --color-muted: #999;
     --color-text-dark: #333;
 
+    // Bootstrap's "primary" is blue by default; the brand's primary accent is orange.
+    --bs-primary: var(--color-brand-orange);
+    --bs-primary-rgb: 242, 141, 26;
+
     --heading-margin-top-lg: 20px;
     --heading-margin-top-sm: 10px;
     --heading-margin-bottom: 10px;
@@ -628,26 +632,19 @@ strong {
 .search-facets-clear-all .ais-ClearRefinements-button--disabled {
     display: none;
 }
-.search-facets-active-filters .active-filter-item {
-    display: block;
-    font-size: 13px;
-    line-height: 1.8;
-    color: #c56024;
+.search-facets-active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
-.search-facets-active-filters .active-filter-label {
-    color: var(--color-text-dark);
+.search-facets-active-filters .active-filter-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: normal;
 }
 .search-facets-active-filters .active-filter-remove {
-    background: none;
-    border: none;
-    color: var(--color-muted);
-    cursor: pointer;
-    padding: 0 3px;
-    font-size: 13px;
-    line-height: 1;
-}
-.search-facets-active-filters .active-filter-remove:hover {
-    color: var(--color-danger-dark);
+    padding: 0;
 }
 .search-facets .ais-Menu-item--selected {
     font-weight: bold;
@@ -707,30 +704,28 @@ strong {
 }
 
 .search-facets .ais-RefinementList-searchBox .ais-SearchBox-form {
+    margin-bottom: 8px;
+}
+.search-facets-searchbox-btn {
     display: flex;
-    flex: 1;
-    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius-sm);
+    background: #fff;
+    color: var(--color-muted);
 }
-.search-facets .ais-RefinementList-searchBox .ais-SearchBox-form input {
-    height: 22px;
-    border: 1px solid var(--color-brand-orange);
-    border-radius: 3px;
-    margin-right: 6px;
-    padding-left: 4px;
-    margin-bottom: 5px;
+.search-facets-searchbox-btn:hover {
+    background: #f8f9fa;
 }
-.search-facets .ais-RefinementList-searchBox .ais-SearchBox-form button {
-    width: 22px;
-    height: 22px;
-    display: inline-block;
-    overflow: hidden;
-    padding: 2px 5px 1px;
-    background: none;
-    border: 0;
+.search-facets .ais-RefinementList-searchBox .ais-SearchBox-reset[hidden],
+.search-facets .ais-RefinementList-searchBox .ais-SearchBox-loadingIndicator[hidden] {
+    display: none;
 }
-.search-facets .ais-RefinementList-searchBox .ais-SearchBox-form svg {
-    width: 100% !important;
-    height: 100% !important;
+.search-facets .ais-RefinementList-searchBox .ais-SearchBox-submitIcon,
+.search-facets .ais-RefinementList-searchBox .ais-SearchBox-resetIcon {
+    fill: currentColor;
 }
 
 .wrapper-footer {
@@ -842,8 +837,14 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     border-right: 0;
 }
 
-.input-group .form-control {
+.input-group .form-control:not(:first-child) {
     border-left: 0;
+}
+
+.input-group-sm > .form-control:first-child:focus {
+    padding: 3px 7px;
+    border-width: 2px;
+    border-radius: var(--bs-border-radius-sm) 0 0 var(--bs-border-radius-sm);
 }
 
 .input-group .form-control:focus {
@@ -1608,41 +1609,19 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     width: 77px;
 }
 
-#pagination-container {
-    text-align: center;
-    margin-bottom: 32px;
-}
-
 .pagination {
-    margin: 6px 0;
-}
-
-.pagination ul {
-    list-style: none;
-    margin: 0;
-    padding-left: 0;
-}
-
-.pagination ul > li {
-    float: left;
-    line-height: 40px;
-    padding: 0;
-}
-
-.pagination ul > li > a, .pagination ul > li > span {
-    font-size: 14px;
+    --bs-pagination-color: var(--color-text-dark);
+    --bs-pagination-hover-color: var(--color-brand-dark);
+    --bs-pagination-focus-color: var(--color-brand-dark);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.25rem rgba(242, 141, 26, 0.25);
+    --bs-pagination-active-color: #fff;
+    --bs-pagination-active-bg: var(--color-brand-orange);
+    --bs-pagination-active-border-color: var(--color-brand-orange);
     font-weight: 600;
-    height: 40px;
-    text-align: center;
-    text-decoration: none;
-    padding: 0 10px;
-    display: inline-block;
 }
-.pagination ul > li > a:hover, .pagination .ais-Pagination-item--selected {
-    background: #F2F2F2;
-}
-.pagination .ais-Pagination-item--selected a {
-    color: #000 !important;
+
+#pagination-container {
+    margin-bottom: 32px;
 }
 
 .legend {

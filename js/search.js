@@ -206,10 +206,9 @@ var customCurrentRefinements = connectCurrentRefinements(function (renderOptions
     items.forEach(function (item) {
         var label = item.attribute === 'tags' ? 'tag' : item.attribute;
         item.refinements.forEach(function (refinement) {
-            html += '<span class="active-filter-item">'
-                + '<span class="active-filter-label">' + label + ':</span> '
-                + '<span class="active-filter-value">' + refinement.label + '</span>'
-                + '<button class="active-filter-remove" data-attribute="' + item.attribute + '" data-value="' + refinement.label + '">&times;</button>'
+            html += '<span class="badge bg-primary active-filter-item">'
+                + label + ': ' + refinement.label
+                + '<button type="button" class="btn-close btn-close-white active-filter-remove" aria-label="Remove filter" data-attribute="' + item.attribute + '" data-value="' + refinement.label + '"></button>'
                 + '</span>';
         });
     });
@@ -314,11 +313,18 @@ search.addWidgets([
     }),
 
     pagination({
-        container: '.pagination',
+        container: '.pagination-mount',
         totalPages: 20,
         scrollTo: '#search_query_query',
         showFirst: false,
         showLast: false,
+        cssClasses: {
+            list: 'pagination justify-content-center',
+            item: 'page-item',
+            link: 'page-link',
+            selectedItem: 'active',
+            disabledItem: 'disabled',
+        },
     }),
 
     clearRefinements({
@@ -342,6 +348,13 @@ search.addWidgets([
         limit: 15,
         showMore: true,
         searchable: true,
+        cssClasses: {
+            checkbox: 'form-check-input',
+            searchableForm: 'input-group input-group-sm',
+            searchableInput: 'form-control',
+            searchableSubmit: 'search-facets-searchbox-btn',
+            searchableReset: 'search-facets-searchbox-btn',
+        },
     }),
 ]);
 
