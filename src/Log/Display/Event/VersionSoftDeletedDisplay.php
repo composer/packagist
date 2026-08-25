@@ -26,7 +26,7 @@ readonly class VersionSoftDeletedDisplay extends AbstractLogDisplay
         public string $reason,
         public ?string $reasonText,
         ActorDisplay $actor,
-        // audit-log only: the public log's rows are scrubbed of both at projection time
+        // audit_log only: package_transparency_log rows are scrubbed of both at projection time
         ?string $ip = null,
         public ?string $internalReasonText = null,
     ) {

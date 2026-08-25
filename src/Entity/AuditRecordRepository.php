@@ -30,6 +30,7 @@ class AuditRecordRepository extends ServiceEntityRepository
     public function __construct(
         ManagerRegistry $registry,
         private readonly AuditRecordsManager $auditRecordsManager,
+        private readonly PackageTransparencyLogQueueRepository $transparencyLogQueue,
     ) {
         parent::__construct($registry, AuditRecord::class);
     }
@@ -131,11 +132,35 @@ class AuditRecordRepository extends ServiceEntityRepository
 
     /**
      * Performs a direct insert not requiring usage of the ORM so it can be used within ORM lifecycle listeners
+     *
+     * The transparency-log queue row is this record's outbox entry: it has to commit together with
+     * the audit_log row, or the record exists and can never be projected. Callers inside an ORM
+     * flush are already in a transaction (DBAL turns this one into a savepoint), but some, like
+     * {@see \App\Security\TwoFactorAuthManager}, call this in autocommit, so own the transaction here.
      */
     public function insert(AuditRecord $record): void
     {
         $this->auditRecordsManager->enrichWithClientIP($record);
 
+        $connection = $this->getEntityManager()->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $this->insertRecord($record);
+            $this->indexSearchTerms($record);
+            $this->transparencyLogQueue->enqueue($record);
+            $connection->commit();
+        } catch (\Throwable $e) {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+    private function insertRecord(AuditRecord $record): void
+    {
         $this->getEntityManager()->getConnection()->insert('audit_log', [
             'id' => $record->id,
             'datetime' => $record->datetime,
@@ -153,8 +178,6 @@ class AuditRecordRepository extends ServiceEntityRepository
             'attributes' => Types::JSON,
             'organizationId' => UlidType::NAME,
         ]);
-
-        $this->indexSearchTerms($record);
     }
 
     /**
