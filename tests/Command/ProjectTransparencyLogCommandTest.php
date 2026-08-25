@@ -47,7 +47,8 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         self::assertSame(1, (int) $rows[1]['leafIndex']);
         self::assertSame('package_created', $rows[0]['type']);
         self::assertSame('package_created', $rows[1]['type']);
-        // leaf order follows ULID (chronological) order: the first-created package is leaf 0
+        // Leaf order is publication order, which for records that commit in construction order is
+        // also chronological: the first-created package is leaf 0.
         self::assertSame($firstId, (int) $rows[0]['packageId']);
     }
 
@@ -63,13 +64,15 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         // Default (5-minute) window: the just-created record is too fresh, nothing is projected.
         $this->runProjector();
         self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'));
+        // Held back, not dropped: it is still queued, so the lag can never lose anything.
+        self::assertSame(1, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
 
         // With no lag it is old enough and gets projected.
         $this->runProjector('0');
         self::assertSame(1, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'));
     }
 
-    public function testReRunIsIdempotentAndKeepsCursor(): void
+    public function testReRunIsIdempotentAndDrainsTheQueue(): void
     {
         $em = $this->getEM();
         $conn = self::getService(Connection::class);
@@ -83,6 +86,7 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
 
         self::assertSame(1, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'));
         self::assertSame(0, (int) $conn->fetchOne('SELECT MAX(leafIndex) FROM package_transparency_log'));
+        self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
     }
 
     public function testProjectedAttributesAreScrubbed(): void
@@ -219,91 +223,17 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         $this->runProjector('0');
 
         self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
+        // Nothing to publish is a final answer, not a pending one: it must not stay queued and be
+        // reconsidered later against a maintainer set the user has since acquired.
+        self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
     }
 
-    public function testSkipAccountEventsProjectsPackageNativeEventsOnly(): void
-    {
-        $em = $this->getEM();
-        $conn = self::getService(Connection::class);
-
-        $user = self::createUser('backfill', 'backfill@example.org');
-        $em->persist($user);
-        $em->flush();
-
-        $pkg = self::createPackage('acme/backfill', 'https://github.com/acme/backfill', null, [$user]);
-        $em->persist($pkg);
-        $em->flush();
-
-        $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
-
-        $this->runProjector('0', skipAccountEvents: true);
-
-        self::assertSame(1, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'package_created'"));
-        self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
-    }
-
-    public function testAccountEventsBelowTheCursorStaySkippedOnLaterRuns(): void
-    {
-        $em = $this->getEM();
-        $conn = self::getService(Connection::class);
-
-        $user = self::createUser('below', 'below@example.org');
-        $em->persist($user);
-        $em->flush();
-
-        // The account event comes first, so the later package_created row carries a higher ULID and
-        // drags the cursor past it.
-        $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
-
-        $pkg = self::createPackage('acme/below', 'https://github.com/acme/below', null, [$user]);
-        $em->persist($pkg);
-        $em->flush();
-
-        $this->runProjector('0', skipAccountEvents: true);
-        // A normal run afterwards must not resurrect it: the cursor is already past it.
-        $this->runProjector('0');
-
-        self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
-    }
-
-    /**
-     * The flipside of the cursor rule, and the reason the cron must only be enabled once the backfill
-     * has caught up: an account event above the last projected row is still eligible afterwards.
-     */
-    public function testAccountEventsAboveTheCursorAreStillProjectedOnLaterRuns(): void
-    {
-        $em = $this->getEM();
-        $conn = self::getService(Connection::class);
-
-        $user = self::createUser('above', 'above@example.org');
-        $em->persist($user);
-        $em->flush();
-
-        $pkg = self::createPackage('acme/above', 'https://github.com/acme/above', null, [$user]);
-        $em->persist($pkg);
-        $em->flush();
-
-        // Inserted after the package, so its ULID is above the cursor the backfill leaves behind.
-        $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
-
-        $this->runProjector('0', skipAccountEvents: true);
-        self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
-
-        $this->runProjector('0');
-        self::assertSame(1, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
-    }
-
-    private function runProjector(?string $minAge = null, bool $skipAccountEvents = false): CommandTester
+    private function runProjector(?string $minAge = null): CommandTester
     {
         $command = self::getService(ProjectTransparencyLogCommand::class);
         $tester = new CommandTester($command);
 
-        $input = $minAge !== null ? ['--min-event-age-to-project' => $minAge] : [];
-        if ($skipAccountEvents) {
-            $input['--skip-account-events'] = true;
-        }
-
-        $tester->execute($input);
+        $tester->execute($minAge !== null ? ['--min-event-age-to-project' => $minAge] : []);
         $tester->assertCommandIsSuccessful();
 
         return $tester;

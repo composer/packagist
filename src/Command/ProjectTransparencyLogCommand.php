@@ -27,6 +27,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * The command owns the run-orchestration concerns (option parsing, an advisory lock so two runs never
  * overlap, graceful shutdown, progress output); the projection logic itself lives in the service.
+ *
+ * Only queued records are projected, so this never projects history on its own. Use
+ * {@see SeedTransparencyLogQueueCommand} to backfill.
  */
 class ProjectTransparencyLogCommand extends Command
 {
@@ -49,14 +52,8 @@ class ProjectTransparencyLogCommand extends Command
                 'min-event-age-to-project',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Safety-lag window in seconds: only project audit records older than this many seconds. Must exceed the longest audit_log-writing transaction.',
+                'Only project audit records older than this many seconds. The delay lets records committed out of order arrive before their neighbours are projected. Setting it too low will not skip any records when projecting. The records committed later to audit_log are still projected, just at the end of the transparency log.',
                 (string) self::DEFAULT_MIN_AGE_SECONDS,
-            )
-            ->addOption(
-                'skip-account-events',
-                null,
-                InputOption::VALUE_NONE,
-                'Project package-native events only. Use this for the one-off historical backfill: account events fan out to the maintainers of today, which is the wrong set for an old event.',
             )
         ;
     }
@@ -79,11 +76,6 @@ class ProjectTransparencyLogCommand extends Command
             return Command::SUCCESS;
         }
 
-        $includeAccountEvents = !$input->getOption('skip-account-events');
-        if (!$includeAccountEvents) {
-            $output->writeln('Projecting package-native events only, account events are skipped and stay skipped');
-        }
-
         $signal = SignalHandler::create(null, $this->logger);
 
         try {
@@ -93,7 +85,6 @@ class ProjectTransparencyLogCommand extends Command
                 static function (int $projected, int $leafIndex) use ($output): void {
                     $output->writeln(\sprintf('%d projected (up to leaf index %d)', $projected, $leafIndex));
                 },
-                $includeAccountEvents,
             );
 
             $output->writeln('Done');

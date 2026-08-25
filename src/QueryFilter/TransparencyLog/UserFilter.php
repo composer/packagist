@@ -17,8 +17,9 @@ use Doctrine\ORM\QueryBuilder;
 
 /**
  * Restricts to entries about one user, matched on the canonical (lowercased) username so the lookup is
- * case-insensitive. Only the subject of the event is matched, not the actor: on the public log the two
- * are the same for account events, and package events are attributed by package rather than by actor.
+ * case-insensitive. Only the subject of the event is matched, not the actor: in the transparency log
+ * the two are the same for account events, and package events are attributed by package rather
+ * than by actor.
  */
 class UserFilter extends AbstractTextFilter
 {

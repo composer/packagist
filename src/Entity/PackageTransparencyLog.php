@@ -21,8 +21,9 @@ use Symfony\Component\Uid\Ulid;
  * A public, per-package, append-only transparency-log entry projected asynchronously from a package
  * relevant {@see AuditRecord} row (see ProjectTransparencyLogCommand).
  *
- * Rows are appended in source-ULID (chronological) order behind a safety-lag window, so
- * {@see self::$leafIndex} is a gapless sequence in event order.
+ * {@see self::$leafIndex} numbers the rows in the order the projector inserted them, which is not always
+ * chronological: a source row committed after newer ones were already projected is appended at the
+ * end, and therefore carries a $datetime older than the leaf before it. leafIndex must stay append-only and immutable
  */
 #[ORM\Entity(repositoryClass: PackageTransparencyLogRepository::class)]
 #[ORM\Table(name: 'package_transparency_log')]
@@ -44,15 +45,17 @@ class PackageTransparencyLog
 
     private function __construct(
         /**
-         * The `audit_log.id` this entry was projected from. Drives the projection cursor
-         * (MAX(sourceAuditLogId)) and, together with packageId, the idempotency (dedupe) key: one
-         * source event fans out to at most one row per package.
+         * The `audit_log.id` this entry was projected from. Together with packageId it is the
+         * idempotency (dedupe) key: one source event fans out to at most one row per package. Its
+         * MAX() is also the projector's late-arrival high-water mark, which is used only for logging
+         * ({@see PackageTransparencyLogRepository::getHighestProjectedSourceId()}).
          */
         #[ORM\Column(type: 'ulid')]
         public readonly Ulid $sourceAuditLogId,
 
         /**
-         * Gapless append-only position in the log, assigned in source-ULID order.
+         * Gapless append-only position in package_transparency_log, assigned in the order the
+         * projector inserts entries, which is source-ULID order except for late-committing rows.
          */
         #[ORM\Column(options: ['unsigned' => true])]
         public readonly int $leafIndex,
@@ -71,12 +74,20 @@ class PackageTransparencyLog
         #[ORM\Column]
         public readonly \DateTimeImmutable $datetime,
 
+        /**
+         * Every entry belongs to exactly one package: package-native events carry their own
+         * packageId and account events fan out to ids read from the database. NOT NULL is load
+         * bearing, because MySQL treats NULLs as distinct, so (sourceAuditLogId, NULL) would not
+         * collide in source_package_uniq and a retried projection could append a second,
+         * permanently immutable leaf for the same event.
+         */
+        #[ORM\Column]
+        public readonly int $packageId,
+
         #[ORM\Column(nullable: true)]
         public readonly ?int $actorId = null,
         #[ORM\Column(nullable: true)]
         public readonly ?string $vendor = null,
-        #[ORM\Column(nullable: true)]
-        public readonly ?int $packageId = null,
         #[ORM\Column(nullable: true)]
         public readonly ?int $userId = null,
         #[ORM\Column(type: 'ulid', nullable: true)]
@@ -98,7 +109,7 @@ class PackageTransparencyLog
      *
      * @param array<string, mixed> $scrubbedAttributes
      */
-    public static function project(AuditRecord $source, TransparencyLogType $type, int $leafIndex, array $scrubbedAttributes, ?int $packageId, ?string $vendor): self
+    public static function project(AuditRecord $source, TransparencyLogType $type, int $leafIndex, array $scrubbedAttributes, int $packageId, ?string $vendor): self
     {
         return new self(
             sourceAuditLogId: $source->id,

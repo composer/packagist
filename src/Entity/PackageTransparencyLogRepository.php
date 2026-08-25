@@ -30,11 +30,13 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * The projection cursor: the largest source audit_log id already projected, or null if the log is
-     * empty. The next run resumes after it (WHERE id > cursor). ULIDs sort chronologically, so MAX()
-     * is the last-projected event.
+     * The largest audit_log id ever projected, or null if package_transparency_log is empty.
+     *
+     * This is for logging purposes only: the queue decides what gets projected, so this must never be used to filter.
+     * {@see \App\Service\TransparencyLogProjector} compares each record against it to detect a late
+     * arrival, a source row committed after a newer event had already been projected.
      */
-    public function getProjectionCursor(): ?Ulid
+    public function getHighestProjectedSourceId(): ?Ulid
     {
         $max = $this->getEntityManager()->getConnection()
             ->fetchOne('SELECT MAX(sourceAuditLogId) FROM package_transparency_log');
@@ -47,7 +49,8 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * The highest leaf index currently in the log, or -1 when empty (so the next leaf is index 0).
+     * The highest leafIndex currently in package_transparency_log, or -1 when it is empty (so the
+     * next leaf is index 0).
      */
     public function getMaxLeafIndex(): int
     {
@@ -98,7 +101,9 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * All entries, newest first (leaf index is chronological), for the public read view.
+     * All entries, most recently inserted first, for the public read view. Leaf index is insertion
+     * order rather than chronology, so an audit_log row committed late appears at the top of the page
+     * carrying a datetime older than the entries below it; the datetime filters still use event time.
      * {@see TransparencyLogType::temporarilyHiddenTypes()} are projected but not shown, unless
      * $includeHiddenTypes is set (auditors see everything).
      */
