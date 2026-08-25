@@ -845,7 +845,6 @@ class PackageController extends Controller
         }
 
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         return new JsonResponse(['softDeleted' => $softDeleted, 'deletionTitle' => $deletionTitle]);
     }
@@ -871,7 +870,6 @@ class PackageController extends Controller
 
         $repo->softDelete($version, VersionDeletionReason::DeletedByAdmin, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         // deletionTitle becomes a public tooltip, so it only carries the public reason.
         $deletionTitle = 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
@@ -910,10 +908,8 @@ class PackageController extends Controller
         $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
 
-        // Read before clear(), and from the entity so the date matches what a page reload renders —
-        // softDelete() keeps the original removal time when the version was already soft-deleted.
+        // Read off the entity so the ajax tooltip matches what a page reload renders.
         $deletionTitle = $version->getDeletionTitle();
-        $this->getEM()->clear();
 
         return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'glyphicon-eye-close']);
     }
@@ -944,7 +940,6 @@ class PackageController extends Controller
 
         $repo->recover($version, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         return new Response('', 204);
     }

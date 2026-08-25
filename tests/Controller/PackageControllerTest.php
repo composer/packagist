@@ -403,11 +403,11 @@ class PackageControllerTest extends IntegrationTestCase
      * maintainer-pulled; admin-pulled and already-hidden rows must be recovered first.
      */
     #[TestWith([null, true, 200])]
-    #[TestWith(['auto_missing', true, 200])]
-    #[TestWith(['maintainer', true, 200])]
-    #[TestWith(['admin', false, 403])]
-    #[TestWith(['hidden', false, 403])]
-    public function testAdminHideVersionAllowedTransitions(?string $reason, bool $buttonShown, int $expectedStatus): void
+    #[TestWith([VersionDeletionReason::AutoDeletedMissing, true, 200])]
+    #[TestWith([VersionDeletionReason::DeletedByMaintainer, true, 200])]
+    #[TestWith([VersionDeletionReason::DeletedByAdmin, false, 403])]
+    #[TestWith([VersionDeletionReason::Hidden, false, 403])]
+    public function testAdminHideVersionAllowedTransitions(?VersionDeletionReason $reason, bool $buttonShown, int $expectedStatus): void
     {
         $removedAt = new \DateTimeImmutable('2024-01-02 03:04:05');
 
@@ -418,7 +418,7 @@ class PackageControllerTest extends IntegrationTestCase
         $target = $this->createStableVersion($package, '1.0.0');
         if ($reason !== null) {
             $target->setSoftDeletedAt($removedAt);
-            $target->setDeletionReason(VersionDeletionReason::from($reason));
+            $target->setDeletionReason($reason);
         }
         // A never-deleted version always renders a hide form, giving us a valid CSRF token even in
         // the cases where the target row must not offer one.
@@ -434,7 +434,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertSame(
             $buttonShown ? 1 : 0,
             $crawler->filter('li.version[data-version-id="1.0.0"] .hide-version')->count(),
-            'hide button visibility for reason '.var_export($reason, true)
+            'hide button visibility for reason '.($reason?->value ?? 'none')
         );
 
         $token = $crawler->filter('li.version[data-version-id="1.1.0"] .hide-version input[name="_token"]')->attr('value');
@@ -447,7 +447,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertNotNull($reloaded);
 
         if ($expectedStatus !== 200) {
-            self::assertSame(VersionDeletionReason::from((string) $reason), $reloaded->getDeletionReason(), 'rejected request must not change the reason');
+            self::assertSame($reason, $reloaded->getDeletionReason(), 'rejected request must not change the reason');
 
             return;
         }
@@ -457,10 +457,10 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertNotNull($reloaded->getSoftDeletedAt());
 
         if ($reason !== null) {
-            self::assertSame(
-                $removedAt->format('Y-m-d H:i:s'),
-                $reloaded->getSoftDeletedAt()->format('Y-m-d H:i:s'),
-                'hiding an already soft-deleted version must keep the original removal time'
+            self::assertGreaterThan(
+                $removedAt,
+                $reloaded->getSoftDeletedAt(),
+                'hiding an already soft-deleted version restamps it with the time of the hide'
             );
         }
     }

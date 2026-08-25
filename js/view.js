@@ -239,6 +239,18 @@ const init = function ($) {
         return $(form).closest('.version').find('.version-number').text().trim();
     }
 
+    // Point a deletion tooltip at a new title, creating it when the row was not soft-deleted before.
+    // fixTitle re-reads the native title into data-original-title and blanks it, so the browser
+    // tooltip does not render on top of the Bootstrap one.
+    function setDeletionTooltip($el, title) {
+        $el.attr('title', title);
+        if ($el.data('bs.tooltip')) {
+            $el.tooltip('fixTitle');
+        } else {
+            $el.tooltip({placement: 'top', container: 'body'});
+        }
+    }
+
     function applyVersionDeleteResponse(form, data, deletedToast, softDeletedToast) {
         var row = $(form).closest('.version');
         if (data && data.softDeleted) {
@@ -248,13 +260,15 @@ const init = function ($) {
             // and refresh it rather than leaving the previous icon and title in place.
             var alert = row.find('.deletion-alert');
             if (!alert.length) {
-                alert = $('<span class="action-alert deletion-alert"><i class="glyphicon"></i></span>');
+                alert = $('<span class="action-alert deletion-alert" data-toggle="tooltip" data-placement="top" data-container="body"><i class="glyphicon"></i></span>');
                 alert.insertBefore(row.find('form').first());
             }
             alert.find('i').attr('class', 'glyphicon ' + (data.deletionIcon || 'glyphicon-trash'));
+            // The version number carries the same title, and has no tooltip at all until the row is
+            // soft-deleted, so it needs the same treatment as the badge.
             var title = data.deletionTitle || 'Deleted';
-            // server-rendered badges have an initialised BS3 tooltip, which reads data-original-title
-            alert.attr('title', title).attr('data-original-title', title);
+            setDeletionTooltip(alert, title);
+            setDeletionTooltip(row.find('.version-number a'), title);
             row.find('.delete-version, .hide-version').remove();
         } else {
             notifier.log(deletedToast, {timeout: 3000});
