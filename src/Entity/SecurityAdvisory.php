@@ -192,7 +192,7 @@ class SecurityAdvisory
     public function calculateDifferenceScore(RemoteSecurityAdvisory $advisory): int
     {
         // Regard advisories where CVE + package name match as identical as the remaining data on GitHub and FriendsOfPhp can be quite different
-        if ($advisory->cve === $this->getCve() && $advisory->packageName === $this->getPackageName()) {
+        if ($advisory->cve !== null && $advisory->cve === $this->getCve() && $advisory->packageName === $this->getPackageName()) {
             return 0;
         }
 

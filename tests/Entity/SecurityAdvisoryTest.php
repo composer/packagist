@@ -21,6 +21,19 @@ use PHPUnit\Framework\TestCase;
 
 class SecurityAdvisoryTest extends TestCase
 {
+    private const NULL_CVE_INITIAL_TITLE = 'Remote Code Execution';
+    private const NULL_CVE_UPDATED_TITLE = 'Cross-Site Request Forgery';
+    private const NULL_CVE_INITIAL_LINK = 'https://example.org/advisory/one';
+    private const NULL_CVE_UPDATED_LINK = 'https://example.org/advisory/two';
+    private const NULL_CVE_BRANCH = '1.x';
+    private const NULL_CVE_PUBLISHED_AT = 1494806400;
+    private const NULL_CVE_INITIAL_VERSIONS = ['<1.2'];
+    private const NULL_CVE_UPDATED_VERSIONS = ['>=2.0', '<2.1'];
+    private const NULL_CVE_REFERENCE = 'composer://acme/security-package';
+    private const NULL_CVE_INITIAL_FILENAME = 'acme/security-package/2017-05-15.yaml';
+    private const NULL_CVE_UPDATED_FILENAME = 'acme/security-package/2026-08-25.yaml';
+    private const ADVISORY_MATCH_THRESHOLD = 3;
+
     public function testCalculateDifferenceScore(): void
     {
         $data = [
@@ -42,6 +55,34 @@ class SecurityAdvisoryTest extends TestCase
         $advisory = new SecurityAdvisory($remoteAdvisory, 'source');
 
         $this->assertSame(0, $advisory->calculateDifferenceScore($updatedAdvisory));
+    }
+
+    public function testCalculateDifferenceScoreDoesNotMatchNullCves(): void
+    {
+        $data = [
+            'title' => self::NULL_CVE_INITIAL_TITLE,
+            'link' => self::NULL_CVE_INITIAL_LINK,
+            'cve' => null,
+            'branches' => [
+                self::NULL_CVE_BRANCH => [
+                    'time' => self::NULL_CVE_PUBLISHED_AT,
+                    'versions' => self::NULL_CVE_INITIAL_VERSIONS,
+                ],
+            ],
+            'reference' => self::NULL_CVE_REFERENCE,
+        ];
+
+        $advisory = new SecurityAdvisory(
+            RemoteSecurityAdvisory::createFromFriendsOfPhp(self::NULL_CVE_INITIAL_FILENAME, $data),
+            FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME,
+        );
+
+        $data['title'] = self::NULL_CVE_UPDATED_TITLE;
+        $data['link'] = self::NULL_CVE_UPDATED_LINK;
+        $data['branches'][self::NULL_CVE_BRANCH]['versions'] = self::NULL_CVE_UPDATED_VERSIONS;
+        $otherAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp(self::NULL_CVE_UPDATED_FILENAME, $data);
+
+        $this->assertGreaterThan(self::ADVISORY_MATCH_THRESHOLD, $advisory->calculateDifferenceScore($otherAdvisory));
     }
 
     public function testCalculateDifferenceScoreChangeNameAndCVE(): void
