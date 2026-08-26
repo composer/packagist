@@ -54,6 +54,12 @@ class SecurityAdvisoryAuditListener
 
     public function preUpdate(SecurityAdvisory $advisory, PreUpdateEventArgs $event): void
     {
+        if ($event->hasChangedField('withdrawnAt') && null !== $event->getNewValue('withdrawnAt')) {
+            $this->buffered[] = AuditRecord::securityAdvisoryWithdrawn($advisory, $this->getUser(), $this->getPackageId($advisory));
+
+            return;
+        }
+
         $this->buffered[] = AuditRecord::securityAdvisoryEdited($advisory, $this->getUser(), $event->getEntityChangeSet(), $this->getPackageId($advisory));
     }
 

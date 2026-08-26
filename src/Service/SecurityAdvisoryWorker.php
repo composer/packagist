@@ -73,33 +73,12 @@ class SecurityAdvisoryWorker
         /** @var SecurityAdvisory[] $existingAdvisories */
         $existingAdvisories = $this->doctrine->getRepository(SecurityAdvisory::class)->getPackageAdvisoriesWithSources($packageNames, $sourceName);
 
-        // Remove advisories withdrawn at the source first and flush them on their own, before
-        // resolve() mutates any remaining advisory. Doctrine commits inserts/updates before deletes
-        // within a single flush, so deleting here frees any (packageName, cve) unique key that a
-        // replacement advisory may reuse in the same run, avoiding a constraint violation.
-        [$existingAdvisories, $withdrawn] = $this->securityAdvisoryResolver->removeWithdrawn($existingAdvisories, $remoteAdvisories, $sourceName);
-        if (\count($withdrawn) > 0) {
-            $manager = $this->doctrine->getManager();
-            foreach ($withdrawn as $advisory) {
-                // Remove the loaded source rows explicitly: the association only cascades persist, so
-                // otherwise they would dangle in the UnitOfWork and trip the later flush once their
-                // advisory is gone.
-                foreach ($advisory->getSources() as $source) {
-                    $manager->remove($source);
-                }
-                $manager->remove($advisory);
-            }
-            $manager->flush();
-        }
+        [$existingAdvisories] = $this->securityAdvisoryResolver->removeWithdrawn($existingAdvisories, $remoteAdvisories, $sourceName);
 
-        [$new, $removed] = $this->securityAdvisoryResolver->resolve($existingAdvisories, $remoteAdvisories, $sourceName);
+        [$new] = $this->securityAdvisoryResolver->resolve($existingAdvisories, $remoteAdvisories, $sourceName);
 
         foreach ($new as $advisory) {
             $this->doctrine->getManager()->persist($advisory);
-        }
-
-        foreach ($removed as $advisory) {
-            $this->doctrine->getManager()->remove($advisory);
         }
 
         $this->doctrine->getManager()->flush();

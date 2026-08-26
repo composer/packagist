@@ -10,6 +10,7 @@
                                     <h4 class="font-bold">
                                         {% if advisory.severity %}[{{ advisory.severity.value|upper }}]{% endif %}
                                         <a href="{{ advisory.link }}">{{ advisory.title }}</a>
+                                        {% if advisory.withdrawnAt %}<span class="label label-default">Withdrawn {{ advisory.withdrawnAt|date('Y-m-d') }}</span>{% endif %}
                                     </h4>
                                     <p>
                                         <a href="{{ path('view_advisory', {id: advisory.packagistAdvisoryId}) }}">{{ advisory.packagistAdvisoryId }}</a>

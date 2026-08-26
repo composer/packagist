@@ -157,7 +157,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId, s.severity
                 FROM security_advisory s
                 INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
-                WHERE s.updatedAt >= :updatedSince '
+                WHERE s.withdrawnAt IS NULL AND s.updatedAt >= :updatedSince '
                 .($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
                 .' ORDER BY '.($filterByNames ? 's.reportedAt DESC, ' : '').'s.id DESC';
 
@@ -206,7 +206,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
         $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.affectedVersions
             FROM security_advisory s
-            WHERE s.packageName IN (:packageNames)
+            WHERE s.withdrawnAt IS NULL AND s.packageName IN (:packageNames)
             ORDER BY s.id DESC';
 
         $params['packageNames'] = $packageNames;

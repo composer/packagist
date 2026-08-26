@@ -72,9 +72,11 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
         self::assertSame('^2.0', $attributes['changes']['affectedVersions']['to']);
         self::assertArrayNotHasKey('updatedAt', $attributes['changes'], 'The bookkeeping timestamp should be excluded from the recorded changes');
 
-        // Withdrawn: deleting the advisory records a withdrawal in the transparency log.
-        $em->remove($advisory);
+        // Withdrawn
+        $advisory->withdraw();
         $em->flush();
+
+        self::assertNotNull($advisory->getWithdrawnAt());
 
         self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisoryWithdrawn));
     }

@@ -120,6 +120,43 @@ class SecurityAdvisoryTest extends TestCase
         $this->assertSame(Severity::HIGH, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getSeverity(), 'GitHub should update the source data');
     }
 
+    public function testWithdraw(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $this->assertFalse($advisory->isWithdrawn());
+        $this->assertNull($advisory->getWithdrawnAt());
+
+        $advisory->withdraw();
+
+        $this->assertTrue($advisory->isWithdrawn());
+        $this->assertNotNull($advisory->getWithdrawnAt());
+    }
+
+    public function testWithdrawIsIdempotent(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $advisory->withdraw();
+        $withdrawnAt = $advisory->getWithdrawnAt();
+
+        $advisory->withdraw();
+
+        $this->assertSame($withdrawnAt, $advisory->getWithdrawnAt());
+    }
+
+    public function testUpdateAdvisoryClearsWithdrawnAt(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->withdraw();
+        $this->assertTrue($advisory->isWithdrawn());
+
+        $advisory->updateAdvisory($this->generateGitHubAdvisory(null));
+
+        $this->assertFalse($advisory->isWithdrawn());
+        $this->assertNull($advisory->getWithdrawnAt());
+    }
+
     private function generateGitHubAdvisory(?Severity $severity): RemoteSecurityAdvisory
     {
         return new RemoteSecurityAdvisory(

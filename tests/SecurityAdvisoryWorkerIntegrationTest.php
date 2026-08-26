@@ -23,6 +23,7 @@ use App\SecurityAdvisory\SecurityAdvisorySourceInterface;
 use App\Service\Locker;
 use App\Service\SecurityAdvisoryWorker;
 use Composer\IO\ConsoleIO;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
 use Psr\Log\NullLogger;
@@ -31,18 +32,35 @@ use Seld\Signal\SignalHandler;
 class SecurityAdvisoryWorkerIntegrationTest extends IntegrationTestCase
 {
     /**
-     * Exercises the real unique constraint on (packageName, cve): a withdrawn advisory holds a CVE
-     * that the source reassigns to another advisory in the same run. The worker must delete the
-     * withdrawn advisory (and flush) before resolve() updates the survivor, otherwise Doctrine
-     * commits the UPDATE before the DELETE and the package_name_cve_idx constraint is violated.
+     * Guards the package_name_cve_idx unique index itself: two ACTIVE (withdrawnAt IS NULL)
+     * advisories must never coexist for the same (packageName, cve). This is the case a naive
+     * (packageName, cve, withdrawnAt) composite index would fail to catch, because MySQL exempts a
+     * row from a unique index entirely once any indexed column is NULL - and withdrawnAt is NULL for
+     * every active row. The activeCve generated column (NULL only when withdrawn) is what makes this
+     * still throw.
      */
-    public function testWithdrawnAdvisoryRemovalFreesCveForReassignment(): void
+    public function testTwoActiveAdvisoriesCannotShareTheSameCve(): void
+    {
+        $first = new SecurityAdvisory($this->remoteAdvisory('GHSA-aaaa-0000-0000', 'acme/package', 'CVE-2024-40004'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $second = new SecurityAdvisory($this->remoteAdvisory('GHSA-bbbb-1111-1111', 'acme/package', 'CVE-2024-40004'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $this->expectException(UniqueConstraintViolationException::class);
+
+        $this->store($first, $second);
+    }
+
+    /**
+     * Exercises the real unique constraint on (packageName, activeCve): a withdrawn advisory keeps
+     * its CVE (with a non-null withdrawnAt, so activeCve is NULL), while the source reassigns the
+     * same CVE to another (live) advisory in the same run. Since activeCve is NULL for the withdrawn
+     * row, it is exempt from the uniqueness check and both rows can coexist.
+     */
+    public function testWithdrawnAdvisoryFreesCveForReassignment(): void
     {
         $withdrawn = new SecurityAdvisory($this->remoteAdvisory('GHSA-old-0000-0000', 'acme/package', 'CVE-2024-10001'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
         $survivor = new SecurityAdvisory($this->remoteAdvisory('GHSA-new-1111-1111', 'acme/package', 'CVE-2024-20002'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
         $this->store($withdrawn, $survivor);
 
-        // GHSA-old is withdrawn at the source; the survivor (GHSA-new) now carries the freed CVE.
         $collection = new RemoteSecurityAdvisoryCollection(
             [$this->remoteAdvisory('GHSA-new-1111-1111', 'acme/package', 'CVE-2024-10001')],
             ['acme/package' => ['GHSA-old-0000-0000' => true]],
@@ -53,17 +71,26 @@ class SecurityAdvisoryWorkerIntegrationTest extends IntegrationTestCase
         $this->getEM()->clear();
         $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->findByPackageName('acme/package');
 
-        $this->assertCount(1, $advisories);
-        $this->assertSame('GHSA-new-1111-1111', $advisories[0]->getRemoteId());
-        $this->assertSame('CVE-2024-10001', $advisories[0]->getCve());
+        $this->assertCount(2, $advisories);
+
+        $active = array_values(array_filter($advisories, static fn (SecurityAdvisory $a) => !$a->isWithdrawn()));
+        $withdrawnAdvisories = array_values(array_filter($advisories, static fn (SecurityAdvisory $a) => $a->isWithdrawn()));
+
+        $this->assertCount(1, $active);
+        $this->assertSame('GHSA-new-1111-1111', $active[0]->getRemoteId());
+        $this->assertSame('CVE-2024-10001', $active[0]->getCve());
+
+        $this->assertCount(1, $withdrawnAdvisories);
+        $this->assertSame('GHSA-old-0000-0000', $withdrawnAdvisories[0]->getRemoteId());
+        $this->assertSame('CVE-2024-10001', $withdrawnAdvisories[0]->getCve());
+        $this->assertNotNull($withdrawnAdvisories[0]->getWithdrawnAt());
     }
 
-    public function testPureOrphanWithdrawnAdvisoryIsRemoved(): void
+    public function testPureOrphanWithdrawnAdvisoryIsKeptButMarkedWithdrawn(): void
     {
         $withdrawn = new SecurityAdvisory($this->remoteAdvisory('GHSA-orphan-0000', 'acme/orphan', 'CVE-2024-30003'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
         $this->store($withdrawn);
 
-        // The source reports the advisory only as withdrawn, with no live advisory for the package.
         $collection = new RemoteSecurityAdvisoryCollection([], ['acme/orphan' => ['GHSA-orphan-0000' => true]]);
 
         $this->runWorkerWithSource($collection);
@@ -71,7 +98,13 @@ class SecurityAdvisoryWorkerIntegrationTest extends IntegrationTestCase
         $this->getEM()->clear();
         $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->findByPackageName('acme/orphan');
 
-        $this->assertSame([], $advisories);
+        $this->assertCount(1, $advisories);
+        $this->assertTrue($advisories[0]->isWithdrawn());
+        $this->assertNotNull($advisories[0]->getWithdrawnAt());
+
+        // Withdrawn advisories must not surface in the active composer audit / API results any more.
+        $active = $this->getEM()->getRepository(SecurityAdvisory::class)->getPackageSecurityAdvisories('acme/orphan');
+        $this->assertSame([], $active);
     }
 
     private function runWorkerWithSource(RemoteSecurityAdvisoryCollection $collection): void

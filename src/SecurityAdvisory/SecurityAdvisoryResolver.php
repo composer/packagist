@@ -17,38 +17,30 @@ use App\Entity\SecurityAdvisory;
 class SecurityAdvisoryResolver
 {
     /**
-     * Remove the source from existing advisories that were withdrawn at the remote source.
-     *
-     * The caller is expected to delete the returned advisories (and flush) before running
-     * {@see self::resolve()}, so the freed (packageName, cve) unique key can be reused in the
-     * same run without a constraint violation.
-     *
      * @param SecurityAdvisory[] $existingAdvisories
      *
-     * @return array{SecurityAdvisory[], SecurityAdvisory[]} [$remaining, $toRemove]
+     * @return array{SecurityAdvisory[], SecurityAdvisory[]} [$remaining, $withdrawn]
      */
     public function removeWithdrawn(array $existingAdvisories, RemoteSecurityAdvisoryCollection $remoteAdvisories, string $sourceName): array
     {
         $remaining = [];
-        $toRemove = [];
+        $withdrawn = [];
         foreach ($existingAdvisories as $advisory) {
             $sourceRemoteId = $advisory->getSourceRemoteId($sourceName);
             if (null !== $sourceRemoteId && $remoteAdvisories->isWithdrawn($advisory->getPackageName(), $sourceRemoteId)) {
-                // The withdrawn source is the only one: remove the whole advisory. The source row is
-                // left attached so the caller can delete the full entity graph in one go.
                 if (!$this->hasOtherSource($advisory, $sourceName)) {
-                    $toRemove[] = $advisory;
+                    $advisory->withdraw();
+                    $withdrawn[] = $advisory;
                     continue;
                 }
 
-                // Other sources remain, so only drop the withdrawn source and keep the advisory.
                 $advisory->removeSource($sourceName);
             }
 
             $remaining[] = $advisory;
         }
 
-        return [$remaining, $toRemove];
+        return [$remaining, $withdrawn];
     }
 
     private function hasOtherSource(SecurityAdvisory $advisory, string $sourceName): bool
@@ -65,12 +57,12 @@ class SecurityAdvisoryResolver
     /**
      * @param SecurityAdvisory[] $existingAdvisories
      *
-     * @return array{SecurityAdvisory[], SecurityAdvisory[]}
+     * @return array{SecurityAdvisory[], SecurityAdvisory[]} [$newAdvisories, $withdrawnAdvisories]
      */
     public function resolve(array $existingAdvisories, RemoteSecurityAdvisoryCollection $remoteAdvisories, string $sourceName): array
     {
         $newAdvisories = [];
-        $removedAdvisories = [];
+        $withdrawnAdvisories = [];
 
         /** @var array<string, array<string, SecurityAdvisory>> $existingSourceAdvisoryMap */
         $existingSourceAdvisoryMap = [];
@@ -135,12 +127,20 @@ class SecurityAdvisoryResolver
 
         foreach ($unmatchedExistingAdvisories as $packageUnmatchedAdvisories) {
             foreach ($packageUnmatchedAdvisories as $unmatchedAdvisory) {
-                if ($unmatchedAdvisory->removeSource($sourceName) && !$unmatchedAdvisory->hasSources()) {
-                    $removedAdvisories[] = $unmatchedAdvisory;
+                if (null === $unmatchedAdvisory->getSourceRemoteId($sourceName)) {
+                    continue;
                 }
+
+                if ($this->hasOtherSource($unmatchedAdvisory, $sourceName)) {
+                    $unmatchedAdvisory->removeSource($sourceName);
+                    continue;
+                }
+
+                $unmatchedAdvisory->withdraw();
+                $withdrawnAdvisories[] = $unmatchedAdvisory;
             }
         }
 
-        return [$newAdvisories, $removedAdvisories];
+        return [$newAdvisories, $withdrawnAdvisories];
     }
 }

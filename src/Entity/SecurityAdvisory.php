@@ -25,9 +25,10 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: 'App\Entity\SecurityAdvisoryRepository')]
 #[ORM\Table(name: 'security_advisory')]
 #[ORM\UniqueConstraint(name: 'source_remoteid_package_idx', columns: ['source', 'remoteId', 'packageName'])]
-#[ORM\UniqueConstraint(name: 'package_name_cve_idx', columns: ['packageName', 'cve'])]
+#[ORM\UniqueConstraint(name: 'package_name_cve_idx', columns: ['packageName', 'activeCve'])]
 #[ORM\Index(name: 'package_name_idx', columns: ['packageName'])]
 #[ORM\Index(name: 'updated_at_idx', columns: ['updatedAt'])]
+#[ORM\Index(name: 'withdrawn_at_idx', columns: ['withdrawnAt'])]
 class SecurityAdvisory
 {
     public const PACKAGIST_ORG = 'https://packagist.org';
@@ -73,6 +74,15 @@ class SecurityAdvisory
     #[ORM\Column(nullable: true)]
     private ?Severity $severity = null;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $withdrawnAt = null;
+
+    /**
+     * DB-only generated column backing the package_name_cve_idx unique constraint; Never read or written from PHP.
+     */
+    #[ORM\Column(name: 'activeCve', type: 'string', nullable: true, insertable: false, updatable: false, columnDefinition: 'VARCHAR(255) GENERATED ALWAYS AS (IF(withdrawnAt IS NULL, cve, NULL)) VIRTUAL')]
+    private ?string $activeCve = null;
+
     /**
      * @var Collection<int, SecurityAdvisorySource>&Selectable<int, SecurityAdvisorySource>
      */
@@ -97,6 +107,12 @@ class SecurityAdvisory
         $this->findSecurityAdvisorySource($advisory->source)?->update($advisory);
 
         $now = new \DateTimeImmutable();
+
+        if (null !== $this->withdrawnAt) {
+            $this->withdrawnAt = null;
+            $this->updatedAt = $now;
+        }
+
         $allSeverities = $this->sources->map(static fn (SecurityAdvisorySource $source) => $source->getSeverity())->toArray();
         if ($advisory->severity && (!$this->severity || !\in_array($this->severity, $allSeverities, true))) {
             $this->updatedAt = $now;
@@ -252,6 +268,24 @@ class SecurityAdvisory
     public function getSeverity(): ?Severity
     {
         return $this->severity;
+    }
+
+    public function getWithdrawnAt(): ?\DateTimeImmutable
+    {
+        return $this->withdrawnAt;
+    }
+
+    public function isWithdrawn(): bool
+    {
+        return null !== $this->withdrawnAt;
+    }
+
+    public function withdraw(): void
+    {
+        if (null === $this->withdrawnAt) {
+            $this->withdrawnAt = new \DateTimeImmutable();
+            $this->updatedAt = $this->withdrawnAt;
+        }
     }
 
     public function hasSources(): bool
