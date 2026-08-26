@@ -398,6 +398,98 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('s-maxage=86400', $cacheControl);
     }
 
+    /**
+     * Admins can hide a version that is already soft-deleted as gone-from-upstream or
+     * maintainer-pulled; admin-pulled and already-hidden rows must be recovered first.
+     */
+    #[TestWith([null, true, 200])]
+    #[TestWith([VersionDeletionReason::AutoDeletedMissing, true, 200])]
+    #[TestWith([VersionDeletionReason::DeletedByMaintainer, true, 200])]
+    #[TestWith([VersionDeletionReason::DeletedByAdmin, false, 403])]
+    #[TestWith([VersionDeletionReason::Hidden, false, 403])]
+    public function testAdminHideVersionAllowedTransitions(?VersionDeletionReason $reason, bool $buttonShown, int $expectedStatus): void
+    {
+        $removedAt = new \DateTimeImmutable('2024-01-02 03:04:05');
+
+        $maintainer = self::createUser('owner', 'owner@example.org');
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$maintainer]);
+
+        $target = $this->createStableVersion($package, '1.0.0');
+        if ($reason !== null) {
+            $target->setSoftDeletedAt($removedAt);
+            $target->setDeletionReason($reason);
+        }
+        // A never-deleted version always renders a hide form, giving us a valid CSRF token even in
+        // the cases where the target row must not offer one.
+        $live = $this->createStableVersion($package, '1.1.0');
+
+        $this->store($maintainer, $admin, $package, $target, $live);
+        $targetId = $target->getId();
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        self::assertSame(
+            $buttonShown ? 1 : 0,
+            $crawler->filter('li.version[data-version-id="1.0.0"] .hide-version')->count(),
+            'hide button visibility for reason '.($reason?->value ?? 'none')
+        );
+
+        $token = $crawler->filter('li.version[data-version-id="1.1.0"] .hide-version input[name="_token"]')->attr('value');
+        $this->client->request('POST', '/versions/'.$targetId.'/admin-hide', ['_token' => $token, 'reason' => 'spam']);
+        self::assertResponseStatusCodeSame($expectedStatus);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->find($targetId);
+        self::assertNotNull($reloaded);
+
+        if ($expectedStatus !== 200) {
+            self::assertSame($reason, $reloaded->getDeletionReason(), 'rejected request must not change the reason');
+
+            return;
+        }
+
+        self::assertSame(VersionDeletionReason::Hidden, $reloaded->getDeletionReason());
+        self::assertSame('spam', $reloaded->getDeletionReasonText());
+        self::assertNotNull($reloaded->getSoftDeletedAt());
+
+        if ($reason !== null) {
+            self::assertGreaterThan(
+                $removedAt,
+                $reloaded->getSoftDeletedAt(),
+                'hiding an already soft-deleted version restamps it with the time of the hide'
+            );
+        }
+    }
+
+    public function testAdminHideVersionDeniedForMaintainer(): void
+    {
+        $maintainer = self::createUser('owner', 'owner@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$maintainer]);
+        $version = $this->createStableVersion($package, '1.0.0');
+        $version->setSoftDeletedAt(new \DateTimeImmutable());
+        $version->setDeletionReason(VersionDeletionReason::AutoDeletedMissing);
+        $this->store($maintainer, $package, $version);
+        $versionId = $version->getId();
+
+        $this->client->loginUser($maintainer);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('.hide-version'), 'maintainers are never offered the hide action');
+
+        $this->client->request('POST', '/versions/'.$versionId.'/admin-hide', ['_token' => 'x', 'reason' => 'spam']);
+        self::assertResponseStatusCodeSame(403);
+
+        self::getEM()->clear();
+        self::assertSame(
+            VersionDeletionReason::AutoDeletedMissing,
+            self::getEM()->getRepository(Version::class)->find($versionId)->getDeletionReason()
+        );
+    }
+
     private function createStableVersion(Package $package, string $version): Version
     {
         $v = new Version();

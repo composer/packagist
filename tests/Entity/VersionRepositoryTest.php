@@ -15,6 +15,7 @@ namespace App\Tests\Entity;
 use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
+use App\Entity\Job;
 use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Tests\IntegrationTestCase;
@@ -120,6 +121,52 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertNotNull($audit);
         self::assertSame('legal takedown', $audit->attributes['reasonText']);
         self::assertSame('reporter john@example.com, ticket #42', $audit->attributes['internalReasonText']);
+    }
+
+    public function testSoftDeleteOfAlreadySoftDeletedVersionRestampsAndSkipsRecrawl(): void
+    {
+        $em = self::getEM();
+        $version = $this->seedStableVersion('vendor/sd-rehide', '2.0.0', '2.0.0.0');
+        $packageId = $version->getPackage()->getId();
+
+        $this->versionRepository->softDelete($version, VersionDeletionReason::AutoDeletedMissing, null, null, null);
+        // Backdate the first removal so the restamp below is unambiguous rather than same-second.
+        $originalSoftDeletedAt = new \DateTimeImmutable('2024-01-02 03:04:05');
+        $version->setSoftDeletedAt($originalSoftDeletedAt);
+        $em->flush();
+
+        $jobRepo = $em->getRepository(Job::class);
+        self::assertCount(1, $jobRepo->findBy(['type' => 'package:updates', 'packageId' => $packageId]));
+
+        // An admin hiding the already soft-deleted version rewrites the reason and the removal time.
+        $this->versionRepository->softDelete($version, VersionDeletionReason::Hidden, 'spam', 'ticket #7', null);
+        $em->flush();
+        $em->clear();
+
+        $reloaded = $this->versionRepository->find($version->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame(VersionDeletionReason::Hidden, $reloaded->getDeletionReason());
+        self::assertSame('spam', $reloaded->getDeletionReasonText());
+        self::assertSame('ticket #7', $reloaded->getInternalDeletionReasonText());
+        self::assertNotNull($reloaded->getSoftDeletedAt());
+        self::assertGreaterThan(
+            $originalSoftDeletedAt,
+            $reloaded->getSoftDeletedAt(),
+            'A reason change restamps the removal time; the audit log keeps the detailed timeline'
+        );
+
+        // Nothing to recompute: dumps filter on isSoftDeleted() alone, so no extra crawl is queued.
+        self::assertCount(1, $em->getRepository(Job::class)->findBy(['type' => 'package:updates', 'packageId' => $packageId]));
+
+        $audits = $em->getRepository(AuditRecord::class)->findBy([
+            'type' => AuditRecordType::VersionSoftDeleted->value,
+            'packageId' => $packageId,
+        ]);
+        self::assertCount(2, $audits, 'The reason change should be audited as its own record');
+        self::assertSame(
+            [VersionDeletionReason::AutoDeletedMissing->value, VersionDeletionReason::Hidden->value],
+            array_map(static fn (AuditRecord $a): string => $a->attributes['reason'], $audits)
+        );
     }
 
     public function testRecoverClearsAllSoftDeleteState(): void
