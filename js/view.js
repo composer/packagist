@@ -241,18 +241,36 @@ const init = function ($) {
         return $(form).closest('.version').find('.version-number').text().trim();
     }
 
-    function applyVersionDeleteResponse(form, data, deletedToast) {
+    // Point a deletion tooltip at a new title, creating it when the row was not soft-deleted before.
+    // fixTitle re-reads the native title into data-original-title and blanks it, so the browser
+    // tooltip does not render on top of the Bootstrap one.
+    function setDeletionTooltip($el, title) {
+        $el.attr('title', title);
+        if ($el.data('bs.tooltip')) {
+            $el.tooltip('fixTitle');
+        } else {
+            $el.tooltip({placement: 'top', container: 'body'});
+        }
+    }
+
+    function applyVersionDeleteResponse(form, data, deletedToast, softDeletedToast) {
         var row = $(form).closest('.version');
         if (data && data.softDeleted) {
-            notifier.log('Version soft-deleted. Reload the page to access the recovery action.', {timeout: 4000});
+            notifier.log(softDeletedToast || 'Version soft-deleted. Reload the page to access the recovery action.', {timeout: 4000});
             row.addClass('version-soft-deleted');
-            if (!row.find('.deletion-alert').length) {
-                var icon = data.deletionIcon || 'bi-trash-fill';
-                var alert = $('<span class="action-alert deletion-alert"><i class="bi"></i></span>');
-                alert.find('i').addClass(icon);
-                alert.attr('title', data.deletionTitle || 'Deleted');
+            // The row may already carry a badge (hiding an already soft-deleted version), so reuse
+            // and refresh it rather than leaving the previous icon and title in place.
+            var alert = row.find('.deletion-alert');
+            if (!alert.length) {
+                alert = $('<span class="action-alert deletion-alert"><i class="bi"></i></span>');
                 alert.insertBefore(row.find('form').first());
             }
+            alert.find('i').attr('class', 'bi ' + (data.deletionIcon || 'bi-trash-fill'));
+            // The version number carries the same title, and has no tooltip at all until the row is
+            // soft-deleted, so it needs the same treatment as the badge.
+            var title = data.deletionTitle || 'Deleted';
+            setDeletionTooltip(alert, title);
+            setDeletionTooltip(row.find('.version-number a'), title);
             row.find('.delete-version, .hide-version').remove();
         } else {
             notifier.log(deletedToast, {timeout: 3000});
@@ -332,7 +350,7 @@ const init = function ($) {
             if (publicReason) data.push({name: 'reason', value: publicReason});
             if (internalReason) data.push({name: 'internalReason', value: internalReason});
             dispatchVersionAction(form, function (resp) {
-                applyVersionDeleteResponse(form, resp, 'Version hidden');
+                applyVersionDeleteResponse(form, resp, 'Version hidden.', 'Version hidden.');
             }, {data: data});
         });
     });

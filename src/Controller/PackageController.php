@@ -845,7 +845,6 @@ class PackageController extends Controller
         }
 
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         return new JsonResponse(['softDeleted' => $softDeleted, 'deletionTitle' => $deletionTitle]);
     }
@@ -871,7 +870,6 @@ class PackageController extends Controller
 
         $repo->softDelete($version, VersionDeletionReason::DeletedByAdmin, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         // deletionTitle becomes a public tooltip, so it only carries the public reason.
         $deletionTitle = 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
@@ -896,15 +894,22 @@ class PackageController extends Controller
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
+        // Admins may hide a version that is already soft-deleted as gone-from-upstream or
+        // maintainer-pulled, without recovering it first. Admin-pulled rows already carry a
+        // deliberate admin decision and Hidden rows are already hidden, so those go through recover.
+        $currentReason = $version->getDeletionReason() ?? VersionDeletionReason::AutoDeletedMissing;
+        if ($version->isSoftDeleted() && !$currentReason->isHideableByAdmin()) {
+            throw new AccessDeniedException('This version must be recovered before it can be hidden.');
+        }
+
         $reasonText = trim($req->request->getString('reason')) ?: null;
         $internalReasonText = trim($req->request->getString('internalReason')) ?: null;
 
         $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
-        $deletionTitle = 'Hidden by admin on '.gmdate('Y-m-d H:i:s').' UTC'
-            .($reasonText !== null ? ': '.$reasonText : '');
+        // Read off the entity so the ajax tooltip matches what a page reload renders.
+        $deletionTitle = $version->getDeletionTitle();
 
         return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'bi-eye-slash-fill']);
     }
@@ -935,7 +940,6 @@ class PackageController extends Controller
 
         $repo->recover($version, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         return new Response('', 204);
     }
