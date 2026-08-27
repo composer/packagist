@@ -2314,6 +2314,84 @@ body {
     line-height: 10px;
 }
 
+.update-history-table {
+    .update-history-datetime {
+        width: 155px;
+        white-space: nowrap;
+    }
+
+    .update-history-time {
+        width: 85px;
+        white-space: nowrap;
+    }
+
+    .update-history-duration {
+        width: 80px;
+    }
+
+    .update-history-status {
+        width: 120px;
+    }
+
+    .update-history-toggle {
+        width: 30px;
+        text-align: right;
+    }
+
+    // the whole summary row is the collapse trigger
+    > tbody > tr.update-history-summary-row {
+        cursor: pointer;
+
+        &:hover {
+            background-color: #f5f5f5;
+        }
+
+        .glyphicon {
+            color: #999;
+            transition: transform .15s ease-in-out;
+        }
+
+        // .collapsed is rendered server-side too, so :not() means expanded from the first paint
+        &:not(.collapsed) .glyphicon {
+            transform: rotate(180deg);
+        }
+    }
+
+    // this row only hosts the collapsible panel, so while collapsed it must add no height or border
+    > tbody > tr.update-history-detail-row > td {
+        padding: 0;
+        border-top: 0;
+    }
+}
+
+.update-history-detail {
+    padding: 10px 0 20px;
+
+    pre {
+        max-height: 400px;
+        overflow: auto;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+}
+
+// The updater log is worker-produced HTML: only <span style> survives cleanupOutput()'s sanitizer and
+// the style values come from Composer's fixed ANSI->CSS tables, but the log *text* comes from the
+// package's repository. `contain` also makes this the containing block for any position:fixed
+// descendant, which neutralises a crafted inline style trying to overlay the page. Not `size`, that
+// would break the collapse animation.
+.update-history-log {
+    contain: layout paint style;
+    position: relative;
+
+    pre {
+        margin: 0;
+        background: #2d2d32;
+        color: #fff;
+        border: 0;
+    }
+}
+
 #transfer-package-form {
     .maintainers-collection-wrapper {
         margin-bottom: 15px;

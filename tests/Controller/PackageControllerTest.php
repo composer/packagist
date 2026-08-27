@@ -520,6 +520,197 @@ class PackageControllerTest extends IntegrationTestCase
         );
     }
 
+    public function testUpdateHistoryDeniedWithoutUpdatePackagesRole(): void
+    {
+        $maintainer = self::createUser('maintainer', 'maintainer@example.org');
+        $other = self::createUser('other', 'other@example.org', apiToken: 'api-token-2', safeApiToken: 'safe-api-token-2', githubId: '23456');
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg', maintainers: [$maintainer]);
+        $this->store($maintainer, $other, $package);
+
+        // anonymous is bounced to the login form
+        $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseRedirects('http://localhost/login/');
+
+        // a maintainer of the package is not enough: the PackageActions::Update voter grants them the
+        // View Log toast, but the full history is staff-only
+        $this->client->loginUser($maintainer);
+        $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseStatusCodeSame(403);
+
+        $this->client->loginUser($other);
+        $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testUpdateHistoryListsOnlyThisPackagesUpdateJobs(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $otherPackage = self::createPackage('test/other', 'https://example.org/other');
+        $this->store($admin, $package, $otherPackage);
+
+        $older = $this->createUpdateJob($package, 'aaaa0000', '2026-08-01 10:00:00', ['status' => Job::STATUS_COMPLETED, 'message' => 'OLDER JOB MESSAGE']);
+        $newer = $this->createUpdateJob($package, 'bbbb0000', '2026-08-02 10:00:00', ['status' => Job::STATUS_FAILED, 'message' => 'NEWER JOB MESSAGE']);
+        $foreignPackageJob = $this->createUpdateJob($otherPackage, 'cccc0000', '2026-08-03 10:00:00', ['status' => Job::STATUS_COMPLETED, 'message' => 'OTHER PACKAGE MESSAGE']);
+
+        // packageId is overloaded across job types - it holds a *user* id for githubuser:migrate - so a
+        // job carrying this package's id under another type must not leak into the listing
+        $foreignTypeJob = new Job('dddd0000', 'githubuser:migrate', ['id' => $package->getId(), 'old_scope' => 'a', 'new_scope' => 'b']);
+        $foreignTypeJob->setPackageId($package->getId());
+        $foreignTypeJob->setCreatedAt(new \DateTimeImmutable('2026-08-04 10:00:00'));
+        $foreignTypeJob->complete(['status' => Job::STATUS_COMPLETED, 'message' => 'FOREIGN TYPE MESSAGE']);
+
+        $this->store($older, $newer, $foreignPackageJob, $foreignTypeJob);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseIsSuccessful();
+
+        $rows = $crawler->filter('tr[data-toggle="collapse"]');
+        self::assertCount(2, $rows);
+        // the whole summary row is the trigger, not just a cell in it
+        self::assertSame('#update-job-bbbb0000', $rows->first()->attr('data-target'));
+        self::assertCount(1, $crawler->filter('#update-job-bbbb0000'));
+
+        $html = (string) $this->client->getResponse()->getContent();
+        self::assertStringNotContainsString('OTHER PACKAGE MESSAGE', $html);
+        self::assertStringNotContainsString('FOREIGN TYPE MESSAGE', $html);
+        self::assertLessThan(
+            strpos($html, 'OLDER JOB MESSAGE'),
+            strpos($html, 'NEWER JOB MESSAGE'),
+            'jobs should be listed newest first'
+        );
+    }
+
+    public function testUpdateHistoryRendersLogAndEscapesResultJson(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($admin, $package);
+
+        $job = $this->createUpdateJob($package, 'aaaa0000', '2026-08-01 10:00:00', [
+            'status' => Job::STATUS_ERRORED,
+            'message' => 'Update of test/pkg failed',
+            'details' => '<pre>ok <span style="color:green;">done</span></pre>',
+            'exceptionMsg' => '<script>alert(1)</script>',
+        ]);
+        $this->store($job);
+
+        $this->client->loginUser($admin);
+        $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseIsSuccessful();
+
+        $html = (string) $this->client->getResponse()->getContent();
+
+        // the sanitized log HTML is rendered as HTML, not escaped
+        self::assertStringContainsString('<span style="color:green;">done</span>', $html);
+        // ..and only once, i.e. details is excluded from the result JSON block rather than duplicated
+        self::assertSame(1, substr_count($html, 'color:green'));
+
+        // the payload block is pretty printed, and autoescaped (hence &quot; rather than ")
+        self::assertStringContainsString('&quot;force_dump&quot;: false', $html);
+
+        // the JSON blocks are autoescaped, so an exception message cannot inject markup
+        self::assertStringNotContainsString('<script>', $html);
+        self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
+    }
+
+    public function testUpdateHistoryHandlesQueuedJobWithNoResult(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($admin, $package);
+
+        // no result at all, as for any job that has not completed yet
+        $job = $this->createUpdateJob($package, 'aaaa0000', '2026-08-01 10:00:00');
+        $this->store($job);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseIsSuccessful();
+
+        self::assertCount(1, $crawler->filter('tr[data-toggle="collapse"]'));
+
+        $html = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('No log output recorded for this job.', $html);
+        self::assertStringContainsString('No result recorded yet.', $html);
+    }
+
+    public function testUpdateHistoryEmptyState(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($admin, $package);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseIsSuccessful();
+
+        self::assertCount(1, $crawler->filter('.alert-info'));
+        self::assertCount(0, $crawler->filter('tr[data-toggle="collapse"]'));
+    }
+
+    public function testPackagePageShowsUpdateHistoryLinkOnlyToStaff(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $maintainer = self::createUser('maintainer', 'maintainer@example.org', apiToken: 'api-token-2', safeApiToken: 'safe-api-token-2', githubId: '23456');
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg', maintainers: [$maintainer]);
+        $package->setUpdatedAt(new \DateTimeImmutable());
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $version = $this->createStableVersion($package, '1.0.0');
+        $this->store($admin, $maintainer, $package, $version);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('a[href$="/update-history"]'));
+
+        $this->client->loginUser($maintainer);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('a[href$="/update-history"]'));
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertGreaterThan(0, $crawler->filter('a[href$="/update-history"]')->count());
+    }
+
+    public function testPackageStatsPageStillRendersForStaff(): void
+    {
+        // stats.html.twig includes version_list.html.twig without package/showUpdated, so the new link
+        // must stay behind the showUpdated guard
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $version = $this->createStableVersion($package, '1.0.0');
+        $this->store($admin, $package, $version);
+
+        $this->client->loginUser($admin);
+        $this->client->request('GET', '/packages/test/pkg/stats');
+        self::assertResponseIsSuccessful();
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function createUpdateJob(Package $package, string $id, string $createdAt, array $result = []): Job
+    {
+        $job = new Job($id, 'package:updates', [
+            'id' => $package->getId(),
+            'update_source_dist_url' => false,
+            'delete_before' => false,
+            'force_dump' => false,
+            'source' => 'test',
+        ]);
+        $job->setPackageId($package->getId());
+        $job->setCreatedAt(new \DateTimeImmutable($createdAt));
+        if ($result !== []) {
+            $job->complete($result);
+        }
+
+        return $job;
+    }
+
     private function createStableVersion(Package $package, string $version): Version
     {
         $v = new Version();

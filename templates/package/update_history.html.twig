@@ -1,0 +1,104 @@
+{% extends "layout.html.twig" %}
+
+{% set showSearchDesc = 'hide' %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block title %}Update history - {{ package.name }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-xs-12 package">
+            <div class="package-header">
+                <h2 class="title">
+                    <a href="{{ path("view_package", {name: package.name}) }}">{{ package.name }}</a>
+                    update history
+                    <small>({{ jobs.nbResults }})</small>
+                </h2>
+                <p>Every <code>package:updates</code> job recorded for this package, newest first. Click a row for its log and raw payload/result.</p>
+            </div>
+        </div>
+    </div>
+
+    <section class="row">
+        <section class="col-md-12">
+            {% if jobs|length %}
+                <table class="table update-history-table">
+                    <thead>
+                        <tr>
+                            <th class="update-history-datetime">Created (UTC)</th>
+                            <th class="update-history-time">Started</th>
+                            <th class="update-history-time">Completed</th>
+                            <th class="update-history-duration">Duration</th>
+                            <th class="update-history-status">Status</th>
+                            <th>Message</th>
+                            <th class="update-history-toggle"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobs %}
+                            {# result is null until a job completes and strict_variables is on in dev/test, so normalize once #}
+                            {% set result = job.result ?? {} %}
+                            {% set panelId = 'update-job-' ~ job.id %}
+                            {# the whole row is the collapse trigger, so bootstrap toggles .collapsed/aria-expanded on the tr itself #}
+                            <tr class="update-history-summary-row collapsed" data-toggle="collapse" data-target="#{{ panelId }}" aria-expanded="false" aria-controls="{{ panelId }}">
+                                <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
+                                {# started/completed are shown as time only to stay narrow, full value in the title #}
+                                <td{% if job.startedAt %} title="{{ job.startedAt|date('Y-m-d H:i:s') }} UTC"{% endif %}>{{ job.startedAt ? job.startedAt|date('H:i:s') : '—' }}</td>
+                                <td{% if job.completedAt %} title="{{ job.completedAt|date('Y-m-d H:i:s') }} UTC"{% endif %}>{{ job.completedAt ? job.completedAt|date('H:i:s') : '—' }}</td>
+                                <td>{{ job.startedAt and job.completedAt ? (job.completedAt.timestamp - job.startedAt.timestamp) ~ 's' : '—' }}</td>
+                                <td>{{ job.status }}</td>
+                                <td>{{ result.message ?? '—' }}</td>
+                                <td><span class="glyphicon glyphicon-chevron-down"></span></td>
+                            </tr>
+                            {# the panel gets its own full-width row so the log has the whole table width while the toggle stays on the summary row #}
+                            <tr class="update-history-detail-row">
+                                <td colspan="7">
+                                    <div class="collapse" id="{{ panelId }}">
+                                        <div class="update-history-detail">
+                                            <dl class="dl-horizontal">
+                                                <dt>Job ID</dt>
+                                                <dd><code>{{ job.id }}</code></dd>
+                                                <dt>Execute after</dt>
+                                                <dd>{{ job.executeAfter ? job.executeAfter|date('Y-m-d H:i:s') ~ ' UTC' : '—' }}</dd>
+                                            </dl>
+
+                                            <h5>Updater log</h5>
+                                            {% if result.details ?? null %}
+                                                {# already a <pre>-wrapped, HtmlSanitizer-cleaned log (only <span style> survives) built by
+                                                   UpdaterWorker::cleanupOutput() - the same string the View Log toast injects #}
+                                                <div class="update-history-log">{{ result.details|raw }}</div>
+                                            {% else %}
+                                                <p class="text-muted">No log output recorded for this job.</p>
+                                            {% endif %}
+
+                                            <h5>Payload</h5>
+                                            <pre>{{ job.payload|json_pretty }}</pre>
+
+                                            <h5>Result</h5>
+                                            {# details is rendered as HTML above, so it is dropped from the JSON #}
+                                            {% set resultRest = result|filter((value, key) => key != 'details') %}
+                                            {% if resultRest is not empty %}
+                                                <pre>{{ resultRest|json_pretty }}</pre>
+                                            {% else %}
+                                                <p class="text-muted">No result recorded yet.</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% if jobs.haveToPaginate() %}
+                    {{ pagerfanta(jobs, 'twitter_bootstrap', {'proximity': 2}) }}
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <p>No update jobs have been recorded for this package.</p>
+                </div>
+            {% endif %}
+        </section>
+    </section>
+{% endblock %}

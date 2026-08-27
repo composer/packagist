@@ -63,6 +63,7 @@ class PackagistExtension extends AbstractExtension
             new TwigFilter('vendor', [$this, 'getVendor']),
             new TwigFilter('sort_links', [$this, 'sortLinks']),
             new TwigFilter('version_deletion_title', [$this, 'deletionTitle']),
+            new TwigFilter('json_pretty', [$this, 'jsonPretty']),
         ];
     }
 
@@ -134,6 +135,16 @@ class PackagistExtension extends AbstractExtension
         }
 
         return $this->providerManager->packageIsProvided($package);
+    }
+
+    /**
+     * Human-readable JSON for debug views (job payloads/results, ..). Invalid UTF-8 is substituted
+     * rather than thrown on, so one bad byte in a captured exception message cannot 500 the page.
+     * Deliberately not is_safe, so autoescaping still applies.
+     */
+    public function jsonPretty(mixed $value): string
+    {
+        return json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
     }
 
     public function prettifySourceReference(string $sourceReference): string
