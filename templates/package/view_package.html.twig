@@ -435,7 +435,8 @@
                             Freezing as
                             {%- for r in enum('App\\Entity\\PackageFreezeReason').suppressingValues() %} <strong>{{ r }}</strong>{% if not loop.last %} or{% endif %}{% endfor %}
                             hides the package from the public, removes it from search, and purges its published metadata.
-                            A <strong>temporary</strong> freeze keeps its metadata served but stops updates.
+                            A <strong>gone</strong> or <strong>temporary</strong> freeze keeps its metadata served but stops updates &mdash;
+                            use <strong>gone</strong> when the canonical repository no longer exists.
                         </p>
                         <input type="hidden" name="token" value="{{ freezeCsrfToken }}" />
                     </div>

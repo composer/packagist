@@ -74,6 +74,36 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertSame('test/pkg', $job->getPayload()['name']);
     }
 
+    public function testFreezePackageAsGoneDoesNotPurge(): void
+    {
+        $mod = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($mod, $package);
+        $packageId = $package->getId();
+
+        $this->client->loginUser($mod);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $form = $crawler->filter('#freeze-package-modal form')->form();
+        $form['reason'] = 'gone';
+        $this->client->submit($form);
+        self::assertResponseStatusCodeSame(302);
+
+        $em = self::getEM();
+        $em->clear();
+        $package = $em->find(Package::class, $packageId);
+        self::assertSame(PackageFreezeReason::Gone, $package->getFreezeReason());
+
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::PackageFrozen->value, 'packageId' => $packageId]);
+        self::assertNotNull($record, 'a PackageFrozen audit record should be created');
+        self::assertSame('gone', $record->attributes['reason']);
+        // a manual freeze is attributed to the moderator, unlike the crawler's 'automation'
+        self::assertIsArray($record->attributes['actor']);
+        self::assertSame('mod', $record->attributes['actor']['username']);
+
+        // Gone is a gentle freeze: the package stops being crawled but its metadata keeps being served.
+        self::assertNull($em->getRepository(Job::class)->findOneBy(['type' => 'package:purge']), 'no purge should be scheduled for a gentle freeze');
+    }
+
     public function testFreezePackageDeniedWithoutRole(): void
     {
         $user = self::createUser('bob', 'bob@example.org');
