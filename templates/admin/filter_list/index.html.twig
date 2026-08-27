@@ -21,23 +21,23 @@
     </div>
 
     <form method="get" class="d-flex flex-wrap align-items-center gap-2" action="{{ path('admin_filter_lists') }}">
-        <input type="search" name="q" class="form-control" placeholder="package name" value="{{ filters.q }}" />
+        <input type="search" name="q" class="form-control w-auto" placeholder="package name" value="{{ filters.q }}" />
 
-        <select name="list" class="form-control">
+        <select name="list" class="form-select w-auto">
             <option value="">All lists</option>
             {% for list in lists %}
                 <option value="{{ list.value }}" {{ filters.list == list.value ? 'selected' : '' }}>{{ list.value }}</option>
             {% endfor %}
         </select>
 
-        <select name="source" class="form-control">
+        <select name="source" class="form-select w-auto">
             <option value="">All sources</option>
             {% for source in sources %}
                 <option value="{{ source.value }}" {{ filters.source == source.value ? 'selected' : '' }}>{{ source.displayName }}</option>
             {% endfor %}
         </select>
 
-        <select name="state" class="form-control">
+        <select name="state" class="form-select w-auto">
             <option value="" {{ filters.state == '' ? 'selected' : '' }}>Any state</option>
             <option value="enabled" {{ filters.state == 'enabled' ? 'selected' : '' }}>Active</option>
             <option value="disabled" {{ filters.state == 'disabled' ? 'selected' : '' }}>Disabled</option>

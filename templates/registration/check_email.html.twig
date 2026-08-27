@@ -25,18 +25,17 @@
         <p>If you notice an error in your email address, you can correct it below and resend the confirmation email.</p>
 
         {{ form_start(form, {
-            action: path('register_resend', {token: token}),
-            attr: {class: "form-horizontal"}
+            action: path('register_resend', {token: token})
         }) }}
-            <div class="form-group">
-                <label for="{{ form.email.vars.id }}" class="col-md-3 form-label">Email address:</label>
+            <div class="row mb-3">
+                <label for="{{ form.email.vars.id }}" class="col-md-3 col-form-label">Email address:</label>
                 <div class="col-md-9">
                     {{ form_errors(form.email) }}
                     {{ form_widget(form.email, {attr: {class: 'form-control'}}) }}
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="row mb-3">
                 <div class="offset-md-3 col-md-9">
                     <button type="submit" class="btn btn-primary">
                         <span class="bi bi-envelope-fill"></span> Update &amp; Resend Confirmation Email

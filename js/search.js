@@ -202,13 +202,19 @@ var customCurrentRefinements = connectCurrentRefinements(function (renderOptions
         wrapper.style.display = items.length > 0 ? '' : 'none';
     }
 
+    var escapeHtml = function (value) {
+        return String(value).replace(/[&<>"']/g, function (char) {
+            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char];
+        });
+    };
+
     var html = '';
     items.forEach(function (item) {
         var label = item.attribute === 'tags' ? 'tag' : item.attribute;
         item.refinements.forEach(function (refinement) {
             html += '<span class="badge bg-primary active-filter-item">'
-                + label + ': ' + refinement.label
-                + '<button type="button" class="btn-close btn-close-white active-filter-remove" aria-label="Remove filter" data-attribute="' + item.attribute + '" data-value="' + refinement.label + '"></button>'
+                + escapeHtml(label) + ': ' + escapeHtml(refinement.label)
+                + '<button type="button" class="btn-close btn-close-white active-filter-remove" aria-label="Remove filter" data-attribute="' + escapeHtml(item.attribute) + '" data-value="' + escapeHtml(refinement.label) + '"></button>'
                 + '</span>';
         });
     });

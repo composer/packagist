@@ -93,6 +93,15 @@ class UserControllerTest extends IntegrationTestCase
 
         // Freeze
         $crawler = $this->client->request('GET', '/users/bob/');
+
+        $freezePackagesLabel = $crawler->filter('#freeze-user-modal label[for="freeze_freezePackages"]');
+        $this->assertCount(1, $freezePackagesLabel, 'admins may act on packages, so the checkbox should render');
+        $this->assertSame(
+            "Also act on the user's packages",
+            trim($freezePackagesLabel->text()),
+            'the freezePackages checkbox must render its label (set on FreezeType)',
+        );
+
         $form = $crawler->filter('#freeze-user-modal form')->form();
         $form['freeze[reason]'] = 'bad_actor';
         $form['freeze[reasonText]'] = 'malware author';

@@ -33,9 +33,8 @@
         </div>
         {% endif %}
 
-        <div class="failure-notifications form-check">
-            {{ form_widget(form.failureNotifications, {'attr': {'class': 'form-check-input'}}) }}
-            {{ form_label(form.failureNotifications, 'Notify me of package update failures', {'label_attr': {'class': 'form-check-label'}}) }}
+        <div class="failure-notifications">
+            {{ form_widget(form.failureNotifications) }}
             {{ form_errors(form.failureNotifications) }}
         </div>
 

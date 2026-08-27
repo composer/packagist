@@ -32,7 +32,7 @@
     --color-muted: #999;
     --color-text-dark: #333;
 
-    // Bootstrap's "primary" is blue by default; the brand's primary accent is orange.
+    // Only affects runtime var(--bs-primary[-rgb]) consumers (.text-primary, .bg-primary); .btn-primary stays blue.
     --bs-primary: var(--color-brand-orange);
     --bs-primary-rgb: 242, 141, 26;
 
@@ -186,6 +186,15 @@ a:hover, .package .package-aside a:hover {
 .h4, h4 { font-size: var(--heading-font-size-h4); }
 .h5, h5 { font-size: var(--heading-font-size-h5); }
 .h6, h6 { font-size: var(--heading-font-size-h6); }
+
+small, .small { font-size: 85%; }
+
+.h1, .h2, .h3, h1, h2, h3 {
+  small, .small { font-size: 65%; }
+}
+.h4, .h5, .h6, h4, h5, h6 {
+  small, .small { font-size: 75%; }
+}
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
@@ -517,7 +526,7 @@ strong {
     .navbar .nav > li {
         height: 57px;
     }
-    .navbar-collapse.in {
+    .navbar-collapse.show {
         overflow-y: visible;
     }
     .nav-user .nav-user-menu {
@@ -756,7 +765,8 @@ footer p {
     font-size: 26px;
     display: flex;
     flex-wrap: nowrap;
-    justify-content: flex-end;
+    flex-direction: row-reverse;
+    justify-content: flex-start;
 }
 
 .wrapper-footer .social li {
@@ -785,6 +795,14 @@ button {
 
 .form-group {
     clear: left;
+    margin-bottom: 15px;
+}
+
+.help-block {
+    display: block;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    color: var(--color-muted);
 }
 
 .form-control {
@@ -982,9 +1000,32 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     text-shadow: none;
     font-weight: 600;
 }
-.btn-group-xs .btn {
+.btn-group-xs .btn,
+.btn-xs {
     padding: 5px 10px;
     font-size: 12px;
+}
+
+.dl-horizontal {
+    dd {
+        margin-left: 0;
+    }
+
+    @media (min-width: 768px) {
+        dt {
+            float: left;
+            width: 160px;
+            clear: left;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        dd {
+            margin-left: 180px;
+        }
+    }
 }
 
 .btn.loading, .btn.loading:hover, .btn.loading:active {
@@ -1089,40 +1130,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 .wrapper-search .sortable a {
   border: 0;
-}
-
-#search_query_orderBys {
-  display: none;
-}
-
-.sortable .glyphicon.active {
-  color: var(--color-brand-dark);
-}
-
-.sortable #order-bys-wrapper {
-  font-size: 24px;
-  position: relative;
-  top: 2px;
-  margin-left: -12px;
-  padding-right: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  height: 30px;
-}
-
-.sortable .order-by-group .icon:first-child {
-  margin-right: 5px;
-}
-
-.sortable #order-bys-wrapper a {
-  margin-right: 7px;
-  display: inline-block;
-}
-
-.sortable #order-bys-wrapper a.clear {
-  width: auto;
-  margin-right: 0px;
-  margin-left: 5px;
 }
 
 #search-form .submit-wrapper {
@@ -1885,6 +1892,19 @@ body {
 .notification .title {
     font-size: 18px;
 }
+.notification .close {
+    float: right;
+    margin-left: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.4;
+    cursor: pointer;
+}
+.notification .close:hover {
+    opacity: 0.9;
+}
 .notification .content {
     margin-top: 10px;
 }
@@ -2156,21 +2176,21 @@ body {
     margin-left: 8px;
 
     &.bg-success {
-        background-color: var(--color-success);
+        background-color: var(--color-success) !important;
     }
     &.bg-warning {
-        background-color: var(--color-warning);
+        background-color: var(--color-warning) !important;
         color: var(--color-brand-dark);
     }
     &.bg-danger {
-        background-color: var(--color-danger);
+        background-color: var(--color-danger) !important;
     }
     &.bg-info {
-        background-color: #5bc0de;
+        background-color: #5bc0de !important;
         color: var(--color-brand-dark);
     }
     &.bg-secondary {
-        background-color: var(--color-secondary);
+        background-color: var(--color-secondary) !important;
     }
 }
 
@@ -2188,7 +2208,7 @@ body {
         display: block;
     }
 
-    .form-control {
+    .form-control, .form-select {
         box-shadow: none;
         border: 1px solid #ccc;
         transition: border-color 0.2s ease;

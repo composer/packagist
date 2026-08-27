@@ -38,7 +38,7 @@ function Notifier() {
     return <div className={"notifications " + (notifications.length > 0 ? "visible" : "")}>
         {notifications.map((notification) => {
             return <div key={notification.id} className="notification" onClick={notification.options.timeout ? remove : () => {}}>
-                {notification.options.timeout ? null : <a onClick={remove} className="close">x</a>}
+                {notification.options.timeout ? null : <a onClick={remove} className="close" aria-label="Close">&times;</a>}
                 <div className="title">{notification.msg}</div>
                 {notification.details && <div className="content" dangerouslySetInnerHTML={{__html: notification.details}}></div>}
             </div>;

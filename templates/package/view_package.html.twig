@@ -425,7 +425,7 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label for="freeze-package-reason">Reason</label>
-                            <select name="reason" id="freeze-package-reason" class="form-control">
+                            <select name="reason" id="freeze-package-reason" class="form-select">
                                 {% for reason in enum('App\\Entity\\PackageFreezeReason').casesForRole(true) %}
                                     <option value="{{ reason.value }}">{{ reason.value|capitalize }}</option>
                                 {% endfor %}

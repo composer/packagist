@@ -7,7 +7,7 @@
                 <div class="col-lg-4 col-md-6">
                     <div class="form-group">
                         <label for="type-filter">Type</label>
-                        <select name="type[]" id="type-filter" class="form-control audit-log-type-select" multiple style="height: 120px;">
+                        <select name="type[]" id="type-filter" class="form-select audit-log-type-select" multiple style="height: 120px;">
                             {% for type in types %}
                                 <option value="{{ type.value }}" {% if type.value in selectedFilters.type %}selected="selected"{% endif %}>
                                     {{ ('audit_log.type.' ~ type.value)|trans }}

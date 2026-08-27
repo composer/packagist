@@ -32,6 +32,14 @@ class ProfileControllerTest extends IntegrationTestCase
 
         $crawler = $this->client->request('GET', '/profile/edit');
 
+        $failureNotifications = $crawler->filter('.failure-notifications');
+        $this->assertCount(1, $failureNotifications->filter('input[type="checkbox"].form-check-input'));
+        $this->assertSame(
+            'Notify me of package update failures',
+            trim($failureNotifications->filter('label.form-check-label')->text()),
+            'the failure-notifications checkbox must render its label (set on ProfileFormType)',
+        );
+
         $form = $crawler->selectButton('Update')->form();
         $this->client->submit($form, [
             'packagist_user_profile[email]' => $newEmail = 'new-email@example.org',
