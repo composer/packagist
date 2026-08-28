@@ -307,6 +307,16 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip,
             ),
+            AuditRecordType::SecurityAdvisoryUnwithdrawn => new SecurityAdvisoryUnwithdrawnDisplay(
+                $record->datetime,
+                $record->attributes['name'],
+                $record->attributes['advisoryId'],
+                $record->attributes['cve'] ?? null,
+                $record->attributes['title'],
+                $record->attributes['source'],
+                $this->buildActor($record->attributes['actor'] ?? null),
+                $record->ip,
+            ),
             AuditRecordType::OrganizationCreated => new OrganizationCreatedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),

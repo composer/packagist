@@ -30,7 +30,6 @@ use Symfony\Bundle\SecurityBundle\Security;
 #[AsEntityListener(event: 'postPersist', entity: SecurityAdvisory::class)]
 #[AsEntityListener(event: 'preUpdate', entity: SecurityAdvisory::class)]
 #[AsEntityListener(event: 'postUpdate', entity: SecurityAdvisory::class)]
-#[AsEntityListener(event: 'preRemove', entity: SecurityAdvisory::class)]
 class SecurityAdvisoryAuditListener
 {
     use DoctrineTrait;
@@ -54,8 +53,10 @@ class SecurityAdvisoryAuditListener
 
     public function preUpdate(SecurityAdvisory $advisory, PreUpdateEventArgs $event): void
     {
-        if ($event->hasChangedField('withdrawnAt') && null !== $event->getNewValue('withdrawnAt')) {
-            $this->buffered[] = AuditRecord::securityAdvisoryWithdrawn($advisory, $this->getUser(), $this->getPackageId($advisory));
+        if ($event->hasChangedField('withdrawnAt')) {
+            $this->buffered[] = null !== $event->getNewValue('withdrawnAt')
+                ? AuditRecord::securityAdvisoryWithdrawn($advisory, $this->getUser(), $this->getPackageId($advisory))
+                : AuditRecord::securityAdvisoryUnwithdrawn($advisory, $this->getUser(), $this->getPackageId($advisory));
 
             return;
         }
@@ -77,14 +78,6 @@ class SecurityAdvisoryAuditListener
             $repository->insert($record);
         }
         $this->buffered = [];
-    }
-
-    /**
-     * @param LifecycleEventArgs<EntityManager> $event
-     */
-    public function preRemove(SecurityAdvisory $advisory, LifecycleEventArgs $event): void
-    {
-        $this->getEM()->persist(AuditRecord::securityAdvisoryWithdrawn($advisory, $this->getUser(), $this->getPackageId($advisory)));
     }
 
     private function getUser(): ?User

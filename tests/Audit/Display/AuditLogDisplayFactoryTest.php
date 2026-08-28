@@ -30,6 +30,7 @@ use App\Audit\Display\PackageUnabandonedDisplay;
 use App\Audit\Display\PackageUnfrozenDisplay;
 use App\Audit\Display\SecurityAdvisoryCreatedDisplay;
 use App\Audit\Display\SecurityAdvisoryEditedDisplay;
+use App\Audit\Display\SecurityAdvisoryUnwithdrawnDisplay;
 use App\Audit\Display\SecurityAdvisoryWithdrawnDisplay;
 use App\Audit\Display\TwoFaDeactivatedDisplay;
 use App\Audit\Display\UserFreezeDisplay;
@@ -715,6 +716,29 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertNull($display->cve);
         self::assertSame(AuditRecordType::SecurityAdvisoryWithdrawn, $display->getType());
         self::assertSame('audit_log/display/security_advisory_withdrawn.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildSecurityAdvisoryUnwithdrawn(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::SecurityAdvisoryUnwithdrawn,
+            [
+                'advisoryId' => 'PKSA-abcd-1234-5678',
+                'name' => 'acme/package',
+                'source' => 'GitHub',
+                'remoteId' => 'GHSA-aaaa-bbbb-cccc',
+                'cve' => 'CVE-2024-12345',
+                'title' => 'Restored advisory',
+                'actor' => 'automation',
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(SecurityAdvisoryUnwithdrawnDisplay::class, $display);
+        self::assertSame('CVE-2024-12345', $display->cve);
+        self::assertSame(AuditRecordType::SecurityAdvisoryUnwithdrawn, $display->getType());
+        self::assertSame('audit_log/display/security_advisory_unwithdrawn.html.twig', $display->getTemplateName());
     }
 
     public function testBuildUserFrozenHidesInternalReasonForNonAuditor(): void

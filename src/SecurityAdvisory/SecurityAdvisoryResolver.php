@@ -55,6 +55,33 @@ class SecurityAdvisoryResolver
     }
 
     /**
+     * Whether another active advisory already holds $cve for $candidate's package. When it does, a
+     * withdrawn $candidate must stay withdrawn even though the source reports it as live again,
+     * otherwise un-withdrawing it would violate the (packageName, activeCve) unique constraint. The
+     * advisory un-withdraws on its own on a later run once the conflicting advisory is gone.
+     *
+     * @param SecurityAdvisory[] $existingAdvisories
+     */
+    private function cveClaimedByActiveAdvisory(array $existingAdvisories, SecurityAdvisory $candidate, ?string $cve): bool
+    {
+        if (null === $cve || !$candidate->isWithdrawn()) {
+            return false;
+        }
+
+        foreach ($existingAdvisories as $advisory) {
+            if ($advisory === $candidate || $advisory->isWithdrawn()) {
+                continue;
+            }
+
+            if ($advisory->getPackageName() === $candidate->getPackageName() && $advisory->getCve() === $cve) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @param SecurityAdvisory[] $existingAdvisories
      *
      * @return array{SecurityAdvisory[], SecurityAdvisory[]} [$newAdvisories, $withdrawnAdvisories]
@@ -82,7 +109,8 @@ class SecurityAdvisoryResolver
         foreach ($remoteAdvisories->getPackageNames() as $packageName) {
             foreach ($remoteAdvisories->getAdvisoriesForPackageName($packageName) as $remoteAdvisory) {
                 if (isset($existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id])) {
-                    $existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id]->updateAdvisory($remoteAdvisory);
+                    $matched = $existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id];
+                    $matched->updateAdvisory($remoteAdvisory, !$this->cveClaimedByActiveAdvisory($existingAdvisories, $matched, $remoteAdvisory->cve));
                     unset($existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id]);
                 } else {
                     $unmatchedRemoteAdvisories[$packageName][] = $remoteAdvisory;
@@ -106,10 +134,24 @@ class SecurityAdvisoryResolver
                 if (isset($unmatchedExistingAdvisories[$packageName])) {
                     foreach ($unmatchedExistingAdvisories[$packageName] as $unmatchedAdvisory) {
                         $score = $unmatchedAdvisory->calculateDifferenceScore($remoteAdvisory);
-                        if ($score < $lowestScore && $score <= $requiredDifferenceScore) {
-                            $matchedAdvisory = $unmatchedAdvisory;
-                            $lowestScore = $score;
+                        if ($score >= $lowestScore || $score > $requiredDifferenceScore) {
+                            continue;
                         }
+
+                        // Never resurrect a withdrawn advisory through a fuzzy match: only an exact
+                        // packageName + CVE or packageName + remoteId match may re-associate it. A
+                        // loose match could let a newly discovered issue silently inherit a withdrawn
+                        // (and possibly ignored) advisory id and never be surfaced to users.
+                        if (
+                            $unmatchedAdvisory->isWithdrawn()
+                            && !(null !== $remoteAdvisory->cve && $remoteAdvisory->cve === $unmatchedAdvisory->getCve())
+                            && $remoteAdvisory->id !== $unmatchedAdvisory->getRemoteId()
+                        ) {
+                            continue;
+                        }
+
+                        $matchedAdvisory = $unmatchedAdvisory;
+                        $lowestScore = $score;
                     }
                 }
 
@@ -119,7 +161,7 @@ class SecurityAdvisoryResolver
                 } else {
                     // Update advisory and make sure the new source is added
                     $matchedAdvisory->addSource($remoteAdvisory->id, $sourceName, $remoteAdvisory->severity);
-                    $matchedAdvisory->updateAdvisory($remoteAdvisory);
+                    $matchedAdvisory->updateAdvisory($remoteAdvisory, !$this->cveClaimedByActiveAdvisory($existingAdvisories, $matchedAdvisory, $remoteAdvisory->cve));
                     unset($unmatchedExistingAdvisories[$packageName][$matchedAdvisory->getPackagistAdvisoryId()]);
                 }
             }

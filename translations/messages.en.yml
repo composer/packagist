@@ -224,6 +224,7 @@ audit_log:
         security_advisory_created: Security advisory created
         security_advisory_edited: Security advisory edited
         security_advisory_withdrawn: Security advisory withdrawn
+        security_advisory_unwithdrawn: Security advisory reinstated
         organization_created: Organization created
         organization_name_changed: Organization name changed
         organization_slug_changed: Organization slug changed

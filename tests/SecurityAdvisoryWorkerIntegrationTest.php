@@ -107,6 +107,68 @@ class SecurityAdvisoryWorkerIntegrationTest extends IntegrationTestCase
         $this->assertSame([], $active);
     }
 
+    /**
+     * Same reassignment as {@see self::testWithdrawnAdvisoryFreesCveForReassignment()}, but the
+     * advisory that inherits the CVE was stored first, so Doctrine computes its change set (and runs
+     * its UPDATE) before the withdrawal UPDATE. Both land in the same flush, so without the worker's
+     * intermediate flush the outcome hangs on entity order and can trip package_name_cve_idx.
+     */
+    public function testWithdrawnAdvisoryFreesCveForReassignmentWhateverTheEntityOrder(): void
+    {
+        $survivor = new SecurityAdvisory($this->remoteAdvisory('GHSA-live-2222-2222', 'acme/reordered', 'CVE-2024-40004'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $withdrawn = new SecurityAdvisory($this->remoteAdvisory('GHSA-stale-3333-3333', 'acme/reordered', 'CVE-2024-50005'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $this->store($survivor, $withdrawn);
+
+        $collection = new RemoteSecurityAdvisoryCollection(
+            [$this->remoteAdvisory('GHSA-live-2222-2222', 'acme/reordered', 'CVE-2024-50005')],
+            ['acme/reordered' => ['GHSA-stale-3333-3333' => true]],
+        );
+
+        $this->runWorkerWithSource($collection);
+
+        $this->getEM()->clear();
+        $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->findByPackageName('acme/reordered');
+
+        $this->assertCount(2, $advisories);
+        $this->assertSame('CVE-2024-50005', $this->activeAdvisory($advisories)->getCve());
+    }
+
+    /**
+     * The withdrawn advisory keeps its CVE and the source publishes a brand new advisory carrying
+     * that same CVE in the same run. removeWithdrawn() leaves the withdrawn advisory out of the list
+     * handed to resolve(), so the replacement is persisted as a new entity, and Doctrine commits
+     * inserts before updates - the withdrawal must be flushed first for the insert to fit.
+     */
+    public function testWithdrawnAdvisoryFreesCveForAReplacementInsertedInTheSameRun(): void
+    {
+        $withdrawn = new SecurityAdvisory($this->remoteAdvisory('GHSA-gone-4444-4444', 'acme/replaced', 'CVE-2024-60006'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $this->store($withdrawn);
+
+        $collection = new RemoteSecurityAdvisoryCollection(
+            [$this->remoteAdvisory('GHSA-fresh-5555-5555', 'acme/replaced', 'CVE-2024-60006')],
+            ['acme/replaced' => ['GHSA-gone-4444-4444' => true]],
+        );
+
+        $this->runWorkerWithSource($collection);
+
+        $this->getEM()->clear();
+        $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->findByPackageName('acme/replaced');
+
+        $this->assertCount(2, $advisories);
+        $this->assertSame('GHSA-fresh-5555-5555', $this->activeAdvisory($advisories)->getRemoteId());
+    }
+
+    /**
+     * @param SecurityAdvisory[] $advisories
+     */
+    private function activeAdvisory(array $advisories): SecurityAdvisory
+    {
+        $active = array_values(array_filter($advisories, static fn (SecurityAdvisory $a) => !$a->isWithdrawn()));
+        $this->assertCount(1, $active);
+
+        return $active[0];
+    }
+
     private function runWorkerWithSource(RemoteSecurityAdvisoryCollection $collection): void
     {
         $doctrine = static::getContainer()->get(ManagerRegistry::class);

@@ -1727,7 +1727,12 @@ class PackageController extends Controller
     {
         /** @var SecurityAdvisoryRepository $repo */
         $repo = $this->getEM()->getRepository(SecurityAdvisory::class);
-        $securityAdvisories = $repo->findByPackageName($name);
+        // Withdrawn advisories are excluded here so this count stays in sync with the package page;
+        // they remain reachable via their /security-advisories/{id} page for historical lookups.
+        $securityAdvisories = array_values(array_filter(
+            $repo->findByPackageName($name),
+            static fn (SecurityAdvisory $advisory) => !$advisory->isWithdrawn(),
+        ));
 
         $data = [];
         $data['name'] = $name;

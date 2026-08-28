@@ -718,6 +718,17 @@ class AuditRecord
         );
     }
 
+    public static function securityAdvisoryUnwithdrawn(SecurityAdvisory $advisory, ?User $actor, ?int $packageId): self
+    {
+        return new self(
+            AuditRecordType::SecurityAdvisoryUnwithdrawn,
+            self::getSecurityAdvisoryData($advisory, $actor),
+            vendor: self::vendorFromPackageName($advisory->getPackageName()),
+            actorId: $actor?->getId(),
+            packageId: $packageId,
+        );
+    }
+
     /**
      * @return array{id: int, username: string}|string
      */

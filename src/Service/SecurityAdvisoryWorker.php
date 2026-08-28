@@ -73,7 +73,16 @@ class SecurityAdvisoryWorker
         /** @var SecurityAdvisory[] $existingAdvisories */
         $existingAdvisories = $this->doctrine->getRepository(SecurityAdvisory::class)->getPackageAdvisoriesWithSources($packageNames, $sourceName);
 
-        [$existingAdvisories] = $this->securityAdvisoryResolver->removeWithdrawn($existingAdvisories, $remoteAdvisories, $sourceName);
+        [$existingAdvisories, $withdrawn] = $this->securityAdvisoryResolver->removeWithdrawn($existingAdvisories, $remoteAdvisories, $sourceName);
+
+        // Commit the withdrawals on their own before resolve() reuses any freed (packageName, cve)
+        // key. A withdrawal nulls the activeCve generated column backing package_name_cve_idx, and
+        // Doctrine does not order the INSERT/UPDATE statements within a single flush to keep that
+        // unique index transiently consistent, so a replacement advisory reusing the same CVE in
+        // the same run would otherwise trip an unrecoverable constraint violation.
+        if (\count($withdrawn) > 0) {
+            $this->doctrine->getManager()->flush();
+        }
 
         [$new] = $this->securityAdvisoryResolver->resolve($existingAdvisories, $remoteAdvisories, $sourceName);
 

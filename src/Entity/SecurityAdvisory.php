@@ -102,13 +102,20 @@ class SecurityAdvisory
         $this->addSource($advisory->id, $source, $advisory->severity);
     }
 
-    public function updateAdvisory(RemoteSecurityAdvisory $advisory): void
+    /**
+     * @param bool $allowUnwithdraw when false, a withdrawn advisory keeps its withdrawnAt timestamp
+     *                              even though the source reports it as live again. The resolver
+     *                              passes false when another active advisory already holds this
+     *                              advisory's CVE for the same package, so un-withdrawing here would
+     *                              violate the (packageName, activeCve) unique constraint.
+     */
+    public function updateAdvisory(RemoteSecurityAdvisory $advisory, bool $allowUnwithdraw = true): void
     {
         $this->findSecurityAdvisorySource($advisory->source)?->update($advisory);
 
         $now = new \DateTimeImmutable();
 
-        if (null !== $this->withdrawnAt) {
+        if ($allowUnwithdraw && null !== $this->withdrawnAt) {
             $this->withdrawnAt = null;
             $this->updatedAt = $now;
         }

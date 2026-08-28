@@ -138,6 +138,55 @@ class SecurityAdvisoryResolverTest extends TestCase
         $this->assertNull($advisory->getWithdrawnAt());
     }
 
+    public function testResolveDoesNotResurrectWithdrawnAdvisoryThroughFuzzyMatch(): void
+    {
+        $date = new \DateTimeImmutable('2024-01-01');
+        $advisory = new SecurityAdvisory(
+            new RemoteSecurityAdvisory('old-id', 'Security Advisory', 'acme/package', '^1.0', 'https://example.org', 'CVE-2022-1111', $date, null, [], 'test', null),
+            'test',
+        );
+        $advisory->withdraw();
+
+        // Same package/title/link/versions/date, only the remote id differs and the CVE is gone:
+        // a low enough difference score that it would fuzzy-match were the advisory still active.
+        $newRemote = new RemoteSecurityAdvisory('new-id', 'Security Advisory', 'acme/package', '^1.0', 'https://example.org', null, $date, null, [], 'test', null);
+
+        [$new, $withdrawn] = $this->resolver->resolve([$advisory], new RemoteSecurityAdvisoryCollection([$newRemote]), 'test');
+
+        $this->assertCount(1, $new);
+        $this->assertNotSame($advisory, $new[0]);
+        $this->assertSame('new-id', $new[0]->getRemoteId());
+        $this->assertTrue($advisory->isWithdrawn());
+    }
+
+    public function testResolveKeepsAdvisoryWithdrawnWhenAnActiveAdvisoryHoldsTheCve(): void
+    {
+        $date = new \DateTimeImmutable('2024-01-01');
+        $active = new SecurityAdvisory(
+            new RemoteSecurityAdvisory('active-id', 'Active advisory', 'acme/package', '^1.0', 'https://example.org', 'CVE-2022-3333', $date, null, [], 'test', null),
+            'test',
+        );
+        $withdrawnAdvisory = new SecurityAdvisory(
+            new RemoteSecurityAdvisory('stale-id', 'Stale advisory', 'acme/package', '^1.0', 'https://example.org', 'CVE-2022-3333', $date, null, [], 'test', null),
+            'test',
+        );
+        $withdrawnAdvisory->withdraw();
+
+        // The source reports the stale advisory as live again while the active one still owns the CVE.
+        $collection = new RemoteSecurityAdvisoryCollection([
+            new RemoteSecurityAdvisory('active-id', 'Active advisory', 'acme/package', '^1.0', 'https://example.org', 'CVE-2022-3333', $date, null, [], 'test', null),
+            new RemoteSecurityAdvisory('stale-id', 'Stale advisory', 'acme/package', '^1.0', 'https://example.org', 'CVE-2022-3333', $date, null, [], 'test', null),
+        ]);
+
+        [$new, $withdrawn] = $this->resolver->resolve([$active, $withdrawnAdvisory], $collection, 'test');
+
+        $this->assertSame([], $new);
+        $this->assertSame([], $withdrawn);
+        $this->assertFalse($active->isWithdrawn());
+        $this->assertTrue($withdrawnAdvisory->isWithdrawn(), 'must stay withdrawn while the active advisory owns the CVE');
+        $this->assertNotNull($withdrawnAdvisory->getWithdrawnAt());
+    }
+
     public function testResolveEmpty(): void
     {
         [$new, $withdrawn] = $this->resolver->resolve([], new RemoteSecurityAdvisoryCollection([]), 'test');
