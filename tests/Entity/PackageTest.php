@@ -66,7 +66,7 @@ class PackageTest extends TestCase
     public function testFreezeReasonCasesForRole(): void
     {
         self::assertSame(
-            [PackageFreezeReason::Spam, PackageFreezeReason::Malware, PackageFreezeReason::Temporary],
+            [PackageFreezeReason::Spam, PackageFreezeReason::Malware, PackageFreezeReason::Gone, PackageFreezeReason::Temporary],
             PackageFreezeReason::casesForRole(true),
         );
         self::assertSame([], PackageFreezeReason::casesForRole(false));

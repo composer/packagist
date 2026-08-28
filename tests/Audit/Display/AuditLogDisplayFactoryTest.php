@@ -22,6 +22,7 @@ use App\Audit\Display\FilterListEntryEnabledDisplay;
 use App\Audit\Display\FilterListEntryEditedDisplay;
 use App\Audit\Display\GenericUserDisplay;
 use App\Audit\Display\GitHubLinkedWithUserDisplay;
+use App\Audit\Display\OrganizationInvitationDisplay;
 use App\Audit\Display\PackageAbandonedDisplay;
 use App\Audit\Display\PackageCreatedDisplay;
 use App\Audit\Display\PackageDeletedDisplay;
@@ -44,6 +45,7 @@ use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Uid\Ulid;
 
 class AuditLogDisplayFactoryTest extends TestCase
 {
@@ -820,6 +822,71 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame(456, $display->actor->id);
         self::assertSame(AuditRecordType::UserUnfrozen, $display->getType());
         self::assertSame('audit_log/display/user_freeze.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildOrganizationInvitationSent(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::OrganizationInvitationSent,
+            [
+                'organization' => ['id' => (string) new Ulid(), 'org_slug' => 'acme', 'org_name' => 'ACME Corp'],
+                'email' => 'alice@example.org',
+                'actor' => ['id' => 7, 'username' => 'owner'],
+            ],
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(OrganizationInvitationDisplay::class, $display);
+        self::assertSame(AuditRecordType::OrganizationInvitationSent, $display->getType());
+        self::assertSame('audit_log/display/organization_invitation_sent.html.twig', $display->getTemplateName());
+        self::assertSame('audit_log.type.organization_invitation_sent', $display->getTypeTranslationKey());
+        self::assertSame('acme', $display->organization->slug);
+        self::assertSame('owner', $display->actor->username);
+        // Not an auditor: on the public log the invited email is obfuscated.
+        self::assertSame('**@**.**', $display->email);
+    }
+
+    public function testBuildOrganizationInvitationExpiredHasNoActingUser(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::OrganizationInvitationExpired,
+            [
+                'organization' => ['id' => (string) new Ulid(), 'org_slug' => 'acme', 'org_name' => 'ACME Corp'],
+                'email' => 'alice@example.org',
+                'actor' => 'automation',
+            ],
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(OrganizationInvitationDisplay::class, $display);
+        self::assertSame(AuditRecordType::OrganizationInvitationExpired, $display->getType());
+        self::assertNull($display->actor->id);
+        self::assertSame('automation', $display->actor->username);
+    }
+
+    #[TestWith([true, 'alice@example.org'])]
+    #[TestWith([false, '**@**.**'])]
+    public function testOrganizationInvitationEmailVisibility(bool $isAuditor, string $expectedEmail): void
+    {
+        $security = $this->createStub(Security::class);
+        $security->method('isGranted')->willReturn($isAuditor);
+        $this->factory = new AuditLogDisplayFactory($security);
+
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::OrganizationInvitationRevoked,
+            [
+                'organization' => ['id' => (string) new Ulid(), 'org_slug' => 'acme', 'org_name' => 'ACME Corp'],
+                'email' => 'alice@example.org',
+                'actor' => ['id' => 7, 'username' => 'owner'],
+            ],
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(OrganizationInvitationDisplay::class, $display);
+        self::assertSame($expectedEmail, $display->email);
     }
 
     /**

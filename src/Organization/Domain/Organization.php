@@ -12,6 +12,7 @@
 
 namespace App\Organization\Domain;
 
+use App\Organization\Domain\Event\MemberJoined;
 use App\Organization\Domain\Event\MemberLeft;
 use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
@@ -67,14 +68,19 @@ final class Organization extends AbstractAggregate
     /** @var array<string, list<int>> teamId (rfc4122) => member user ids */
     private array $teamMembers = [];
 
+    /** @var list<int> org member user ids, tracked directly from MemberJoined / MemberLeft / MemberRemoved */
+    private array $members = [];
+
     public static function create(Ulid $id, Slug $slug, DisplayName $displayName, Ulid $ownersTeamId, Ulid $allMembersTeamId, int $ownerId): self
     {
         $organization = new self($id);
 
-        // Bootstrap the org through multiple events: the org itself, then its two system teams,
-        // then the creator joining each. The teams and memberships are modeled as their own events (rather
-        // than all being covered by a single OrganizationCreated event).
+        // Bootstrap the org through multiple events: the org itself, the founding owner joining, then its
+        // two system teams and the owner's membership of each. Every fact is a first-class event (rather
+        // than all being covered by a single OrganizationCreated event); MemberJoined is the org-level
+        // membership fact and the TeamMemberAdded events place the owner in the system teams.
         $organization->record(new OrganizationCreated($id, $slug->value, $displayName->value, $ownersTeamId, $allMembersTeamId));
+        $organization->record(new MemberJoined($id, $ownerId, null));
         $organization->record(new TeamCreated($id, $ownersTeamId, self::OWNERS_TEAM_NAME, OrganizationTeamKind::System));
         $organization->record(new TeamCreated($id, $allMembersTeamId, self::ALL_ORGANIZATION_MEMBERS_TEAM_NAME, OrganizationTeamKind::System));
         $organization->record(new TeamMemberAdded($id, $ownersTeamId, $ownerId));
@@ -204,6 +210,43 @@ final class Organization extends AbstractAggregate
     }
 
     /**
+     * A new member joins by accepting an invitation. The invitation always carries the automatically-managed
+     * `all organization members` team, so the resolved set is never empty and the org-side membership is
+     * recorded straight from the target teams. The caller ({@see \App\Organization\InvitationManager}) resolves
+     * the still-existing target teams and enforces the invitation-side checks (email match, 2FA for owners).
+     *
+     * @param list<Ulid> $targetTeamIds the still-existing target teams, including the all-members team
+     */
+    public function joinViaInvitation(int $userId, array $targetTeamIds, Ulid $invitationId): void
+    {
+        $teamIds = $this->existingTeamsAmong($targetTeamIds);
+
+        // Skip any team the user is somehow already in, so a re-run cannot double-add.
+        $teamIds = array_values(array_filter($teamIds, fn (Ulid $teamId): bool => !$this->isInTeam($teamId, $userId)));
+        if ($teamIds === []) {
+            return;
+        }
+
+        $this->record(new MemberJoined($this->id, $userId, $invitationId));
+        foreach ($teamIds as $teamId) {
+            $this->record(new TeamMemberAdded($this->id, $teamId, $userId));
+        }
+    }
+
+    /**
+     * The subset of the given team ids that currently exist in the org, preserving order. Used by the
+     * invitation flow to resolve which target teams a new member is actually added to.
+     *
+     * @param list<Ulid> $teamIds
+     *
+     * @return list<Ulid>
+     */
+    public function existingTeamsAmong(array $teamIds): array
+    {
+        return array_values(array_filter($teamIds, fn (Ulid $teamId): bool => isset($this->teams[$teamId->toRfc4122()])));
+    }
+
+    /**
      * Remove a user from the entire org (all their teams at once).
      *
      * @throws NotAMemberException
@@ -275,13 +318,7 @@ final class Organization extends AbstractAggregate
 
     public function isOrgMember(int $userId): bool
     {
-        foreach ($this->teamMembers as $members) {
-            if (\in_array($userId, $members, true)) {
-                return true;
-            }
-        }
-
-        return false;
+        return \in_array($userId, $this->members, true);
     }
 
     private function isInTeam(Ulid $teamId, int $userId): bool
@@ -360,6 +397,7 @@ final class Organization extends AbstractAggregate
             $event instanceof TeamMemberAdded => $this->teamMembers[$event->teamId->toRfc4122()][] = $event->userId,
             $event instanceof TeamMemberRemoved => $this->applyTeamMemberRemoved($event),
             $event instanceof TeamDeleted => $this->applyTeamDeleted($event),
+            $event instanceof MemberJoined => $this->applyMemberJoined($event),
             $event instanceof MemberRemoved => $this->applyMemberGone($event->userId),
             $event instanceof MemberLeft => $this->applyMemberGone($event->userId),
             default => throw new \LogicException('Unhandled organization event: '.$event->eventType()->value),
@@ -368,7 +406,7 @@ final class Organization extends AbstractAggregate
 
     private function applyCreated(OrganizationCreated $event): void
     {
-        // The organization teams and its members are established by the TeamCreated / TeamMemberAdded events that follow in the creation batch.
+        // Membership and the system teams are established by the MemberJoined / TeamCreated / TeamMemberAdded events that follow in the creation batch.
         $this->slug = $event->slug;
         $this->displayName = $event->displayName;
         $this->deleted = false;
@@ -396,8 +434,21 @@ final class Organization extends AbstractAggregate
         unset($this->teams[$event->teamId->toRfc4122()], $this->teamMembers[$event->teamId->toRfc4122()]);
     }
 
+    private function applyMemberJoined(MemberJoined $event): void
+    {
+        // Idempotent: a re-run, or joining a further team while already a member, must not duplicate.
+        if (!\in_array($event->userId, $this->members, true)) {
+            $this->members[] = $event->userId;
+        }
+    }
+
     private function applyMemberGone(int $userId): void
     {
+        $this->members = array_values(array_filter(
+            $this->members,
+            static fn (int $id): bool => $id !== $userId,
+        ));
+
         foreach ($this->teamMembers as $key => $members) {
             $this->teamMembers[$key] = array_values(array_filter(
                 $members,
@@ -420,8 +471,17 @@ final class Organization extends AbstractAggregate
             OrganizationEventType::TeamMemberAdded => TeamMemberAdded::fromPayload($id, $payload),
             OrganizationEventType::TeamMemberRemoved => TeamMemberRemoved::fromPayload($id, $payload),
             OrganizationEventType::TeamDeleted => TeamDeleted::fromPayload($id, $payload),
+            OrganizationEventType::MemberJoined => MemberJoined::fromPayload($id, $payload),
             OrganizationEventType::MemberRemoved => MemberRemoved::fromPayload($id, $payload),
             OrganizationEventType::MemberLeft => MemberLeft::fromPayload($id, $payload),
+            // Invitation-stream events belong to the Invitation aggregate and never appear in an org's
+            // history, so reconstituting an org never denormalizes them.
+            OrganizationEventType::UserInvitationSent,
+            OrganizationEventType::UserInvitationResent,
+            OrganizationEventType::UserInvitationRevoked,
+            OrganizationEventType::UserInvitationDeclined,
+            OrganizationEventType::UserInvitationAccepted,
+            OrganizationEventType::UserInvitationExpired => throw new \LogicException('Not an organization-stream event: '.$type->value),
         };
     }
 }

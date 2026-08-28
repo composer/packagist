@@ -233,8 +233,15 @@ audit_log:
         organization_team_deleted: Team deleted
         organization_team_member_added: Team member added
         organization_team_member_removed: Team member removed
+        organization_member_joined: Member joined
         organization_member_removed: Member removed
         organization_member_left: Member left
+        organization_invitation_sent: Invitation sent
+        organization_invitation_resent: Invitation resent
+        organization_invitation_revoked: Invitation revoked
+        organization_invitation_accepted: Invitation accepted
+        organization_invitation_declined: Invitation declined
+        organization_invitation_expired: Invitation expired
     enums:
         user-registration-method:
             form: 'Registration form'

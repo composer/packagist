@@ -3,6 +3,7 @@
 namespace App\Tests\Fixtures;
 
 use App\Entity\Organization;
+use App\Entity\OrganizationMember;
 use App\Entity\OrganizationStatus;
 use App\Entity\OrganizationTeam;
 use App\Entity\OrganizationTeamMember;
@@ -30,11 +31,11 @@ trait Fixtures
     }
 
     /**
-     * The two bootstrapped system teams (`owners` and `all organization members`) and the owner's
-     * membership in both, mirroring what OrganizationCreated projects. Persist these alongside the
-     * organization so the owner is recognised as an owner and org member.
+     * The two bootstrapped system teams (`owners` and `all organization members`), the owner's
+     * membership in both, and the org-level membership record, mirroring what org creation projects.
+     * Persist these alongside the organization so the owner is recognised as an owner and org member.
      *
-     * @return array{OrganizationTeam, OrganizationTeamMember, OrganizationTeam, OrganizationTeamMember}
+     * @return array{OrganizationTeam, OrganizationTeamMember, OrganizationTeam, OrganizationTeamMember, OrganizationMember}
      */
     protected static function createOwnerMembership(Organization $organization, User $owner): array
     {
@@ -48,6 +49,8 @@ trait Fixtures
             $owner,
             $now,
         );
+
+        $orgMembership = new OrganizationMember($organization->id, $owner->getId(), $now);
 
         $ownerMembership = new OrganizationTeamMember(
             $organization->ownersTeamId,
@@ -74,7 +77,7 @@ trait Fixtures
             $now,
         );
 
-        return [$ownersTeam, $ownerMembership, $allMembersTeam, $allMembersMembership];
+        return [$ownersTeam, $ownerMembership, $allMembersTeam, $allMembersMembership, $orgMembership];
     }
 
     /**

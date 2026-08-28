@@ -77,7 +77,7 @@ class TransparencyLogController extends Controller
         }
 
         // Group types by category in desired order
-        $categoryOrder = ['ownership', 'package', 'version', 'user', 'filterlist', 'advisory'];
+        $categoryOrder = ['ownership', 'package', 'version', 'user', 'filterlist', 'advisory', 'organization'];
         $groupedTypes = [];
         foreach (AuditRecordType::cases() as $type) {
             // Don't display 2FA events in the type filter initially

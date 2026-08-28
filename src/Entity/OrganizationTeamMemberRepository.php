@@ -47,28 +47,6 @@ class OrganizationTeamMemberRepository extends ServiceEntityRepository
     }
 
     /**
-     * Load the {@see User} behind an organization membership by the org slug and their username
-     * (canonicalised here) in a single joined query. Membership is the union of team memberships, so
-     * DISTINCT collapses a user who belongs to several teams. Returns null when the user does not exist
-     * or is not a member of the org, so callers cannot tell the two cases apart and no user id is exposed.
-     */
-    public function findOrgMember(string $orgSlug, string $username): ?User
-    {
-        return $this->getEntityManager()->createQueryBuilder()
-            ->select('u')
-            ->distinct()
-            ->from(User::class, 'u')
-            ->innerJoin(OrganizationTeamMember::class, 'm', Join::WITH, 'm.userId = u.id')
-            ->innerJoin(Organization::class, 'o', Join::WITH, 'o.id = m.orgId')
-            ->where('o.slug = :slug')
-            ->andWhere('u.usernameCanonical = :username')
-            ->setParameter('slug', $orgSlug)
-            ->setParameter('username', mb_strtolower($username))
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
-    /**
      * @return list<OrganizationTeamMember>
      */
     public function findByTeam(Ulid $teamId): array

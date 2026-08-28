@@ -20,6 +20,7 @@ use App\Entity\Download;
 use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
 use App\Entity\Job;
+use App\Entity\JobRepository;
 use App\Entity\Package;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
@@ -57,6 +58,7 @@ use Composer\Semver\Constraint\MatchNoneConstraint;
 use Composer\Semver\Constraint\MultiConstraint;
 use Doctrine\ORM\NoResultException;
 use Pagerfanta\Adapter\FixedAdapter;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
 use Predis\Connection\ConnectionException;
@@ -845,7 +847,6 @@ class PackageController extends Controller
         }
 
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         return new JsonResponse(['softDeleted' => $softDeleted, 'deletionTitle' => $deletionTitle]);
     }
@@ -871,7 +872,6 @@ class PackageController extends Controller
 
         $repo->softDelete($version, VersionDeletionReason::DeletedByAdmin, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         // deletionTitle becomes a public tooltip, so it only carries the public reason.
         $deletionTitle = 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
@@ -896,15 +896,22 @@ class PackageController extends Controller
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
+        // Admins may hide a version that is already soft-deleted as gone-from-upstream or
+        // maintainer-pulled, without recovering it first. Admin-pulled rows already carry a
+        // deliberate admin decision and Hidden rows are already hidden, so those go through recover.
+        $currentReason = $version->getDeletionReason() ?? VersionDeletionReason::AutoDeletedMissing;
+        if ($version->isSoftDeleted() && !$currentReason->isHideableByAdmin()) {
+            throw new AccessDeniedException('This version must be recovered before it can be hidden.');
+        }
+
         $reasonText = trim($req->request->getString('reason')) ?: null;
         $internalReasonText = trim($req->request->getString('internalReason')) ?: null;
 
         $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
-        $deletionTitle = 'Hidden by admin on '.gmdate('Y-m-d H:i:s').' UTC'
-            .($reasonText !== null ? ': '.$reasonText : '');
+        // Read off the entity so the ajax tooltip matches what a page reload renders.
+        $deletionTitle = $version->getDeletionTitle();
 
         return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'glyphicon-eye-close']);
     }
@@ -935,7 +942,6 @@ class PackageController extends Controller
 
         $repo->recover($version, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         return new Response('', 204);
     }
@@ -1839,6 +1845,32 @@ class PackageController extends Controller
         $data['list'] = $list;
 
         return $this->render('package/filter_list_entries.html.twig', $data);
+    }
+
+    /**
+     * Staff-only history of every package:updates job of one package, with each run's log and raw
+     * payload/result. Gated on the role, not the PackageActions::Update voter, as that voter also grants
+     * maintainers and the history exposes internal exception classes/messages. Frozen and suppressed
+     * packages stay viewable here (unlike viewPackageAction) as that is when the log is most needed.
+     */
+    #[IsGranted('ROLE_UPDATE_PACKAGES')]
+    #[Route(path: '/packages/{name}/update-history', name: 'view_package_update_history', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET'])]
+    public function updateHistoryAction(Request $req, string $name, JobRepository $jobRepository): Response
+    {
+        $package = $this->getPackageByName($req, $name);
+        if ($package instanceof Response) {
+            return $package;
+        }
+
+        $jobs = new Pagerfanta(new QueryAdapter($jobRepository->getPackageUpdateJobsQueryBuilder($package->getId()), false, false));
+        $jobs->setNormalizeOutOfRangePages(true);
+        $jobs->setMaxPerPage(20);
+        $jobs->setCurrentPage(max(1, $req->query->getInt('page', 1)));
+
+        return $this->render('package/update_history.html.twig', [
+            'package' => $package,
+            'jobs' => $jobs,
+        ]);
     }
 
     /**

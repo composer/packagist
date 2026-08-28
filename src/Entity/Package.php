@@ -79,14 +79,15 @@ enum PackageFreezeReason: string
 
     /**
      * Freeze reasons a package moderator may apply through the UI, given whether they hold
-     * ROLE_DISABLE_PACKAGES. Excludes automation-only reasons (RemoteIdMismatch, Gone) which are
-     * set by the crawler, never chosen by a human.
+     * ROLE_DISABLE_PACKAGES. Gone is offered here as well as being crawler-set, for repos which are
+     * gone in a way the 404 detection cannot conclude on its own. Excludes RemoteIdMismatch, which
+     * is set by the crawler only, never chosen by a human.
      *
      * @return list<self>
      */
     public static function casesForRole(bool $mayDisablePackages): array
     {
-        return $mayDisablePackages ? [self::Spam, self::Malware, self::Temporary] : [];
+        return $mayDisablePackages ? [self::Spam, self::Malware, self::Gone, self::Temporary] : [];
     }
 }
 

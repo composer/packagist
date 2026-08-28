@@ -16,6 +16,8 @@ use App\Entity\Organization;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationStatus;
 use App\Entity\OrganizationTeam;
+use App\Entity\OrganizationMember;
+use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationTeamMember;
 use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\OrganizationTeamRepository;
@@ -24,6 +26,8 @@ use App\Entity\SlugReservationKind;
 use App\Entity\SlugReservationRepository;
 use App\Entity\User;
 use App\Entity\UserRepository;
+use App\Organization\Domain\Event\InvitationEvent;
+use App\Organization\Domain\Event\MemberJoined;
 use App\Organization\Domain\Event\MemberLeft;
 use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
@@ -56,12 +60,18 @@ final readonly class OrganizationReadModelProjector implements Projector
         private SlugReservationRepository $slugReservationRepo,
         private OrganizationTeamRepository $organizationTeamRepo,
         private OrganizationTeamMemberRepository $organizationTeamMemberRepo,
+        private OrganizationMemberRepository $organizationMemberRepo,
     ) {
     }
 
     public function project(RecordedEvent $recorded): void
     {
         $event = $recorded->event;
+
+        // Invitation-stream events have their own read-model projector and are internal only.
+        if ($event instanceof InvitationEvent) {
+            return;
+        }
 
         match (true) {
             $event instanceof OrganizationCreated => $this->organizationCreated($recorded, $event),
@@ -70,6 +80,7 @@ final readonly class OrganizationReadModelProjector implements Projector
             $event instanceof TeamCreated => $this->teamCreated($recorded, $event),
             $event instanceof TeamRenamed => $this->team($event->teamId)->name = $event->name,
             $event instanceof TeamMemberAdded => $this->teamMemberAdded($recorded, $event),
+            $event instanceof MemberJoined => $this->memberJoined($recorded, $event),
             $event instanceof TeamMemberRemoved => $this->removeMembership($event->teamId, $event->userId),
             $event instanceof TeamDeleted => $this->teamDeleted($event),
             $event instanceof MemberRemoved => $this->memberGone($event->organizationId, $event->userId),
@@ -144,6 +155,11 @@ final readonly class OrganizationReadModelProjector implements Projector
         ));
     }
 
+    private function memberJoined(RecordedEvent $recorded, MemberJoined $event): void
+    {
+        $this->getEM()->persist(new OrganizationMember($event->organizationId, $event->userId, $recorded->occurredAt));
+    }
+
     private function teamDeleted(TeamDeleted $event): void
     {
         foreach ($this->organizationTeamMemberRepo->findByTeam($event->teamId) as $member) {
@@ -160,6 +176,11 @@ final readonly class OrganizationReadModelProjector implements Projector
     {
         foreach ($this->organizationTeamMemberRepo->findBy(['orgId' => $orgId, 'userId' => $userId]) as $member) {
             $this->getEM()->remove($member);
+        }
+
+        $orgMember = $this->organizationMemberRepo->findOneByOrgAndUser($orgId, $userId);
+        if ($orgMember !== null) {
+            $this->getEM()->remove($orgMember);
         }
     }
 

@@ -90,6 +90,13 @@ class OrganizationControllerTest extends IntegrationTestCase
         $connection = static::getService(Connection::class);
         $actorId = $connection->fetchOne("SELECT actorId FROM audit_log WHERE type = 'organization_created'");
         self::assertSame($admin->getId(), (int) $actorId);
+
+        // The founding owner did not drive their own join here, so the entry names both: the owner as
+        // the member, the admin who created the org as the actor.
+        $join = $connection->fetchAssociative("SELECT actorId, userId FROM audit_log WHERE type = 'organization_member_joined'");
+        self::assertIsArray($join);
+        self::assertSame($admin->getId(), (int) $join['actorId']);
+        self::assertSame($owner->getId(), (int) $join['userId']);
     }
 
     public function testCreateRejectsUnknownOwner(): void

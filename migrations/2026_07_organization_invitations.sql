@@ -1,0 +1,42 @@
+-- Organizations: membership invitations.
+-- Read-model projections for the invitation aggregate (organization_invitation) plus the org-level
+-- membership record (organization_member) introduced with the invitation-acceptance flow. Columns,
+-- index names and foreign keys match the Doctrine entity mappings so doctrine:schema:update reports
+-- no changes. Only mapped relations get a foreign key; orgId is a plain ULID column on these
+-- projections, as on organization_team_member.
+--
+-- The invitation aggregate is a separate ULID stream persisted in the shared organization_event
+-- table; no new event table is needed. Pre-membership invitation events (sent/resent/revoked/
+-- declined/expired) stay internal (event stream + these read models) and never reach audit_log.
+
+CREATE TABLE organization_invitation (
+    id BINARY(16) NOT NULL,
+    orgId BINARY(16) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    teamIds JSON NOT NULL,
+    status VARCHAR(16) NOT NULL,
+    -- SHA-256 hex of the single-use link token. Only the hash is stored; the raw token lives
+    -- solely in the emailed link and is never persisted, here or in the event stream.
+    tokenHash VARCHAR(64) NOT NULL,
+    createdAt DATETIME NOT NULL,
+    expiresAt DATETIME NOT NULL,
+    lastSentAt DATETIME NOT NULL,
+    resolvedAt DATETIME DEFAULT NULL,
+    invitedByUserId INT DEFAULT NULL,
+    PRIMARY KEY (id),
+    INDEX org_invitation_org_idx (orgId),
+    INDEX org_invitation_pending_idx (orgId, email, status),
+    INDEX org_invitation_expiry_idx (status, expiresAt),
+    INDEX IDX_1846F34DB319F9DE (invitedByUserId),
+    CONSTRAINT FK_1846F34DB319F9DE FOREIGN KEY (invitedByUserId) REFERENCES fos_user (id) ON DELETE SET NULL
+) DEFAULT CHARACTER SET utf8mb4;
+
+-- Org-level membership record. A member's team memberships (organization_team_member) still drive
+-- access; this row carries the org-scoped facts that are not derivable from team rows (joinedAt).
+CREATE TABLE organization_member (
+    orgId BINARY(16) NOT NULL,
+    userId INT NOT NULL,
+    joinedAt DATETIME NOT NULL,
+    INDEX org_member_user_idx (userId),
+    PRIMARY KEY (orgId, userId)
+) DEFAULT CHARACTER SET utf8mb4;

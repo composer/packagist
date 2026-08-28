@@ -44,6 +44,33 @@ class SecurityAdvisoryTest extends TestCase
         $this->assertSame(0, $advisory->calculateDifferenceScore($updatedAdvisory));
     }
 
+    public function testCalculateDifferenceScoreDoesNotMatchNullCves(): void
+    {
+        $data = [
+            'title' => 'Remote Code Execution',
+            'link' => 'https://example.org/advisory/one',
+            'cve' => null,
+            'branches' => [
+                '1.x' => [
+                    'time' => 1494806400,
+                    'versions' => ['<1.2'],
+                ],
+            ],
+            'reference' => 'composer://acme/security-package',
+        ];
+
+        $remoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('acme/security-package/2017-05-15.yaml', $data);
+
+        $data['title'] = 'Cross-Site Request Forgery';
+        $data['link'] = 'https://example.org/advisory/two';
+        $data['branches']['1.x']['versions'] = ['>=2.0', '<2.1'];
+        $unrelatedRemoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('acme/security-package/2026-08-25.yaml', $data);
+
+        $advisory = new SecurityAdvisory($remoteAdvisory, FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $this->assertSame(5, $advisory->calculateDifferenceScore($unrelatedRemoteAdvisory));
+    }
+
     public function testCalculateDifferenceScoreChangeNameAndCVE(): void
     {
         $remoteAdvisory = RemoteSecurityAdvisory::createFromFriendsOfPhp('league/flysystem/2021-06-24.yaml', [
