@@ -12,12 +12,12 @@
 
 namespace App\QueryFilter\TransparencyLog;
 
-use App\Audit\TransparencyLogType;
+use App\Log\TransparencyLogEventType;
 use App\QueryFilter\QueryFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
 
-class TransparencyLogTypeFilter implements QueryFilterInterface
+class EventTypeFilter implements QueryFilterInterface
 {
     /**
      * @param list<string> $types
@@ -53,14 +53,14 @@ class TransparencyLogTypeFilter implements QueryFilterInterface
     public static function fromQuery(InputBag $bag, bool $allowHiddenTypes = false): self
     {
         $hidden = $allowHiddenTypes ? [] : array_map(
-            static fn (TransparencyLogType $type): string => $type->value,
-            TransparencyLogType::temporarilyHiddenTypes(),
+            static fn (TransparencyLogEventType $type): string => $type->value,
+            TransparencyLogEventType::temporarilyHiddenTypes(),
         );
 
         $types = array_filter(
             $bag->all('type'),
             static fn (mixed $value): bool => \is_string($value)
-                && TransparencyLogType::tryFrom($value) !== null
+                && TransparencyLogEventType::tryFrom($value) !== null
                 && !\in_array($value, $hidden, true),
         );
 

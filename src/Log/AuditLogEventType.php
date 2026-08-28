@@ -10,11 +10,11 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Audit;
+namespace App\Log;
 
-use App\Log\Display\LogEventType;
+use App\Log\LogEventType;
 
-enum AuditRecordType: string implements LogEventType
+enum AuditLogEventType: string implements LogEventType
 {
     // package ownership
     case MaintainerAdded = 'maintainer_added';
@@ -50,8 +50,8 @@ enum AuditRecordType: string implements LogEventType
     case UsernameChanged = 'username_changed';
     case GitHubLinkedWithUser = 'github_linked_with_user';
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user';
-    case TwoFaAuthenticationActivated = 'two_fa_activated';
-    case TwoFaAuthenticationDeactivated = 'two_fa_deactivated';
+    case TwoFactorAuthenticationActivated = 'two_fa_activated';
+    case TwoFactorAuthenticationDeactivated = 'two_fa_deactivated';
 
     // filterlist
     case FilterListEntryAdded = 'filter_list_entry_added';
@@ -106,8 +106,8 @@ enum AuditRecordType: string implements LogEventType
             self::UserFrozen, self::UserUnfrozen,
             self::PasswordResetRequested, self::PasswordReset, self::PasswordChanged,
             self::EmailChanged, self::UsernameChanged, self::GitHubLinkedWithUser,
-            self::GitHubDisconnectedFromUser, self::TwoFaAuthenticationActivated,
-            self::TwoFaAuthenticationDeactivated => 'user',
+            self::GitHubDisconnectedFromUser, self::TwoFactorAuthenticationActivated,
+            self::TwoFactorAuthenticationDeactivated => 'user',
             self::FilterListEntryAdded, self::FilterListEntryDeleted,
             self::FilterListEntryDisabled, self::FilterListEntryEnabled,
             self::FilterListEntryEdited => 'filterlist',

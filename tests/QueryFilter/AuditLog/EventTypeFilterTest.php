@@ -12,14 +12,14 @@
 
 namespace App\Tests\QueryFilter\AuditLog;
 
-use App\Audit\AuditRecordType;
-use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
+use App\Log\AuditLogEventType;
+use App\QueryFilter\AuditLog\EventTypeFilter;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\InputBag;
 
-class AuditRecordTypeFilterTest extends TestCase
+class EventTypeFilterTest extends TestCase
 {
     private EntityManagerInterface $entityManager;
 
@@ -31,7 +31,7 @@ class AuditRecordTypeFilterTest extends TestCase
     public function testFromQueryWithEmptyInput(): void
     {
         $bag = new InputBag([]);
-        $filter = AuditRecordTypeFilter::fromQuery($bag);
+        $filter = EventTypeFilter::fromQuery($bag);
 
         $this->assertSame('type', $filter->getKey());
         $this->assertSame([], $filter->getSelectedValue());
@@ -40,16 +40,16 @@ class AuditRecordTypeFilterTest extends TestCase
     public function testFromQueryWithMultipleValidAndInvalidTypes(): void
     {
         $types = [
-            AuditRecordType::PackageCreated->value,
+            AuditLogEventType::PackageCreated->value,
             'invalid_type',
-            AuditRecordType::VersionDeleted->value,
+            AuditLogEventType::VersionDeleted->value,
         ];
 
         $bag = new InputBag(['type' => $types]);
-        $filter = AuditRecordTypeFilter::fromQuery($bag);
+        $filter = EventTypeFilter::fromQuery($bag);
 
         $this->assertSame(
-            [AuditRecordType::PackageCreated->value, AuditRecordType::VersionDeleted->value],
+            [AuditLogEventType::PackageCreated->value, AuditLogEventType::VersionDeleted->value],
             $filter->getSelectedValue()
         );
     }
@@ -57,7 +57,7 @@ class AuditRecordTypeFilterTest extends TestCase
     public function testFilterWithEmptyTypes(): void
     {
         $bag = new InputBag([]);
-        $filter = AuditRecordTypeFilter::fromQuery($bag);
+        $filter = EventTypeFilter::fromQuery($bag);
 
         $qb = new QueryBuilder($this->entityManager);
         $result = $filter->filter($qb);
@@ -69,12 +69,12 @@ class AuditRecordTypeFilterTest extends TestCase
     public function testFilterWithTypes(): void
     {
         $types = [
-            AuditRecordType::PackageCreated->value,
-            AuditRecordType::VersionCreated->value,
+            AuditLogEventType::PackageCreated->value,
+            AuditLogEventType::VersionCreated->value,
         ];
 
         $bag = new InputBag(['type' => $types]);
-        $filter = AuditRecordTypeFilter::fromQuery($bag);
+        $filter = EventTypeFilter::fromQuery($bag);
 
         $qb = new QueryBuilder($this->entityManager);
         $result = $filter->filter($qb);

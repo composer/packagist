@@ -10,18 +10,18 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Tests\Audit;
+namespace App\Tests\Log;
 
 use App\Audit\AbandonmentReason;
-use App\Audit\AuditRecordType;
-use App\Audit\TransparencyLogScrubber;
-use App\Audit\TransparencyLogType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\Entity\Version;
+use App\Log\AuditLogEventType;
+use App\Log\TransparencyLogEventType;
+use App\Log\TransparencyLogScrubber;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -96,10 +96,10 @@ class TransparencyLogScrubberTest extends TestCase
      * @param array<string, mixed> $expectedScrubbedAttributes
      */
     #[DataProvider('projectedRecords')]
-    public function testProjectedRecordIsScrubbedToExactlyThePublicAttributes(AuditRecordType $type, AuditRecord $record, array $expectedScrubbedAttributes): void
+    public function testProjectedRecordIsScrubbedToExactlyThePublicAttributes(AuditLogEventType $type, AuditRecord $record, array $expectedScrubbedAttributes): void
     {
         self::assertSame($type, $record->type, 'the fixture must build the record type it claims to cover');
-        self::assertNotNull(TransparencyLogType::fromAuditRecordType($type), $type->value.' is not projected, so it does not belong in this data set');
+        self::assertNotNull(TransparencyLogEventType::fromAuditLogEventType($type), $type->value.' is not projected, so it does not belong in this data set');
 
         $scrubbed = new TransparencyLogScrubber()->scrub($record->attributes);
 
@@ -116,7 +116,7 @@ class TransparencyLogScrubberTest extends TestCase
     /**
      * Ensure that every projected audit record type is tested
      */
-    public function testEveryProjectedAuditRecordTypeHasAFixture(): void
+    public function testEveryProjectedAuditLogEventTypeHasAFixture(): void
     {
         $covered = [];
         foreach (self::projectedRecords() as [$type, , ]) {
@@ -125,7 +125,7 @@ class TransparencyLogScrubberTest extends TestCase
 
         self::assertSame(array_unique($covered), $covered, 'each projected audit record type should be covered exactly once');
 
-        $projected = array_map(static fn (AuditRecordType $type): string => $type->value, TransparencyLogType::projectedAuditRecordTypes());
+        $projected = array_map(static fn (AuditLogEventType $type): string => $type->value, TransparencyLogEventType::projectedAuditLogEventTypes());
 
         sort($covered);
         sort($projected);
@@ -161,7 +161,7 @@ class TransparencyLogScrubberTest extends TestCase
     /**
      * One fixture per projected audit record type, keyed by the type value.
      *
-     * @return iterable<string, array{AuditRecordType, AuditRecord, array<string, mixed>}>
+     * @return iterable<string, array{AuditLogEventType, AuditRecord, array<string, mixed>}>
      */
     public static function projectedRecords(): iterable
     {
@@ -173,19 +173,19 @@ class TransparencyLogScrubberTest extends TestCase
 
         // package ownership
         yield 'maintainer_added' => [
-            AuditRecordType::MaintainerAdded,
+            AuditLogEventType::MaintainerAdded,
             AuditRecord::maintainerAdded($package, $maintainer, $admin),
             ['name' => self::PACKAGE_NAME, 'user' => self::MAINTAINER, 'actor' => self::ADMIN],
         ];
 
         yield 'maintainer_removed' => [
-            AuditRecordType::MaintainerRemoved,
+            AuditLogEventType::MaintainerRemoved,
             AuditRecord::maintainerRemoved($package, $maintainer, $admin),
             ['name' => self::PACKAGE_NAME, 'user' => self::MAINTAINER, 'actor' => self::ADMIN],
         ];
 
         yield 'package_transferred' => [
-            AuditRecordType::PackageTransferred,
+            AuditLogEventType::PackageTransferred,
             AuditRecord::packageTransferred($package, $admin, [$maintainer], [$newOwner]),
             [
                 'name' => self::PACKAGE_NAME,
@@ -197,13 +197,13 @@ class TransparencyLogScrubberTest extends TestCase
 
         // package management
         yield 'package_created' => [
-            AuditRecordType::PackageCreated,
+            AuditLogEventType::PackageCreated,
             AuditRecord::packageCreated($package, $maintainer),
             ['name' => self::PACKAGE_NAME, 'repository' => self::REPOSITORY, 'actor' => self::MAINTAINER],
         ];
 
         yield 'canonical_url_changed' => [
-            AuditRecordType::CanonicalUrlChanged,
+            AuditLogEventType::CanonicalUrlChanged,
             AuditRecord::canonicalUrlChange($package, $maintainer, 'https://github.com/acme/old-widget'),
             [
                 'name' => self::PACKAGE_NAME,
@@ -214,7 +214,7 @@ class TransparencyLogScrubberTest extends TestCase
         ];
 
         yield 'package_abandoned' => [
-            AuditRecordType::PackageAbandoned,
+            AuditLogEventType::PackageAbandoned,
             AuditRecord::packageAbandoned($package, $maintainer, 'acme/replacement', AbandonmentReason::Manual),
             [
                 'name' => self::PACKAGE_NAME,
@@ -226,13 +226,13 @@ class TransparencyLogScrubberTest extends TestCase
         ];
 
         yield 'package_unabandoned' => [
-            AuditRecordType::PackageUnabandoned,
+            AuditLogEventType::PackageUnabandoned,
             AuditRecord::packageUnabandoned($package, $maintainer),
             ['name' => self::PACKAGE_NAME, 'repository' => self::REPOSITORY, 'actor' => self::MAINTAINER],
         ];
 
         yield 'package_frozen' => [
-            AuditRecordType::PackageFrozen,
+            AuditLogEventType::PackageFrozen,
             AuditRecord::packageFrozen($package, $admin, PackageFreezeReason::Malware),
             [
                 'name' => self::PACKAGE_NAME,
@@ -243,13 +243,13 @@ class TransparencyLogScrubberTest extends TestCase
         ];
 
         yield 'package_unfrozen' => [
-            AuditRecordType::PackageUnfrozen,
+            AuditLogEventType::PackageUnfrozen,
             AuditRecord::packageUnfrozen($package, $admin),
             ['name' => self::PACKAGE_NAME, 'repository' => self::REPOSITORY, 'actor' => self::ADMIN],
         ];
 
         yield 'package_deleted' => [
-            AuditRecordType::PackageDeleted,
+            AuditLogEventType::PackageDeleted,
             AuditRecord::packageDeleted($package, $admin, 'violates the terms of service', 'reported by jane, ticket '.self::PRIVATE_MARKER),
             [
                 'name' => self::PACKAGE_NAME,
@@ -261,25 +261,25 @@ class TransparencyLogScrubberTest extends TestCase
 
         // version
         yield 'version_created' => [
-            AuditRecordType::VersionCreated,
+            AuditLogEventType::VersionCreated,
             AuditRecord::versionCreated($version, self::versionMetadata(), null),
             ['name' => self::PACKAGE_NAME, 'version' => self::VERSION, 'actor' => 'automation'],
         ];
 
         yield 'version_reference_change_blocked' => [
-            AuditRecordType::VersionReferenceChangeBlocked,
+            AuditLogEventType::VersionReferenceChangeBlocked,
             AuditRecord::versionReferenceChangeBlocked($package, self::VERSION, 'aaaaaaa', 'bbbbbbb'),
             ['name' => self::PACKAGE_NAME, 'version' => self::VERSION, 'ref_from' => 'aaaaaaa', 'ref_to' => 'bbbbbbb'],
         ];
 
         yield 'version_deleted' => [
-            AuditRecordType::VersionDeleted,
+            AuditLogEventType::VersionDeleted,
             AuditRecord::versionDeleted($version, $maintainer),
             ['name' => self::PACKAGE_NAME, 'version' => self::VERSION, 'actor' => self::MAINTAINER],
         ];
 
         yield 'version_soft_deleted' => [
-            AuditRecordType::VersionSoftDeleted,
+            AuditLogEventType::VersionSoftDeleted,
             AuditRecord::versionSoftDeleted($version, VersionDeletionReason::DeletedByAdmin, 'contains a leaked credential', 'reported by jane, ticket '.self::PRIVATE_MARKER, $admin),
             [
                 'name' => self::PACKAGE_NAME,
@@ -291,38 +291,38 @@ class TransparencyLogScrubberTest extends TestCase
         ];
 
         yield 'version_recovered' => [
-            AuditRecordType::VersionRecovered,
+            AuditLogEventType::VersionRecovered,
             AuditRecord::versionRecovered($version, VersionDeletionReason::Hidden, $admin),
             ['name' => self::PACKAGE_NAME, 'version' => self::VERSION, 'previousReason' => 'hidden', 'actor' => self::ADMIN],
         ];
 
         // account security
         yield 'two_fa_activated' => [
-            AuditRecordType::TwoFaAuthenticationActivated,
+            AuditLogEventType::TwoFactorAuthenticationActivated,
             AuditRecord::twoFactorAuthenticationActivated($maintainer, $maintainer),
             ['user' => self::MAINTAINER, 'actor' => self::MAINTAINER],
         ];
 
         yield 'two_fa_deactivated' => [
-            AuditRecordType::TwoFaAuthenticationDeactivated,
+            AuditLogEventType::TwoFactorAuthenticationDeactivated,
             AuditRecord::twoFactorAuthenticationDeactivated($maintainer, $admin, 'Disabled on request from user'),
             ['user' => self::MAINTAINER, 'actor' => self::ADMIN, 'reason' => 'Disabled on request from user'],
         ];
 
         yield 'password_reset' => [
-            AuditRecordType::PasswordReset,
+            AuditLogEventType::PasswordReset,
             AuditRecord::passwordReset($maintainer, $maintainer),
             ['user' => self::MAINTAINER, 'actor' => self::MAINTAINER],
         ];
 
         yield 'password_changed' => [
-            AuditRecordType::PasswordChanged,
+            AuditLogEventType::PasswordChanged,
             AuditRecord::passwordChanged($maintainer, $maintainer),
             ['user' => self::MAINTAINER, 'actor' => self::MAINTAINER],
         ];
 
         yield 'email_changed' => [
-            AuditRecordType::EmailChanged,
+            AuditLogEventType::EmailChanged,
             AuditRecord::emailChanged(
                 self::user(self::MAINTAINER, 'new.'.self::PRIVATE_MARKER.'@example.org'),
                 $maintainer,
@@ -332,7 +332,7 @@ class TransparencyLogScrubberTest extends TestCase
         ];
 
         yield 'github_linked_with_user' => [
-            AuditRecordType::GitHubLinkedWithUser,
+            AuditLogEventType::GitHubLinkedWithUser,
             AuditRecord::gitHubLinkedWithUser($maintainer, $maintainer, 'octo-maintainer', 4242),
             [
                 'user' => self::MAINTAINER,
@@ -343,7 +343,7 @@ class TransparencyLogScrubberTest extends TestCase
         ];
 
         yield 'github_disconnected_from_user' => [
-            AuditRecordType::GitHubDisconnectedFromUser,
+            AuditLogEventType::GitHubDisconnectedFromUser,
             AuditRecord::gitHubDisconnectedFromUser($maintainer, $admin),
             ['user' => self::MAINTAINER, 'actor' => self::ADMIN],
         ];

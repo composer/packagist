@@ -136,7 +136,7 @@ class SupportRiskAssessor
      */
     private function twoFactorEnabledAt(User $user): ?\DateTimeImmutable
     {
-        $records = $this->auditRecords->findForUser($user, [AuditLogEventType::TwoFaAuthenticationActivated], limit: 1);
+        $records = $this->auditRecords->findForUser($user, [AuditLogEventType::TwoFactorAuthenticationActivated], limit: 1);
 
         return $records[0]->datetime ?? null;
     }
@@ -206,8 +206,8 @@ class SupportRiskAssessor
             AuditLogEventType::UsernameChanged,
             AuditLogEventType::GitHubLinkedWithUser,
             AuditLogEventType::GitHubDisconnectedFromUser,
-            AuditLogEventType::TwoFaAuthenticationActivated,
-            AuditLogEventType::TwoFaAuthenticationDeactivated,
+            AuditLogEventType::TwoFactorAuthenticationActivated,
+            AuditLogEventType::TwoFactorAuthenticationDeactivated,
             AuditLogEventType::UserFrozen,
             AuditLogEventType::UserUnfrozen,
         ];

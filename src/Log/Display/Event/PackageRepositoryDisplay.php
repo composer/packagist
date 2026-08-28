@@ -14,7 +14,7 @@ namespace App\Log\Display\Event;
 
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
-use App\Log\Display\LogEventType;
+use App\Log\LogEventType;
 
 /**
  * Package events whose only detail is the repository URL: created / unabandoned / unfrozen.

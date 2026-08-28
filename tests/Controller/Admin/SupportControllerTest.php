@@ -179,7 +179,7 @@ class SupportControllerTest extends IntegrationTestCase
         }
 
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::TwoFaAuthenticationDeactivated->value,
+            'type' => AuditLogEventType::TwoFactorAuthenticationDeactivated->value,
             'userId' => $requester->getId(),
         ]);
         self::assertNotNull($audit, 'the deactivation must be attributable to the affected user, not just the actor');

@@ -12,7 +12,7 @@
 
 namespace App\Entity;
 
-use App\Audit\TransparencyLogType;
+use App\Log\TransparencyLogEventType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\QueryBuilder;
@@ -105,7 +105,7 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
      * All entries, most recently inserted first, for the public read view. Leaf index is insertion
      * order rather than chronology, so an audit_log row committed late appears at the top of the page
      * carrying a datetime older than the entries below it; the datetime filters still use event time.
-     * {@see TransparencyLogType::temporarilyHiddenTypes()} are projected but not shown, unless
+     * {@see TransparencyLogEventType::temporarilyHiddenTypes()} are projected but not shown, unless
      * $includeHiddenTypes is set (auditors see everything).
      */
     public function getQueryBuilderForPublicView(bool $includeHiddenTypes = false): QueryBuilder
@@ -117,8 +117,8 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
         }
 
         $hiddenTypes = array_map(
-            static fn (TransparencyLogType $type): string => $type->value,
-            TransparencyLogType::temporarilyHiddenTypes(),
+            static fn (TransparencyLogEventType $type): string => $type->value,
+            TransparencyLogEventType::temporarilyHiddenTypes(),
         );
         if ($hiddenTypes !== []) {
             $qb->andWhere('t.type NOT IN (:hiddenTypes)')

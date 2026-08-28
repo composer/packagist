@@ -14,7 +14,7 @@ namespace App\Log\Display\Event;
 
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
-use App\Log\Display\LogEventType;
+use App\Log\LogEventType;
 
 /**
  * A maintainer being added to or removed from a package; which one it is, is the type label.

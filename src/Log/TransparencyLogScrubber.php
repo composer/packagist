@@ -10,7 +10,7 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Audit;
+namespace App\Log;
 
 /**
  * Strips private data out of an audit record's attributes before they are copied/fanned out into the public

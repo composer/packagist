@@ -12,13 +12,13 @@
 
 namespace App\Tests\Service;
 
-use App\Audit\TransparencyLogScrubber;
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\PackageRepository;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
+use App\Log\TransparencyLogScrubber;
 use App\Service\TransparencyLogProjector;
 use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;

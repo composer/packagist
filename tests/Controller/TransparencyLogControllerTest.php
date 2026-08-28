@@ -12,10 +12,10 @@
 
 namespace App\Tests\Controller;
 
-use App\Audit\TransparencyLogType;
 use App\Command\ProjectTransparencyLogCommand;
 use App\Entity\AuditRecord;
 use App\Entity\PackageFreezeReason;
+use App\Log\TransparencyLogEventType;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -87,7 +87,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertCount(0, $crawler->filter('[data-test="log-type"]'));
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
-            'type' => [TransparencyLogType::VersionCreated->value],
+            'type' => [TransparencyLogEventType::VersionCreated->value],
         ]));
         static::assertResponseIsSuccessful();
         static::assertCount(0, $crawler->filter('[data-test="log-type"]'));
@@ -127,7 +127,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $this->givenLoggedInVisitor();
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
-            'type' => [TransparencyLogType::TwoFaDeactivated->value],
+            'type' => [TransparencyLogEventType::TwoFactorAuthenticationDeactivated->value],
         ]));
         static::assertResponseIsSuccessful();
 

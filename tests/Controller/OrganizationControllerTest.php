@@ -12,7 +12,6 @@
 
 namespace App\Tests\Controller;
 
-use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Organization;
 use App\Entity\OrganizationMember;
@@ -22,6 +21,7 @@ use App\Entity\OrganizationTeamMember;
 use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
+use App\Log\AuditLogEventType;
 use App\Organization\Domain\OrganizationTeamKind;
 use App\Organization\OrganizationManager;
 use App\Organization\OrganizationMembershipManager;
@@ -861,7 +861,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         );
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', '/organizations/acme/audit-log?type[]='.AuditRecordType::OrganizationNameChanged->value);
+        $crawler = $this->client->request('GET', '/organizations/acme/audit-log?type[]='.AuditLogEventType::OrganizationNameChanged->value);
         self::assertResponseIsSuccessful();
 
         $types = $crawler->filter('[data-test=log-type]')->each(fn ($element) => trim($element->text()));

@@ -12,9 +12,9 @@
 
 namespace App\Log\Display\Event;
 
-use App\Audit\TransparencyLogType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Log\TransparencyLogEventType;
 
 /**
  * Version events whose only detail is the version string: created / deleted.
@@ -22,7 +22,7 @@ use App\Log\Display\ActorDisplay;
 readonly class VersionDisplay extends AbstractLogDisplay
 {
     public function __construct(
-        private TransparencyLogType $type,
+        private TransparencyLogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
         public string $version,
@@ -31,7 +31,7 @@ readonly class VersionDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor);
     }
 
-    public function getType(): TransparencyLogType
+    public function getType(): TransparencyLogEventType
     {
         return $this->type;
     }

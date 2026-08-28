@@ -12,11 +12,11 @@
 
 namespace App\Controller\Admin;
 
-use App\Audit\AuditRecordType;
 use App\Controller\Controller;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
+use App\Log\AuditLogEventType;
 use App\QueryFilter\QueryFilterInterface;
 use App\QueryFilter\User\FrozenStatusFilter;
 use App\QueryFilter\User\GithubIdFilter;
@@ -112,7 +112,7 @@ class UserController extends Controller
         $records = $this->getEM()->getRepository(AuditRecord::class)->createQueryBuilder('a')
             ->where('a.type = :type')
             ->andWhere('a.userId IN (:ids)')
-            ->setParameter('type', AuditRecordType::UserFrozen->value)
+            ->setParameter('type', AuditLogEventType::UserFrozen->value)
             ->setParameter('ids', $userIds)
             ->orderBy('a.datetime', 'DESC')
             ->getQuery()->getResult();

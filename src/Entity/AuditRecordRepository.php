@@ -13,8 +13,8 @@
 namespace App\Entity;
 
 use App\Audit\AuditLogSearchType;
-use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
+use App\Log\AuditLogEventType;
 use App\Service\AuditRecordsManager;
 use App\Util\IpAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -44,11 +44,11 @@ class AuditRecordRepository extends ServiceEntityRepository
             ->where('a.type IN (:types)')
             ->andWhere("JSON_EXTRACT(a.attributes, '$.entry.public_id') = :publicId")
             ->setParameter('types', [
-                AuditRecordType::FilterListEntryAdded->value,
-                AuditRecordType::FilterListEntryDeleted->value,
-                AuditRecordType::FilterListEntryDisabled->value,
-                AuditRecordType::FilterListEntryEnabled->value,
-                AuditRecordType::FilterListEntryEdited->value,
+                AuditLogEventType::FilterListEntryAdded->value,
+                AuditLogEventType::FilterListEntryDeleted->value,
+                AuditLogEventType::FilterListEntryDisabled->value,
+                AuditLogEventType::FilterListEntryEnabled->value,
+                AuditLogEventType::FilterListEntryEdited->value,
             ])
             ->setParameter('publicId', $publicId)
             ->orderBy('a.datetime', 'DESC')
@@ -71,14 +71,14 @@ class AuditRecordRepository extends ServiceEntityRepository
             ->orWhere("(a.type = :softDeleted AND JSON_EXTRACT(a.attributes, '$.reason') IN (:adminVersionReasons))")
             ->orWhere("(a.type = :recovered AND JSON_EXTRACT(a.attributes, '$.previousReason') IN (:adminVersionReasons))")
             ->setParameter('alwaysTypes', [
-                AuditRecordType::UserFrozen->value,
-                AuditRecordType::UserUnfrozen->value,
-                AuditRecordType::UserDeleted->value,
-                AuditRecordType::PackageFrozen->value,
-                AuditRecordType::PackageUnfrozen->value,
+                AuditLogEventType::UserFrozen->value,
+                AuditLogEventType::UserUnfrozen->value,
+                AuditLogEventType::UserDeleted->value,
+                AuditLogEventType::PackageFrozen->value,
+                AuditLogEventType::PackageUnfrozen->value,
             ])
-            ->setParameter('softDeleted', AuditRecordType::VersionSoftDeleted->value)
-            ->setParameter('recovered', AuditRecordType::VersionRecovered->value)
+            ->setParameter('softDeleted', AuditLogEventType::VersionSoftDeleted->value)
+            ->setParameter('recovered', AuditLogEventType::VersionRecovered->value)
             ->setParameter('adminVersionReasons', [
                 VersionDeletionReason::DeletedByAdmin->value,
                 VersionDeletionReason::Hidden->value,
@@ -99,7 +99,7 @@ class AuditRecordRepository extends ServiceEntityRepository
      * holder's events. The cost of that key is that records written under a previous handle are not
      * returned (the rename itself indexes both handles, so it still shows up).
      *
-     * @param list<AuditRecordType> $types
+     * @param list<AuditLogEventType> $types
      *
      * @return list<AuditRecord>
      */
@@ -112,7 +112,7 @@ class AuditRecordRepository extends ServiceEntityRepository
             ->setParameter('searchType', AuditLogSearchType::User->value)
             ->setParameter('username', $user->getUsernameCanonical())
             ->setParameter('userId', $user->getId())
-            ->setParameter('types', array_map(static fn (AuditRecordType $type): string => $type->value, $types))
+            ->setParameter('types', array_map(static fn (AuditLogEventType $type): string => $type->value, $types))
             // ULIDs sort by creation time, so this is the datetime order without the filesort
             ->orderBy('a.id', 'DESC');
 
