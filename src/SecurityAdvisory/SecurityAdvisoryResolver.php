@@ -82,18 +82,34 @@ class SecurityAdvisoryResolver
     }
 
     /**
+     * Convenience wrapper that runs the full resolution in one call. Callers that persist to the
+     * database should instead use {@see self::planResolve()}, {@see self::applyWithdrawals()} and
+     * {@see self::applyMatches()} directly with a flush between the last two, so a reassigned CVE
+     * does not collide with the advisory it was freed from within a single flush.
+     *
      * @param SecurityAdvisory[] $existingAdvisories
      *
      * @return array{SecurityAdvisory[], SecurityAdvisory[]} [$newAdvisories, $withdrawnAdvisories]
      */
     public function resolve(array $existingAdvisories, RemoteSecurityAdvisoryCollection $remoteAdvisories, string $sourceName): array
     {
-        $newAdvisories = [];
-        $withdrawnAdvisories = [];
+        $plan = $this->planResolve($existingAdvisories, $remoteAdvisories, $sourceName);
+        $withdrawnAdvisories = $this->applyWithdrawals($plan);
+        $newAdvisories = $this->applyMatches($plan);
 
+        return [$newAdvisories, $withdrawnAdvisories];
+    }
+
+    /**
+     * Classify every advisory without mutating anything.
+     *
+     * @param SecurityAdvisory[] $existingAdvisories
+     */
+    public function planResolve(array $existingAdvisories, RemoteSecurityAdvisoryCollection $remoteAdvisories, string $sourceName): SecurityAdvisoryResolvePlan
+    {
         /** @var array<string, array<string, SecurityAdvisory>> $existingSourceAdvisoryMap */
         $existingSourceAdvisoryMap = [];
-        /** @var array<string, SecurityAdvisory[]> $unmatchedExistingAdvisories */
+        /** @var array<string, array<string, SecurityAdvisory>> $unmatchedExistingAdvisories */
         $unmatchedExistingAdvisories = [];
         foreach ($existingAdvisories as $advisory) {
             $sourceRemoteId = $advisory->getSourceRemoteId($sourceName);
@@ -104,13 +120,13 @@ class SecurityAdvisoryResolver
             }
         }
 
-        // Attempt to match existing advisories against remote id
+        // Match existing advisories against the remote id
+        $exactMatches = [];
         $unmatchedRemoteAdvisories = [];
         foreach ($remoteAdvisories->getPackageNames() as $packageName) {
             foreach ($remoteAdvisories->getAdvisoriesForPackageName($packageName) as $remoteAdvisory) {
                 if (isset($existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id])) {
-                    $matched = $existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id];
-                    $matched->updateAdvisory($remoteAdvisory, !$this->cveClaimedByActiveAdvisory($existingAdvisories, $matched, $remoteAdvisory->cve));
+                    $exactMatches[] = [$existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id], $remoteAdvisory];
                     unset($existingSourceAdvisoryMap[$packageName][$remoteAdvisory->id]);
                 } else {
                     $unmatchedRemoteAdvisories[$packageName][] = $remoteAdvisory;
@@ -127,12 +143,15 @@ class SecurityAdvisoryResolver
         // Try to match remaining remote advisories with remaining local advisories in case the remote id changed
         // Allow three changes e.g. filename, CVE, date on a rename
         $requiredDifferenceScore = 3;
+        $renameMatches = [];
+        $newRemoteAdvisories = [];
         foreach ($unmatchedRemoteAdvisories as $packageName => $packageAdvisories) {
             foreach ($packageAdvisories as $remoteAdvisory) {
                 $matchedAdvisory = null;
+                $matchedKey = null;
                 $lowestScore = 9999;
                 if (isset($unmatchedExistingAdvisories[$packageName])) {
-                    foreach ($unmatchedExistingAdvisories[$packageName] as $unmatchedAdvisory) {
+                    foreach ($unmatchedExistingAdvisories[$packageName] as $key => $unmatchedAdvisory) {
                         $score = $unmatchedAdvisory->calculateDifferenceScore($remoteAdvisory);
                         if ($score >= $lowestScore || $score > $requiredDifferenceScore) {
                             continue;
@@ -151,38 +170,88 @@ class SecurityAdvisoryResolver
                         }
 
                         $matchedAdvisory = $unmatchedAdvisory;
+                        $matchedKey = $key;
                         $lowestScore = $score;
                     }
                 }
 
                 // No similar existing advisories found. Store them as new advisories
-                if ($matchedAdvisory === null) {
-                    $newAdvisories[] = new SecurityAdvisory($remoteAdvisory, $sourceName);
+                if ($matchedAdvisory === null || $matchedKey === null) {
+                    $newRemoteAdvisories[] = $remoteAdvisory;
                 } else {
-                    // Update advisory and make sure the new source is added
-                    $matchedAdvisory->addSource($remoteAdvisory->id, $sourceName, $remoteAdvisory->severity);
-                    $matchedAdvisory->updateAdvisory($remoteAdvisory, !$this->cveClaimedByActiveAdvisory($existingAdvisories, $matchedAdvisory, $remoteAdvisory->cve));
-                    unset($unmatchedExistingAdvisories[$packageName][$matchedAdvisory->getPackagistAdvisoryId()]);
+                    $renameMatches[] = [$matchedAdvisory, $remoteAdvisory];
+                    unset($unmatchedExistingAdvisories[$packageName][$matchedKey]);
                 }
             }
         }
 
+        $unmatchedExisting = [];
         foreach ($unmatchedExistingAdvisories as $packageUnmatchedAdvisories) {
             foreach ($packageUnmatchedAdvisories as $unmatchedAdvisory) {
                 if (null === $unmatchedAdvisory->getSourceRemoteId($sourceName)) {
                     continue;
                 }
 
-                if ($this->hasOtherSource($unmatchedAdvisory, $sourceName)) {
-                    $unmatchedAdvisory->removeSource($sourceName);
-                    continue;
-                }
-
-                $unmatchedAdvisory->withdraw();
-                $withdrawnAdvisories[] = $unmatchedAdvisory;
+                $unmatchedExisting[] = $unmatchedAdvisory;
             }
         }
 
-        return [$newAdvisories, $withdrawnAdvisories];
+        return new SecurityAdvisoryResolvePlan(
+            $sourceName,
+            $existingAdvisories,
+            $exactMatches,
+            $renameMatches,
+            $newRemoteAdvisories,
+            $unmatchedExisting,
+        );
+    }
+
+    /**
+     * Withdraw (or just detach the source from) the advisories the source no longer lists. Flush
+     * these before {@see self::applyMatches()} so the (packageName, activeCve) keys they free can be
+     * reused in the same run.
+     *
+     * @return SecurityAdvisory[] the advisories that were marked withdrawn
+     */
+    public function applyWithdrawals(SecurityAdvisoryResolvePlan $plan): array
+    {
+        $withdrawn = [];
+        foreach ($plan->unmatchedExisting as $advisory) {
+            if ($this->hasOtherSource($advisory, $plan->sourceName)) {
+                $advisory->removeSource($plan->sourceName);
+                continue;
+            }
+
+            $advisory->withdraw();
+            $withdrawn[] = $advisory;
+        }
+
+        return $withdrawn;
+    }
+
+    /**
+     * Apply the remote data to the matched advisories and build the brand new ones. Run this after
+     * {@see self::applyWithdrawals()} (and a flush) so an advisory re-reported as live can reclaim a
+     * CVE that a same-run withdrawal just freed.
+     *
+     * @return SecurityAdvisory[] freshly created advisories that still need to be persisted
+     */
+    public function applyMatches(SecurityAdvisoryResolvePlan $plan): array
+    {
+        foreach ($plan->exactMatches as [$advisory, $remoteAdvisory]) {
+            $advisory->updateAdvisory($remoteAdvisory, !$this->cveClaimedByActiveAdvisory($plan->existingAdvisories, $advisory, $remoteAdvisory->cve));
+        }
+
+        foreach ($plan->renameMatches as [$advisory, $remoteAdvisory]) {
+            $advisory->addSource($remoteAdvisory->id, $plan->sourceName, $remoteAdvisory->severity);
+            $advisory->updateAdvisory($remoteAdvisory, !$this->cveClaimedByActiveAdvisory($plan->existingAdvisories, $advisory, $remoteAdvisory->cve));
+        }
+
+        $newAdvisories = [];
+        foreach ($plan->newRemoteAdvisories as $remoteAdvisory) {
+            $newAdvisories[] = new SecurityAdvisory($remoteAdvisory, $plan->sourceName);
+        }
+
+        return $newAdvisories;
     }
 }

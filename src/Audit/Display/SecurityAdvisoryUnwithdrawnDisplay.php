@@ -16,6 +16,9 @@ use App\Audit\AuditRecordType;
 
 readonly class SecurityAdvisoryUnwithdrawnDisplay extends AbstractAuditLogDisplay
 {
+    /**
+     * @param array<string, array{from: scalar|null, to: scalar|null}> $changes
+     */
     public function __construct(
         \DateTimeImmutable $datetime,
         public string $packageName,
@@ -23,6 +26,7 @@ readonly class SecurityAdvisoryUnwithdrawnDisplay extends AbstractAuditLogDispla
         public ?string $cve,
         public string $title,
         public string $source,
+        public array $changes,
         ActorDisplay $actor,
         ?string $ip,
     ) {

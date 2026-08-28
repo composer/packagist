@@ -159,6 +159,34 @@ class SecurityAdvisoryWorkerIntegrationTest extends IntegrationTestCase
     }
 
     /**
+     * The CVE is reassigned to a still-listed advisory, while the advisory that used to hold it is
+     * simply absent from the source response (no withdrawn-map entry). resolve() withdraws the
+     * dropped advisory and reassigns the CVE in the same pass, so the withdrawal UPDATE and the
+     * reassignment UPDATE land in one flush and can violate package_name_cve_idx depending on
+     * entity order.
+     */
+    public function testCveReassignedFromAnAdvisoryTheSourceStoppedListing(): void
+    {
+        $survivor = new SecurityAdvisory($this->remoteAdvisory('GHSA-survivor-0000', 'acme/dropped', 'CVE-2024-70007'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $dropped = new SecurityAdvisory($this->remoteAdvisory('GHSA-dropped-1111', 'acme/dropped', 'CVE-2024-80008'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $this->store($survivor, $dropped);
+
+        // No withdrawn map entry: GHSA-dropped-1111 is just absent from the source's response.
+        $collection = new RemoteSecurityAdvisoryCollection(
+            [$this->remoteAdvisory('GHSA-survivor-0000', 'acme/dropped', 'CVE-2024-80008')],
+        );
+
+        $this->runWorkerWithSource($collection);
+
+        $this->getEM()->clear();
+        $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->findByPackageName('acme/dropped');
+
+        $this->assertCount(2, $advisories);
+        $this->assertSame('CVE-2024-80008', $this->activeAdvisory($advisories)->getCve());
+        $this->assertSame('GHSA-survivor-0000', $this->activeAdvisory($advisories)->getRemoteId());
+    }
+
+    /**
      * @param SecurityAdvisory[] $advisories
      */
     private function activeAdvisory(array $advisories): SecurityAdvisory

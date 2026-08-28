@@ -23,4 +23,20 @@
     </div>
 
     {% include 'package/_security_advisory_list.html.twig' %}
+
+    {% if withdrawnCount > 0 %}
+        <section class="row">
+            <section class="col-md-12">
+                <h3>
+                    <a role="button" class="collapsed" data-toggle="collapse" href="#withdrawn-advisories" aria-expanded="false" aria-controls="withdrawn-advisories">
+                        <span class="caret"></span> Withdrawn advisories ({{ withdrawnCount }})
+                    </a>
+                </h3>
+                <p class="text-muted">These advisories were withdrawn at their source and are not included in the count above. They are kept so you can still look up advisories you encountered previously.</p>
+            </section>
+        </section>
+        <div class="collapse" id="withdrawn-advisories">
+            {% include 'package/_security_advisory_list.html.twig' with {securityAdvisories: withdrawnSecurityAdvisories} %}
+        </div>
+    {% endif %}
 {% endblock %}

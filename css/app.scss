@@ -2341,3 +2341,18 @@ body {
         margin-right: 6px;
     }
 }
+
+// Security advisory severity labels
+.label-severity {
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 70%;
+    vertical-align: middle;
+}
+
+.label-severity-critical { background-color: #b02a37; }
+.label-severity-high     { background-color: #d9534f; }
+.label-severity-medium   { background-color: #d98c00; }
+.label-severity-low      { background-color: #6c8fa3; }
+.label-severity-none     { background-color: #777777; }

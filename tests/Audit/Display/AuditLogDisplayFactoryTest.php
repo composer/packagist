@@ -729,6 +729,7 @@ class AuditLogDisplayFactoryTest extends TestCase
                 'remoteId' => 'GHSA-aaaa-bbbb-cccc',
                 'cve' => 'CVE-2024-12345',
                 'title' => 'Restored advisory',
+                'changes' => ['affectedVersions' => ['from' => '^1.0', 'to' => '^2.0']],
                 'actor' => 'automation',
             ]
         );
@@ -737,6 +738,7 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         self::assertInstanceOf(SecurityAdvisoryUnwithdrawnDisplay::class, $display);
         self::assertSame('CVE-2024-12345', $display->cve);
+        self::assertSame(['affectedVersions' => ['from' => '^1.0', 'to' => '^2.0']], $display->changes);
         self::assertSame(AuditRecordType::SecurityAdvisoryUnwithdrawn, $display->getType());
         self::assertSame('audit_log/display/security_advisory_unwithdrawn.html.twig', $display->getTemplateName());
     }

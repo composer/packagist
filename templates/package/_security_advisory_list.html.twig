@@ -8,7 +8,7 @@
                             <div class="row">
                                 <div class="col-sm-8 col-lg-9">
                                     <h4 class="font-bold">
-                                        {% if advisory.severity %}[{{ advisory.severity.value|upper }}]{% endif %}
+                                        {% if advisory.severity %}<span class="label label-severity {{ advisory.severity.labelClass }}">{{ advisory.severity.value|capitalize }}</span>{% endif %}
                                         <a href="{{ advisory.link }}">{{ advisory.title }}</a>
                                         {% if advisory.withdrawnAt %}<span class="label label-default">Withdrawn {{ advisory.withdrawnAt|date('Y-m-d') }}</span>{% endif %}
                                     </h4>

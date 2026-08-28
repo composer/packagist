@@ -187,6 +187,31 @@ class SecurityAdvisoryResolverTest extends TestCase
         $this->assertNotNull($withdrawnAdvisory->getWithdrawnAt());
     }
 
+    public function testResolveUnWithdrawsWhenTheAdvisoryHoldingTheCveIsWithdrawnInTheSameRun(): void
+    {
+        $date = new \DateTimeImmutable('2024-01-01');
+        $droppedByTheSource = new SecurityAdvisory(
+            new RemoteSecurityAdvisory('ghsa-a', 'Advisory A', 'acme/package', '^1.0', 'https://example.org/a', 'CVE-2024-1111', $date, null, [], 'test', null),
+            'test',
+        );
+        $reportedAsLiveAgain = new SecurityAdvisory(
+            new RemoteSecurityAdvisory('ghsa-b', 'Advisory B', 'acme/package', '^1.0', 'https://example.org/b', 'CVE-2024-1111', $date, null, [], 'test', null),
+            'test',
+        );
+        $reportedAsLiveAgain->withdraw();
+
+        $collection = new RemoteSecurityAdvisoryCollection([
+            new RemoteSecurityAdvisory('ghsa-b', 'Advisory B', 'acme/package', '^1.0', 'https://example.org/b', 'CVE-2024-1111', $date, null, [], 'test', null),
+        ]);
+
+        [$new, $withdrawn] = $this->resolver->resolve([$droppedByTheSource, $reportedAsLiveAgain], $collection, 'test');
+
+        $this->assertSame([], $new);
+        $this->assertSame([$droppedByTheSource], $withdrawn);
+        $this->assertTrue($droppedByTheSource->isWithdrawn());
+        $this->assertFalse($reportedAsLiveAgain->isWithdrawn(), 'the advisory the source reports as live must not stay withdrawn once the CVE holder is withdrawn in the same run');
+    }
+
     public function testResolveEmpty(): void
     {
         [$new, $withdrawn] = $this->resolver->resolve([], new RemoteSecurityAdvisoryCollection([]), 'test');

@@ -718,11 +718,14 @@ class AuditRecord
         );
     }
 
-    public static function securityAdvisoryUnwithdrawn(SecurityAdvisory $advisory, ?User $actor, ?int $packageId): self
+    /**
+     * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, mixed>> $changeSet the Doctrine entity change set (field => [old, new])
+     */
+    public static function securityAdvisoryUnwithdrawn(SecurityAdvisory $advisory, ?User $actor, array $changeSet, ?int $packageId): self
     {
         return new self(
             AuditRecordType::SecurityAdvisoryUnwithdrawn,
-            self::getSecurityAdvisoryData($advisory, $actor),
+            [...self::getSecurityAdvisoryData($advisory, $actor), 'changes' => self::getSecurityAdvisoryChanges($changeSet)],
             vendor: self::vendorFromPackageName($advisory->getPackageName()),
             actorId: $actor?->getId(),
             packageId: $packageId,
@@ -767,8 +770,8 @@ class AuditRecord
     {
         $changes = [];
         foreach ($changeSet as $field => $change) {
-            // Skip the timestamp and any collection-valued changes; we only record scalar field diffs.
-            if ($field === 'updatedAt' || !\is_array($change)) {
+            // Skip bookkeeping fields (implied by the record type) and collection-valued changes; we only record scalar field diffs.
+            if (\in_array($field, ['updatedAt', 'withdrawnAt'], true) || !\is_array($change)) {
                 continue;
             }
 

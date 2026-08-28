@@ -80,14 +80,19 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
 
         self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisoryWithdrawn));
 
-        // Un-withdrawn: the source reports the advisory as live again.
-        $advisory->updateAdvisory($this->remoteAdvisory('GHSA-aaaa-bbbb-cccc', '^2.0'));
+        // Un-withdrawn: the source reports the advisory as live again, with a changed field.
+        $advisory->updateAdvisory($this->remoteAdvisory('GHSA-aaaa-bbbb-cccc', '^3.0'));
         $em->flush();
 
         self::assertNull($advisory->getWithdrawnAt());
 
         self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisoryUnwithdrawn));
         self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisoryWithdrawn), 'Un-withdrawing must not be recorded as another withdrawal');
+
+        $attributes = $this->latestAttributes(AuditRecordType::SecurityAdvisoryUnwithdrawn);
+        self::assertSame('^2.0', $attributes['changes']['affectedVersions']['from']);
+        self::assertSame('^3.0', $attributes['changes']['affectedVersions']['to']);
+        self::assertArrayNotHasKey('withdrawnAt', $attributes['changes'], 'The withdrawnAt flip is implied by the record type');
     }
 
     private function auditCount(AuditRecordType $type): int

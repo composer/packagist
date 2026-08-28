@@ -56,7 +56,7 @@ class SecurityAdvisoryAuditListener
         if ($event->hasChangedField('withdrawnAt')) {
             $this->buffered[] = null !== $event->getNewValue('withdrawnAt')
                 ? AuditRecord::securityAdvisoryWithdrawn($advisory, $this->getUser(), $this->getPackageId($advisory))
-                : AuditRecord::securityAdvisoryUnwithdrawn($advisory, $this->getUser(), $this->getPackageId($advisory));
+                : AuditRecord::securityAdvisoryUnwithdrawn($advisory, $this->getUser(), $event->getEntityChangeSet(), $this->getPackageId($advisory));
 
             return;
         }

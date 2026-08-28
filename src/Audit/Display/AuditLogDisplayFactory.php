@@ -314,6 +314,7 @@ class AuditLogDisplayFactory
                 $record->attributes['cve'] ?? null,
                 $record->attributes['title'],
                 $record->attributes['source'],
+                $record->attributes['changes'] ?? [],
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip,
             ),

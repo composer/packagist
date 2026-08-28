@@ -42,4 +42,19 @@ class SeverityTest extends TestCase
         yield ['LOW', Severity::LOW];
         yield [null, null];
     }
+
+    #[DataProvider('labelClassProvider')]
+    public function testLabelClass(Severity $severity, string $expected): void
+    {
+        $this->assertSame($expected, $severity->labelClass());
+    }
+
+    public static function labelClassProvider(): iterable
+    {
+        yield [Severity::NONE, 'label-severity-none'];
+        yield [Severity::LOW, 'label-severity-low'];
+        yield [Severity::MEDIUM, 'label-severity-medium'];
+        yield [Severity::HIGH, 'label-severity-high'];
+        yield [Severity::CRITICAL, 'label-severity-critical'];
+    }
 }
