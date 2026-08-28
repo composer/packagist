@@ -84,6 +84,9 @@ class PackageTransparencyLog
         #[ORM\Column]
         public readonly int $packageId,
 
+        #[ORM\Column(length: 255)]
+        public readonly string $packageName,
+
         #[ORM\Column(nullable: true)]
         public readonly ?int $actorId = null,
         #[ORM\Column(nullable: true)]
@@ -109,7 +112,7 @@ class PackageTransparencyLog
      *
      * @param array<string, mixed> $scrubbedAttributes
      */
-    public static function project(AuditRecord $source, TransparencyLogType $type, int $leafIndex, array $scrubbedAttributes, int $packageId, ?string $vendor): self
+    public static function project(AuditRecord $source, TransparencyLogType $type, int $leafIndex, array $scrubbedAttributes, int $packageId, ?string $vendor, string $packageName): self
     {
         return new self(
             sourceAuditLogId: $source->id,
@@ -120,6 +123,7 @@ class PackageTransparencyLog
             actorId: $source->actorId,
             vendor: $vendor,
             packageId: $packageId,
+            packageName: $packageName,
             userId: $source->userId,
             organizationId: $source->organizationId,
         );
