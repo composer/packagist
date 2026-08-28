@@ -12,7 +12,7 @@
 
 namespace App\Log\Display\Event;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 
@@ -29,9 +29,9 @@ readonly class EmailChangedDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditRecordType
+    public function getType(): AuditLogEventType
     {
-        return AuditRecordType::EmailChanged;
+        return AuditLogEventType::EmailChanged;
     }
 
     public function getTemplateName(): string

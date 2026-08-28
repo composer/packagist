@@ -12,14 +12,14 @@
 
 namespace App\Service;
 
-use App\Audit\TransparencyLogScrubber;
-use App\Audit\TransparencyLogType;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\PackageRepository;
 use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
+use App\Log\TransparencyLogEventType;
+use App\Log\TransparencyLogScrubber;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
@@ -219,7 +219,7 @@ class TransparencyLogProjector
      */
     private function projectRecord(AuditRecord $record, int $leafIndex): int
     {
-        $type = TransparencyLogType::fromAuditRecordType($record->type);
+        $type = TransparencyLogEventType::fromAuditLogEventType($record->type);
         if ($type === null) {
             // Only reachable from a seed that named a type we do not project.
             return 0;
@@ -241,7 +241,7 @@ class TransparencyLogProjector
      * for a user who maintains nothing).
      * @return list<array{id: int, vendor: string|null, name: string}>
      */
-    private function resolveTargets(AuditRecord $record, TransparencyLogType $type): array
+    private function resolveTargets(AuditRecord $record, TransparencyLogEventType $type): array
     {
         if ($type->fansOutToMaintainedPackages()) {
             return $record->userId !== null ? $this->packageRepository->getPackageRefsByMaintainer($record->userId) : [];
@@ -286,7 +286,7 @@ class TransparencyLogProjector
      *
      * @return int rows actually inserted
      */
-    private function insertTargets(AuditRecord $record, TransparencyLogType $type, array $targets, array $scrubbedAttributes, int $leafIndex): int
+    private function insertTargets(AuditRecord $record, TransparencyLogEventType $type, array $targets, array $scrubbedAttributes, int $leafIndex): int
     {
         $inserted = 0;
         foreach ($targets as $target) {

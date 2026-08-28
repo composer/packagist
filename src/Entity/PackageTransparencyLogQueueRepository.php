@@ -12,7 +12,7 @@
 
 namespace App\Entity;
 
-use App\Audit\TransparencyLogType;
+use App\Log\TransparencyLogEventType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Types\UlidType;
@@ -41,7 +41,7 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
      */
     public function enqueue(AuditRecord $record): void
     {
-        if (TransparencyLogType::fromAuditRecordType($record->type) === null) {
+        if (TransparencyLogEventType::fromAuditLogEventType($record->type) === null) {
             return;
         }
 

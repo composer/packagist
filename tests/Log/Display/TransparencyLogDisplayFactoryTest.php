@@ -12,12 +12,12 @@
 
 namespace App\Tests\Log\Display;
 
-use App\Audit\TransparencyLogType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageTransparencyLog;
 use App\Log\Display\Event\MaintainerAccountEventDisplay;
 use App\Log\Display\TransparencyLogDisplayFactory;
+use App\Log\TransparencyLogEventType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -45,17 +45,17 @@ class TransparencyLogDisplayFactoryTest extends TestCase
     ];
 
     /**
-     * @return iterable<string, array{TransparencyLogType}>
+     * @return iterable<string, array{TransparencyLogEventType}>
      */
     public static function provideTypes(): iterable
     {
-        foreach (TransparencyLogType::cases() as $type) {
+        foreach (TransparencyLogEventType::cases() as $type) {
             yield $type->value => [$type];
         }
     }
 
     #[DataProvider('provideTypes')]
-    public function testEveryTypeBuildsADisplayRenderableByTheLogTable(TransparencyLogType $type): void
+    public function testEveryTypeBuildsADisplayRenderableByTheLogTable(TransparencyLogEventType $type): void
     {
         $display = (new TransparencyLogDisplayFactory())->buildSingle($this->entry($type));
 
@@ -69,11 +69,11 @@ class TransparencyLogDisplayFactoryTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{TransparencyLogType}>
+     * @return iterable<string, array{TransparencyLogEventType}>
      */
     public static function provideFannedOutTypes(): iterable
     {
-        foreach (TransparencyLogType::cases() as $type) {
+        foreach (TransparencyLogEventType::cases() as $type) {
             if ($type->fansOutToMaintainedPackages()) {
                 yield $type->value => [$type];
             }
@@ -85,7 +85,7 @@ class TransparencyLogDisplayFactoryTest extends TestCase
      * thing that tells the fanned-out copies apart on the unfiltered log.
      */
     #[DataProvider('provideFannedOutTypes')]
-    public function testAccountEventNamesThePackageItWasFannedOutOnto(TransparencyLogType $type): void
+    public function testAccountEventNamesThePackageItWasFannedOutOnto(TransparencyLogEventType $type): void
     {
         // Deliberately different from the 'name' in self::ATTRIBUTES: the display must read the
         // column, not the source event's attributes.
@@ -96,7 +96,7 @@ class TransparencyLogDisplayFactoryTest extends TestCase
         self::assertSame('maintainer', $display->maintainerUsername);
     }
 
-    private function entry(TransparencyLogType $type, string $packageName = 'acme/logged'): PackageTransparencyLog
+    private function entry(TransparencyLogEventType $type, string $packageName = 'acme/logged'): PackageTransparencyLog
     {
         $package = new Package();
         $package->setName('acme/logged');

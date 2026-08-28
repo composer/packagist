@@ -10,18 +10,18 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Log\Display;
+namespace App\Log;
 
 /**
- * An event type that can be rendered as a log row: {@see \App\Audit\AuditRecordType} for the internal
- * audit log, {@see \App\Audit\TransparencyLogType} for the public transparency log.
+ * An event type that can be rendered as a log row: {@see \App\Log\AuditLogEventType} for the internal
+ * audit log, {@see \App\Log\TransparencyLogEventType} for the public transparency log.
  *
  * A display class is shared by both logs wherever the event carries the same detail in each, so the
  * type it was built with identifies the row.
  *
  * The two enums implement this common type only because each log projects a different subset of
  * events; both render under the same shared 'log.' translation vocabulary (see
- * {@see AbstractLogDisplay::getTypeTranslationKey()}).
+ * {@see \App\Log\Display\AbstractLogDisplay::getTypeTranslationKey()}).
  */
 interface LogEventType extends \BackedEnum
 {

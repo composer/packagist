@@ -14,11 +14,11 @@ namespace App\Tests\Controller;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\AuditLogSearchType;
-use App\Audit\AuditRecordType;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
+use App\Log\AuditLogEventType;
 use App\Tests\Fixtures\Fixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -57,7 +57,7 @@ class PackageAuditRecordTest extends KernelTestCase
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(1, $logs);
-        self::assertSame(AuditRecordType::PackageCreated->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageCreated->value, $logs[0]['type']);
 
         // Change the repository property through reflection, to avoid the costly network-based initialization
         new \ReflectionProperty($package, 'repository')->setValue($package, 'https://github.com/composer/packagist');
@@ -66,7 +66,7 @@ class PackageAuditRecordTest extends KernelTestCase
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(2, $logs);
-        self::assertSame(AuditRecordType::CanonicalUrlChanged->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::CanonicalUrlChanged->value, $logs[0]['type']);
         self::assertSame('{"name": "composer/composer", "actor": "unknown", "repository_to": "https://github.com/composer/packagist", "repository_from": "https://github.com/composer/composer"}', $logs[0]['attributes']);
 
         $em->remove($package);
@@ -74,7 +74,7 @@ class PackageAuditRecordTest extends KernelTestCase
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(3, $logs);
-        self::assertSame(AuditRecordType::PackageDeleted->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageDeleted->value, $logs[0]['type']);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertArrayHasKey('reason', $attributes);
         self::assertNull($attributes['reason']);
@@ -101,7 +101,7 @@ class PackageAuditRecordTest extends KernelTestCase
         $em->persist($package);
         $em->flush();
 
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditRecordType::PackageCreated->value]);
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditLogEventType::PackageCreated->value]);
         self::assertCount(1, $logs);
         self::assertSame($moderator->getId(), $logs[0]['actorId']);
         self::assertSame($maintainer->getId(), $logs[0]['userId']);
@@ -130,7 +130,7 @@ class PackageAuditRecordTest extends KernelTestCase
         $em->persist($package);
         $em->flush();
 
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditRecordType::PackageCreated->value]);
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditLogEventType::PackageCreated->value]);
         self::assertCount(1, $logs);
         self::assertSame($user->getId(), $logs[0]['actorId']);
         self::assertNull($logs[0]['userId']);
@@ -151,7 +151,7 @@ class PackageAuditRecordTest extends KernelTestCase
         $em->persist($package);
         $em->flush();
 
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditRecordType::PackageCreated->value]);
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditLogEventType::PackageCreated->value]);
         self::assertCount(1, $logs);
         self::assertNull($logs[0]['actorId']);
         self::assertSame($user->getId(), $logs[0]['userId']);
@@ -174,7 +174,7 @@ class PackageAuditRecordTest extends KernelTestCase
         $em->remove($package);
         $em->flush();
 
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageDeleted->value]);
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditLogEventType::PackageDeleted->value]);
         self::assertCount(1, $logs);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('public takedown notice', $attributes['reason']);
@@ -194,7 +194,7 @@ class PackageAuditRecordTest extends KernelTestCase
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(1, $logs);
-        self::assertSame(AuditRecordType::PackageCreated->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageCreated->value, $logs[0]['type']);
 
         // Test abandonment with replacement package
         $package->setAbandoned(true);
@@ -206,7 +206,7 @@ class PackageAuditRecordTest extends KernelTestCase
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(2, $logs);
-        self::assertSame(AuditRecordType::PackageAbandoned->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageAbandoned->value, $logs[0]['type']);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('test/package', $attributes['name']);
         self::assertSame('https://github.com/test/package', $attributes['repository']);
@@ -225,7 +225,7 @@ class PackageAuditRecordTest extends KernelTestCase
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(3, $logs);
-        self::assertSame(AuditRecordType::PackageUnabandoned->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageUnabandoned->value, $logs[0]['type']);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('test/package', $attributes['name']);
         self::assertSame('https://github.com/test/package', $attributes['repository']);
@@ -249,9 +249,9 @@ class PackageAuditRecordTest extends KernelTestCase
         $eventDispatcher->dispatch(new PackageAbandonedEvent($package, AbandonmentReason::Unknown));
         $em->flush();
 
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageAbandoned->value]);
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditLogEventType::PackageAbandoned->value]);
         self::assertCount(1, $logs);
-        self::assertSame(AuditRecordType::PackageAbandoned->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageAbandoned->value, $logs[0]['type']);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('test/package2', $attributes['name']);
         self::assertNull($attributes['replacement_package']);
@@ -264,9 +264,9 @@ class PackageAuditRecordTest extends KernelTestCase
         $eventDispatcher->dispatch(new PackageUnabandonedEvent($package, AbandonmentReason::Unknown));
         $em->flush();
 
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageUnabandoned->value]);
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditLogEventType::PackageUnabandoned->value]);
         self::assertCount(1, $logs);
-        self::assertSame(AuditRecordType::PackageUnabandoned->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageUnabandoned->value, $logs[0]['type']);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('test/package2', $attributes['name']);
     }
@@ -283,16 +283,16 @@ class PackageAuditRecordTest extends KernelTestCase
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log ORDER BY id DESC');
         self::assertCount(1, $logs);
-        self::assertSame(AuditRecordType::PackageCreated->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageCreated->value, $logs[0]['type']);
 
         // Test freezing
         $package->freeze(PackageFreezeReason::Spam);
         $em->persist($package);
         $em->flush();
 
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageFrozen->value]);
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditLogEventType::PackageFrozen->value]);
         self::assertCount(1, $logs);
-        self::assertSame(AuditRecordType::PackageFrozen->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageFrozen->value, $logs[0]['type']);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('test/freeze-package', $attributes['name']);
         self::assertSame('https://github.com/test/freeze-package', $attributes['repository']);
@@ -304,9 +304,9 @@ class PackageAuditRecordTest extends KernelTestCase
         $em->persist($package);
         $em->flush();
 
-        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditRecordType::PackageUnfrozen->value]);
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditLogEventType::PackageUnfrozen->value]);
         self::assertCount(1, $logs);
-        self::assertSame(AuditRecordType::PackageUnfrozen->value, $logs[0]['type']);
+        self::assertSame(AuditLogEventType::PackageUnfrozen->value, $logs[0]['type']);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertSame('test/freeze-package', $attributes['name']);
         self::assertSame('https://github.com/test/freeze-package', $attributes['repository']);

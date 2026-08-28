@@ -12,11 +12,11 @@
 
 namespace App\Controller;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 use App\Log\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\QueryFilter\AuditLog\ActorFilter;
-use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
+use App\QueryFilter\AuditLog\EventTypeFilter;
 use App\QueryFilter\AuditLog\DateTimeFromFilter;
 use App\QueryFilter\AuditLog\DateTimeToFilter;
 use App\QueryFilter\AuditLog\PackageNameFilter;
@@ -30,10 +30,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/**
- * The internal audit log over raw audit_log rows, including records and fields that never reach the
- * public transparency log.
- */
 class AdminAuditLogController extends Controller
 {
     #[IsGranted('ROLE_AUDITOR')]
@@ -43,10 +39,9 @@ class AdminAuditLogController extends Controller
         $dateTimeFromFilter = DateTimeFromFilter::fromQuery($request->query);
         $dateTimeToFilter = DateTimeToFilter::fromQuery($request->query);
 
-        // Everyone reaching this page holds ROLE_AUDITOR, so the admin-only wildcard search is always on.
         /** @var QueryFilterInterface[] $filters */
         $filters = [
-            AuditRecordTypeFilter::fromQuery($request->query),
+            EventTypeFilter::fromQuery($request->query),
             ActorFilter::fromQuery($request->query, 'actor', true),
             UserFilter::fromQuery($request->query, 'user', true),
             VendorFilter::fromQuery($request->query, 'vendor', true),
@@ -65,8 +60,8 @@ class AdminAuditLogController extends Controller
         // Don't display 2FA events in the result list initially
         $qb->andWhere('a.type NOT IN (:hidden_types)')
             ->setParameter('hidden_types', [
-                AuditRecordType::TwoFaAuthenticationActivated->value,
-                AuditRecordType::TwoFaAuthenticationDeactivated->value,
+                AuditLogEventType::TwoFactorAuthenticationActivated->value,
+                AuditLogEventType::TwoFactorAuthenticationDeactivated->value,
             ]);
 
         $auditLogs = new Pagerfanta(new QueryAdapter($qb, false, false));
@@ -82,9 +77,9 @@ class AdminAuditLogController extends Controller
         // Group types by category in desired order
         $categoryOrder = ['ownership', 'package', 'version', 'user', 'filterlist', 'advisory', 'organization'];
         $groupedTypes = [];
-        foreach (AuditRecordType::cases() as $type) {
+        foreach (AuditLogEventType::cases() as $type) {
             // Don't display 2FA events in the type filter initially
-            if ($type === AuditRecordType::TwoFaAuthenticationActivated || $type === AuditRecordType::TwoFaAuthenticationDeactivated) {
+            if ($type === AuditLogEventType::TwoFactorAuthenticationActivated || $type === AuditLogEventType::TwoFactorAuthenticationDeactivated) {
                 continue;
             }
             $groupedTypes[$type->category()][] = $type;

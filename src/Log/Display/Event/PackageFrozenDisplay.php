@@ -15,7 +15,7 @@ namespace App\Log\Display\Event;
 use App\Entity\PackageFreezeReason;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
-use App\Log\Display\LogEventType;
+use App\Log\LogEventType;
 
 readonly class PackageFrozenDisplay extends AbstractLogDisplay
 {

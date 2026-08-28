@@ -12,9 +12,9 @@
 
 namespace App\Log\Display\Event;
 
-use App\Audit\TransparencyLogType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Log\TransparencyLogEventType;
 
 /**
  * A user account-security event (2FA, password, email, GitHub link) fanned out onto a package the
@@ -23,7 +23,7 @@ use App\Log\Display\ActorDisplay;
 readonly class MaintainerAccountEventDisplay extends AbstractLogDisplay
 {
     public function __construct(
-        private TransparencyLogType $type,
+        private TransparencyLogEventType $type,
         \DateTimeImmutable $datetime,
         public string $maintainerUsername,
         public string $packageName,
@@ -32,7 +32,7 @@ readonly class MaintainerAccountEventDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor);
     }
 
-    public function getType(): TransparencyLogType
+    public function getType(): TransparencyLogEventType
     {
         return $this->type;
     }

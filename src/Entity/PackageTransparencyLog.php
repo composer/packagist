@@ -12,7 +12,7 @@
 
 namespace App\Entity;
 
-use App\Audit\TransparencyLogType;
+use App\Log\TransparencyLogEventType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
@@ -61,7 +61,7 @@ class PackageTransparencyLog
         public readonly int $leafIndex,
 
         #[ORM\Column(length: 64)]
-        public readonly TransparencyLogType $type,
+        public readonly TransparencyLogEventType $type,
 
         /**
          * PII-scrubbed copy of the source audit record's attributes.
@@ -108,11 +108,11 @@ class PackageTransparencyLog
     /**
      * Builds a transparency-log entry from a source audit record, targeting a specific package.
      *
-     * Attributes must already be scrubbed by {@see \App\Audit\TransparencyLogScrubber}.
+     * Attributes must already be scrubbed by {@see \App\Log\TransparencyLogScrubber}.
      *
      * @param array<string, mixed> $scrubbedAttributes
      */
-    public static function project(AuditRecord $source, TransparencyLogType $type, int $leafIndex, array $scrubbedAttributes, int $packageId, ?string $vendor, string $packageName): self
+    public static function project(AuditRecord $source, TransparencyLogEventType $type, int $leafIndex, array $scrubbedAttributes, int $packageId, ?string $vendor, string $packageName): self
     {
         return new self(
             sourceAuditLogId: $source->id,
