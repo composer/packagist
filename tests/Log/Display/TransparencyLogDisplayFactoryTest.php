@@ -16,6 +16,7 @@ use App\Audit\TransparencyLogType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageTransparencyLog;
+use App\Log\Display\Event\MaintainerAccountEventDisplay;
 use App\Log\Display\TransparencyLogDisplayFactory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -67,7 +68,35 @@ class TransparencyLogDisplayFactoryTest extends TestCase
         );
     }
 
-    private function entry(TransparencyLogType $type): PackageTransparencyLog
+    /**
+     * @return iterable<string, array{TransparencyLogType}>
+     */
+    public static function provideFannedOutTypes(): iterable
+    {
+        foreach (TransparencyLogType::cases() as $type) {
+            if ($type->fansOutToMaintainedPackages()) {
+                yield $type->value => [$type];
+            }
+        }
+    }
+
+    /**
+     * An account event carries no package of its own, so the row's own packageName column is the only
+     * thing that tells the fanned-out copies apart on the unfiltered log.
+     */
+    #[DataProvider('provideFannedOutTypes')]
+    public function testAccountEventNamesThePackageItWasFannedOutOnto(TransparencyLogType $type): void
+    {
+        // Deliberately different from the 'name' in self::ATTRIBUTES: the display must read the
+        // column, not the source event's attributes.
+        $display = new TransparencyLogDisplayFactory()->buildSingle($this->entry($type, 'acme/fanned-out'));
+
+        self::assertInstanceOf(MaintainerAccountEventDisplay::class, $display);
+        self::assertSame('acme/fanned-out', $display->packageName);
+        self::assertSame('maintainer', $display->maintainerUsername);
+    }
+
+    private function entry(TransparencyLogType $type, string $packageName = 'acme/logged'): PackageTransparencyLog
     {
         $package = new Package();
         $package->setName('acme/logged');
@@ -81,6 +110,7 @@ class TransparencyLogDisplayFactoryTest extends TestCase
             self::ATTRIBUTES,
             1,
             'acme',
+            $packageName,
         );
     }
 }

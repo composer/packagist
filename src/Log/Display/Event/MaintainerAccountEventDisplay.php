@@ -18,7 +18,7 @@ use App\Log\Display\ActorDisplay;
 
 /**
  * A user account-security event (2FA, password, email, GitHub link) fanned out onto a package the
- * user maintains. The specific event is conveyed by the type label; the detail names the maintainer.
+ * user maintains.
  */
 readonly class MaintainerAccountEventDisplay extends AbstractLogDisplay
 {
@@ -26,6 +26,7 @@ readonly class MaintainerAccountEventDisplay extends AbstractLogDisplay
         private TransparencyLogType $type,
         \DateTimeImmutable $datetime,
         public string $maintainerUsername,
+        public string $packageName,
         ActorDisplay $actor,
     ) {
         parent::__construct($datetime, $actor);

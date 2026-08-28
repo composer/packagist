@@ -48,6 +48,10 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
             "SELECT COUNT(*) FROM package_transparency_log WHERE type = 'package_created' AND packageId = ?",
             [$packageId],
         ));
+        self::assertSame('svc/one', $conn->fetchOne(
+            "SELECT packageName FROM package_transparency_log WHERE type = 'package_created' AND packageId = ?",
+            [$packageId],
+        ));
     }
 
     public function testFansOutAccountEventToMaintainedPackages(): void
@@ -72,6 +76,10 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         self::assertSame(2, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
         // return value accounts for every row written (the two package_created rows plus the fan-out)
         self::assertSame((int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'), $created);
+
+        self::assertSame(['svc/one', 'svc/two'], $conn->fetchFirstColumn(
+            "SELECT packageName FROM package_transparency_log WHERE type = 'two_fa_deactivated' ORDER BY packageName",
+        ));
     }
 
     /**

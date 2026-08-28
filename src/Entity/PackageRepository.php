@@ -209,16 +209,16 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * All packages the user is a direct maintainer of. Returns package id + vendor, ordered by id for deterministic fan-out.
+     * All packages the user is a direct maintainer of. Returns package id + vendor + name, ordered by id for deterministic fan-out.
      * In the future this will need to also take into account organization membership.
      *
-     * @return list<array{id: int, vendor: string}>
+     * @return list<array{id: int, vendor: string, name: string}>
      */
     public function getPackageRefsByMaintainer(int $userId): array
     {
-        /** @var list<array{id: int|string, vendor: string}> $rows */
+        /** @var list<array{id: int|string, vendor: string, name: string}> $rows */
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT p.id AS id, p.vendor AS vendor
+            'SELECT p.id AS id, p.vendor AS vendor, p.name AS name
                 FROM package p
                 JOIN maintainers_packages mp ON mp.package_id = p.id AND mp.user_id = :userId
                 ORDER BY p.id ASC',
@@ -226,7 +226,7 @@ class PackageRepository extends ServiceEntityRepository
         );
 
         return array_map(
-            static fn (array $row): array => ['id' => (int) $row['id'], 'vendor' => (string) $row['vendor']],
+            static fn (array $row): array => ['id' => (int) $row['id'], 'vendor' => (string) $row['vendor'], 'name' => (string) $row['name']],
             $rows,
         );
     }

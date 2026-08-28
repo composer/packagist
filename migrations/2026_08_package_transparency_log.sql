@@ -24,6 +24,7 @@ CREATE TABLE package_transparency_log (
     actorId INT DEFAULT NULL,
     vendor VARCHAR(255) DEFAULT NULL,
     packageId INT NOT NULL,
+    packageName VARCHAR(255) NOT NULL,
     userId INT DEFAULT NULL,
     organizationId BINARY(16) DEFAULT NULL,
     leafHash VARBINARY(32) DEFAULT NULL,

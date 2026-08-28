@@ -91,6 +91,7 @@ class PackageTransparencyLogRepositoryTest extends IntegrationTestCase
             ['name' => $package->getName()],
             $package->getId(),
             $vendor ?? $package->getVendor(),
+            $package->getName(),
         );
     }
 
