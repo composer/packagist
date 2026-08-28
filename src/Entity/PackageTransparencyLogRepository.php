@@ -74,8 +74,8 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
         try {
             return (int) $this->getEntityManager()->getConnection()->executeStatement(
                 'INSERT INTO package_transparency_log
-                    (id, sourceAuditLogId, leafIndex, type, attributes, datetime, actorId, vendor, packageId, userId, organizationId, leafHash)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (id, sourceAuditLogId, leafIndex, type, attributes, datetime, actorId, vendor, packageId, packageName, userId, organizationId, leafHash)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     $entry->id->toBinary(),
                     $entry->sourceAuditLogId->toBinary(),
@@ -86,6 +86,7 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
                     $entry->actorId,
                     $entry->vendor,
                     $entry->packageId,
+                    $entry->packageName,
                     $entry->userId,
                     $entry->organizationId?->toBinary(),
                     null,

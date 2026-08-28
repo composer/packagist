@@ -1,4 +1,5 @@
 {% import 'log/macros.html.twig' as log %}
 
+Package: <strong>{{ log.packageLink(display.packageName) }}</strong><br>
 Maintainer: {{ log.userLink(display.maintainerUsername) }}
 {%- if display.actor.username != display.maintainerUsername %}<br>By: {{ display.actor.username }}{% endif %}

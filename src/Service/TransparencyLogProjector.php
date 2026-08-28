@@ -239,8 +239,7 @@ class TransparencyLogProjector
      * The package(s) a source record projects onto: package-native events target their own package;
      * account-security events fan out to every package the user maintains at projection time (none
      * for a user who maintains nothing).
-     *
-     * @return list<array{id: int, vendor: string|null}>
+     * @return list<array{id: int, vendor: string|null, name: string}>
      */
     private function resolveTargets(AuditRecord $record, TransparencyLogType $type): array
     {
@@ -261,7 +260,17 @@ class TransparencyLogProjector
             return [];
         }
 
-        return [['id' => $record->packageId, 'vendor' => $record->vendor]];
+        $name = $record->attributes['name'] ?? null;
+        if (!\is_string($name) || $name === '') {
+            $this->logger->error('Refusing to project a package-native audit record with no package name', [
+                'auditLogId' => (string) $record->id,
+                'type' => $record->type->value,
+            ]);
+
+            return [];
+        }
+
+        return [['id' => $record->packageId, 'vendor' => $record->vendor, 'name' => $name]];
     }
 
     /**
@@ -272,8 +281,8 @@ class TransparencyLogProjector
      * The duplicate-key error insertProjected() swallows does not poison the enclosing transaction:
      * InnoDB rolls back only the offending statement, so the remaining targets still commit.
      *
-     * @param list<array{id: int, vendor: string|null}> $targets
-     * @param array<string, mixed>                      $scrubbedAttributes
+     * @param list<array{id: int, vendor: string|null, name: string}> $targets
+     * @param array<string, mixed>                                    $scrubbedAttributes
      *
      * @return int rows actually inserted
      */
@@ -288,6 +297,7 @@ class TransparencyLogProjector
                 $scrubbedAttributes,
                 $target['id'],
                 $target['vendor'],
+                $target['name'],
             );
 
             if ($this->transparencyLogRepository->insertProjected($entry) > 0) {
