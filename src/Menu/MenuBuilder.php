@@ -83,9 +83,9 @@ class MenuBuilder
             ]);
         }
         if ($this->security->isGranted('ROLE_DISABLE_USERS')) {
-            $menu->addChild('Frozen users', [
-                'label' => '<span class="icon-lock"></span>Frozen users',
-                'route' => 'admin_frozen_users',
+            $menu->addChild('Users', [
+                'label' => '<span class="icon-vcard"></span>Users',
+                'route' => 'admin_users',
                 'extras' => ['safe_label' => true, 'translation_domain' => false],
             ]);
         }
