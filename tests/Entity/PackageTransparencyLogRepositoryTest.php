@@ -12,11 +12,11 @@
 
 namespace App\Tests\Entity;
 
-use App\Audit\TransparencyLogType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogRepository;
+use App\Log\TransparencyLogEventType;
 use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DriverException;
@@ -86,7 +86,7 @@ class PackageTransparencyLogRepositoryTest extends IntegrationTestCase
     {
         return PackageTransparencyLog::project(
             $source,
-            TransparencyLogType::PackageCreated,
+            TransparencyLogEventType::PackageCreated,
             $leafIndex,
             ['name' => $package->getName()],
             $package->getId(),

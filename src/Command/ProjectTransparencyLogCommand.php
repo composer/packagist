@@ -25,9 +25,6 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Thin CLI wrapper around {@see TransparencyLogProjector}: run frequently from cron to project
  * package-relevant audit_log rows into the public package transparency log.
  *
- * The command owns the run-orchestration concerns (option parsing, an advisory lock so two runs never
- * overlap, graceful shutdown, progress output); the projection logic itself lives in the service.
- *
  * Only queued records are projected, so this never projects history on its own. Use
  * {@see SeedTransparencyLogQueueCommand} to backfill.
  */

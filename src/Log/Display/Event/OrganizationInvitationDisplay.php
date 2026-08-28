@@ -12,7 +12,7 @@
 
 namespace App\Log\Display\Event;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 use App\Log\Display\OrganizationDisplay;
@@ -26,7 +26,7 @@ use App\Log\Display\OrganizationDisplay;
 readonly class OrganizationInvitationDisplay extends AbstractLogDisplay
 {
     public function __construct(
-        private AuditRecordType $type,
+        private AuditLogEventType $type,
         \DateTimeImmutable $datetime,
         public OrganizationDisplay $organization,
         public string $email,
@@ -36,7 +36,7 @@ readonly class OrganizationInvitationDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditRecordType
+    public function getType(): AuditLogEventType
     {
         return $this->type;
     }
@@ -48,12 +48,12 @@ readonly class OrganizationInvitationDisplay extends AbstractLogDisplay
     public function getTemplateName(): string
     {
         return match ($this->type) {
-            AuditRecordType::OrganizationInvitationSent => 'log/display/organization_invitation_sent.html.twig',
-            AuditRecordType::OrganizationInvitationResent => 'log/display/organization_invitation_resent.html.twig',
-            AuditRecordType::OrganizationInvitationRevoked => 'log/display/organization_invitation_revoked.html.twig',
-            AuditRecordType::OrganizationInvitationAccepted => 'log/display/organization_invitation_accepted.html.twig',
-            AuditRecordType::OrganizationInvitationDeclined => 'log/display/organization_invitation_declined.html.twig',
-            AuditRecordType::OrganizationInvitationExpired => 'log/display/organization_invitation_expired.html.twig',
+            AuditLogEventType::OrganizationInvitationSent => 'log/display/organization_invitation_sent.html.twig',
+            AuditLogEventType::OrganizationInvitationResent => 'log/display/organization_invitation_resent.html.twig',
+            AuditLogEventType::OrganizationInvitationRevoked => 'log/display/organization_invitation_revoked.html.twig',
+            AuditLogEventType::OrganizationInvitationAccepted => 'log/display/organization_invitation_accepted.html.twig',
+            AuditLogEventType::OrganizationInvitationDeclined => 'log/display/organization_invitation_declined.html.twig',
+            AuditLogEventType::OrganizationInvitationExpired => 'log/display/organization_invitation_expired.html.twig',
             default => throw new \LogicException($this->type->value.' is not an invitation event'),
         };
     }

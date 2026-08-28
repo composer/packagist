@@ -12,10 +12,10 @@
 
 namespace App\Tests\Controller;
 
-use App\Audit\AuditRecordType;
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
 use App\Entity\User;
+use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
 use App\Validator\NotProhibitedPassword;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -52,7 +52,7 @@ class RegistrationControllerTest extends IntegrationTestCase
         $this->assertFalse($user->isEnabled(), 'user should not be enabled yet');
 
         $log = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditRecordType::UserCreated,
+            'type' => AuditLogEventType::UserCreated,
             'userId' => $user->getId(),
         ]);
         $this->assertInstanceOf(AuditRecord::class, $log);
@@ -121,7 +121,7 @@ class RegistrationControllerTest extends IntegrationTestCase
         $this->assertStringStartsWith('/register/check-email/', $redirectUrl);
 
         $log = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditRecordType::EmailChanged,
+            'type' => AuditLogEventType::EmailChanged,
             'userId' => $user->getId(),
         ]);
         $this->assertInstanceOf(AuditRecord::class, $log);
@@ -145,7 +145,7 @@ class RegistrationControllerTest extends IntegrationTestCase
 
         $this->client->submit($form);
 
-        $log = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::EmailChanged]);
+        $log = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::EmailChanged]);
         $this->assertNull($log);
     }
 

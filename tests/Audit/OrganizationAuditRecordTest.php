@@ -12,9 +12,9 @@
 
 namespace App\Tests\Audit;
 
-use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\User;
+use App\Log\AuditLogEventType;
 use App\Tests\Fixtures\Fixtures;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Ulid;
@@ -28,7 +28,7 @@ class OrganizationAuditRecordTest extends TestCase
         $organizationId = new Ulid();
         $record = AuditRecord::organizationCreated($organizationId, 'acme', 'ACME Corp', $this->actor());
 
-        self::assertSame(AuditRecordType::OrganizationCreated, $record->type);
+        self::assertSame(AuditLogEventType::OrganizationCreated, $record->type);
         self::assertSame((string) $organizationId, $record->attributes['organization']['id']);
         self::assertSame('acme', $record->attributes['organization']['org_slug']);
         self::assertSame('ACME Corp', $record->attributes['organization']['org_name']);
@@ -40,7 +40,7 @@ class OrganizationAuditRecordTest extends TestCase
 
     public function testOrganizationCreatedBelongsToOrganizationCategory(): void
     {
-        self::assertSame('organization', AuditRecordType::OrganizationCreated->category());
+        self::assertSame('organization', AuditLogEventType::OrganizationCreated->category());
     }
 
     public function testOrganizationNameChangedCapturesBeforeAndAfter(): void
@@ -48,7 +48,7 @@ class OrganizationAuditRecordTest extends TestCase
         $organizationId = new Ulid();
         $record = AuditRecord::organizationNameChanged($organizationId, 'acme', 'ACME Inc', 'ACME Corp', $this->actor());
 
-        self::assertSame(AuditRecordType::OrganizationNameChanged, $record->type);
+        self::assertSame(AuditLogEventType::OrganizationNameChanged, $record->type);
         self::assertSame((string) $organizationId, $record->attributes['organization']['id']);
         self::assertSame('acme', $record->attributes['organization']['org_slug']);
         self::assertSame('ACME Inc', $record->attributes['organization']['org_name']);
@@ -57,7 +57,7 @@ class OrganizationAuditRecordTest extends TestCase
         self::assertSame('ACME Inc', $record->attributes['org_name_to']);
         self::assertSame(42, $record->attributes['actor']['id']);
         self::assertSame('test', $record->attributes['actor']['username']);
-        self::assertSame('organization', AuditRecordType::OrganizationNameChanged->category());
+        self::assertSame('organization', AuditLogEventType::OrganizationNameChanged->category());
     }
 
     public function testOrganizationSlugChangedCapturesBeforeAndAfter(): void
@@ -65,14 +65,14 @@ class OrganizationAuditRecordTest extends TestCase
         $organizationId = new Ulid();
         $record = AuditRecord::organizationSlugChanged($organizationId, 'acme-inc', 'ACME Corp', 'acme', $this->actor());
 
-        self::assertSame(AuditRecordType::OrganizationSlugChanged, $record->type);
+        self::assertSame(AuditLogEventType::OrganizationSlugChanged, $record->type);
         self::assertSame((string) $organizationId, $record->attributes['organization']['id']);
         self::assertSame('acme-inc', $record->attributes['organization']['org_slug']);
         self::assertSame('ACME Corp', $record->attributes['organization']['org_name']);
         self::assertSame((string) $organizationId, (string) $record->organizationId);
         self::assertSame('acme', $record->attributes['org_slug_from']);
         self::assertSame('acme-inc', $record->attributes['org_slug_to']);
-        self::assertSame('organization', AuditRecordType::OrganizationSlugChanged->category());
+        self::assertSame('organization', AuditLogEventType::OrganizationSlugChanged->category());
     }
 
     public function testTeamCreatedCapturesTeamName(): void
@@ -80,17 +80,17 @@ class OrganizationAuditRecordTest extends TestCase
         $organizationId = new Ulid();
         $record = AuditRecord::organizationTeamCreated($organizationId, 'acme', 'ACME Corp', 'backend', null);
 
-        self::assertSame(AuditRecordType::OrganizationTeamCreated, $record->type);
+        self::assertSame(AuditLogEventType::OrganizationTeamCreated, $record->type);
         self::assertSame('backend', $record->attributes['team_name']);
         self::assertSame((string) $organizationId, (string) $record->organizationId);
-        self::assertSame('organization', AuditRecordType::OrganizationTeamCreated->category());
+        self::assertSame('organization', AuditLogEventType::OrganizationTeamCreated->category());
     }
 
     public function testTeamRenamedCapturesBeforeAndAfter(): void
     {
         $record = AuditRecord::organizationTeamRenamed(new Ulid(), 'acme', 'ACME Corp', 'backend', 'platform', null);
 
-        self::assertSame(AuditRecordType::OrganizationTeamRenamed, $record->type);
+        self::assertSame(AuditLogEventType::OrganizationTeamRenamed, $record->type);
         self::assertSame('backend', $record->attributes['team_name_from']);
         self::assertSame('platform', $record->attributes['team_name_to']);
     }
@@ -105,7 +105,7 @@ class OrganizationAuditRecordTest extends TestCase
 
         $record = AuditRecord::organizationTeamMemberAdded(new Ulid(), 'acme', 'ACME Corp', 'backend', $member, null);
 
-        self::assertSame(AuditRecordType::OrganizationTeamMemberAdded, $record->type);
+        self::assertSame(AuditLogEventType::OrganizationTeamMemberAdded, $record->type);
         self::assertSame('backend', $record->attributes['team_name']);
         self::assertSame(7, $record->attributes['user']['id']);
         self::assertSame('alice', $record->attributes['user']['username']);
@@ -122,7 +122,7 @@ class OrganizationAuditRecordTest extends TestCase
 
         $record = AuditRecord::organizationMemberLeft(new Ulid(), 'acme', 'ACME Corp', $member, $member);
 
-        self::assertSame(AuditRecordType::OrganizationMemberLeft, $record->type);
+        self::assertSame(AuditLogEventType::OrganizationMemberLeft, $record->type);
         self::assertSame('alice', $record->attributes['user']['username']);
         self::assertSame('alice', $record->attributes['actor']['username']);
         self::assertSame(7, $record->actorId);
@@ -139,8 +139,8 @@ class OrganizationAuditRecordTest extends TestCase
         $organizationId = new Ulid();
         $record = AuditRecord::organizationMemberJoined($organizationId, 'acme', 'ACME Corp', $member, $member);
 
-        self::assertSame(AuditRecordType::OrganizationMemberJoined, $record->type);
-        self::assertSame('organization', AuditRecordType::OrganizationMemberJoined->category());
+        self::assertSame(AuditLogEventType::OrganizationMemberJoined, $record->type);
+        self::assertSame('organization', AuditLogEventType::OrganizationMemberJoined->category());
         self::assertSame('alice', $record->attributes['user']['username']);
         // Accepting an invitation or founding the org: the member drove their own join. The invited
         // email never appears.
@@ -172,8 +172,8 @@ class OrganizationAuditRecordTest extends TestCase
         $organizationId = new Ulid();
         $record = AuditRecord::organizationInvitationSent($organizationId, 'acme', 'ACME Corp', 'alice@example.org', $this->actor());
 
-        self::assertSame(AuditRecordType::OrganizationInvitationSent, $record->type);
-        self::assertSame('organization', AuditRecordType::OrganizationInvitationSent->category());
+        self::assertSame(AuditLogEventType::OrganizationInvitationSent, $record->type);
+        self::assertSame('organization', AuditLogEventType::OrganizationInvitationSent->category());
         self::assertSame('acme', $record->attributes['organization']['org_slug']);
         self::assertSame('alice@example.org', $record->attributes['email']);
         self::assertSame('test', $record->attributes['actor']['username']);
@@ -185,7 +185,7 @@ class OrganizationAuditRecordTest extends TestCase
     {
         $record = AuditRecord::organizationInvitationAccepted(new Ulid(), 'acme', 'ACME Corp', 'alice@example.org', $this->actor());
 
-        self::assertSame(AuditRecordType::OrganizationInvitationAccepted, $record->type);
+        self::assertSame(AuditLogEventType::OrganizationInvitationAccepted, $record->type);
         self::assertSame('alice@example.org', $record->attributes['email']);
         self::assertSame('test', $record->attributes['actor']['username']);
         self::assertSame(42, $record->actorId);
@@ -195,7 +195,7 @@ class OrganizationAuditRecordTest extends TestCase
     {
         $record = AuditRecord::organizationInvitationExpired(new Ulid(), 'acme', 'ACME Corp', 'alice@example.org');
 
-        self::assertSame(AuditRecordType::OrganizationInvitationExpired, $record->type);
+        self::assertSame(AuditLogEventType::OrganizationInvitationExpired, $record->type);
         self::assertSame('alice@example.org', $record->attributes['email']);
         // Expiry is recorded by automation, so there is no acting user.
         self::assertSame('automation', $record->attributes['actor']);

@@ -12,9 +12,9 @@
 
 namespace App\Tests\Controller;
 
-use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\User;
+use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
 use App\Validator\NotProhibitedPassword;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -47,7 +47,7 @@ class ChangePasswordControllerTest extends IntegrationTestCase
         $record = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
             'userId' => $user->getId(),
             'actorId' => $user->getId(),
-            'type' => AuditRecordType::PasswordChanged->value,
+            'type' => AuditLogEventType::PasswordChanged->value,
         ]);
 
         if ($expectedResult == 'ok') {

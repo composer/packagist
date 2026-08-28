@@ -12,7 +12,7 @@
 
 namespace App\Controller;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 use App\Log\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\Entity\Organization;
@@ -47,7 +47,7 @@ use App\Organization\InvitationManager;
 use App\Organization\OrganizationManager;
 use App\Organization\OrganizationMembershipManager;
 use App\QueryFilter\AuditLog\ActorFilter;
-use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
+use App\QueryFilter\AuditLog\EventTypeFilter;
 use App\QueryFilter\AuditLog\DateTimeFromFilter;
 use App\QueryFilter\AuditLog\DateTimeToFilter;
 use App\QueryFilter\QueryFilterInterface;
@@ -147,7 +147,7 @@ class OrganizationController extends Controller
 
         /** @var QueryFilterInterface[] $filters */
         $filters = [
-            AuditRecordTypeFilter::fromQuery($request->query),
+            EventTypeFilter::fromQuery($request->query),
             ActorFilter::fromQuery($request->query, 'actor', $isAuditAdmin),
             $dateTimeFromFilter,
             $dateTimeToFilter,
@@ -176,7 +176,7 @@ class OrganizationController extends Controller
             'organization' => $organization,
             'auditLogDisplays' => $displayFactory->build($auditLogs, revealEmails: true),
             'auditLogPaginator' => $auditLogs,
-            'types' => AuditRecordType::organizationCases(),
+            'types' => AuditLogEventType::organizationCases(),
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,
             'dateTimeToFilter' => $dateTimeToFilter,

@@ -13,13 +13,13 @@
 namespace App\Controller;
 
 use App\Log\Display\TransparencyLogDisplayFactory;
-use App\Audit\TransparencyLogType;
+use App\Log\TransparencyLogEventType;
 use App\Entity\PackageTransparencyLogRepository;
 use App\QueryFilter\QueryFilterInterface;
 use App\QueryFilter\TransparencyLog\DateTimeFromFilter;
 use App\QueryFilter\TransparencyLog\DateTimeToFilter;
 use App\QueryFilter\TransparencyLog\PackageNameFilter;
-use App\QueryFilter\TransparencyLog\TransparencyLogTypeFilter;
+use App\QueryFilter\TransparencyLog\EventTypeFilter;
 use App\QueryFilter\TransparencyLog\UserFilter;
 use App\QueryFilter\TransparencyLog\VendorFilter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -43,7 +43,7 @@ class TransparencyLogController extends Controller
 
         /** @var QueryFilterInterface[] $filters */
         $filters = [
-            TransparencyLogTypeFilter::fromQuery($request->query, $includeHiddenTypes),
+            EventTypeFilter::fromQuery($request->query, $includeHiddenTypes),
             UserFilter::fromQuery($request->query),
             VendorFilter::fromQuery($request->query),
             PackageNameFilter::fromQuery($request->query),
@@ -78,19 +78,19 @@ class TransparencyLogController extends Controller
      * Types offered in the filter, minus the temporarily hidden ones so the form can't ask for rows the
      * read query excludes anyway. Auditors ($includeHiddenTypes) are offered every type.
      *
-     * @return list<TransparencyLogType>
+     * @return list<TransparencyLogEventType>
      */
     private function selectableTypes(bool $includeHiddenTypes): array
     {
         if ($includeHiddenTypes) {
-            return TransparencyLogType::cases();
+            return TransparencyLogEventType::cases();
         }
 
-        $hidden = TransparencyLogType::temporarilyHiddenTypes();
+        $hidden = TransparencyLogEventType::temporarilyHiddenTypes();
 
         return array_values(array_filter(
-            TransparencyLogType::cases(),
-            static fn (TransparencyLogType $type): bool => !\in_array($type, $hidden, true),
+            TransparencyLogEventType::cases(),
+            static fn (TransparencyLogEventType $type): bool => !\in_array($type, $hidden, true),
         ));
     }
 }
