@@ -1,5 +1,19 @@
-<section class="wrapper wrapper-search">
+<section class="wrapper wrapper-search{% if showSearchDesc == 'hero' %} wrapper-search-hero{% endif %}">
     <div class="container {% if showSearchDesc == 'show' %}with-description{% endif %}">
+        {%- if showSearchDesc == 'hero' %}
+            <div class="hero-search-intro">
+                <div class="hero-brand-row">
+                    <img src="{{ asset('img/logo-packagist.webp') }}" class="hero-brand-logo" alt="Packagist logo" width="400" height="455">
+                    <div class="hero-brand-text">
+                        <h1 class="hero-brand-title">{{ 'brandname'|trans }}</h1>
+                        <div class="hero-brand-subtitle">{{ 'navclaim'|trans }}</div>
+                    </div>
+                    <img src="{{ asset('img/logo-composer.png') }}" class="hero-brand-logo" alt="Composer logo" width="290" height="356">
+                </div>
+                <p class="hero-search-claim">{{ 'search.claim_html'|trans|raw }}</p>
+            </div>
+        {%- endif %}
+
         <form name="search_query" method="get" action="{{ path('search_web') }}" id="search-form" autocomplete="off">
             <div class="sortable row">
                 <div class="col-12 js-search-field-wrapper col-lg-9">
@@ -16,6 +30,20 @@
                     <img src="{{ asset('img/logo-small.png') }}" class="logo" alt="Packagist logo">
                     <p>{{ 'search.claim_html'|trans|raw }}</p>
                     <img src="{{ asset('img/logo-composer.png') }}" alt="Composer logo" class="logo-composer d-none d-lg-inline-block">
+                </div>
+            </div>
+        {%- elseif showSearchDesc == 'hero' %}
+            <div class="hero-search-footer">
+                {%- if packages is defined and versions is defined and downloads is defined %}
+                    <ul class="hero-search-stats">
+                        <li><strong>{% if packages == 'N/A' %}{{ packages }}{% else %}{{ packages|number_format(0, '.', "&#8201;")|raw }}{% endif %}</strong> {{ 'hero.stats.packages'|trans }}</li>
+                        <li><strong>{% if versions == 'N/A' %}{{ versions }}{% else %}{{ versions|number_format(0, '.', "&#8201;")|raw }}{% endif %}</strong> {{ 'hero.stats.versions'|trans }}</li>
+                        <li><strong>{% if downloads == 'N/A' %}{{ downloads }}{% else %}{{ downloads|number_format(0, '.', "&#8201;")|raw }}{% endif %}</strong> {{ 'hero.stats.installs'|trans }}</li>
+                    </ul>
+                {%- endif %}
+                <div class="hero-search-actions">
+                    <a href="https://getcomposer.org/" class="hero-btn hero-btn-primary" target="_blank" rel="noopener noreferrer">{{ 'hero.install_composer'|trans }}</a>
+                    <a href="{{ path('about') }}" class="hero-btn hero-btn-secondary">{{ 'hero.discover_packagist'|trans }}</a>
                 </div>
             </div>
         {%- endif %}

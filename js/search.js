@@ -88,6 +88,11 @@ var opts = {
             || (indexState.refinementList && indexState.refinementList.tags && indexState.refinementList.tags.length > 0);
         var hasSearch = hasQuery || (isSearchPage && hasFilters);
 
+        var hero = document.querySelector('.wrapper-search-hero');
+        if (hero) {
+            hero.classList.toggle('search-active', hasSearch);
+        }
+
         if (!hasSearch) {
             searchResults.classList.add('d-none');
         } else {
