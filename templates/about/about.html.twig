@@ -22,6 +22,39 @@
         </section>
     </section>
 
+    <h2 class="title" id="getting-started">Getting Started</h2>
+    <section class="row">
+        <section class="col-lg-6">
+            <h3 id="define-your-dependencies">Define Your Dependencies</h3>
+            <p>Put a file named <em>composer.json</em> at the root of your project, containing your project dependencies:</p>
+            <pre><code>{
+    "require": {
+        "vendor/package": "1.3.2",
+        "vendor/package2": "1.*",
+        "vendor/package3": "^2.0.3"
+    }
+}</code></pre>
+            <p>For more information about packages versions usage, see the <a href="https://getcomposer.org/doc/01-basic-usage.md#package-versions">composer documentation</a>.</p>
+
+            <h3 id="install-composer">Install Composer In Your Project</h3>
+            <p>Run this in your command line:</p>
+            <pre><code>curl -sS https://getcomposer.org/installer | php</code></pre>
+            <p>Or <a href="https://getcomposer.org/composer.phar">download composer.phar</a> into your project root.
+            See the Composer documentation for complete <a href="https://getcomposer.org/doc/00-intro.md#installation-linux-unix-macos">installation instructions</a> on various platforms.</p>
+        </section>
+
+        <section class="col-lg-6">
+            <h3 id="install-dependencies">Install Dependencies</h3>
+            <p>Execute this in your project root.</p>
+            <pre><code>php composer.phar install</code></pre>
+
+            <h3 id="autoload-dependencies">Autoload Dependencies</h3>
+            <p>If your packages specify <a href="https://getcomposer.org/doc/01-basic-usage.md#autoloading">autoloading information</a>, you can autoload all the dependencies by adding this to your code:</p>
+            <pre><code>require 'vendor/autoload.php';</code></pre>
+            <p><a href="{{ path('browse') }}">Browse</a> the packages we have to find more great libraries you can use in your project.</p>
+        </section>
+    </section>
+
     <h2 class="title" id="how-to-submit-packages">How to submit packages?</h2>
     <section class="row">
         <section class="col-lg-6">
@@ -63,11 +96,11 @@ acme/email</code></pre>
         }
     ],
     "require": {
-        "php": ">=8.0.0"
+        "php": ">=8.2"
     },
     "autoload": {
-        "psr-0": {
-            "Monolog": "src"
+        "psr-4": {
+            "Monolog\\": "src/Monolog"
         }
     }
 }</code></pre>
@@ -76,6 +109,15 @@ acme/email</code></pre>
         </section>
 
         <section class="col-lg-6">
+            <h3 id="validate-and-publish">Validate and publish</h3>
+            <p>Run <code>composer validate</code> to check that your composer.json file has no syntax errors, then commit it to your git or other VCS repository.</p>
+            <p><a href="{{ path('login') }}">Log in</a> or <a href="{{ path('register') }}">register</a> on this site, then hit the <a href="{{ path('submit') }}">submit</a> button in the menu. Once you entered your public repository URL, your package will be automatically crawled periodically - just make sure you keep the composer.json file up to date.</p>
+            <p>Use <a href="https://packagist.com">Private Packagist</a> if you want to share private code as a Composer package with colleagues or customers without publishing it for everyone on Packagist.org.</p>
+        </section>
+
+        <div class="w-100"></div>
+        <section class="col-lg-6">
+
             <h3 id="managing-package-versions">Managing package versions</h3>
             <p>New versions of your package are automatically fetched from tags you create in your VCS repository.</p>
             <p>The easiest way to manage versioning is to just omit the version field from the composer.json file. The version numbers will then be parsed from the tag and branch names.</p>

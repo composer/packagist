@@ -53,7 +53,11 @@
             {% endif %}
             <nav class="container">
                 <div class="navbar navbar-expand-md" role="navigation">
-                    <h1 class="navbar-brand"><a href="{{ path('home') }}">{{ 'brandname'|trans }}</a> <em class="d-none d-lg-inline">{{ 'navclaim'|trans }}</em></h1>
+                    {%- if app.current_route == 'home' %}
+                        <div class="navbar-brand"><a href="{{ path('home') }}">{{ 'brandname'|trans }}</a> <em class="d-none d-lg-inline">{{ 'navclaim'|trans }}</em></div>
+                    {%- else %}
+                        <h1 class="navbar-brand"><a href="{{ path('home') }}">{{ 'brandname'|trans }}</a> <em class="d-none d-lg-inline">{{ 'navclaim'|trans }}</em></h1>
+                    {%- endif %}
                     <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
                         <span class="visually-hidden">{{ 'menu.togglenav'|trans }}</span>
                         <span class="icon-bar"></span>
@@ -65,6 +69,9 @@
                         <ul class="nav navbar-nav">
                             <li>
                                 <a href="{{ path('browse') }}">{{ 'menu.browse'|trans }}</a>
+                            </li>
+                            <li>
+                                <a href="{{ path('about') }}">{{ 'menu.about'|trans }}</a>
                             </li>
                             <li>
                                 <a href="{{ path('submit') }}">{{ 'menu.submit'|trans }}</a>

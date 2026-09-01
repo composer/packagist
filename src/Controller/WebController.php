@@ -37,14 +37,33 @@ use Symfony\Contracts\Cache\CacheInterface;
 class WebController extends Controller
 {
     #[Route('/', name: 'home')]
-    public function index(Request $req, BlogRssFetcher $blogRssFetcher): RedirectResponse|Response
+    public function index(Request $req, BlogRssFetcher $blogRssFetcher, RedisClient $redis): RedirectResponse|Response
     {
         if ($resp = $this->checkForQueryMatch($req)) {
             return $resp;
         }
 
+        $downloads = 'N/A';
+        if (Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
+            try {
+                $downloads = (int) ($redis->get('downloads') ?: 0);
+            } catch (\Predis\PredisException) {
+            }
+        }
+
+        // keep the homepage renderable for anonymous visitors even when the DB or Redis is down
+        $packages = $versions = 'N/A';
+        try {
+            $packages = $this->getEM()->getRepository(Package::class)->getTotal();
+            $versions = $this->getEM()->getRepository(Version::class)->getTotal();
+        } catch (\Doctrine\DBAL\Exception) {
+        }
+
         return $this->render('web/index.html.twig', [
             'newsItems' => $blogRssFetcher->getNewsItems(),
+            'packages' => $packages,
+            'versions' => $versions,
+            'downloads' => $downloads,
         ]);
     }
 
