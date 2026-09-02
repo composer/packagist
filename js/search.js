@@ -192,6 +192,12 @@ var customSearchBox = connectSearchBox(function (renderOptions, isFirstRender) {
     }
 });
 
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function (char) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char];
+    });
+}
+
 var customCurrentRefinements = connectCurrentRefinements(function (renderOptions) {
     var items = renderOptions.items;
     var refine = renderOptions.refine;
@@ -201,12 +207,6 @@ var customCurrentRefinements = connectCurrentRefinements(function (renderOptions
     if (wrapper) {
         wrapper.style.display = items.length > 0 ? '' : 'none';
     }
-
-    var escapeHtml = function (value) {
-        return String(value).replace(/[&<>"']/g, function (char) {
-            return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char];
-        });
-    };
 
     var html = '';
     items.forEach(function (item) {
