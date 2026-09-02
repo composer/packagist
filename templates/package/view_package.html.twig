@@ -88,7 +88,7 @@
                     <p class="description">{{ package.description|u.truncate(300) }}</p>
 
                     {% if hasActions %}
-                        <div class="btn-group btn-group-xs">
+                        <div class="btn-group-xs">
                             {% if is_granted('abandon', package) %}
                                 {% if package.abandoned %}
                                     <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}" method="POST">
