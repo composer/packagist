@@ -19,8 +19,12 @@ use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
+use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Entity\Version;
+use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
+use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
+use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
 use App\Tests\IntegrationTestCase;
@@ -426,6 +430,72 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(200);
         $cacheControl = $this->client->getResponse()->headers->get('Cache-Control', '');
         self::assertStringContainsString('s-maxage=86400', $cacheControl);
+    }
+
+    public function testAdvisoriesPageListsWithdrawnSeparately(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $this->store($package);
+
+        $this->store(
+            new SecurityAdvisory($this->remoteAdvisory('GHSA-active-1111-1111', 'CVE-2024-1001', 'Active advisory one'), GitHubSecurityAdvisoriesSource::SOURCE_NAME),
+            new SecurityAdvisory($this->remoteAdvisory('GHSA-active-2222-2222', 'CVE-2024-1002', 'Active advisory two'), GitHubSecurityAdvisoriesSource::SOURCE_NAME),
+        );
+
+        $withdrawn = new SecurityAdvisory($this->remoteAdvisory('GHSA-gone-3333-3333', 'CVE-2024-1003', 'Withdrawn advisory'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $withdrawn->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $this->store($withdrawn);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg/advisories');
+        self::assertResponseIsSuccessful();
+
+        // The header count reflects only the active advisories, matching the package page.
+        self::assertStringContainsString('(2)', $crawler->filter('.package-header .title')->text());
+
+        $withdrawnSection = $crawler->filter('#withdrawn-advisories');
+        self::assertCount(1, $withdrawnSection);
+        self::assertStringContainsString('Withdrawn advisory', $withdrawnSection->text());
+        self::assertStringNotContainsString('Withdrawn advisory', $crawler->filter('.package-item')->eq(0)->text());
+        self::assertStringContainsString('Withdrawn advisories', $crawler->filter('body')->text());
+    }
+
+    public function testAdvisoriesPageKeepsPartiallyWithdrawnAdvisoryInTheActiveList(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $this->store($package);
+
+        $advisory = new SecurityAdvisory($this->remoteAdvisory('GHSA-partial-1111-1111', 'CVE-2024-1004', 'Partially withdrawn advisory'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->addSource('test/pkg/CVE-2024-1004.yaml', FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, null);
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $this->store($advisory);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg/advisories');
+        self::assertResponseIsSuccessful();
+
+        self::assertStringContainsString('(1)', $crawler->filter('.package-header .title')->text());
+        self::assertCount(0, $crawler->filter('#withdrawn-advisories'));
+
+        $item = $crawler->filter('.package-item')->eq(0)->text();
+        self::assertStringContainsString('Partially withdrawn advisory', $item);
+        self::assertStringContainsString('withdrawn', $item, 'the source that dropped the advisory is marked as withdrawn');
+        self::assertStringContainsString(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, $item);
+    }
+
+    private function remoteAdvisory(string $remoteId, string $cve, string $title): RemoteSecurityAdvisory
+    {
+        return new RemoteSecurityAdvisory(
+            $remoteId,
+            $title,
+            'test/pkg',
+            '^1.0',
+            'https://example.org/'.$remoteId,
+            $cve,
+            new \DateTimeImmutable('2024-01-01 00:00:00'),
+            null,
+            [],
+            GitHubSecurityAdvisoriesSource::SOURCE_NAME,
+            null,
+        );
     }
 
     /**

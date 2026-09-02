@@ -46,7 +46,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->addSelect('s')
             ->innerJoin('a.sources', 's')
             ->innerJoin('a.sources', 'query')
-            ->where('query.source = :source OR a.packageName IN (:packageNames)')
+            ->where('(query.source = :source AND query.withdrawnAt IS NULL) OR a.packageName IN (:packageNames)')
             ->setParameter('packageNames', $packageNames, ArrayParameterType::STRING)
             ->setParameter('source', $sourceName)
             ->getQuery()
@@ -92,6 +92,8 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->leftJoin('a.sources', 's')
             ->where('s.source = :source')
             ->andWhere('s.remoteId = :id')
+            ->orderBy('a.withdrawnAt', 'ASC')
+            ->addOrderBy('a.reportedAt', 'DESC')
             ->setParameter('source', $source)
             ->setParameter('id', $id)
             ->getQuery()
@@ -156,8 +158,8 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
         if (!$useCache || $filterByNames) {
             $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.remoteId, s.title, s.link, s.cve, s.affectedVersions, s.source, s.reportedAt, s.composerRepository, sa.source sourceSource, sa.remoteId sourceRemoteId, s.severity
                 FROM security_advisory s
-                INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id
-                WHERE s.updatedAt >= :updatedSince '
+                INNER JOIN security_advisory_source sa ON sa.securityAdvisory_id=s.id AND sa.withdrawnAt IS NULL
+                WHERE s.withdrawnAt IS NULL AND s.updatedAt >= :updatedSince '
                 .($filterByNames ? ' AND s.packageName IN (:packageNames)' : '')
                 .' ORDER BY '.($filterByNames ? 's.reportedAt DESC, ' : '').'s.id DESC';
 
@@ -206,7 +208,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
 
         $sql = 'SELECT s.packagistAdvisoryId as advisoryId, s.packageName, s.affectedVersions
             FROM security_advisory s
-            WHERE s.packageName IN (:packageNames)
+            WHERE s.withdrawnAt IS NULL AND s.packageName IN (:packageNames)
             ORDER BY s.id DESC';
 
         $params['packageNames'] = $packageNames;

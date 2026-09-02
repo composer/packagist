@@ -42,6 +42,14 @@ enum Severity: string
     case CRITICAL = 'critical';
 
     /**
+     * Bootstrap label modifier class used to colour the severity badge in advisory listings.
+     */
+    public function labelClass(): string
+    {
+        return 'label-severity-'.$this->value;
+    }
+
+    /**
      * @see https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-cvss-levels
      */
     public static function fromGitHub(?string $githubSeverity): ?Severity

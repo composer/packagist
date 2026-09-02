@@ -62,6 +62,9 @@ enum AuditRecordType: string
     case SecurityAdvisoryCreated = 'security_advisory_created';
     case SecurityAdvisoryEdited = 'security_advisory_edited';
     case SecurityAdvisoryWithdrawn = 'security_advisory_withdrawn';
+    case SecurityAdvisoryUnwithdrawn = 'security_advisory_unwithdrawn';
+    case SecurityAdvisorySourceWithdrawn = 'security_advisory_source_withdrawn';
+    case SecurityAdvisorySourceUnwithdrawn = 'security_advisory_source_unwithdrawn';
 
     // organization
     case OrganizationCreated = 'organization_created';
@@ -110,7 +113,8 @@ enum AuditRecordType: string
             self::FilterListEntryDisabled, self::FilterListEntryEnabled,
             self::FilterListEntryEdited => 'filterlist',
             self::SecurityAdvisoryCreated, self::SecurityAdvisoryEdited,
-            self::SecurityAdvisoryWithdrawn => 'advisory',
+            self::SecurityAdvisoryWithdrawn, self::SecurityAdvisoryUnwithdrawn,
+            self::SecurityAdvisorySourceWithdrawn, self::SecurityAdvisorySourceUnwithdrawn => 'advisory',
             self::OrganizationCreated, self::OrganizationNameChanged, self::OrganizationSlugChanged,
             self::OrganizationTeamCreated, self::OrganizationTeamRenamed, self::OrganizationTeamDeleted,
             self::OrganizationTeamMemberAdded, self::OrganizationTeamMemberRemoved,

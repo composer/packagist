@@ -1,0 +1,5 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+{{ display.title }}{% if display.cve %} ({{ display.cve }}){% endif %}<br>
+Listed again by: {{ display.source }} ({{ display.remoteId }})

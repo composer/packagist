@@ -14,7 +14,7 @@ namespace App\Audit\Display;
 
 use App\Audit\AuditRecordType;
 
-readonly class SecurityAdvisoryWithdrawnDisplay extends AbstractAuditLogDisplay
+readonly class SecurityAdvisoryUnwithdrawnDisplay extends AbstractAuditLogDisplay
 {
     /**
      * @param array<string, array{from: scalar|null, to: scalar|null}> $changes
@@ -35,11 +35,11 @@ readonly class SecurityAdvisoryWithdrawnDisplay extends AbstractAuditLogDisplay
 
     public function getType(): AuditRecordType
     {
-        return AuditRecordType::SecurityAdvisoryWithdrawn;
+        return AuditRecordType::SecurityAdvisoryUnwithdrawn;
     }
 
     public function getTemplateName(): string
     {
-        return 'audit_log/display/security_advisory_withdrawn.html.twig';
+        return 'audit_log/display/security_advisory_unwithdrawn.html.twig';
     }
 }

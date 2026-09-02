@@ -1733,7 +1733,12 @@ class PackageController extends Controller
     {
         /** @var SecurityAdvisoryRepository $repo */
         $repo = $this->getEM()->getRepository(SecurityAdvisory::class);
-        $securityAdvisories = $repo->findByPackageName($name);
+        $allAdvisories = $repo->findByPackageName($name);
+
+        // Active advisories drive the visible count so it matches the package page; withdrawn ones
+        // are still listed (in their own section) so people can look up advisories they hit before.
+        $securityAdvisories = array_values(array_filter($allAdvisories, static fn (SecurityAdvisory $advisory) => !$advisory->isWithdrawn()));
+        $withdrawnSecurityAdvisories = array_values(array_filter($allAdvisories, static fn (SecurityAdvisory $advisory) => $advisory->isWithdrawn()));
 
         $data = [];
         $data['name'] = $name;
@@ -1744,27 +1749,28 @@ class PackageController extends Controller
                 'id' => $versionId,
             ]);
             if ($version) {
-                $versionSecurityAdvisories = [];
                 $versionParser = new VersionParser();
-                foreach ($securityAdvisories as $advisory) {
+                $matchesVersion = static function (SecurityAdvisory $advisory) use ($versionParser, $version): bool {
                     try {
                         $affectedVersionConstraint = $versionParser->parseConstraints($advisory->getAffectedVersions());
                     } catch (\UnexpectedValueException) {
                         // ignore parsing errors, advisory must be invalid
-                        continue;
+                        return false;
                     }
-                    if ($affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
-                        $versionSecurityAdvisories[] = $advisory;
-                    }
-                }
+
+                    return $affectedVersionConstraint->matches(new Constraint('=', $version->getNormalizedVersion()));
+                };
 
                 $data['version'] = $version->getVersion();
-                $securityAdvisories = $versionSecurityAdvisories;
+                $securityAdvisories = array_values(array_filter($securityAdvisories, $matchesVersion));
+                $withdrawnSecurityAdvisories = array_values(array_filter($withdrawnSecurityAdvisories, $matchesVersion));
             }
         }
 
         $data['securityAdvisories'] = $securityAdvisories;
         $data['count'] = \count($securityAdvisories);
+        $data['withdrawnSecurityAdvisories'] = $withdrawnSecurityAdvisories;
+        $data['withdrawnCount'] = \count($withdrawnSecurityAdvisories);
 
         return $this->render('package/security_advisories.html.twig', $data);
     }
@@ -1785,7 +1791,7 @@ class PackageController extends Controller
     {
         $repo = $this->getEM()->getRepository(SecurityAdvisory::class);
         if (str_starts_with($id, 'CVE-')) {
-            $securityAdvisories = $repo->findBy(['cve' => $id]);
+            $securityAdvisories = $repo->findBy(['cve' => $id], ['withdrawnAt' => 'ASC', 'reportedAt' => 'DESC']);
         } elseif (str_starts_with($id, 'GHSA-')) {
             $securityAdvisories = $repo->findByRemoteId(GitHubSecurityAdvisoriesSource::SOURCE_NAME, $id);
         } else {

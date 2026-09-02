@@ -15,6 +15,7 @@ namespace App\EventListener;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
+use App\Entity\SecurityAdvisorySource;
 use App\Entity\User;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
@@ -30,7 +31,8 @@ use Symfony\Bundle\SecurityBundle\Security;
 #[AsEntityListener(event: 'postPersist', entity: SecurityAdvisory::class)]
 #[AsEntityListener(event: 'preUpdate', entity: SecurityAdvisory::class)]
 #[AsEntityListener(event: 'postUpdate', entity: SecurityAdvisory::class)]
-#[AsEntityListener(event: 'preRemove', entity: SecurityAdvisory::class)]
+#[AsEntityListener(event: 'preUpdate', method: 'preUpdateSource', entity: SecurityAdvisorySource::class)]
+#[AsEntityListener(event: 'postUpdate', method: 'postUpdateSource', entity: SecurityAdvisorySource::class)]
 class SecurityAdvisoryAuditListener
 {
     use DoctrineTrait;
@@ -54,6 +56,14 @@ class SecurityAdvisoryAuditListener
 
     public function preUpdate(SecurityAdvisory $advisory, PreUpdateEventArgs $event): void
     {
+        if ($event->hasChangedField('withdrawnAt')) {
+            $this->buffered[] = null !== $event->getNewValue('withdrawnAt')
+                ? AuditRecord::securityAdvisoryWithdrawn($advisory, $this->getUser(), $event->getEntityChangeSet(), $this->getPackageId($advisory))
+                : AuditRecord::securityAdvisoryUnwithdrawn($advisory, $this->getUser(), $event->getEntityChangeSet(), $this->getPackageId($advisory));
+
+            return;
+        }
+
         $this->buffered[] = AuditRecord::securityAdvisoryEdited($advisory, $this->getUser(), $event->getEntityChangeSet(), $this->getPackageId($advisory));
     }
 
@@ -61,6 +71,31 @@ class SecurityAdvisoryAuditListener
      * @param LifecycleEventArgs<EntityManager> $event
      */
     public function postUpdate(SecurityAdvisory $advisory, LifecycleEventArgs $event): void
+    {
+        $this->flushBuffered();
+    }
+
+    public function preUpdateSource(SecurityAdvisorySource $source, PreUpdateEventArgs $event): void
+    {
+        if (!$event->hasChangedField('withdrawnAt')) {
+            return;
+        }
+
+        $packageId = $this->getPackageId($source->getSecurityAdvisory());
+        $this->buffered[] = null !== $event->getNewValue('withdrawnAt')
+            ? AuditRecord::securityAdvisorySourceWithdrawn($source, $this->getUser(), $packageId)
+            : AuditRecord::securityAdvisorySourceUnwithdrawn($source, $this->getUser(), $packageId);
+    }
+
+    /**
+     * @param LifecycleEventArgs<EntityManager> $event
+     */
+    public function postUpdateSource(SecurityAdvisorySource $source, LifecycleEventArgs $event): void
+    {
+        $this->flushBuffered();
+    }
+
+    private function flushBuffered(): void
     {
         if (!$this->buffered) {
             return;
@@ -71,14 +106,6 @@ class SecurityAdvisoryAuditListener
             $repository->insert($record);
         }
         $this->buffered = [];
-    }
-
-    /**
-     * @param LifecycleEventArgs<EntityManager> $event
-     */
-    public function preRemove(SecurityAdvisory $advisory, LifecycleEventArgs $event): void
-    {
-        $this->getEM()->persist(AuditRecord::securityAdvisoryWithdrawn($advisory, $this->getUser(), $this->getPackageId($advisory)));
     }
 
     private function getUser(): ?User

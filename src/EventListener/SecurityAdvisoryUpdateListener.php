@@ -13,6 +13,7 @@
 namespace App\EventListener;
 
 use App\Entity\SecurityAdvisory;
+use App\Entity\SecurityAdvisorySource;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\DBAL\ArrayParameterType;
@@ -24,6 +25,8 @@ use Predis\Client;
 #[AsEntityListener(event: 'postUpdate', entity: SecurityAdvisory::class)]
 #[AsEntityListener(event: 'postPersist', entity: SecurityAdvisory::class)]
 #[AsEntityListener(event: 'postRemove', entity: SecurityAdvisory::class)]
+#[AsEntityListener(event: 'postUpdate', method: 'postUpdateSource', entity: SecurityAdvisorySource::class)]
+#[AsEntityListener(event: 'postPersist', method: 'postPersistSource', entity: SecurityAdvisorySource::class)]
 class SecurityAdvisoryUpdateListener
 {
     use DoctrineTrait;
@@ -59,6 +62,22 @@ class SecurityAdvisoryUpdateListener
     public function postRemove(SecurityAdvisory $advisory, LifecycleEventArgs $event): void
     {
         $this->dumpPackage($advisory->getPackageName());
+    }
+
+    /**
+     * @param LifecycleEventArgs<EntityManager> $event
+     */
+    public function postUpdateSource(SecurityAdvisorySource $source, LifecycleEventArgs $event): void
+    {
+        $this->dumpPackage($source->getSecurityAdvisory()->getPackageName());
+    }
+
+    /**
+     * @param LifecycleEventArgs<EntityManager> $event
+     */
+    public function postPersistSource(SecurityAdvisorySource $source, LifecycleEventArgs $event): void
+    {
+        $this->dumpPackage($source->getSecurityAdvisory()->getPackageName());
     }
 
     public function flushChangesToPackages(): void

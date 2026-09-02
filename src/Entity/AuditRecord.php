@@ -784,15 +784,73 @@ class AuditRecord
         );
     }
 
-    public static function securityAdvisoryWithdrawn(SecurityAdvisory $advisory, ?User $actor, ?int $packageId): self
+    /**
+     * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, mixed>> $changeSet the Doctrine entity change set (field => [old, new])
+     */
+    public static function securityAdvisoryWithdrawn(SecurityAdvisory $advisory, ?User $actor, array $changeSet, ?int $packageId): self
     {
         return new self(
             AuditRecordType::SecurityAdvisoryWithdrawn,
-            self::getSecurityAdvisoryData($advisory, $actor),
+            [...self::getSecurityAdvisoryData($advisory, $actor), 'changes' => self::getSecurityAdvisoryChanges($changeSet)],
             vendor: self::vendorFromPackageName($advisory->getPackageName()),
             actorId: $actor?->getId(),
             packageId: $packageId,
         );
+    }
+
+    /**
+     * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, mixed>> $changeSet the Doctrine entity change set (field => [old, new])
+     */
+    public static function securityAdvisoryUnwithdrawn(SecurityAdvisory $advisory, ?User $actor, array $changeSet, ?int $packageId): self
+    {
+        return new self(
+            AuditRecordType::SecurityAdvisoryUnwithdrawn,
+            [...self::getSecurityAdvisoryData($advisory, $actor), 'changes' => self::getSecurityAdvisoryChanges($changeSet)],
+            vendor: self::vendorFromPackageName($advisory->getPackageName()),
+            actorId: $actor?->getId(),
+            packageId: $packageId,
+        );
+    }
+
+    public static function securityAdvisorySourceWithdrawn(SecurityAdvisorySource $source, ?User $actor, ?int $packageId): self
+    {
+        return new self(
+            AuditRecordType::SecurityAdvisorySourceWithdrawn,
+            self::getSecurityAdvisorySourceData($source, $actor),
+            vendor: self::vendorFromPackageName($source->getSecurityAdvisory()->getPackageName()),
+            actorId: $actor?->getId(),
+            packageId: $packageId,
+        );
+    }
+
+    public static function securityAdvisorySourceUnwithdrawn(SecurityAdvisorySource $source, ?User $actor, ?int $packageId): self
+    {
+        return new self(
+            AuditRecordType::SecurityAdvisorySourceUnwithdrawn,
+            self::getSecurityAdvisorySourceData($source, $actor),
+            vendor: self::vendorFromPackageName($source->getSecurityAdvisory()->getPackageName()),
+            actorId: $actor?->getId(),
+            packageId: $packageId,
+        );
+    }
+
+    /**
+     * @return array{name: string, advisoryId: string, source: string, remoteId: string, cve: string|null, title: string, advisoryWithdrawn: bool, actor: array{id: int, username: string}|string}
+     */
+    private static function getSecurityAdvisorySourceData(SecurityAdvisorySource $source, ?User $actor): array
+    {
+        $advisory = $source->getSecurityAdvisory();
+
+        return [
+            'name' => $advisory->getPackageName(),
+            'advisoryId' => $advisory->getPackagistAdvisoryId(),
+            'source' => $source->getSource(),
+            'remoteId' => $source->getRemoteId(),
+            'cve' => $advisory->getCve(),
+            'title' => $advisory->getTitle(),
+            'advisoryWithdrawn' => $advisory->isWithdrawn(),
+            'actor' => self::getUserData($actor, 'automation'),
+        ];
     }
 
     /**
@@ -833,8 +891,8 @@ class AuditRecord
     {
         $changes = [];
         foreach ($changeSet as $field => $change) {
-            // Skip the timestamp and any collection-valued changes; we only record scalar field diffs.
-            if ($field === 'updatedAt' || !\is_array($change)) {
+            // Skip bookkeeping fields (implied by the record type) and collection-valued changes; we only record scalar field diffs.
+            if (\in_array($field, ['updatedAt', 'withdrawnAt'], true) || !\is_array($change)) {
                 continue;
             }
 

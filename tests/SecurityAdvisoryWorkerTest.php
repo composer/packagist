@@ -81,7 +81,7 @@ class SecurityAdvisoryWorkerTest extends TestCase
         ];
 
         $existingAdvisory1 = new SecurityAdvisory($advisory1Existing, 'test');
-        $existingAdvisory2ToBeDeleted = new SecurityAdvisory($this->createRemoteAdvisory('vendor/delete', 'to-be-deleted'), 'test');
+        $existingAdvisory2ToBeWithdrawn = new SecurityAdvisory($this->createRemoteAdvisory('vendor/delete', 'to-be-deleted'), 'test');
 
         $this->source
             ->expects($this->once())
@@ -93,22 +93,23 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->method('persist');
 
         $this->em
-            ->expects($this->once())
-            ->method('remove')
-            ->with($this->equalTo($existingAdvisory2ToBeDeleted));
+            ->expects($this->never())
+            ->method('remove');
 
         $this->securityAdvisoryRepository
             ->expects($this->once())
             ->method('getPackageAdvisoriesWithSources')
             ->with($this->equalTo(['package/existing', 'package/new']))
-            ->willReturn([$existingAdvisory1->getPackagistAdvisoryId() => $existingAdvisory1, $existingAdvisory2ToBeDeleted->getPackagistAdvisoryId() => $existingAdvisory2ToBeDeleted]);
+            ->willReturn([$existingAdvisory1->getPackagistAdvisoryId() => $existingAdvisory1, $existingAdvisory2ToBeWithdrawn->getPackagistAdvisoryId() => $existingAdvisory2ToBeWithdrawn]);
 
         $job = new Job('job', 'security:advisory', ['source' => 'test']);
         $job->setPackageId(42);
         $this->worker->process($job, SignalHandler::create());
+
+        $this->assertTrue($existingAdvisory2ToBeWithdrawn->isWithdrawn());
     }
 
-    public function testProcessRemovesWithdrawnAdvisoryBeforeResolve(): void
+    public function testProcessMarksWithdrawnAdvisoryWithoutDeleting(): void
     {
         $newRemote = $this->createRemoteAdvisory('package/new', 'new-id');
         $withdrawnExisting = new SecurityAdvisory($this->createRemoteAdvisory('package/withdrawn', 'withdrawn-id'), 'test');
@@ -125,31 +126,19 @@ class SecurityAdvisoryWorkerTest extends TestCase
             ->method('getPackageAdvisoriesWithSources')
             ->willReturn([$withdrawnExisting->getPackagistAdvisoryId() => $withdrawnExisting]);
 
-        $calls = [];
         $this->em
-            ->method('remove')
-            ->willReturnCallback(function (object $entity) use (&$calls): void {
-                $calls[] = $entity instanceof SecurityAdvisory ? 'remove:advisory' : 'remove:source';
-            });
+            ->expects($this->never())
+            ->method('remove');
         $this->em
-            ->method('persist')
-            ->willReturnCallback(function () use (&$calls): void {
-                $calls[] = 'persist';
-            });
-        $this->em
-            ->expects($this->exactly(2))
-            ->method('flush')
-            ->willReturnCallback(function () use (&$calls): void {
-                $calls[] = 'flush';
-            });
-
+            ->expects($this->once())
+            ->method('persist');
         $job = new Job('job', 'security:advisory', ['source' => 'test']);
         $job->setPackageId(42);
         $this->worker->process($job, SignalHandler::create());
 
-        // The withdrawn advisory (and its source row) is removed and flushed on its own before the
-        // new advisory is persisted, freeing any (packageName, cve) unique key for reuse.
-        $this->assertSame(['remove:source', 'remove:advisory', 'flush', 'persist', 'flush'], $calls);
+        $this->assertTrue($withdrawnExisting->isWithdrawn());
+        $this->assertNotNull($withdrawnExisting->getWithdrawnAt());
+        $this->assertTrue($withdrawnExisting->hasSources());
     }
 
     public function testProcessNoAdvisories(): void
