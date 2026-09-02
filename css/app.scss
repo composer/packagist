@@ -1109,6 +1109,15 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     border-bottom-color: var(--color-warning);
 }
 
+.btn-info, .btn-info:hover {
+    background: #5bc0de;
+    border-bottom-color: #31b0d5;
+}
+.btn-info:focus, .btn-info:active {
+    background: #31b0d5;
+    border-bottom-color: #5bc0de;
+}
+
 .btn-github {
     line-height: 26px;
     font-weight: 600;
