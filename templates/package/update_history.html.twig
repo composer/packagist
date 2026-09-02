@@ -8,7 +8,7 @@
 
 {% block content %}
     <div class="row">
-        <div class="col-xs-12 package">
+        <div class="col-12 package">
             <div class="package-header">
                 <h2 class="title">
                     <a href="{{ path("view_package", {name: package.name}) }}">{{ package.name }}</a>
@@ -21,7 +21,7 @@
     </div>
 
     <section class="row">
-        <section class="col-md-12">
+        <section class="col-lg-12">
             {% if jobs|length %}
                 <table class="table update-history-table">
                     <thead>
@@ -41,7 +41,7 @@
                             {% set result = job.result ?? {} %}
                             {% set panelId = 'update-job-' ~ job.id %}
                             {# the whole row is the collapse trigger, so bootstrap toggles .collapsed/aria-expanded on the tr itself #}
-                            <tr class="update-history-summary-row collapsed" data-toggle="collapse" data-target="#{{ panelId }}" aria-expanded="false" aria-controls="{{ panelId }}">
+                            <tr class="update-history-summary-row collapsed" data-bs-toggle="collapse" data-bs-target="#{{ panelId }}" aria-expanded="false" aria-controls="{{ panelId }}">
                                 <td>{{ job.createdAt|date('Y-m-d H:i:s') }}</td>
                                 {# started/completed are shown as time only to stay narrow, full value in the title #}
                                 <td{% if job.startedAt %} title="{{ job.startedAt|date('Y-m-d H:i:s') }} UTC"{% endif %}>{{ job.startedAt ? job.startedAt|date('H:i:s') : '—' }}</td>
@@ -49,7 +49,7 @@
                                 <td>{{ job.startedAt and job.completedAt ? (job.completedAt.timestamp - job.startedAt.timestamp) ~ 's' : '—' }}</td>
                                 <td>{{ job.status }}</td>
                                 <td>{{ result.message ?? '—' }}</td>
-                                <td><span class="glyphicon glyphicon-chevron-down"></span></td>
+                                <td><span class="bi bi-chevron-down"></span></td>
                             </tr>
                             {# the panel gets its own full-width row so the log has the whole table width while the toggle stays on the summary row #}
                             <tr class="update-history-detail-row">

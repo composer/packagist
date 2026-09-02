@@ -2377,13 +2377,16 @@ body {
             background-color: #f5f5f5;
         }
 
-        .glyphicon {
+        // bootstrap-icons only makes .bi::before inline-block, and transform is ignored on
+        // non-replaced inline elements, so the span itself needs it for the rotation to apply
+        .bi {
+            display: inline-block;
             color: #999;
             transition: transform .15s ease-in-out;
         }
 
         // .collapsed is rendered server-side too, so :not() means expanded from the first paint
-        &:not(.collapsed) .glyphicon {
+        &:not(.collapsed) .bi {
             transform: rotate(180deg);
         }
     }

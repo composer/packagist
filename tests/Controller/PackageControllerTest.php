@@ -566,10 +566,10 @@ class PackageControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/packages/test/pkg/update-history');
         self::assertResponseIsSuccessful();
 
-        $rows = $crawler->filter('tr[data-toggle="collapse"]');
+        $rows = $crawler->filter('tr[data-bs-toggle="collapse"]');
         self::assertCount(2, $rows);
         // the whole summary row is the trigger, not just a cell in it
-        self::assertSame('#update-job-bbbb0000', $rows->first()->attr('data-target'));
+        self::assertSame('#update-job-bbbb0000', $rows->first()->attr('data-bs-target'));
         self::assertCount(1, $crawler->filter('#update-job-bbbb0000'));
 
         $html = (string) $this->client->getResponse()->getContent();
@@ -629,7 +629,7 @@ class PackageControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/packages/test/pkg/update-history');
         self::assertResponseIsSuccessful();
 
-        self::assertCount(1, $crawler->filter('tr[data-toggle="collapse"]'));
+        self::assertCount(1, $crawler->filter('tr[data-bs-toggle="collapse"]'));
 
         $html = (string) $this->client->getResponse()->getContent();
         self::assertStringContainsString('No log output recorded for this job.', $html);
@@ -647,7 +647,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
 
         self::assertCount(1, $crawler->filter('.alert-info'));
-        self::assertCount(0, $crawler->filter('tr[data-toggle="collapse"]'));
+        self::assertCount(0, $crawler->filter('tr[data-bs-toggle="collapse"]'));
     }
 
     public function testPackagePageShowsUpdateHistoryLinkOnlyToStaff(): void
