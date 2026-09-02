@@ -292,7 +292,9 @@ strong {
 
 .navbar-toggler {
     background: rgba(0, 0, 0, 0.3);
-    margin-top: 12px;
+    margin-top: 3px;
+    padding-top: calc(var(--bs-navbar-toggler-padding-y) * 2.5);
+    padding-bottom: calc(var(--bs-navbar-toggler-padding-y) * 2.5);
 }
 
 .navbar-toggler .icon-bar {
