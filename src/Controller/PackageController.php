@@ -20,6 +20,7 @@ use App\Entity\Download;
 use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
 use App\Entity\Job;
+use App\Entity\JobRepository;
 use App\Entity\Package;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
@@ -57,6 +58,7 @@ use Composer\Semver\Constraint\MatchNoneConstraint;
 use Composer\Semver\Constraint\MultiConstraint;
 use Doctrine\ORM\NoResultException;
 use Pagerfanta\Adapter\FixedAdapter;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
 use Predis\Connection\ConnectionException;
@@ -1837,6 +1839,32 @@ class PackageController extends Controller
         $data['list'] = $list;
 
         return $this->render('package/filter_list_entries.html.twig', $data);
+    }
+
+    /**
+     * Staff-only history of every package:updates job of one package, with each run's log and raw
+     * payload/result. Gated on the role, not the PackageActions::Update voter, as that voter also grants
+     * maintainers and the history exposes internal exception classes/messages. Frozen and suppressed
+     * packages stay viewable here (unlike viewPackageAction) as that is when the log is most needed.
+     */
+    #[IsGranted('ROLE_UPDATE_PACKAGES')]
+    #[Route(path: '/packages/{name}/update-history', name: 'view_package_update_history', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET'])]
+    public function updateHistoryAction(Request $req, string $name, JobRepository $jobRepository): Response
+    {
+        $package = $this->getPackageByName($req, $name);
+        if ($package instanceof Response) {
+            return $package;
+        }
+
+        $jobs = new Pagerfanta(new QueryAdapter($jobRepository->getPackageUpdateJobsQueryBuilder($package->getId()), false, false));
+        $jobs->setNormalizeOutOfRangePages(true);
+        $jobs->setMaxPerPage(20);
+        $jobs->setCurrentPage(max(1, $req->query->getInt('page', 1)));
+
+        return $this->render('package/update_history.html.twig', [
+            'package' => $package,
+            'jobs' => $jobs,
+        ]);
     }
 
     /**

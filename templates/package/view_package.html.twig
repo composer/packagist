@@ -135,7 +135,7 @@
                             {% endif %}
                         </div>
                         {% if lastJobWarning is defined and lastJobWarning is not empty %}
-                            <p class="alert alert-danger">{{ lastJobWarning|raw }} <br /> <a href="#" data-msg="{{ lastJobMsg }}" data-details="{{ lastJobDetails }}" class="view-log">View Last Update Log</a></p>
+                            <p class="alert alert-danger">{{ lastJobWarning|raw }} <br /> <a href="#" data-msg="{{ lastJobMsg }}" data-details="{{ lastJobDetails }}" class="view-log">View Last Update Log</a>{% if is_granted('ROLE_UPDATE_PACKAGES') %} &middot; <a rel="nofollow noindex" href="{{ path('view_package_update_history', {name: package.name}) }}">Update History</a>{% endif %}</p>
                         {% endif %}
                     {% endif %}
                     {% if package.isFrozen() %}
@@ -435,7 +435,8 @@
                             Freezing as
                             {%- for r in enum('App\\Entity\\PackageFreezeReason').suppressingValues() %} <strong>{{ r }}</strong>{% if not loop.last %} or{% endif %}{% endfor %}
                             hides the package from the public, removes it from search, and purges its published metadata.
-                            A <strong>temporary</strong> freeze keeps its metadata served but stops updates.
+                            A <strong>gone</strong> or <strong>temporary</strong> freeze keeps its metadata served but stops updates &mdash;
+                            use <strong>gone</strong> when the canonical repository no longer exists.
                         </p>
                         <input type="hidden" name="token" value="{{ freezeCsrfToken }}" />
                     </div>

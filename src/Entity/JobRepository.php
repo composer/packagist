@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -98,5 +99,23 @@ class JobRepository extends ServiceEntityRepository
         }
 
         return null;
+    }
+
+    /**
+     * Every package:updates job of one package, newest first, as a QueryBuilder so Pagerfanta can drive
+     * both the COUNT and the paged slice.
+     *
+     * The type filter is load bearing, not a selectivity tweak: packageId is overloaded across job types
+     * (it holds a *user* id for githubuser:migrate rows), so filtering on it alone mixes in other jobs.
+     */
+    public function getPackageUpdateJobsQueryBuilder(int $packageId): QueryBuilder
+    {
+        return $this->createQueryBuilder('j')
+            ->where('j.packageId = :packageId')
+            ->andWhere('j.type = :type')
+            // no id tiebreaker, job ids are random hex so ordering by them is meaningless
+            ->orderBy('j.createdAt', 'DESC')
+            ->setParameter('packageId', $packageId)
+            ->setParameter('type', 'package:updates');
     }
 }
