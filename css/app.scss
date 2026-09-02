@@ -1001,6 +1001,11 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     border-radius: 3px;
     text-shadow: none;
     font-weight: 600;
+    color: var(--color-light-grey);
+}
+.btn:hover {
+    background: var(--color-secondary);
+    color: #fff;
 }
 .btn-group-xs .btn,
 .btn-xs {
@@ -1050,11 +1055,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 
 .btn.disabled {
     border-bottom-color: #e1e1e8;
-}
-
-.btn:hover {
-    background: var(--color-secondary);
-    color: #fff;
 }
 
 .btn.disabled:hover {
