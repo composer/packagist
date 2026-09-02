@@ -36,6 +36,12 @@
     --bs-primary: var(--color-brand-orange);
     --bs-primary-rgb: 242, 141, 26;
 
+    // BS5 bases the page on 16px/1.5 where BS3 used 14px/1.43. Only body reads these, so component
+    // sizing is untouched, but the site's copy and its fixed column widths are built for the smaller
+    // base - at 16px the transparency log's timestamps no longer fit their column.
+    --bs-body-font-size: 14px;
+    --bs-body-line-height: 1.428571429;
+
     --heading-margin-top-lg: 20px;
     --heading-margin-top-sm: 10px;
     --heading-margin-bottom: 10px;
