@@ -1195,6 +1195,13 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   background-repeat: no-repeat;
   padding-left: 35px;
 }
+// the row mixes inline-block <form>s with a bare <button>, whose inline baselines don't match, so
+// lay it out with flex - which also keeps the wrapping that .btn-group's nowrap took away
+.package .package-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
 .package .action {
   margin-right: 5px;
   margin-bottom: 15px;
@@ -1588,6 +1595,9 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 
 .package .requireme {
     margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 .package .requireme input {
   cursor: text;
@@ -1595,10 +1605,8 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   border-radius: 0;
   background-color: transparent;
   font-family: Consolas, "Courier New", Courier, monospace;
-  min-width: 80%;
-  position: relative;
-  top: -3px;
-  left: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
 
