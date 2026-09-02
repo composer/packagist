@@ -6,10 +6,12 @@ import './view';
 import './submitPackage';
 import './filterListAdmin';
 import '../css/app.scss';
+// bare side-effect import: registers the delegated data-bs-* handlers the navbar toggler and the
+// update-history rows need. It must stay on the same specifier as every other bootstrap import -
+// mixing in 'bootstrap/js/dist/collapse' bundles a second copy, and the two data-api handlers then
+// toggle each other back, so a panel opens but never closes.
+import 'bootstrap';
 import { Tooltip } from 'bootstrap';
-// side-effect import: registers the delegated [data-bs-toggle="collapse"] handler the navbar
-// toggler and the update-history rows rely on; nothing instantiates Collapse itself
-import 'bootstrap/js/dist/collapse';
 
 (function ($) {
     "use strict";
