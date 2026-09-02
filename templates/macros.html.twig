@@ -72,7 +72,7 @@
     </ul>
 
     {% if paginate is defined and paginate and packages.haveToPaginate() %}
-        {{ pagerfanta(packages, 'twitter_bootstrap', {'proximity': 2}) }}
+        {{ pagerfanta(packages, 'twitter_bootstrap5', {'proximity': 2}) }}
     {% endif %}
 {% endmacro %}
 

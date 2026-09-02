@@ -107,6 +107,6 @@
      } only %}
 
     {% if auditLogDisplays|length and auditLogPaginator.haveToPaginate() %}
-        {{ pagerfanta(auditLogPaginator, 'twitter_bootstrap', {'proximity': 2}) }}
+        {{ pagerfanta(auditLogPaginator, 'twitter_bootstrap5', {'proximity': 2}) }}
     {% endif %}
 {% endblock %}

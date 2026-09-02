@@ -118,8 +118,6 @@
     </form>
 
     {% if paginator.haveToPaginate %}
-        <div class="text-center">
-            {{ pagerfanta(paginator, 'twitter_bootstrap', {'proximity': 2}) }}
-        </div>
+        {{ pagerfanta(paginator, 'twitter_bootstrap5', {'proximity': 2}) }}
     {% endif %}
 {% endblock %}

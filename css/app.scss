@@ -1157,10 +1157,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   list-style: none;
   padding-left: 0;
 }
-.pagination .ais-Pagination-list {
-  list-style: none;
-  padding-left: 0;
-}
 
 
 .package h2.title {
@@ -1627,6 +1623,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     --bs-pagination-active-bg: var(--color-brand-orange);
     --bs-pagination-active-border-color: var(--color-brand-orange);
     font-weight: 600;
+    justify-content: center;
 }
 
 #pagination-container {

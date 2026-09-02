@@ -64,7 +64,7 @@
                 </table>
 
                 {% if users.haveToPaginate() %}
-                    {{ pagerfanta(users, 'twitter_bootstrap', {'proximity': 2}) }}
+                    {{ pagerfanta(users, 'twitter_bootstrap5', {'proximity': 2}) }}
                 {% endif %}
             {% else %}
                 <div class="alert alert-info">
