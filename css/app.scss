@@ -817,6 +817,7 @@ button {
 .form-select {
     min-height: 20px;
     padding: 7px 11px 6px 9px;
+    font-size: 14px;
     box-shadow: none;
     border-radius: 2px;
     font-family: var(--font-sans);
@@ -1015,6 +1016,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     text-shadow: none;
     font-weight: 600;
     color: var(--color-light-grey);
+    --bs-btn-font-size: 14px;
 }
 .btn:hover {
     background: var(--color-secondary);
@@ -1024,6 +1026,15 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .btn-xs {
     padding: 5px 10px;
     font-size: 12px;
+}
+
+// .btn-sm/.btn-lg set --bs-btn-font-size themselves, so they have to be restated after our .btn or
+// it would win on source order and flatten every button to one size
+.btn-sm {
+    --bs-btn-font-size: 12px;
+}
+.btn-lg {
+    --bs-btn-font-size: 18px;
 }
 
 .dl-horizontal {
