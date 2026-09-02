@@ -18,7 +18,7 @@
 
                 {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
                     <a rel="nofollow noindex" class="action-alert advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">
-                        <i class="bi bi-bell-fill" data-bs-toggle="tooltip" data-bs-placement="top" title="Version has security advisories" data-bs-container="body"></i>
+                        <i class="bi bi-shield-exclamation" data-bs-toggle="tooltip" data-bs-placement="top" title="Version has security advisories" data-bs-container="body"></i>
                     </a>
                 {% endif %}
 

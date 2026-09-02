@@ -46,7 +46,7 @@
 
             <div class="row">
                 <div class="col-lg-8">
-                    <p class="requireme"><i class="bi bi-download"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
+                    <p class="requireme"><i class="bi bi-terminal"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
 
                     {% if hasVersionsFlaggedAsMalware %}
                     <div class="alert alert-danger"><i class="bi bi-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
