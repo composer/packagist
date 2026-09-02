@@ -6,7 +6,10 @@ import './view';
 import './submitPackage';
 import './filterListAdmin';
 import '../css/app.scss';
-import { Collapse, Tooltip } from 'bootstrap';
+import { Tooltip } from 'bootstrap';
+// side-effect import: registers the delegated [data-bs-toggle="collapse"] handler the navbar
+// toggler and the update-history rows rely on; nothing instantiates Collapse itself
+import 'bootstrap/js/dist/collapse';
 
 (function ($) {
     "use strict";
