@@ -72,7 +72,7 @@
                                 {% endfor %}
                             </td>
                             {# Only pending rows are listed, so the effective status is either pending or expired. #}
-                            <td><span class="badge bg-{{ effectiveStatus == 'pending' ? 'primary' : 'secondary' }}">{{ effectiveStatus }}</span></td>
+                            <td><span class="badge bg-{{ effectiveStatus == 'pending' ? 'info' : 'secondary' }}">{{ effectiveStatus }}</span></td>
                             <td>{{ invitation.lastSentAt|date('Y-m-d H:i') }}</td>
                             <td>{% if invitation.isActive(now) %}{{ invitation.expiresAt|date('Y-m-d H:i') }}{% endif %}</td>
                             <td class="text-end btn-group-xs" style="white-space:nowrap">
