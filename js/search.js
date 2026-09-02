@@ -4,11 +4,16 @@ import historyRouter from 'instantsearch.js/es/lib/routers/history';
 import { connectSearchBox, connectCurrentRefinements } from 'instantsearch.js/es/connectors';
 import { hits, pagination, clearRefinements, menu, refinementList, configure, panel } from 'instantsearch.js/es/widgets';
 
-document.getElementById('search_query_query').addEventListener('keydown', function (e) {
-    if (e.keyCode === 13) {
-        e.preventDefault();
-    }
-});
+// this file is imported by app.js ahead of every other module, so an unguarded lookup here would
+// take out view.js, the tooltips and the bootstrap data-api handlers on any page without the search
+var searchQueryInput = document.getElementById('search_query_query');
+if (searchQueryInput) {
+    searchQueryInput.addEventListener('keydown', function (e) {
+        if (e.keyCode === 13) {
+            e.preventDefault();
+        }
+    });
+}
 
 // Add accessibility functionality:
 // "Press '/' to focus the searchbar".
