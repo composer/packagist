@@ -73,13 +73,13 @@ class SecurityAdvisoryWorker
         /** @var SecurityAdvisory[] $existingAdvisories */
         $existingAdvisories = $this->doctrine->getRepository(SecurityAdvisory::class)->getPackageAdvisoriesWithSources($packageNames, $sourceName);
 
-        // Withdrawals must be committed on their own before any advisory reuses a freed
-        // (packageName, cve) key. A withdrawal nulls the activeCve generated column backing
-        // package_name_cve_idx, and Doctrine does not order the INSERT/UPDATE statements within a
-        // single flush to keep that unique index transiently consistent, so a replacement advisory
-        // reusing the same CVE in the same run would otherwise trip an unrecoverable constraint
-        // violation. This happens twice: advisories withdrawn at the source, then advisories the
-        // source simply stopped listing.
+        // Every stage below is flushed on its own. A withdrawal nulls the activeCve generated
+        // column backing package_name_active_cve_idx and a revival repopulates it, and Doctrine orders
+        // neither the statements within a flush nor inserts after updates, so sharing a flush
+        // between two stages trips an unrecoverable constraint violation as soon as a CVE moves
+        // between advisories. A CVE handed from one still-listed advisory to another is held back
+        // to the insert flush for the same reason. SecurityAdvisoryWorkerIntegrationTest covers
+        // each boundary.
         [$existingAdvisories, $withdrawn] = $this->securityAdvisoryResolver->removeWithdrawn($existingAdvisories, $remoteAdvisories, $sourceName);
         if (\count($withdrawn) > 0) {
             $this->doctrine->getManager()->flush();
@@ -91,13 +91,28 @@ class SecurityAdvisoryWorker
             $this->doctrine->getManager()->flush();
         }
 
-        $new = $this->securityAdvisoryResolver->applyMatches($plan);
+        $cvesBefore = [];
+        foreach ($plan->existingAdvisories as $advisory) {
+            $cvesBefore[$advisory->getPackagistAdvisoryId()] = $advisory->getCve();
+        }
 
+        $new = $this->securityAdvisoryResolver->applyMatches($plan);
+        $deferred = $this->securityAdvisoryResolver->deferContestedCves($plan, $cvesBefore);
+
+        $this->doctrine->getManager()->flush();
+
+        $this->securityAdvisoryResolver->assignDeferredCves($plan, $deferred);
         foreach ($new as $advisory) {
             $this->doctrine->getManager()->persist($advisory);
         }
 
-        $this->doctrine->getManager()->flush();
+        if (\count($new) > 0 || \count($deferred) > 0) {
+            $this->doctrine->getManager()->flush();
+        }
+
+        if (\count($this->securityAdvisoryResolver->applyUnwithdrawals($plan, $new)) > 0) {
+            $this->doctrine->getManager()->flush();
+        }
 
         $this->advisoryUpdateListener->flushChangesToPackages();
 

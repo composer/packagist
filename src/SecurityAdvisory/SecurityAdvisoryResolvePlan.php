@@ -15,11 +15,10 @@ namespace App\SecurityAdvisory;
 use App\Entity\SecurityAdvisory;
 
 /**
- * The outcome of {@see SecurityAdvisoryResolver::planResolve()}: what should happen to each advisory,
- * computed without mutating anything. The caller applies the withdrawals ({@see
- * SecurityAdvisoryResolver::applyWithdrawals()}) and flushes them before applying the matches
- * ({@see SecurityAdvisoryResolver::applyMatches()}), so a reassigned CVE can reuse the freed
- * (packageName, activeCve) unique key without a constraint violation.
+ * The outcome of {@see SecurityAdvisoryResolver::planResolve()}, computed without mutating
+ * anything. The caller applies the withdrawals, the matches and finally the revivals, flushing in
+ * between, so a reassigned CVE can reuse the freed (packageName, activeCve) unique key without a
+ * constraint violation.
  */
 final class SecurityAdvisoryResolvePlan
 {
@@ -28,7 +27,7 @@ final class SecurityAdvisoryResolvePlan
      * @param list<array{SecurityAdvisory, RemoteSecurityAdvisory}> $exactMatches        existing advisory matched to a remote by its source remote id
      * @param list<array{SecurityAdvisory, RemoteSecurityAdvisory}> $renameMatches       existing advisory fuzzy-matched to a remote whose id changed
      * @param list<RemoteSecurityAdvisory>                          $newRemoteAdvisories remote advisories with no local counterpart
-     * @param list<SecurityAdvisory>                                $unmatchedExisting   advisories carrying $sourceName that the source no longer lists
+     * @param list<array{SecurityAdvisory, string}>                  $unmatchedExisting   (advisory, remote id) rows of $sourceName that the source no longer lists
      */
     public function __construct(
         public readonly string $sourceName,

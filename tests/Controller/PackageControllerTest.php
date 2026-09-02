@@ -22,6 +22,7 @@ use App\Entity\PackageReadme;
 use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Entity\Version;
+use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Service\Spam\FeatureExtractor;
@@ -442,7 +443,7 @@ class PackageControllerTest extends IntegrationTestCase
         );
 
         $withdrawn = new SecurityAdvisory($this->remoteAdvisory('GHSA-gone-3333-3333', 'CVE-2024-1003', 'Withdrawn advisory'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
-        $withdrawn->withdraw();
+        $withdrawn->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
         $this->store($withdrawn);
 
         $crawler = $this->client->request('GET', '/packages/test/pkg/advisories');
@@ -456,6 +457,28 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('Withdrawn advisory', $withdrawnSection->text());
         self::assertStringNotContainsString('Withdrawn advisory', $crawler->filter('.package-item')->eq(0)->text());
         self::assertStringContainsString('Withdrawn advisories', $crawler->filter('body')->text());
+    }
+
+    public function testAdvisoriesPageKeepsPartiallyWithdrawnAdvisoryInTheActiveList(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $this->store($package);
+
+        $advisory = new SecurityAdvisory($this->remoteAdvisory('GHSA-partial-1111-1111', 'CVE-2024-1004', 'Partially withdrawn advisory'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->addSource('test/pkg/CVE-2024-1004.yaml', FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, null);
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $this->store($advisory);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg/advisories');
+        self::assertResponseIsSuccessful();
+
+        self::assertStringContainsString('(1)', $crawler->filter('.package-header .title')->text());
+        self::assertCount(0, $crawler->filter('#withdrawn-advisories'));
+
+        $item = $crawler->filter('.package-item')->eq(0)->text();
+        self::assertStringContainsString('Partially withdrawn advisory', $item);
+        self::assertStringContainsString('withdrawn', $item, 'the source that dropped the advisory is marked as withdrawn');
+        self::assertStringContainsString(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, $item);
     }
 
     private function remoteAdvisory(string $remoteId, string $cve, string $title): RemoteSecurityAdvisory

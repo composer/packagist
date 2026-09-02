@@ -14,11 +14,8 @@ namespace App\Audit\Display;
 
 use App\Audit\AuditRecordType;
 
-readonly class SecurityAdvisoryWithdrawnDisplay extends AbstractAuditLogDisplay
+readonly class SecurityAdvisorySourceUnwithdrawnDisplay extends AbstractAuditLogDisplay
 {
-    /**
-     * @param array<string, array{from: scalar|null, to: scalar|null}> $changes
-     */
     public function __construct(
         \DateTimeImmutable $datetime,
         public string $packageName,
@@ -26,7 +23,8 @@ readonly class SecurityAdvisoryWithdrawnDisplay extends AbstractAuditLogDisplay
         public ?string $cve,
         public string $title,
         public string $source,
-        public array $changes,
+        public string $remoteId,
+        public bool $advisoryWithdrawn,
         ActorDisplay $actor,
         ?string $ip,
     ) {
@@ -35,11 +33,11 @@ readonly class SecurityAdvisoryWithdrawnDisplay extends AbstractAuditLogDisplay
 
     public function getType(): AuditRecordType
     {
-        return AuditRecordType::SecurityAdvisoryWithdrawn;
+        return AuditRecordType::SecurityAdvisorySourceUnwithdrawn;
     }
 
     public function getTemplateName(): string
     {
-        return 'audit_log/display/security_advisory_withdrawn.html.twig';
+        return 'audit_log/display/security_advisory_source_unwithdrawn.html.twig';
     }
 }

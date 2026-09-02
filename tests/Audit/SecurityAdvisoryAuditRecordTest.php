@@ -14,6 +14,7 @@ namespace App\Tests\Audit;
 
 use App\Audit\AuditRecordType;
 use App\Entity\SecurityAdvisory;
+use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Tests\Fixtures\Fixtures;
@@ -73,7 +74,7 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
         self::assertArrayNotHasKey('updatedAt', $attributes['changes'], 'The bookkeeping timestamp should be excluded from the recorded changes');
 
         // Withdrawn
-        $advisory->withdraw();
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
         $em->flush();
 
         self::assertNotNull($advisory->getWithdrawnAt());
@@ -82,6 +83,7 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
 
         // Un-withdrawn: the source reports the advisory as live again, with a changed field.
         $advisory->updateAdvisory($this->remoteAdvisory('GHSA-aaaa-bbbb-cccc', '^3.0'));
+        $advisory->reinstateSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME, 'GHSA-aaaa-bbbb-cccc');
         $em->flush();
 
         self::assertNull($advisory->getWithdrawnAt());
@@ -93,6 +95,40 @@ class SecurityAdvisoryAuditRecordTest extends KernelTestCase
         self::assertSame('^2.0', $attributes['changes']['affectedVersions']['from']);
         self::assertSame('^3.0', $attributes['changes']['affectedVersions']['to']);
         self::assertArrayNotHasKey('withdrawnAt', $attributes['changes'], 'The withdrawnAt flip is implied by the record type');
+    }
+
+    public function testSourceWithdrawalsGetRecorded(): void
+    {
+        $em = static::getContainer()->get(ManagerRegistry::class)->getManager();
+
+        $package = self::createPackage('acme/package', 'https://example.org/acme/package.git');
+        $em->persist($package);
+        $em->flush();
+
+        $advisory = new SecurityAdvisory($this->remoteAdvisory('GHSA-aaaa-bbbb-cccc'), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->addSource('acme/package/CVE-2024-12345.yaml', FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, null);
+        $em->persist($advisory);
+        $em->flush();
+
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $em->flush();
+
+        self::assertFalse($advisory->isWithdrawn());
+        self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisorySourceWithdrawn));
+        self::assertSame(0, $this->auditCount(AuditRecordType::SecurityAdvisoryWithdrawn));
+
+        $attributes = $this->latestAttributes(AuditRecordType::SecurityAdvisorySourceWithdrawn);
+        self::assertSame('acme/package', $attributes['name']);
+        self::assertSame(GitHubSecurityAdvisoriesSource::SOURCE_NAME, $attributes['source']);
+        self::assertSame('GHSA-aaaa-bbbb-cccc', $attributes['remoteId']);
+        self::assertFalse($attributes['advisoryWithdrawn']);
+        self::assertSame($package->getId(), $this->latestPackageId(AuditRecordType::SecurityAdvisorySourceWithdrawn));
+
+        $advisory->reinstateSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME, 'GHSA-aaaa-bbbb-cccc');
+        $em->flush();
+
+        self::assertSame(1, $this->auditCount(AuditRecordType::SecurityAdvisorySourceUnwithdrawn));
+        self::assertSame(0, $this->auditCount(AuditRecordType::SecurityAdvisoryUnwithdrawn), 'the advisory was never withdrawn, so only its source is reinstated');
     }
 
     private function auditCount(AuditRecordType $type): int

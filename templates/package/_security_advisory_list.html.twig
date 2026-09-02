@@ -27,13 +27,15 @@
                                     <p>Affected version: {{ advisory.affectedVersions }}</p>
                                 </div>
                                 <div class="col-sm-4 col-lg-3">
-                                    <p>Reported by:<br/>{% for source in advisory.sources %}{{ source.source }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+                                    <p>Reported by:{% for source in advisory.sources %}<br/>{{ source.source }}{% if source.publishedAt %} <span class="text-muted">published {{ source.publishedAt|date('Y-m-d') }}</span>{% endif %}{% if source.withdrawnAt %} <span class="text-muted">withdrawn {{ source.withdrawnAt|date('Y-m-d') }}</span>{% endif %}{% endfor %}</p>
                                 </div>
                             </div>
                         </div>
                     </li>
                 {% endfor %}
             </ul>
+        {% elseif emptyMessage|default(null) %}
+            <p class="text-muted">{{ emptyMessage }}</p>
         {% else %}
             <div class="alert alert-danger">
                 <p>{{ 'listing.no_security_advisories'|trans }}</p>

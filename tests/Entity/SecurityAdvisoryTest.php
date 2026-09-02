@@ -147,41 +147,227 @@ class SecurityAdvisoryTest extends TestCase
         $this->assertSame(Severity::HIGH, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getSeverity(), 'GitHub should update the source data');
     }
 
-    public function testWithdraw(): void
+    public function testNewAdvisoryAndItsSourceAreActive(): void
     {
-        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $remote = $this->generateGitHubAdvisory(null);
+        $advisory = new SecurityAdvisory($remote, GitHubSecurityAdvisoriesSource::SOURCE_NAME);
 
         $this->assertFalse($advisory->isWithdrawn());
         $this->assertNull($advisory->getWithdrawnAt());
-
-        $advisory->withdraw();
-
-        $this->assertTrue($advisory->isWithdrawn());
-        $this->assertNotNull($advisory->getWithdrawnAt());
+        $this->assertTrue($advisory->hasActiveSources());
+        $this->assertEquals($remote->date, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getPublishedAt());
     }
 
-    public function testWithdrawIsIdempotent(): void
+    public function testWithdrawSourceKeepsTheAdvisoryWhileAnotherSourceListsIt(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->addSource('symfony/framework-bundle/CVE-2022-1111.yaml', FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, null);
+
+        $this->assertFalse($advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME), 'the advisory itself is still listed');
+
+        $this->assertFalse($advisory->isWithdrawn());
+        $this->assertTrue($advisory->hasActiveSources());
+        $this->assertNotNull($advisory->getSourceRemoteId(GitHubSecurityAdvisoriesSource::SOURCE_NAME), 'the source row must be kept');
+        $this->assertTrue($advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->isWithdrawn());
+        $this->assertFalse($advisory->findSecurityAdvisorySource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME)?->isWithdrawn());
+    }
+
+    public function testWithdrawSourceWithdrawsTheAdvisoryOnceNoSourceListsIt(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->addSource('symfony/framework-bundle/CVE-2022-1111.yaml', FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, null);
+
+        $this->assertFalse($advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME));
+        $this->assertTrue($advisory->withdrawSource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME), 'the last listing source withdraws the advisory');
+
+        $this->assertTrue($advisory->isWithdrawn());
+        $this->assertFalse($advisory->hasActiveSources());
+        $this->assertCount(2, $advisory->getSources());
+    }
+
+    public function testWithdrawSourceIsIdempotent(): void
     {
         $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
 
-        $advisory->withdraw();
+        $this->assertTrue($advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME));
         $withdrawnAt = $advisory->getWithdrawnAt();
+        $sourceWithdrawnAt = $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getWithdrawnAt();
 
-        $advisory->withdraw();
+        $this->assertFalse($advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME), 'nothing changes the second time');
 
         $this->assertSame($withdrawnAt, $advisory->getWithdrawnAt());
+        $this->assertSame($sourceWithdrawnAt, $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getWithdrawnAt());
     }
 
-    public function testUpdateAdvisoryClearsWithdrawnAt(): void
+    public function testWithdrawSourceIgnoresAnUnknownSource(): void
     {
         $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
-        $advisory->withdraw();
+
+        $advisory->withdrawSource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $this->assertFalse($advisory->isWithdrawn());
+        $this->assertTrue($advisory->hasActiveSources());
+        $this->assertCount(1, $advisory->getSources());
+    }
+
+    public function testWithdrawSourcePromotesAnotherSourceToKeepSyncing(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->addSource('symfony/framework-bundle/CVE-2022-1111.yaml', FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, null);
+        $this->assertSame(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, $advisory->getSource(), 'FriendsOfPHP is promoted when it is added');
+
+        $advisory->withdrawSource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $this->assertSame(GitHubSecurityAdvisoriesSource::SOURCE_NAME, $advisory->getSource());
+        $this->assertSame('GHSA-1234-1234-1234', $advisory->getRemoteId());
+        $this->assertFalse($advisory->isWithdrawn());
+    }
+
+    public function testWithdrawSourceKeepsTheMainSourceWhenNoneIsLeft(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $this->assertSame(GitHubSecurityAdvisoriesSource::SOURCE_NAME, $advisory->getSource());
+        $this->assertSame('GHSA-1234-1234-1234', $advisory->getRemoteId());
         $this->assertTrue($advisory->isWithdrawn());
+    }
+
+    public function testReinstateSourceRevivesTheAdvisory(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $advisory->reinstateSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME, 'GHSA-1234-1234-1234');
+
+        $this->assertFalse($advisory->isWithdrawn());
+        $this->assertNull($advisory->getWithdrawnAt());
+        $this->assertTrue($advisory->hasActiveSources());
+        $this->assertNull($advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getWithdrawnAt());
+    }
+
+    public function testReinstateSourceRevivesTheAdvisoryWhileTheOtherSourceStaysWithdrawn(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->addSource('symfony/framework-bundle/CVE-2022-1111.yaml', FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, null);
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->withdrawSource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $advisory->reinstateSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME, 'GHSA-1234-1234-1234');
+
+        $this->assertFalse($advisory->isWithdrawn());
+        $this->assertFalse($advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->isWithdrawn());
+        $this->assertTrue($advisory->findSecurityAdvisorySource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME)?->isWithdrawn());
+    }
+
+    public function testReinstateSourceIgnoresASourceThatIsNotWithdrawn(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $advisory->reinstateSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME, 'GHSA-1234-1234-1234');
+        $advisory->reinstateSource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, 'symfony/framework-bundle/CVE-2022-1111.yaml');
+
+        $this->assertFalse($advisory->isWithdrawn());
+        $this->assertCount(1, $advisory->getSources());
+    }
+
+    public function testSourcePublishedAtTracksTheDateTheSourceReports(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $friendsOfPhp = $this->generateFriendsOfPhpRemoteAdvisory('Advisory', 'https://example.org', 'CVE-2022-1111');
+        $advisory->addSource($friendsOfPhp->id, FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, null, $friendsOfPhp->date);
+
+        $this->assertEquals($friendsOfPhp->date, $advisory->findSecurityAdvisorySource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME)?->getPublishedAt());
+        $this->assertNotEquals(
+            $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getPublishedAt(),
+            $advisory->findSecurityAdvisorySource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME)?->getPublishedAt(),
+            'each source keeps the date it published the advisory on'
+        );
+    }
+
+    public function testAddSourceToAWithdrawnAdvisoryDoesNotReviveIt(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $advisory->addSource('symfony/framework-bundle/CVE-2022-1111.yaml', FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME, null);
+
+        $this->assertTrue($advisory->isWithdrawn());
+        $this->assertFalse($advisory->hasActiveSources(), 'a withdrawn advisory must never gain a listing source on its own');
+        $this->assertTrue($advisory->findSecurityAdvisorySource(FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME)?->isWithdrawn());
+    }
+
+    public function testAddSourceDoesNotReinstateAnExistingWithdrawnSource(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $advisory->addSource('GHSA-1234-1234-1234', GitHubSecurityAdvisoriesSource::SOURCE_NAME, null);
+
+        $this->assertCount(1, $advisory->getSources());
+        $this->assertTrue($advisory->isWithdrawn());
+        $this->assertTrue($advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->isWithdrawn());
+    }
+
+    public function testAddSourceUnderANewIdWithdrawsTheOldRowInsteadOfRenamingIt(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $advisory->addSource('GHSA-5678-5678-5678', GitHubSecurityAdvisoriesSource::SOURCE_NAME, null);
+
+        $this->assertSame(['GHSA-1234-1234-1234', 'GHSA-5678-5678-5678'], $advisory->getSourceRemoteIds(GitHubSecurityAdvisoriesSource::SOURCE_NAME));
+        $this->assertTrue($advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME, 'GHSA-1234-1234-1234')?->isWithdrawn());
+        $this->assertFalse($advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME, 'GHSA-5678-5678-5678')?->isWithdrawn());
+        $this->assertSame('GHSA-5678-5678-5678', $advisory->getSourceRemoteId(GitHubSecurityAdvisoriesSource::SOURCE_NAME), 'the id the source lists it under now');
+        $this->assertFalse($advisory->isWithdrawn());
+    }
+
+    public function testUpdateAdvisoryNeverRewritesASourceRowId(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $renamed = new RemoteSecurityAdvisory('GHSA-9999-9999-9999', 'Tile', 'symfony/framework-bundle', '', 'https://github.com/advisories/GHSA-9999-9999-9999', null, new \DateTimeImmutable(), null, [], GitHubSecurityAdvisoriesSource::SOURCE_NAME, null);
+
+        $advisory->updateAdvisory($renamed);
+
+        $this->assertSame(['GHSA-1234-1234-1234'], $advisory->getSourceRemoteIds(GitHubSecurityAdvisoriesSource::SOURCE_NAME), 'a row id is part of its identifier and must not change');
+    }
+
+    public function testFindSecurityAdvisorySourcePrefersTheListingRow(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->addSource('GHSA-5678-5678-5678', GitHubSecurityAdvisoriesSource::SOURCE_NAME, null);
+
+        $this->assertSame('GHSA-5678-5678-5678', $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getRemoteId());
+        $this->assertSame('GHSA-1234-1234-1234', $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME, 'GHSA-1234-1234-1234')?->getRemoteId());
+        $this->assertNull($advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME, 'GHSA-0000-0000-0000'));
+
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+
+        $this->assertSame('GHSA-5678-5678-5678', $advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->getRemoteId(), 'falls back to the last row once none lists it');
+    }
+
+    public function testDeferAndAssignCve(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->updateAdvisory(new RemoteSecurityAdvisory('GHSA-1234-1234-1234', 'Tile', 'symfony/framework-bundle', '', 'https://github.com/advisories/GHSA-1234-1234-1234', 'CVE-2024-0001', new \DateTimeImmutable(), null, [], GitHubSecurityAdvisoriesSource::SOURCE_NAME, null));
+
+        $advisory->deferCve();
+        $this->assertNull($advisory->getCve());
+
+        $advisory->assignCve('CVE-2024-0001');
+        $this->assertSame('CVE-2024-0001', $advisory->getCve());
+    }
+
+    public function testUpdateAdvisoryLeavesTheWithdrawalStateAlone(): void
+    {
+        $advisory = new SecurityAdvisory($this->generateGitHubAdvisory(null), GitHubSecurityAdvisoriesSource::SOURCE_NAME);
+        $advisory->withdrawSource(GitHubSecurityAdvisoriesSource::SOURCE_NAME);
 
         $advisory->updateAdvisory($this->generateGitHubAdvisory(null));
 
-        $this->assertFalse($advisory->isWithdrawn());
-        $this->assertNull($advisory->getWithdrawnAt());
+        $this->assertTrue($advisory->isWithdrawn());
+        $this->assertTrue($advisory->findSecurityAdvisorySource(GitHubSecurityAdvisoriesSource::SOURCE_NAME)?->isWithdrawn());
     }
 
     private function generateGitHubAdvisory(?Severity $severity): RemoteSecurityAdvisory

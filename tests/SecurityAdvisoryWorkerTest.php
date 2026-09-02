@@ -132,12 +132,6 @@ class SecurityAdvisoryWorkerTest extends TestCase
         $this->em
             ->expects($this->once())
             ->method('persist');
-        // Withdrawals are flushed on their own before resolve() persists replacements, so the
-        // freed (packageName, activeCve) key cannot collide within a single flush.
-        $this->em
-            ->expects($this->exactly(2))
-            ->method('flush');
-
         $job = new Job('job', 'security:advisory', ['source' => 'test']);
         $job->setPackageId(42);
         $this->worker->process($job, SignalHandler::create());

@@ -1791,7 +1791,7 @@ class PackageController extends Controller
     {
         $repo = $this->getEM()->getRepository(SecurityAdvisory::class);
         if (str_starts_with($id, 'CVE-')) {
-            $securityAdvisories = $repo->findBy(['cve' => $id]);
+            $securityAdvisories = $repo->findBy(['cve' => $id], ['withdrawnAt' => 'ASC', 'reportedAt' => 'DESC']);
         } elseif (str_starts_with($id, 'GHSA-')) {
             $securityAdvisories = $repo->findByRemoteId(GitHubSecurityAdvisoriesSource::SOURCE_NAME, $id);
         } else {

@@ -1,0 +1,6 @@
+{% import 'audit_log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+{{ display.title }}{% if display.cve %} ({{ display.cve }}){% endif %}<br>
+No longer listed by: {{ display.source }} ({{ display.remoteId }})
+{% if display.advisoryWithdrawn %}<br>No source lists this advisory any more, it is now withdrawn{% endif %}

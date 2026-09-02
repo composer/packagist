@@ -22,7 +22,7 @@
         </div>
     </div>
 
-    {% include 'package/_security_advisory_list.html.twig' %}
+    {% include 'package/_security_advisory_list.html.twig' with {emptyMessage: withdrawnCount > 0 ? 'No active security advisories, only withdrawn ones are left.' : null} %}
 
     {% if withdrawnCount > 0 %}
         <section class="row">
@@ -32,7 +32,7 @@
                         <span class="caret"></span> Withdrawn advisories ({{ withdrawnCount }})
                     </a>
                 </h3>
-                <p class="text-muted">These advisories were withdrawn at their source and are not included in the count above. They are kept so you can still look up advisories you encountered previously.</p>
+                <p class="text-muted">These advisories are no longer listed by any of their sources and are not included in the count above. They are kept so you can still look up advisories you encountered previously.</p>
             </section>
         </section>
         <div class="collapse" id="withdrawn-advisories">

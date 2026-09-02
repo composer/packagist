@@ -37,12 +37,24 @@ class SecurityAdvisorySource
     #[ORM\Column(nullable: true)]
     private ?Severity $severity;
 
-    public function __construct(SecurityAdvisory $securityAdvisory, string $remoteId, string $source, ?Severity $severity)
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $publishedAt = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $withdrawnAt = null;
+
+    public function __construct(SecurityAdvisory $securityAdvisory, string $remoteId, string $source, ?Severity $severity, ?\DateTimeImmutable $publishedAt = null)
     {
         $this->securityAdvisory = $securityAdvisory;
         $this->remoteId = $remoteId;
         $this->source = $source;
         $this->severity = $severity;
+        $this->publishedAt = $publishedAt;
+    }
+
+    public function getSecurityAdvisory(): SecurityAdvisory
+    {
+        return $this->securityAdvisory;
     }
 
     public function getRemoteId(): string
@@ -60,9 +72,34 @@ class SecurityAdvisorySource
         return $this->severity;
     }
 
+    public function getPublishedAt(): ?\DateTimeImmutable
+    {
+        return $this->publishedAt;
+    }
+
+    public function getWithdrawnAt(): ?\DateTimeImmutable
+    {
+        return $this->withdrawnAt;
+    }
+
+    public function isWithdrawn(): bool
+    {
+        return null !== $this->withdrawnAt;
+    }
+
+    public function withdraw(): void
+    {
+        $this->withdrawnAt ??= new \DateTimeImmutable();
+    }
+
+    public function reinstate(): void
+    {
+        $this->withdrawnAt = null;
+    }
+
     public function update(RemoteSecurityAdvisory $advisory): void
     {
-        $this->remoteId = $advisory->id;
         $this->severity = $advisory->severity;
+        $this->publishedAt = $advisory->date;
     }
 }

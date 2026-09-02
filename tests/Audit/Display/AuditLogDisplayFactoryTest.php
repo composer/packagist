@@ -31,6 +31,8 @@ use App\Audit\Display\PackageUnabandonedDisplay;
 use App\Audit\Display\PackageUnfrozenDisplay;
 use App\Audit\Display\SecurityAdvisoryCreatedDisplay;
 use App\Audit\Display\SecurityAdvisoryEditedDisplay;
+use App\Audit\Display\SecurityAdvisorySourceUnwithdrawnDisplay;
+use App\Audit\Display\SecurityAdvisorySourceWithdrawnDisplay;
 use App\Audit\Display\SecurityAdvisoryUnwithdrawnDisplay;
 use App\Audit\Display\SecurityAdvisoryWithdrawnDisplay;
 use App\Audit\Display\TwoFaDeactivatedDisplay;
@@ -707,6 +709,7 @@ class AuditLogDisplayFactoryTest extends TestCase
                 'source' => 'GitHub',
                 'remoteId' => 'GHSA-aaaa-bbbb-cccc',
                 'cve' => null,
+                'changes' => ['affectedVersions' => ['from' => '^1.0', 'to' => '^2.0']],
                 'title' => 'Withdrawn advisory',
                 'actor' => 'automation',
             ]
@@ -715,6 +718,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $display = $this->factory->buildSingle($auditRecord);
 
         self::assertInstanceOf(SecurityAdvisoryWithdrawnDisplay::class, $display);
+        self::assertSame(['affectedVersions' => ['from' => '^1.0', 'to' => '^2.0']], $display->changes);
         self::assertNull($display->cve);
         self::assertSame(AuditRecordType::SecurityAdvisoryWithdrawn, $display->getType());
         self::assertSame('audit_log/display/security_advisory_withdrawn.html.twig', $display->getTemplateName());
@@ -743,6 +747,56 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame(['affectedVersions' => ['from' => '^1.0', 'to' => '^2.0']], $display->changes);
         self::assertSame(AuditRecordType::SecurityAdvisoryUnwithdrawn, $display->getType());
         self::assertSame('audit_log/display/security_advisory_unwithdrawn.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildSecurityAdvisorySourceWithdrawn(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::SecurityAdvisorySourceWithdrawn,
+            [
+                'advisoryId' => 'PKSA-abcd-1234-5678',
+                'name' => 'acme/package',
+                'source' => 'GitHub',
+                'remoteId' => 'GHSA-aaaa-bbbb-cccc',
+                'cve' => 'CVE-2024-12345',
+                'title' => 'Advisory dropped by one source',
+                'advisoryWithdrawn' => false,
+                'actor' => 'automation',
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(SecurityAdvisorySourceWithdrawnDisplay::class, $display);
+        self::assertSame('GitHub', $display->source);
+        self::assertSame('GHSA-aaaa-bbbb-cccc', $display->remoteId);
+        self::assertFalse($display->advisoryWithdrawn);
+        self::assertSame(AuditRecordType::SecurityAdvisorySourceWithdrawn, $display->getType());
+        self::assertSame('audit_log/display/security_advisory_source_withdrawn.html.twig', $display->getTemplateName());
+    }
+
+    public function testBuildSecurityAdvisorySourceUnwithdrawn(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::SecurityAdvisorySourceUnwithdrawn,
+            [
+                'advisoryId' => 'PKSA-abcd-1234-5678',
+                'name' => 'acme/package',
+                'source' => 'GitHub',
+                'remoteId' => 'GHSA-aaaa-bbbb-cccc',
+                'cve' => 'CVE-2024-12345',
+                'title' => 'Advisory listed again',
+                'advisoryWithdrawn' => false,
+                'actor' => 'automation',
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(SecurityAdvisorySourceUnwithdrawnDisplay::class, $display);
+        self::assertSame('GitHub', $display->source);
+        self::assertSame(AuditRecordType::SecurityAdvisorySourceUnwithdrawn, $display->getType());
+        self::assertSame('audit_log/display/security_advisory_source_unwithdrawn.html.twig', $display->getTemplateName());
     }
 
     public function testBuildUserFrozenHidesInternalReasonForNonAuditor(): void
