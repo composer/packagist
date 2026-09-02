@@ -807,7 +807,8 @@ button {
     color: var(--color-muted);
 }
 
-.form-control {
+.form-control,
+.form-select {
     min-height: 20px;
     padding: 7px 11px 6px 9px;
     box-shadow: none;
@@ -818,6 +819,11 @@ button {
     -o-transition: none;
     -moz-transition: none;
     -webkit-transition: none;
+}
+
+// .form-select draws its chevron inside the right padding, so it needs more room than the inputs
+.form-select {
+    padding-right: 2.25rem;
 }
 
 .form-control[disabled] {

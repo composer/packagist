@@ -139,7 +139,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Reason</label>
-                            {{ form_widget(freezeForm.reason, {'attr': {'class': 'form-control'}}) }}
+                            {{ form_widget(freezeForm.reason) }}
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Public reason <small class="text-muted">(optional — shown in the transparency log)</small></label>
@@ -154,7 +154,7 @@
                             {{ form_widget(freezeForm.freezePackages) }}
                             <div class="mb-3">
                                 <label class="form-label">Package freeze reason (For {% for r in enum('App\\Entity\\PackageFreezeReason').suppressingValues() %}{{ r }}{% if not loop.last %}/{% endif %}{% endfor %} the package will be hidden from the public and uninstallable)</label>
-                                {{ form_widget(freezeForm.packageFreezeReason, {'attr': {'class': 'form-control'}}) }}
+                                {{ form_widget(freezeForm.packageFreezeReason) }}
                             </div>
                         {% endif %}
                     </div>
