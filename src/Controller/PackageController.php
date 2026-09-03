@@ -155,7 +155,7 @@ class PackageController extends Controller
      */
     private function streamedListResponse(array $data): StreamedJsonResponse
     {
-        $response = new StreamedJsonResponse($data);
+        $response = new StreamedJsonResponse($data, encodingOptions: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $response->setSharedMaxAge(300);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
