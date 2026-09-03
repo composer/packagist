@@ -6,7 +6,12 @@ import './view';
 import './submitPackage';
 import './filterListAdmin';
 import '../css/app.scss';
+// bare side-effect import: registers the delegated data-bs-* handlers the navbar toggler and the
+// update-history rows need. It must stay on the same specifier as every other bootstrap import -
+// mixing in 'bootstrap/js/dist/collapse' bundles a second copy, and the two data-api handlers then
+// toggle each other back, so a panel opens but never closes.
 import 'bootstrap';
+import { Tooltip } from 'bootstrap';
 
 (function ($) {
     "use strict";
@@ -66,7 +71,7 @@ import 'bootstrap';
 
     let currentBannerId = $('.banner .banner-close').data('banner-id');
     $('.banner .banner-close').click(function () {
-        $('.banner').addClass('hidden');
+        $('.banner').addClass('d-none');
         try {
             window.localStorage.setItem('banner-read', currentBannerId);
         } catch (e) {}
@@ -74,12 +79,14 @@ import 'bootstrap';
     if (currentBannerId !== undefined) {
         try {
             if (window.localStorage.getItem('banner-read') !== currentBannerId) {
-                $('.banner').removeClass('hidden');
+                $('.banner').removeClass('d-none');
             }
         } catch (e) {}
     }
 
-    $('[data-toggle="tooltip"]').tooltip();
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new Tooltip(el);
+    });
 })(jQuery);
 
 if (

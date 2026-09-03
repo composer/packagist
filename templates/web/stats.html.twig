@@ -6,11 +6,11 @@
     {{ parent() }}
 
     <section class="row">
-        <div class="col-lg-12">
+        <div class="col-xl-12">
             <h3>{{ 'statistics.over_time'|trans }}</h3>
 
             <p class="row">
-                <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ chart.months|join(',') }}" data-scale="1000" data-values="{{ 'statistics.versions'|trans }}:{{ chart.versions|join(',') }}|{{ 'statistics.packages'|trans }}:{{ chart.packages|join(',') }}">
+                <svg class="chart col-12" width="500" height="200" data-labels="{{ chart.months|join(',') }}" data-scale="1000" data-values="{{ 'statistics.versions'|trans }}:{{ chart.versions|join(',') }}|{{ 'statistics.packages'|trans }}:{{ chart.packages|join(',') }}">
                     Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
                 </svg>
             </p>
@@ -19,7 +19,7 @@
             {% if downloadsChart %}
                 <h3>{{ 'statistics.last_month'|trans }}</h3>
                 <p class="row">
-                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChart.labels|join(',') }}" data-scale="1000" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChart.values|join(',') }}">
+                    <svg class="chart col-12" width="500" height="200" data-labels="{{ downloadsChart.labels|join(',') }}" data-scale="1000" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChart.values|join(',') }}">
                         Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
                     </svg>
                 </p>
@@ -28,7 +28,7 @@
             {% if downloadsChartMonthly %}
                 <h3>{{ 'statistics.monthly'|trans }}</h3>
                 <p class="row">
-                    <svg class="chart col-xs-12" width="500" height="200" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-scale="1000000" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChartMonthly.values|join(',') }}">
+                    <svg class="chart col-12" width="500" height="200" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-scale="1000000" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChartMonthly.values|join(',') }}">
                         Sorry, the graph can't be displayed because your browser doesn't support &lt;svg&gt; html element.
                     </svg>
                 </p>

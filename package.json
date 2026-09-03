@@ -1,9 +1,11 @@
 {
     "name": "packagist.org",
     "dependencies": {
-        "bootstrap": "3.3.5",
-        "d3": "^3.5.17",
+        "@popperjs/core": "^2.11.8",
         "algoliasearch": "^4.24.0",
+        "bootstrap": "^5.3.8",
+        "bootstrap-icons": "^1.13.1",
+        "d3": "^3.5.17",
         "instantsearch.js": "^4.75.6",
         "jquery": "^3.7.1",
         "nvd3": "^1.8.6",

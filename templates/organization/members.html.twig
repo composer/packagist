@@ -10,7 +10,7 @@
     <h3 class="title clearfix">
         Members
         {% if canInvite %}
-            <a class="btn btn-success btn-sm pull-right" href="{{ path('organization_invitation_create', { organization: organization.slug }) }}">Invite a member</a>
+            <a class="btn btn-success btn-sm float-end" href="{{ path('organization_invitation_create', { organization: organization.slug }) }}">Invite a member</a>
         {% endif %}
     </h3>
 
@@ -28,12 +28,12 @@
                     <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
                     <td class="team-labels">
                         {% for team in member.teams %}
-                            <span class="label label-default">{{ team.name }}</span>
+                            <span class="badge bg-secondary">{{ team.name }}</span>
                         {% endfor %}
                     </td>
-                    <td class="text-right">
+                    <td class="text-end">
                         {% if app.user and member.userId == app.user.id %}
-                            <a class="btn btn-xs btn-default" href="{{ path('organization_member_leave', { organization: organization.slug }) }}">Leave</a>
+                            <a class="btn btn-xs btn-secondary" href="{{ path('organization_member_leave', { organization: organization.slug }) }}">Leave</a>
                         {% elseif canRemove and member.user %}
                             <a class="btn btn-xs btn-danger" href="{{ path('organization_member_remove', { organization: organization.slug, organizationMember: member.user.username }) }}">Remove</a>
                         {% endif %}
@@ -68,16 +68,16 @@
                             <td>{{ invitation.email }}</td>
                             <td class="team-labels">
                                 {% for name in row.teamNames %}
-                                    <span class="label label-default">{{ name }}</span>
+                                    <span class="badge bg-secondary">{{ name }}</span>
                                 {% endfor %}
                             </td>
                             {# Only pending rows are listed, so the effective status is either pending or expired. #}
-                            <td><span class="label label-{{ effectiveStatus == 'pending' ? 'info' : 'default' }}">{{ effectiveStatus }}</span></td>
+                            <td><span class="badge bg-{{ effectiveStatus == 'pending' ? 'info' : 'secondary' }}">{{ effectiveStatus }}</span></td>
                             <td>{{ invitation.lastSentAt|date('Y-m-d H:i') }}</td>
                             <td>{% if invitation.isActive(now) %}{{ invitation.expiresAt|date('Y-m-d H:i') }}{% endif %}</td>
-                            <td class="text-right btn-group-xs" style="white-space:nowrap">
+                            <td class="text-end btn-group-xs" style="white-space:nowrap">
                                 {% if invitation.isActive(now) %}
-                                    <a class="btn btn-default" href="{{ path('organization_invitation_resend', { organization: organization.slug, invitation: invitation.id }) }}">Resend</a>
+                                    <a class="btn btn-secondary" href="{{ path('organization_invitation_resend', { organization: organization.slug, invitation: invitation.id }) }}">Resend</a>
                                     <a class="btn btn-danger" href="{{ path('organization_invitation_revoke', { organization: organization.slug, invitation: invitation.id }) }}">Revoke</a>
                                 {% endif %}
                             </td>

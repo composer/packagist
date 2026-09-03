@@ -6,7 +6,7 @@
     <section class="row">
         <div class="clearfix"></div>
 
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3 id="support-consulting">Support &amp; Consulting</h3>
             <p>Commercial support and consulting for PHP dependency management with Packagist and Composer are available through <a href="https://packagist.com">Private Packagist</a> subscription plans.</p>
             <p>For general Composer usage guides and a command reference, see the <a href="https://getcomposer.org/doc/">Composer documentation</a>.</p>
@@ -15,7 +15,7 @@
             <p>To report issues or contribute code, you can find the source repository on <a href="https://github.com/composer/packagist">GitHub</a>.</p>
         </section>
 
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3 id="sponsoring">Sponsoring</h3>
             <p>The best way to financially support the hosting and maintenance of Packagist.org and Composer is by using <a href="https://packagist.com">Private Packagist</a>. It helps you install packages fast and reliably, provides you with a private package repository, and the proceeds go directly towards Packagist.org and Composer maintenance.</p>
             <p>For other ways to sponsor the project, visit our <a href="{{ path('sponsor') }}">sponsors page</a>.</p>
@@ -24,7 +24,7 @@
 
     <h2 class="title" id="how-to-submit-packages">How to submit packages?</h2>
     <section class="row">
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3 id="naming-your-package">Naming your package</h3>
             <p>First of all, you must pick a package name. This is a very important step since it can not change and it should be unique enough to avoid conflicts in the future.</p>
             <p>The package name consists of a vendor name and a project name joined by a <code>/</code>. The vendor name exists to prevent naming conflicts. For example, by including a vendor name both <code>igorw</code> and <code>seldaek</code> can have a library named <code>json</code> by naming their packages <code>igorw/json</code> and <code>seldaek/json</code>.</p>
@@ -43,7 +43,7 @@ acme/email</code></pre>
             <p>Vendor names on packagist are protected once a package with that name has been published. That means you can not publish packages with a vendor name that already exists on packagist without permission. To be able to publish packages for an already existing vendor name you need to be maintainer of at least one package within that vendor. Package and vendor names are allowed to contain lowercase letters (a-z), numbers (0-9), and the characters ".", "-" and "_". Each must start with a letter or number.</p>
         </section>
 
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3 id="creating-a-composerjson-file">Creating a composer.json file</h3>
             <p>The composer.json file should reside at the top of your package's git/svn/.. repository, and is the way you describe your package to both packagist and composer.</p>
             <p>A typical composer.json file looks like this:</p>
@@ -75,7 +75,7 @@ acme/email</code></pre>
             <p>Once you have this file committed in your repository root, you can <a href="{{ path('submit') }}">submit the package</a> to Packagist by entering the public repository URL.</p>
         </section>
 
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3 id="managing-package-versions">Managing package versions</h3>
             <p>New versions of your package are automatically fetched from tags you create in your VCS repository.</p>
             <p>The easiest way to manage versioning is to just omit the version field from the composer.json file. The version numbers will then be parsed from the tag and branch names.</p>
@@ -89,7 +89,7 @@ v2.0.4-p1</code></pre>
             <p>Branches will automatically appear as "dev" versions that are easily installable by anyone that wants to try your library's latest and greatest, but that does not mean you should not tag releases. The use of <a href="http://semver.org/">Semantic Versioning</a> is strongly encouraged.</p>
         </section>
 
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3 id="update-schedule">Update Schedule</h3>
             <p>New packages will be crawled <strong>immediately</strong> after submission if you have JS enabled.</p>
             <p>Existing packages without auto-updating (GitHub/BitBucket/GitLab/Gitea hook) will be crawled <strong>once a week</strong> for updates. When a hook is enabled, packages are crawled whenever you push, or at least once a month in case the crawl failed. You can also trigger a manual update on your package page if you are logged-in as a maintainer.</p>
@@ -102,7 +102,7 @@ v2.0.4-p1</code></pre>
 
     <h2 class="title" id="how-to-update-packages">How to update packages?</h2>
     <section class="row">
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3>GitHub Hook</h3>
             <p>Enabling the Packagist service hook ensures that your package will always be updated instantly when you push to GitHub.</p>
             <p>To do so you can:</p>
@@ -122,37 +122,37 @@ v2.0.4-p1</code></pre>
             </ul>
         </section>
 
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3>Bitbucket Webhooks</h3>
             <p>To enable the Bitbucket web hook, go to your BitBucket repository, open the settings and select "Webhooks" in the menu. Add a new hook. You have to enter the Packagist endpoint, containing both your username and API token. Enter <code>https://packagist.org/api/bitbucket?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> as URL. Save your changes and you're done.</p>
         </section>
 
         <div class="clearfix"></div>
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3>GitLab Service</h3>
             <p>To enable the GitLab service integration, go to your GitLab repository, open the Settings > Integrations page from the menu. Search for Packagist in the list of Project Services. Check the "Active" box, enter your packagist.org username and API token. Save your changes and you're done.</p>
         </section>
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3>Gitea Webhook</h3>
             <p>Gitea supports automatic package updates on Packagist since v1.17.</p>
             <p>To enable the Gitea webhook, go to your Gitea repository, open the Settings > Webhooks page and click on "Add Webhook". Select "Packagist" from the dropdown menu. You need to enter your packagist username, API token and the packagist URL of your package in the form. All other options can remain unchanged. Save your changes and you're done.</p>
         </section>
 
         <div class="clearfix"></div>
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3>Manual hook setup</h3>
             <p>If you do not use Bitbucket or GitHub there is a generic endpoint you can call manually from a git post-receive hook or similar. You have to do a <code>POST</code> request to <code>https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> with a request body looking like this: <code>{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}</code></p>
             <p>You can do this using curl for example:</p>
             <pre>curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN' -d'{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}'</pre>
         </section>
 
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3>API Token</h3>
             <p>You can find your API token on <a href="{{ path('my_profile') }}">your profile page</a>.</p>
         </section>
 
         <div class="clearfix"></div>
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3>IP Allowlists</h3>
             <p>If you are trying to restrict IPs and need to grant access to packagist.org workers we maintain a <a href="https://packagist-org-network.s3-eu-west-1.amazonaws.com/ip-address-list">list of our public IPs</a>.</p>
         </section>

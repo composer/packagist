@@ -29,27 +29,27 @@
 
 {% block content %}
     <div class="row" id="view-package-page">
-        <div class="col-xs-12 package"{% if app.user and package.crawledAt is null and is_granted('edit', package) and not package.isFrozen() %} data-force-crawl="true"{% endif %}>
+        <div class="col-12 package"{% if app.user and package.crawledAt is null and is_granted('edit', package) and not package.isFrozen() %} data-force-crawl="true"{% endif %}>
             <div class="package-header">
 
                 <div class="row">
-                    <div class="col-md-9">
+                    <div class="col-lg-9">
                         <h2 class="title">
                             {% if is_favorite is defined %}
-                                <i class="mark-favorite glyphicon glyphicon-star {% if is_favorite %}is-starred{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></i>
+                                <i class="mark-favorite bi bi-star-fill {% if is_favorite %}is-starred{% endif %}" data-remove-url="{{ path('user_remove_fav', {name: app.user.username, package: package.name}) }}" data-add-url="{{ path('user_add_fav', {name: app.user.username}) }}" data-package="{{ package.name }}"></i>
                             {% endif %}
-                            <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}<span class="hidden"> </span>/</a><span class="hidden"> </span>{{ package.packageName }}
+                            <a href="{{ path("view_vendor", {"vendor": package.vendor}) }}">{{ package.vendor }}<span class="d-none"> </span>/</a><span class="d-none"> </span>{{ package.packageName }}
                         </h2>
                     </div>
                 </div>
             </div>
 
             <div class="row">
-                <div class="col-md-8">
-                    <p class="requireme"><i class="glyphicon glyphicon-save"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
+                <div class="col-lg-8">
+                    <p class="requireme"><i class="bi bi-terminal"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
 
                     {% if hasVersionsFlaggedAsMalware %}
-                    <div class="alert alert-danger"><i class="glyphicon glyphicon-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
+                    <div class="alert alert-danger"><i class="bi bi-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
                     {% endif %}
 
                     {% if not package.isAutoUpdated() and is_granted('update', package) %}
@@ -88,11 +88,11 @@
                     <p class="description">{{ package.description|u.truncate(300) }}</p>
 
                     {% if hasActions %}
-                        <div class="btn-group btn-group-xs">
+                        <div class="package-actions btn-group-xs">
                             {% if is_granted('abandon', package) %}
                                 {% if package.abandoned %}
                                     <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}" method="POST">
-                                        <input class="btn btn-default" type="submit" value="Un-abandon" />
+                                        <input class="btn btn-secondary" type="submit" value="Un-abandon" />
                                     </form>
                                 {% else %}
                                     <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
@@ -125,7 +125,7 @@
                                 </form>
                             {% endif %}
                             {% if freezeCsrfToken is defined and not package.isFrozen() %}
-                                <button type="button" class="btn btn-danger action" data-toggle="modal" data-target="#freeze-package-modal">Freeze</button>
+                                <button type="button" class="btn btn-danger action" data-bs-toggle="modal" data-bs-target="#freeze-package-modal">Freeze</button>
                             {% endif %}
                             {% if unfreezeCsrfToken is defined and package.isFrozen() %}
                                 <form class="action" action="{{ path("unfreeze_package", {name: package.name}) }}" method="POST">
@@ -143,9 +143,9 @@
                     {% endif %}
                 </div>
 
-                <div class="col-md-offset-1 col-md-3">
+                <div class="offset-lg-1 col-lg-3">
                     <div class="row package-aside">
-                        <div class="details col-xs-12 col-sm-6 col-md-12">
+                        <div class="details col-12 col-md-6 col-lg-12">
                             <h5>Maintainers</h5>
                             <p class="maintainers">
                                 {% for maintainer in package.maintainers -%}
@@ -156,9 +156,9 @@
                             {% if is_granted('remove_maintainer', package) or is_granted('add_maintainer', package) or is_granted('transfer_package', package) %}
                                 <h5>Maintainer actions</h5>
                                 <p class="maintainer-actions">
-                                    {% if is_granted('add_maintainer', package) %}<a title="Add Maintainer" id="add-maintainer"><i class="glyphicon glyphicon-plus"></i></a>{% endif %}
-                                    {% if is_granted('remove_maintainer', package) %}<a title="Remove Maintainer" id="remove-maintainer"><i class="glyphicon glyphicon-remove"></i></a>{% endif %}
-                                    {% if is_granted('transfer_package', package) %}<a title="Transfer Package" id="transfer-package"><i class="glyphicon glyphicon-transfer"></i></a>{% endif %}
+                                    {% if is_granted('add_maintainer', package) %}<a title="Add Maintainer" id="add-maintainer"><i class="bi bi-plus-lg"></i></a>{% endif %}
+                                    {% if is_granted('remove_maintainer', package) %}<a title="Remove Maintainer" id="remove-maintainer"><i class="bi bi-x-lg"></i></a>{% endif %}
+                                    {% if is_granted('transfer_package', package) %}<a title="Transfer Package" id="transfer-package"><i class="bi bi-arrow-left-right"></i></a>{% endif %}
                                 </p>
                             {% endif %}
                         </div>
@@ -172,7 +172,7 @@
                         <div>
                             {% if is_granted('add_maintainer', package) %}
                                 {{ form_start(addMaintainerForm, {
-                                    attr: { id: 'add-maintainer-form', class: (show_add_maintainer_form|default(false) ? '': 'hidden') },
+                                    attr: { id: 'add-maintainer-form', class: (show_add_maintainer_form|default(false) ? '': 'd-none') },
                                     action: path('add_maintainer', { 'name': package.name })
                                 }) }}
                                     <div>
@@ -183,14 +183,14 @@
                                             {{ form_widget(addMaintainerForm.user) }}
                                         </p>
                                         {{ form_rest(addMaintainerForm) }}
-                                        <input class="btn btn-block btn-success btn-lg" type="submit" value="Add Maintainer" />
+                                        <input class="btn w-100 btn-success btn-lg" type="submit" value="Add Maintainer" />
                                     </div>
                                 {{ form_end(addMaintainerForm) }}
                             {% endif %}
 
                             {% if is_granted('remove_maintainer', package) %}
                                 {{ form_start(removeMaintainerForm, {
-                                    attr: { id: 'remove-maintainer-form', class: (show_remove_maintainer_form|default(false) ? '': 'hidden') },
+                                    attr: { id: 'remove-maintainer-form', class: (show_remove_maintainer_form|default(false) ? '': 'd-none') },
                                     action: path('remove_maintainer', { 'name': package.name })
                                 }) }}
                                     <div>
@@ -201,7 +201,7 @@
                                             {{ form_widget(removeMaintainerForm.user) }}
                                         </p>
                                         {{ form_rest(removeMaintainerForm) }}
-                                        <input class="btn btn-block btn-danger btn-lg" type="submit" value="Remove Maintainer" />
+                                        <input class="btn w-100 btn-danger btn-lg" type="submit" value="Remove Maintainer" />
                                     </div>
                                 {{ form_end(removeMaintainerForm) }}
                             {% endif %}
@@ -213,7 +213,7 @@
                             {{ form_start(transferPackageForm, {
                                 attr: {
                                     id: 'transfer-package-form',
-                                    class: (show_transfer_package_form|default(false) ? '': 'hidden'),
+                                    class: (show_transfer_package_form|default(false) ? '': 'd-none'),
                                 },
                                 action: path('transfer_package', { 'name': package.name })
                             }) }}
@@ -232,14 +232,14 @@
                                         <button type="button" class="btn btn-info btn-sm add-maintainer-item">Add Maintainer</button>
                                     </div>
                                     {{ form_rest(transferPackageForm) }}
-                                    <input class="btn btn-block btn-success btn-lg" type="submit" value="Transfer Ownership" />
+                                    <input class="btn w-100 btn-success btn-lg" type="submit" value="Transfer Ownership" />
                                 </div>
                             {{ form_end(transferPackageForm) }}
                         </div>
                     {% endif %}
 
                     <div class="row package-aside">
-                        <div class="details col-xs-12 col-sm-6 col-md-12">
+                        <div class="details col-12 col-md-6 col-lg-12">
                             <h5>Package info</h5>
                             <p class="canonical">
                                 <a href="{{ repoUrl }}" title="Canonical Repository URL">{{ repoUrl|replace({'https://':'', 'http://':''}) }}</a>
@@ -282,18 +282,18 @@
 
                     {% if version and version.funding and version.funding|length > 0 %}
                         <div class="row package-aside">
-                            <div class="facts funding col-xs-12 col-sm-6 col-md-12">
+                            <div class="facts funding col-12 col-md-6 col-lg-12">
                                 <h5>Fund package maintenance!</h5>
                                 {% for fundingOption in version.funding %}
                                     <p>
                                         <a rel="nofollow noopener external noindex ugc" href="{{ fundingOption.url }}">
                                             {% set fundingType = fundingOption.type|default('custom') %}
                                             {% if fundingType == 'custom' %}
-                                                <i class="glyphicon glyphicon-link"></i>{{ fundingOption.url|replace({'http://': '', 'https://': ''})|trim('/') }}
+                                                <i class="bi bi-link-45deg"></i>{{ fundingOption.url|replace({'http://': '', 'https://': ''})|trim('/') }}
                                             {% elseif fundingType == 'github' %}
-                                                <i class="glyphicon glyphicon-user"></i>{{ fundingOption.url|replace({'https://github.com/sponsors/': '', 'https://github.com/': ''}) }}
+                                                <i class="bi bi-person-fill"></i>{{ fundingOption.url|replace({'https://github.com/sponsors/': '', 'https://github.com/': ''}) }}
                                             {% else %}
-                                                <i class="glyphicon glyphicon-link"></i>{{ fundingType|replace({'_': ' '})|title }}
+                                                <i class="bi bi-link-45deg"></i>{{ fundingType|replace({'_': ' '})|title }}
                                             {% endif %}
                                         </a>
                                     </p>
@@ -303,7 +303,7 @@
                     {% endif %}
 
                     <div class="row package-aside">
-                        <div class="facts col-xs-12 col-sm-6 col-md-12">
+                        <div class="facts col-12 col-md-6 col-lg-12">
                             <h5>Statistics</h5>
                             <p>
                                 <span>
@@ -347,7 +347,7 @@
                     </div>
 
                     <div class="row package-aside">
-                        <div class="facts col-xs-12 col-sm-6 col-md-12">
+                        <div class="facts col-12 col-md-6 col-lg-12">
                             <h5>Security</h5>
                             {% if securityAdvisories is defined %}
                                 <p>
@@ -372,12 +372,12 @@
 
             {% if versions|length %}
                 <div class="row versions-section">
-                    <div class="version-details col-md-9">
+                    <div class="version-details col-lg-9">
                         {% if expandedVersion %}
                             {% include 'package/version_details.html.twig' with {version: expandedVersion} %}
                         {% endif %}
                     </div>
-                    <div class="col-md-3 no-padding">
+                    <div class="col-lg-3 no-padding">
                         {% include 'package/version_list.html.twig' with {
                             versions: versions,
                             expandedId: expandedVersion.id,
@@ -396,9 +396,9 @@
                     </div>
                 </div>
             {% elseif package.crawledAt is null %}
-                <p class="col-xs-12">This package has not been crawled yet, some information is missing.</p>
+                <p class="col-12">This package has not been crawled yet, some information is missing.</p>
             {% else %}
-                <p class="col-xs-12">This package has no released version yet, and little information is available.</p>
+                <p class="col-12">This package has no released version yet, and little information is available.</p>
             {% endif %}
 
             {% if readme is not null and (not package.isSuspect() or hasActions) %}
@@ -419,13 +419,13 @@
             <div class="modal-dialog" role="document">
                 <form class="modal-content" action="{{ path('freeze_package', {name: package.name}) }}" method="POST">
                     <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                         <h4 class="modal-title">Freeze {{ package.name }}</h4>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="form-group">
                             <label for="freeze-package-reason">Reason</label>
-                            <select name="reason" id="freeze-package-reason" class="form-control">
+                            <select name="reason" id="freeze-package-reason" class="form-select">
                                 {% for reason in enum('App\\Entity\\PackageFreezeReason').casesForRole(true) %}
                                     <option value="{{ reason.value }}">{{ reason.value|capitalize }}</option>
                                 {% endfor %}
@@ -441,7 +441,7 @@
                         <input type="hidden" name="token" value="{{ freezeCsrfToken }}" />
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-danger">Freeze</button>
                     </div>
                 </form>

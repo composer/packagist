@@ -1,54 +1,51 @@
 {% extends "user/layout.html.twig" %}
 
 {% block user_content %}
-    {{ form_start(form, { 'action': path('edit_profile'), 'attr': { 'class': 'edit_profile col-md-6', 'id': 'edit_profile' } }) }}
+    {{ form_start(form, { 'action': path('edit_profile'), 'attr': { 'class': 'edit_profile col-lg-6', 'id': 'edit_profile' } }) }}
         {{ form_errors(form) }}
 
         <div class="form-group clearfix">
             {{ form_label(form.username) }}
             <div class="input-group">
-                {{ form_errors(form.username) }}
+                <span class="input-group-text"><span class="icon-user"></span></span>
                 {{ form_widget(form.username) }}
-                <span class="input-group-addon"><span class="icon-user"></span></span>
             </div>
+            {{ form_errors(form.username) }}
         </div>
 
         <div class="form-group clearfix">
             {{ form_label(form.email) }}
             <div class="input-group clearfix">
-                {{ form_errors(form.email) }}
+                <span class="input-group-text"><span class="icon-mail"></span></span>
                 {{ form_widget(form.email) }}
-                <span class="input-group-addon"><span class="icon-mail"></span></span>
             </div>
+            {{ form_errors(form.email) }}
         </div>
 
         {% if not app.user.githubId %}
         <div class="form-group clearfix">
             {{ form_label(form.current_password) }}
             <div class="input-group">
-                {{ form_errors(form.current_password) }}
+                <span class="input-group-text"><span class="icon-lock"></span></span>
                 {{ form_widget(form.current_password) }}
-                <span class="input-group-addon"><span class="icon-lock"></span></span>
             </div>
+            {{ form_errors(form.current_password) }}
         </div>
         {% endif %}
 
-        <div class="failure-notifications form-group">
+        <div class="failure-notifications">
+            {{ form_widget(form.failureNotifications) }}
             {{ form_errors(form.failureNotifications) }}
-            <label>
-                {{ form_widget(form.failureNotifications) }}
-                Notify me of package update failures
-            </label>
         </div>
 
         {{ form_rest(form) }}
 
-        <input type="submit" class="btn btn-block btn-success btn-lg" value="Update" id="_edit_profile_submit" />
+        <input type="submit" class="btn w-100 btn-success btn-lg" value="Update" id="_edit_profile_submit" />
 
         <hr>
 
         <h5>Using GitHub:</h5>
-        <a href="{{ app.user.githubId ? '#' : path('connect_github_start') }}" class="btn btn-block btn-github btn-lg {{ app.user.githubId ? 'disabled' : 'btn-primary' }}">
+        <a href="{{ app.user.githubId ? '#' : path('connect_github_start') }}" class="btn w-100 btn-github btn-lg {{ app.user.githubId ? 'disabled' : 'btn-primary' }}">
             <span class="icon-github"></span>
             {% set ghUser = app.user.githubUsername %}
             {% if app.user.githubId %}
@@ -67,6 +64,6 @@
         {% endif %}
     {{ form_end(form) }}
 
-    <div class="col-md-2">
+    <div class="col-lg-2">
     </div>
 {% endblock user_content %}

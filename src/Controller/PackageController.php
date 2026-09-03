@@ -913,7 +913,7 @@ class PackageController extends Controller
         // Read off the entity so the ajax tooltip matches what a page reload renders.
         $deletionTitle = $version->getDeletionTitle();
 
-        return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'glyphicon-eye-close']);
+        return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'bi-eye-slash-fill']);
     }
 
     #[Route(path: '/versions/{versionId}/recover', name: 'recover_version', requirements: ['versionId' => '[0-9]+'], methods: ['POST'])]

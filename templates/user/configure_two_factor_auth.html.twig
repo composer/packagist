@@ -26,7 +26,7 @@
 
     <section class="row">
         {% if isActualUser %}
-            <section class="col-md-3">
+            <section class="col-lg-3">
                 {{ knp_menu_render('profile_menu', {currentClass: 'active', allow_safe_labels: true}) }}
             </section>
         {% endif %}
@@ -49,7 +49,7 @@
 
                 <p>Two-factor authentication is an extra layer of security for your Packagist account designed to ensure that you're the only person who can access your account, even if someone knows your password.</p>
 
-                <a href="{{ path('user_2fa_enable', {name: user.username}) }}" class="btn btn-block btn-primary btn-lg">Enable two-factor authentication</a>
+                <a href="{{ path('user_2fa_enable', {name: user.username}) }}" class="btn w-100 btn-primary btn-lg">Enable two-factor authentication</a>
             {% endif %}
         </section>
     </section>

@@ -4,11 +4,16 @@ import historyRouter from 'instantsearch.js/es/lib/routers/history';
 import { connectSearchBox, connectCurrentRefinements } from 'instantsearch.js/es/connectors';
 import { hits, pagination, clearRefinements, menu, refinementList, configure, panel } from 'instantsearch.js/es/widgets';
 
-document.getElementById('search_query_query').addEventListener('keydown', function (e) {
-    if (e.keyCode === 13) {
-        e.preventDefault();
-    }
-});
+// this file is imported by app.js ahead of every other module, so an unguarded lookup here would
+// take out view.js, the tooltips and the bootstrap data-api handlers on any page without the search
+var searchQueryInput = document.getElementById('search_query_query');
+if (searchQueryInput) {
+    searchQueryInput.addEventListener('keydown', function (e) {
+        if (e.keyCode === 13) {
+            e.preventDefault();
+        }
+    });
+}
 
 // Add accessibility functionality:
 // "Press '/' to focus the searchbar".
@@ -68,7 +73,7 @@ if (!isSearchPage && !hasQuery && hasFilters) {
     // Redirect to canonical /search/ URL with the filter params
     location.replace('/search/' + location.search);
 } else if (hasQuery || (isSearchPage && hasFilters)) {
-    document.querySelector('#search-container').classList.remove('hidden');
+    document.querySelector('#search-container').classList.remove('d-none');
 }
 
 var opts = {
@@ -84,9 +89,9 @@ var opts = {
         var hasSearch = hasQuery || (isSearchPage && hasFilters);
 
         if (!hasSearch) {
-            searchResults.classList.add('hidden');
+            searchResults.classList.add('d-none');
         } else {
-            searchResults.classList.remove('hidden');
+            searchResults.classList.remove('d-none');
         }
 
         // Force focus to prevent algolia from overwriting input with transformed value
@@ -192,6 +197,12 @@ var customSearchBox = connectSearchBox(function (renderOptions, isFirstRender) {
     }
 });
 
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function (char) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[char];
+    });
+}
+
 var customCurrentRefinements = connectCurrentRefinements(function (renderOptions) {
     var items = renderOptions.items;
     var refine = renderOptions.refine;
@@ -206,10 +217,9 @@ var customCurrentRefinements = connectCurrentRefinements(function (renderOptions
     items.forEach(function (item) {
         var label = item.attribute === 'tags' ? 'tag' : item.attribute;
         item.refinements.forEach(function (refinement) {
-            html += '<span class="active-filter-item">'
-                + '<span class="active-filter-label">' + label + ':</span> '
-                + '<span class="active-filter-value">' + refinement.label + '</span>'
-                + '<button class="active-filter-remove" data-attribute="' + item.attribute + '" data-value="' + refinement.label + '">&times;</button>'
+            html += '<span class="badge bg-primary active-filter-item">'
+                + escapeHtml(label) + ': ' + escapeHtml(refinement.label)
+                + '<button type="button" class="btn-close btn-close-white active-filter-remove" aria-label="Remove filter" data-attribute="' + escapeHtml(item.attribute) + '" data-value="' + escapeHtml(refinement.label) + '"></button>'
                 + '</span>';
         });
     });
@@ -272,7 +282,7 @@ search.addWidgets([
                     if (hit.replacementPackage) {
                         replacementHtml = ` See <a href="${hit.replacementPackageUrl}" rel="nofollow noindex">${hit.replacementPackage}</a>`;
                     }
-                    abandonedHtml = `<p class="abandoned"><i class="glyphicon glyphicon-exclamation-sign"></i> Abandoned!${replacementHtml}</p>`;
+                    abandonedHtml = `<p class="abandoned"><i class="bi bi-exclamation-circle-fill"></i> Abandoned!${replacementHtml}</p>`;
                 }
 
                 var virtualHtml = hit.virtual ? '<small>(Virtual Package)</small>' : '';
@@ -281,18 +291,18 @@ search.addWidgets([
                 var metaHtml = '';
                 if (hit.meta) {
                     metaHtml = `<p class="metadata">
-                        <span class="metadata-block"><i class="glyphicon glyphicon-download"></i> ${hit.meta.downloads_formatted}</span>
-                        <span class="metadata-block"><i class="glyphicon glyphicon-star"></i> ${hit.meta.favers_formatted}</span>
+                        <span class="metadata-block"><i class="bi bi-download"></i> ${hit.meta.downloads_formatted}</span>
+                        <span class="metadata-block"><i class="bi bi-star-fill"></i> ${hit.meta.favers_formatted}</span>
                     </p>`;
                 }
 
                 var nameHighlight = hit._highlightResult && hit._highlightResult.name ? hit._highlightResult.name.value : hit.name;
                 var descHighlight = hit._highlightResult && hit._highlightResult.description ? hit._highlightResult.description.value : (hit.description || '');
 
-                return `<div data-url="${hit.url}" class="col-xs-12 package-item">
+                return `<div data-url="${hit.url}" class="col-12 package-item">
                     <div class="row">
-                        <div class="col-sm-9 col-lg-10">
-                            <p class="pull-right language">${hit.language || ''}</p>
+                        <div class="col-md-9 col-xl-10">
+                            <p class="float-end language">${hit.language || ''}</p>
                             <h4 class="font-bold">
                                 <a href="${hit.url}" tabindex="2" rel="nofollow noindex">${nameHighlight}</a>${extensionHtml}
                                 ${virtualHtml}
@@ -300,7 +310,7 @@ search.addWidgets([
                             <p>${descHighlight}</p>
                             ${abandonedHtml}
                         </div>
-                        <div class="col-sm-3 col-lg-2">
+                        <div class="col-md-3 col-xl-2">
                             ${metaHtml}
                         </div>
                     </div>
@@ -314,11 +324,18 @@ search.addWidgets([
     }),
 
     pagination({
-        container: '.pagination',
+        container: '.pagination-mount',
         totalPages: 20,
         scrollTo: '#search_query_query',
         showFirst: false,
         showLast: false,
+        cssClasses: {
+            list: 'pagination justify-content-center',
+            item: 'page-item',
+            link: 'page-link',
+            selectedItem: 'active',
+            disabledItem: 'disabled',
+        },
     }),
 
     clearRefinements({
@@ -342,6 +359,13 @@ search.addWidgets([
         limit: 15,
         showMore: true,
         searchable: true,
+        cssClasses: {
+            checkbox: 'form-check-input',
+            searchableForm: 'input-group input-group-sm',
+            searchableInput: 'form-control',
+            searchableSubmit: 'search-facets-searchbox-btn',
+            searchableReset: 'search-facets-searchbox-btn',
+        },
     }),
 ]);
 

@@ -56,7 +56,7 @@ class MenuBuilder
     public function createProfileMenu(): ItemInterface
     {
         $menu = $this->factory->createItem('root');
-        $menu->setChildrenAttribute('class', 'nav nav-tabs nav-stacked');
+        $menu->setChildrenAttribute('class', 'nav nav-tabs flex-column');
 
         $this->addProfileMenu($menu);
 
@@ -115,7 +115,7 @@ class MenuBuilder
     public function createOrganizationMenu(): ItemInterface
     {
         $menu = $this->factory->createItem('root');
-        $menu->setChildrenAttribute('class', 'nav nav-tabs nav-stacked');
+        $menu->setChildrenAttribute('class', 'nav nav-tabs flex-column');
 
         $slug = $this->requestStack->getCurrentRequest()?->attributes->get('organization');
         if (!\is_string($slug)) {

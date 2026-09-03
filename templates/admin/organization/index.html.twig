@@ -4,7 +4,7 @@
 
 {% block admin_content %}
     <div class="row">
-        <div class="col-xs-12 package">
+        <div class="col-12 package">
             <div class="package-header">
                 <h2 class="title">
                     Organizations
@@ -16,7 +16,7 @@
     </div>
 
     <div class="clearfix" style="margin-bottom: 15px">
-        <a href="{{ path('admin_organization_create') }}" class="btn btn-success pull-right">Create organization</a>
+        <a href="{{ path('admin_organization_create') }}" class="btn btn-success float-end">Create organization</a>
     </div>
 
     {% if organizations is empty %}
@@ -36,7 +36,7 @@
                         <td>
                             <a href="{{ path('organization_show', { organization: organization.slug }) }}">{{ organization.displayName }}</a>
                             {% if organization.deleted %}
-                                <span class="label label-warning">deleted</span>
+                                <span class="badge bg-warning">deleted</span>
                             {% endif %}
                         </td>
                         <td><code>{{ organization.slug }}</code></td>

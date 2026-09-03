@@ -8,10 +8,10 @@
 <h2 class="title">{{ 'edit.title'|trans({ '%name%':package.name }) }}</h2>
 
 <section class="row">
-    {{ form_start(form, { attr: { class: 'col-md-6' } }) }}
+    {{ form_start(form, { attr: { class: 'col-lg-6' } }) }}
         {{ form_widget(form) }}
 
-        <input class="btn btn-block btn-primary btn-lg" id="submit" type="submit" value="{{ 'edit.submit'|trans }}" />
+        <input class="btn w-100 btn-primary btn-lg" id="submit" type="submit" value="{{ 'edit.submit'|trans }}" />
     {{ form_end(form) }}
 </section>
 {% endblock %}

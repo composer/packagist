@@ -19,15 +19,15 @@
 
     <section class="row">
         {% if isActualUser %}
-            <section class="col-md-3">
+            <section class="col-lg-3">
                 {{ knp_menu_render('profile_menu', {currentClass: 'active', allow_safe_labels: true}) }}
             </section>
         {% endif %}
 
-        <section class="col-md-6">
+        <section class="col-lg-6">
             <h3>Save your backup code</h3>
 
-            <div class="well well-lg">
+            <div class="p-4 bg-body-secondary border rounded">
                 <p>A backup code will let you access your account if your phone is lost, stolen, or you otherwise can't generate codes via your authenticator app.  We ask that you save this unique, one-time use backup code in a safe place:</p>
 
                 <kbd class="two-factor-backup-code">{{ backup_code }}</kbd>

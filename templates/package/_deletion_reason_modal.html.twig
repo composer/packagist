@@ -4,21 +4,21 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title"></h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Public reason <small class="text-muted">(optional — shown to everyone in the transparency log)</small></label>
+                    <label class="form-label">Public reason <small class="text-muted">(optional — shown to everyone in the transparency log)</small></label>
                     <textarea class="form-control deletion-reason-public" rows="2"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
+                    <label class="form-label">Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
                     <textarea class="form-control deletion-reason-internal" rows="2"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger deletion-reason-confirm"></button>
             </div>
         </div>

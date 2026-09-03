@@ -33,7 +33,7 @@
 </ul>
 
 
-<section class="col-d-12">
+<section class="col-md-12">
 <h3 id="best-practices">Best practices when using the Packagist.org API</h3>
 <ul>
   <li>If you do scheduled jobs, <strong>avoid running things at midnight or once an hour at XX:00</strong>. Most people do so and we do see traffic peaks every hour. Pick a "random" time by hand for your cron jobs, or even better (if you can) is to make it run on a really randomized schedule.</li>
@@ -43,7 +43,7 @@
 </ul>
 </section>
 
-<section class="col-d-12">
+<section class="col-md-12">
 <h3 id="authentication">Authentication</h3>
 <p>A lot of our API is accessible <span class="badge bg-success">Anonymously</span>. For API endpoints that <span class="badge bg-warning">require authentication</span>, you can authenticate using either Bearer token authorization or query/request parameters:</p>
 <ul>
@@ -55,7 +55,7 @@
 </p>
 </section>
 
-<section class="col-d-12">
+<section class="col-md-12">
 <h3 id="list-packages">{{ 'api_doc.listing_names'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 <h4 id="list-packages-all">{{ 'api_doc.all_packages'|trans }}</h4>
 <pre>
@@ -120,7 +120,7 @@ GET https://{{ packagist_host }}/packages/list.json?vendor=[type]&amp;fields[]=t
 </section>
 
 
-<section class="col-d-12">
+<section class="col-md-12">
 <h3 id="list-popular-packages">List popular packages <span class="badge bg-success">Anonymous</span></h3>
     <p>If you need to retrieve the most popular (this is sorted by downloads over the last week, not overall downloads to ensure we demote formerly-popular packages) packages please use this endpoint to avoid having to request the download stats for all of our 300K+ packages individually. This also includes faver count (github stars + packagist.org favorites) and downloads count. The API is paginated if you need more than 100.</p>
 <pre>
@@ -146,7 +146,7 @@ GET https://{{ packagist_host }}/explore/popular.json?per_page=100
 </section>
 
 
-<section class="col-d-12">
+<section class="col-md-12">
 <h3 id="search-packages">{{ 'api_doc.searching'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
 <p>Search results are paginated and you can change the pagination step by using the per_page parameter. For example <code>https://{{ packagist_host }}/search.json?q=[query]&amp;per_page=5</code></p>
@@ -218,7 +218,7 @@ GET https://{{ packagist_host }}/search.json?q=[query]&amp;type=symfony-bundle
 </section>
 
 
-<section class="col-d-12">
+<section class="col-md-12">
 <h3 id="get-package-data">{{ 'api_doc.get_package_data'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
 <h4 id="get-package-metadata-v2">Using the Composer v2 metadata</h4>
@@ -331,7 +331,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package].json
 
 </section>
 
-<section class="col-d-12">
+<section class="col-md-12">
 <h3 id="get-package-stats">Get package download stats <span class="badge bg-success">Anonymous</span></h3>
 <p>If you need complete package information and use <a href="#get-package-by-name">the JSON API</a> already then please use the <code>downloads</code> key to retrieve stats from that response.</p>
 
@@ -357,7 +357,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package]/stats.json
 </section>
 
 
-<section class="col-d-12">
+<section class="col-md-12">
 <h3 id="track-package-updates">Track package updates <span class="badge bg-success">Anonymous</span></h3>
 
 <p>This endpoint provides you with a feed of metadata changes you can poll to know what packages you need to update.</p>
@@ -428,7 +428,7 @@ GET https://{{ packagist_host }}/metadata/changes.json?since=16140636710498
 </section>
 
 
-<section class="col-d-12">
+<section class="col-md-12">
     <h3 id="get-statistics">{{ 'api_doc.get_statistics'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
     <p>This endpoint provides basic some statistics.</p>
@@ -446,7 +446,7 @@ GET https://{{ packagist_host }}/statistics.json
 
 </section>
 
-<section class="col-d-12">
+<section class="col-md-12">
     <h3 id="list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
     <p>This endpoint provides a list of security advisories. Either a list of packages as query or request parameter OR a timestamp as updatedSince query parameter needs to be passed.</p>
@@ -491,7 +491,7 @@ GET https://{{ packagist_host }}/api/security-advisories/?packages[]=[vendor/pac
 </section>
 
 
-<section class="col-d-12">
+<section class="col-md-12">
     <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }} <span class="badge bg-warning">Authentication Required</span></h3>
 
     <p>This endpoint creates a package for a specific repo. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
@@ -510,7 +510,7 @@ POST https://{{ packagist_host }}/api/create-package {"repository":"[url]"}
 
 </section>
 
-<section class="col-d-12">
+<section class="col-md-12">
     <h3 id="edit-package">Edit a package <span class="badge bg-warning">Authentication Required</span></h3>
 
     <p>This endpoint allows you to edit a package URL. Only the <code>PUT</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
@@ -529,7 +529,7 @@ PUT https://{{ packagist_host }}/api/packages/[package name] {"repository":"[url
 
 </section>
 
-<section class="col-d-12">
+<section class="col-md-12">
     <h3 id="update-package">Update a package <span class="badge bg-warning">Authentication Required</span></h3>
 
     <p>This endpoint updates a package by canonical repository URL or packagist.org package URL. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>

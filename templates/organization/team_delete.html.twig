@@ -10,6 +10,6 @@
     {{ form_start(form, { 'attr': { 'class': 'organization_team_delete' } }) }}
         {{ form_errors(form) }}
         <input class="btn btn-danger" type="submit" value="Delete team" />
-        <a class="btn btn-default" href="{{ path('organization_teams', { organization: organization.slug }) }}">Cancel</a>
+        <a class="btn btn-secondary" href="{{ path('organization_teams', { organization: organization.slug }) }}">Cancel</a>
     {{ form_end(form) }}
 {% endblock %}
