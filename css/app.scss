@@ -945,13 +945,18 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   font-size: 15px;
 }
 .packages .metadata .bi {
-  position: relative;
-  top: 3px;
-  margin: 0 1px;
+  // line-height 1 stops the 18px icon growing the line box, which dragged the number's baseline
+  // a further 1px below the floated language label sitting in the column next to it
+  line-height: 1;
   font-size: 18px;
 }
 .packages .metadata-block {
-  display: block;
+  // centering the icon beats the old top: 3px nudge, which was measured against BS3's glyphicons -
+  // bootstrap-icons already drops its glyph .125em below the baseline, so the nudge doubled up.
+  // The gap replaces the margin and literal space that flex layout strips.
+  display: flex;
+  align-items: center;
+  gap: 5px;
   margin-bottom: 10px;
 }
 .packages .metadata-block:last-child {
@@ -1069,7 +1074,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     background: var(--color-secondary);
     border-bottom-color: var(--color-secondary-dark);
     color: #fff;
-    font-size: 14px;
 }
 .btn-secondary:focus, .btn-secondary:active {
   color: #fff;

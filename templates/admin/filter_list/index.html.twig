@@ -101,7 +101,7 @@
                             {% endif %}
                         </td>
                         <td>{{ entry.updatedAt|date('Y-m-d H:i') }}</td>
-                        <td class="text-end">
+                        <td class="text-end text-nowrap">
                             <a class="btn btn-secondary btn-xs" href="{{ path('admin_filter_list_edit', {publicId: entry.publicId}) }}">Edit</a>
                             {% if entry.disabled %}
                                 <button type="submit" formaction="{{ path('admin_filter_list_enable', {publicId: entry.publicId}) }}" class="btn btn-success btn-xs">Re-enable</button>
