@@ -766,7 +766,7 @@ class PackageControllerTest extends IntegrationTestCase
             json_encode(['packages' => [
                 'listvendor/abandoned' => ['type' => 'library', 'abandoned' => 'other/pkg'],
                 'listvendor/active' => ['type' => 'library', 'abandoned' => false],
-            ]], JsonResponse::DEFAULT_ENCODING_OPTIONS),
+            ]], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
             $body,
         );
         self::assertStringContainsString('listvendor\\/abandoned', $body);
@@ -790,7 +790,7 @@ class PackageControllerTest extends IntegrationTestCase
         $body = $this->requestListJson('vendor=listvendor');
 
         self::assertSame(
-            json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS),
+            json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
             $body,
         );
     }
@@ -808,7 +808,7 @@ class PackageControllerTest extends IntegrationTestCase
         // asserted on the raw string: a stray `yield $key => $name` would emit an object whose
         // json_decode() looks identical to the array's, so decoding here would hide the regression
         self::assertSame(
-            json_encode(['packageNames' => ['listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS),
+            json_encode(['packageNames' => ['listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
             $this->requestListJson('vendor=listvendor&filter=listvendor/*bb'),
         );
     }
