@@ -12,9 +12,19 @@
 
 namespace App\Controller\Admin;
 
+use App\Audit\AuditRecordType;
 use App\Controller\Controller;
+use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
+use App\QueryFilter\QueryFilterInterface;
+use App\QueryFilter\User\FrozenStatusFilter;
+use App\QueryFilter\User\GithubIdFilter;
+use App\QueryFilter\User\GithubLinkedFilter;
+use App\QueryFilter\User\RegisteredAfterFilter;
+use App\QueryFilter\User\RegisteredBeforeFilter;
+use App\QueryFilter\User\TwoFactorFilter;
+use App\QueryFilter\User\UserSearchFilter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,56 +42,88 @@ class UserController extends Controller
     #[Route(path: '/admin/users', name: 'admin_users', methods: ['GET'])]
     public function index(Request $req): Response
     {
-        $search = trim($req->query->getString('search', ''));
-        $frozenFilter = $req->query->getString('frozen', '');
-        $twoFactorFilter = $req->query->getString('twofa', '');
-        $githubId = trim($req->query->getString('github_id', ''));
-        $githubLinkedFilter = $req->query->getString('github_linked', '');
-        $registeredFrom = $this->parseFilterDate($req->query->getString('registered_from', ''), false);
-        $registeredTo = $this->parseFilterDate($req->query->getString('registered_to', ''), true);
+        return $this->directory($req, FrozenStatusFilter::fromQuery($req->query), 'Users');
+    }
 
-        $qb = $this->getEM()->getRepository(User::class)->getUsersQueryBuilder(
-            $search !== '' ? $search : null,
-            $frozenFilter !== '' ? $frozenFilter : null,
-            $registeredFrom,
-            $registeredTo,
-            $twoFactorFilter !== '' ? $twoFactorFilter : null,
-            $githubId !== '' ? $githubId : null,
-            $githubLinkedFilter !== '' ? $githubLinkedFilter : null,
-        );
+    #[Route(path: '/admin/frozen-users', name: 'admin_frozen_users', methods: ['GET'])]
+    public function frozenUsers(Request $req): Response
+    {
+        return $this->directory($req, FrozenStatusFilter::forReason(UserFreezeReason::Temporary), 'Frozen users');
+    }
 
-        $users = new Pagerfanta(new QueryAdapter($qb, false));
+    private function directory(Request $req, FrozenStatusFilter $frozenFilter, string $heading): Response
+    {
+        /** @var QueryFilterInterface[] $filters */
+        $filters = [
+            UserSearchFilter::fromQuery($req->query),
+            $frozenFilter,
+            RegisteredAfterFilter::fromQuery($req->query),
+            RegisteredBeforeFilter::fromQuery($req->query),
+            TwoFactorFilter::fromQuery($req->query),
+            GithubIdFilter::fromQuery($req->query),
+            GithubLinkedFilter::fromQuery($req->query),
+        ];
+
+        $frozenView = $frozenFilter->narrowsToFrozen();
+
+        $qb = $this->getEM()->getRepository(User::class)->getUsersQueryBuilder($frozenView);
+        foreach ($filters as $filter) {
+            $filter->filter($qb);
+        }
+
+        $users = new Pagerfanta(new QueryAdapter($qb, false, false));
         $users->setNormalizeOutOfRangePages(true);
         $users->setMaxPerPage(30);
         $users->setCurrentPage(max(1, $req->query->getInt('page', 1)));
 
+        $selectedFilters = [];
+        foreach ($filters as $filter) {
+            $selectedFilters[$filter->getKey()] = $filter->getSelectedValue();
+        }
+
+        $freezeContext = [];
+        if ($frozenView) {
+            $ids = array_values(array_map(static fn (array $row): int => $row[0]->getId(), iterator_to_array($users)));
+            $freezeContext = $this->latestFreezeAuditByUserId($ids);
+        }
+
         return $this->render('admin/users.html.twig', [
+            'heading' => $heading,
             'users' => $users,
-            'search' => $search,
-            'selectedFrozenFilter' => $frozenFilter,
-            'selectedTwoFactorFilter' => $twoFactorFilter,
-            'selectedGithubLinkedFilter' => $githubLinkedFilter,
-            'githubId' => $githubId,
-            'registeredFrom' => $registeredFrom?->format('Y-m-d') ?? '',
-            'registeredTo' => $registeredTo?->format('Y-m-d') ?? '',
+            'selectedFilters' => $selectedFilters,
             'freezeReasons' => UserFreezeReason::cases(),
+            'showFreezeContext' => $frozenView,
+            'freezeContext' => $freezeContext,
         ]);
     }
 
     /**
-     * Snap a `Y-m-d` filter value to the start or end of that day so both range bounds are inclusive.
+     * @param list<int> $userIds
+     *
+     * @return array<int, AuditRecord> the most recent UserFrozen record per user id
      */
-    private function parseFilterDate(string $value, bool $endOfDay): ?\DateTimeImmutable
+    private function latestFreezeAuditByUserId(array $userIds): array
     {
-        if ($value === '') {
-            return null;
+        if ($userIds === []) {
+            return [];
         }
 
-        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-        if ($date === false) {
-            return null;
+        /** @var list<AuditRecord> $records */
+        $records = $this->getEM()->getRepository(AuditRecord::class)->createQueryBuilder('a')
+            ->where('a.type = :type')
+            ->andWhere('a.userId IN (:ids)')
+            ->setParameter('type', AuditRecordType::UserFrozen->value)
+            ->setParameter('ids', $userIds)
+            ->orderBy('a.datetime', 'DESC')
+            ->getQuery()->getResult();
+
+        $latestByUserId = [];
+        foreach ($records as $record) {
+            if ($record->userId !== null && !isset($latestByUserId[$record->userId])) {
+                $latestByUserId[$record->userId] = $record;
+            }
         }
 
-        return $endOfDay ? $date->setTime(23, 59, 59) : $date;
+        return $latestByUserId;
     }
 }

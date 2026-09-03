@@ -54,12 +54,60 @@ class UserControllerTest extends IntegrationTestCase
 
         $byUsername = $this->client->request('GET', '/admin/users?search=alice')->html();
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('alice', $byUsername);
+        self::assertStringContainsString('>alice<', $byUsername);
         self::assertStringNotContainsString('>bob<', $byUsername);
 
         $byEmail = $this->client->request('GET', '/admin/users?search=findme')->html();
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('alice', $byEmail);
+        self::assertStringContainsString('>alice<', $byEmail);
+        self::assertStringNotContainsString('>bob<', $byEmail);
+    }
+
+    public function testUnknownFilterValuesAreRejected(): void
+    {
+        $mod = self::createUser('modx', 'modx@example.org', roles: ['ROLE_DISABLE_USERS']);
+        $this->store($mod);
+        $this->client->loginUser($mod);
+
+        foreach (['frozen=frozen', 'twofa=on', 'github_linked=true', 'registered_from=2026-02-31', 'registered_to=01/2026'] as $query) {
+            $this->client->request('GET', '/admin/users?'.$query);
+            self::assertSame(400, $this->client->getResponse()->getStatusCode(), $query);
+        }
+    }
+
+    public function testFrozenUsersRouteShowsTheTemporaryHoldQueue(): void
+    {
+        $mod = self::createUser('mody', 'mody@example.org', roles: ['ROLE_DISABLE_USERS']);
+        $temp = self::createUser('tempheld', 'tempheld@example.org');
+        $temp->freeze(UserFreezeReason::Temporary);
+        $spammer = self::createUser('spamheld', 'spamheld@example.org');
+        $spammer->freeze(UserFreezeReason::Spam);
+        $this->store($mod, $temp, $spammer);
+        $this->client->loginUser($mod);
+
+        $crawler = $this->client->request('GET', '/admin/frozen-users');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Frozen users', $crawler->filter('h2.title')->text(normalizeWhitespace: true));
+        $html = $crawler->html();
+        self::assertStringContainsString('>tempheld<', $html);
+        self::assertStringNotContainsString('>spamheld<', $html);
+        self::assertStringContainsString('Frozen at', $html);
+        self::assertSame('temporary', $crawler->filter('#frozen-filter option[selected]')->attr('value'));
+    }
+
+    public function testMenuHighlightMatchesTheRoute(): void
+    {
+        $mod = self::createUser('modm', 'modm@example.org', roles: ['ROLE_DISABLE_USERS']);
+        $this->store($mod);
+        $this->client->loginUser($mod);
+
+        $onUsers = $this->client->request('GET', '/admin/users')->filter('.admin-nav .active')->text(normalizeWhitespace: true);
+        self::assertStringContainsString('Users', $onUsers);
+        self::assertStringNotContainsString('Frozen users', $onUsers);
+
+        $onFrozen = $this->client->request('GET', '/admin/frozen-users')->filter('.admin-nav .active')->text(normalizeWhitespace: true);
+        self::assertStringContainsString('Frozen users', $onFrozen);
     }
 
     public function testFreezeFilterReplacesOldFrozenUsersQueue(): void
@@ -137,5 +185,24 @@ class UserControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('recentreg', $since2025);
         self::assertStringNotContainsString('oldreg', $since2025);
+    }
+
+    public function testFreezeContextColumnsAppearOnlyForFrozenFilter(): void
+    {
+        $mod = self::createUser('modz', 'modz@example.org', roles: ['ROLE_DISABLE_USERS']);
+        $frozen = self::createUser('heldacct', 'held@example.org');
+        $frozen->freeze(UserFreezeReason::Temporary);
+        $this->store($mod, $frozen);
+
+        $this->client->loginUser($mod);
+
+        $default = $this->client->request('GET', '/admin/users')->html();
+        self::assertStringNotContainsString('Frozen at', $default);
+
+        $frozenView = $this->client->request('GET', '/admin/users?frozen=temporary')->html();
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Frozen at', $frozenView);
+        self::assertStringContainsString('Frozen by', $frozenView);
+        self::assertStringContainsString('heldacct', $frozenView);
     }
 }

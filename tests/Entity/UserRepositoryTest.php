@@ -28,113 +28,40 @@ class UserRepositoryTest extends IntegrationTestCase
         $this->userRepository = self::getEM()->getRepository(User::class);
     }
 
-    /**
-     * @return list<string>
-     */
-    private function usernamesFromRows(array $rows): array
-    {
-        return array_map(static fn (array $row): string => $row[0]->getUsername(), $rows);
-    }
-
-    public function testGetUsersQueryBuilderFiltersByFreezeStatus(): void
-    {
-        $spammer = self::createUser('spammer', 'spammer@example.org');
-        $spammer->freeze(UserFreezeReason::Spam);
-        $temp = self::createUser('temphold', 'temp@example.org');
-        $temp->freeze(UserFreezeReason::Temporary);
-        $active = self::createUser('active', 'active@example.org');
-        $this->store($spammer, $temp, $active);
-
-        $all = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder()->getQuery()->getResult());
-        self::assertContains('spammer', $all);
-        self::assertContains('temphold', $all);
-        self::assertContains('active', $all);
-
-        $anyFrozen = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(frozenFilter: 'any')->getQuery()->getResult());
-        self::assertContains('spammer', $anyFrozen);
-        self::assertContains('temphold', $anyFrozen);
-        self::assertNotContains('active', $anyFrozen, 'unfrozen accounts must not appear');
-
-        $notFrozen = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(frozenFilter: 'none')->getQuery()->getResult());
-        self::assertSame(['active'], $notFrozen);
-
-        $temporaryOnly = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(frozenFilter: 'temporary')->getQuery()->getResult());
-        self::assertSame(['temphold'], $temporaryOnly);
-    }
-
-    public function testGetUsersQueryBuilderFiltersBySearchTerm(): void
-    {
-        $alice = self::createUser('alice', 'alice@example.org');
-        $bob = self::createUser('bob', 'bob@findme.example.org');
-        $this->store($alice, $bob);
-
-        $byUsername = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(search: 'ali')->getQuery()->getResult());
-        self::assertSame(['alice'], $byUsername);
-
-        $byEmail = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(search: 'findme')->getQuery()->getResult());
-        self::assertSame(['bob'], $byEmail);
-    }
-
     public function testGetUsersQueryBuilderIncludesPackageCount(): void
     {
-        $user = self::createUser('withpkgs', 'withpkgs@example.org');
-        $this->store($user);
+        $maintainer = self::createUser('withpkgs', 'withpkgs@example.org');
+        $loner = self::createUser('nopkgs', 'nopkgs@example.org');
+        $this->store($maintainer, $loner);
+        $this->store(
+            self::createPackage('acme/one', 'https://example.org/acme/one', maintainers: [$maintainer]),
+            self::createPackage('acme/two', 'https://example.org/acme/two', maintainers: [$maintainer]),
+        );
 
-        $rows = $this->userRepository->getUsersQueryBuilder(search: 'withpkgs')->getQuery()->getResult();
-        self::assertCount(1, $rows);
-        self::assertSame(0, (int) $rows[0]['packageCount']);
+        $rows = $this->userRepository->getUsersQueryBuilder()->getQuery()->getResult();
+        $countsByName = [];
+        foreach ($rows as $row) {
+            $countsByName[$row[0]->getUsername()] = (int) $row['packageCount'];
+        }
+
+        self::assertSame(2, $countsByName['withpkgs']);
+        self::assertSame(0, $countsByName['nopkgs']);
     }
 
-    public function testGetUsersQueryBuilderFiltersByRegistrationDateRange(): void
+    public function testGetUsersQueryBuilderOrdersByFrozenAtWhenRequested(): void
     {
-        $old = self::createUser('oldaccount', 'old@example.org');
-        $recent = self::createUser('recentaccount', 'recent@example.org');
-        new \ReflectionProperty(User::class, 'createdAt')->setValue($old, new \DateTimeImmutable('2020-01-01 12:00:00'));
-        new \ReflectionProperty(User::class, 'createdAt')->setValue($recent, new \DateTimeImmutable('2026-06-15 12:00:00'));
-        $this->store($old, $recent);
+        $older = self::createUser('olderfreeze', 'older@example.org');
+        $older->freeze(UserFreezeReason::Temporary);
+        $newer = self::createUser('newerfreeze', 'newer@example.org');
+        $newer->freeze(UserFreezeReason::Temporary);
+        new \ReflectionProperty(User::class, 'frozenAt')->setValue($older, new \DateTimeImmutable('2026-01-01 00:00:00'));
+        new \ReflectionProperty(User::class, 'frozenAt')->setValue($newer, new \DateTimeImmutable('2026-06-01 00:00:00'));
+        $this->store($older, $newer);
 
-        $from = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(registeredFrom: new \DateTimeImmutable('2025-01-01 00:00:00'))->getQuery()->getResult());
-        self::assertSame(['recentaccount'], $from);
+        $rows = $this->userRepository->getUsersQueryBuilder(orderByFrozenAt: true)->getQuery()->getResult();
+        $names = array_map(static fn (array $row): string => $row[0]->getUsername(), $rows);
 
-        $to = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(registeredTo: new \DateTimeImmutable('2025-01-01 00:00:00'))->getQuery()->getResult());
-        self::assertSame(['oldaccount'], $to);
-
-        $between = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(
-            registeredFrom: new \DateTimeImmutable('2019-01-01 00:00:00'),
-            registeredTo: new \DateTimeImmutable('2021-01-01 00:00:00'),
-        )->getQuery()->getResult());
-        self::assertSame(['oldaccount'], $between);
-    }
-
-    public function testGetUsersQueryBuilderFiltersByTwoFactorStatus(): void
-    {
-        $withTwoFa = self::createUser('with2fa', 'with2fa@example.org');
-        $withTwoFa->setTotpSecret('SECRET');
-        $withoutTwoFa = self::createUser('without2fa', 'without2fa@example.org');
-        $this->store($withTwoFa, $withoutTwoFa);
-
-        $enabled = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(twoFactorFilter: 'enabled')->getQuery()->getResult());
-        self::assertSame(['with2fa'], $enabled);
-
-        $disabled = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(twoFactorFilter: 'disabled')->getQuery()->getResult());
-        self::assertSame(['without2fa'], $disabled);
-    }
-
-    public function testGetUsersQueryBuilderFiltersByGithubIdAndLinkStatus(): void
-    {
-        $linked = self::createUser('linkeduser', 'linked@example.org', githubId: '424242');
-        $unlinked = self::createUser('unlinkeduser', 'unlinked@example.org');
-        $unlinked->setGithubId(null);
-        $this->store($linked, $unlinked);
-
-        $byId = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(githubId: '424242')->getQuery()->getResult());
-        self::assertSame(['linkeduser'], $byId);
-
-        $onlyLinked = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(githubLinkedFilter: 'yes')->getQuery()->getResult());
-        self::assertSame(['linkeduser'], $onlyLinked);
-
-        $onlyUnlinked = $this->usernamesFromRows($this->userRepository->getUsersQueryBuilder(githubLinkedFilter: 'no')->getQuery()->getResult());
-        self::assertSame(['unlinkeduser'], $onlyUnlinked);
+        self::assertSame(['newerfreeze', 'olderfreeze'], $names);
     }
 
     public function testFindUsersByUsernameWithMultipleValidUsernames(): void

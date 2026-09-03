@@ -88,6 +88,11 @@ class MenuBuilder
                 'route' => 'admin_users',
                 'extras' => ['safe_label' => true, 'translation_domain' => false],
             ]);
+            $menu->addChild('Frozen users', [
+                'label' => '<span class="icon-lock"></span>Frozen users',
+                'route' => 'admin_frozen_users',
+                'extras' => ['safe_label' => true, 'translation_domain' => false],
+            ]);
         }
         if ($this->security->isGranted('ROLE_ADMIN_ORGS')) {
             $menu->addChild('Organizations', [
