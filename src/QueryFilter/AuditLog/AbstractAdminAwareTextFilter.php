@@ -14,6 +14,7 @@ namespace App\QueryFilter\AuditLog;
 
 use App\Audit\AuditLogSearchType;
 use App\Entity\AuditLogSearch;
+use App\QueryFilter\LikePattern;
 use App\QueryFilter\QueryFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
@@ -44,8 +45,7 @@ abstract class AbstractAdminAwareTextFilter implements QueryFilterInterface
         if ($this->isAdmin) {
             $useWildcard = str_contains($this->value, '*');
             if ($useWildcard) {
-                $escapedValue = addcslashes($this->value, '%_\\');
-                $pattern = str_replace('*', '%', $escapedValue);
+                $pattern = str_replace('*', '%', LikePattern::escape($this->value));
             } else {
                 $pattern = $this->value;
             }
