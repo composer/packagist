@@ -28,9 +28,15 @@ abstract class AbstractRegisteredDateFilter implements QueryFilterInterface
     abstract protected static function key(): string;
 
     /**
-     * @return '>='|'<='
+     * @return '>='|'>'|'<='|'<'
      */
     abstract protected static function operator(): string;
+
+    /**
+     * Whether the bound covers the whole named day rather than its first instant. Kept separate
+     * from operator() so a new comparison does not silently inherit a boundary.
+     */
+    abstract protected static function endOfDay(): bool;
 
     /**
      * @param InputBag<string> $bag
@@ -47,7 +53,8 @@ abstract class AbstractRegisteredDateFilter implements QueryFilterInterface
             throw new BadRequestHttpException(\sprintf('Invalid %s date', static::key()));
         }
 
-        if (static::operator() === '<=') {
+        // `!Y-m-d` already yields 00:00:00, so only the end-of-day bound needs adjusting.
+        if (static::endOfDay()) {
             $date = $date->setTime(23, 59, 59);
         }
 

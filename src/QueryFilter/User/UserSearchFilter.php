@@ -12,6 +12,7 @@
 
 namespace App\QueryFilter\User;
 
+use App\QueryFilter\LikePattern;
 use App\QueryFilter\QueryFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
@@ -37,7 +38,7 @@ class UserSearchFilter implements QueryFilterInterface
         }
 
         return $qb->andWhere('(u.usernameCanonical LIKE :search OR u.emailCanonical LIKE :search)')
-            ->setParameter('search', '%'.addcslashes(mb_strtolower($this->value), '%_\\').'%');
+            ->setParameter('search', LikePattern::contains(mb_strtolower($this->value)));
     }
 
     public function getKey(): string

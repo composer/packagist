@@ -23,4 +23,9 @@ class RegisteredAfterFilter extends AbstractRegisteredDateFilter
     {
         return '>=';
     }
+
+    protected static function endOfDay(): bool
+    {
+        return false;
+    }
 }
