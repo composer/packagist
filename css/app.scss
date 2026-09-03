@@ -116,7 +116,8 @@ pre, code {
     border-radius: 0;
     border: none;
     color: var(--color-brand-dark);
-    line-height: 12px;
+    // was 12px against a 12px font, i.e. dead-on 1.0, which clipped descenders in multi-line blocks
+    line-height: 1.5;
     font-size: 12px;
 }
 pre {
