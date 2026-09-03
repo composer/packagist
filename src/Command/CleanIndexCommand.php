@@ -12,7 +12,7 @@
 
 namespace App\Command;
 
-use Algolia\AlgoliaSearch\SearchClient;
+use Algolia\AlgoliaSearch\Api\SearchClient;
 use App\Service\Locker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -69,20 +69,20 @@ class CleanIndexCommand extends Command
             return 0;
         }
 
-        $index = $this->algolia->initIndex($this->algoliaIndexName);
-
         $page = 0;
         $perPage = 100;
         do {
-            $results = $index->search('', ['facets' => '*,type,tags', 'facetFilters' => ['type:virtual-package'], 'numericFilters' => ['trendiness=100'], 'hitsPerPage' => $perPage, 'page' => $page]);
+            /** @var array{hits: list<array{objectID: string, name: string}>} $results */
+            $results = $this->algolia->searchSingleIndex($this->algoliaIndexName, ['facets' => ['*', 'type', 'tags'], 'facetFilters' => ['type:virtual-package'], 'numericFilters' => ['trendiness=100'], 'hitsPerPage' => $perPage, 'page' => $page]);
             foreach ($results['hits'] as $result) {
                 if (!str_starts_with($result['objectID'], 'virtual:')) {
-                    $duplicate = $index->search('', ['facets' => '*,objectID,type,tags', 'facetFilters' => ['objectID:virtual:'.$result['objectID']]]);
+                    /** @var array{hits: list<array{objectID: string}>} $duplicate */
+                    $duplicate = $this->algolia->searchSingleIndex($this->algoliaIndexName, ['facets' => ['*', 'objectID', 'type', 'tags'], 'facetFilters' => ['objectID:virtual:'.$result['objectID']]]);
                     if (\count($duplicate['hits']) === 1) {
                         if ($verbose) {
                             $output->writeln('Deleting '.$result['objectID'].' which is a duplicate of '.$duplicate['hits'][0]['objectID']);
                         }
-                        $index->deleteObject($result['objectID']);
+                        $this->algolia->deleteObject($this->algoliaIndexName, $result['objectID']);
                         continue;
                     }
                 }
@@ -91,7 +91,7 @@ class CleanIndexCommand extends Command
                     if ($verbose) {
                         $output->writeln('Deleting '.$result['objectID'].' which has no provider anymore');
                     }
-                    $index->deleteObject($result['objectID']);
+                    $this->algolia->deleteObject($this->algoliaIndexName, $result['objectID']);
                 }
             }
             $page++;

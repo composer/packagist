@@ -12,7 +12,7 @@
 
 namespace App\Command;
 
-use Algolia\AlgoliaSearch\SearchClient;
+use Algolia\AlgoliaSearch\Api\SearchClient;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -40,9 +40,7 @@ class ConfigureAlgoliaCommand extends Command
 
         $settings = Yaml::parse($yaml);
 
-        $index = $this->algolia->initIndex($this->algoliaIndexName);
-
-        $index->setSettings($settings);
+        $this->algolia->setSettings($this->algoliaIndexName, $settings);
 
         return 0;
     }

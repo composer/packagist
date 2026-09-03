@@ -126,9 +126,9 @@ services:
         tags:
             - { name: knp_menu.menu, alias: organization_menu }
 
-    Algolia\AlgoliaSearch\SearchClient:
+    Algolia\AlgoliaSearch\Api\SearchClient:
         arguments: ['%env(ALGOLIA_APP_ID)%', '%env(ALGOLIA_ADMIN_KEY)%']
-        factory: ['Algolia\AlgoliaSearch\SearchClient', create]
+        factory: ['Algolia\AlgoliaSearch\Api\SearchClient', create]
 
     App\Service\QueueWorker:
         $jobWorkers:

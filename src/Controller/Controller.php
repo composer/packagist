@@ -38,16 +38,15 @@ abstract class Controller extends AbstractController
     /**
      * @param array<Package|array{id: int}> $packages
      *
-     * @return array{downloads: array<int, int>, favers: array<int, int>}
+     * @return array{downloads: array<int, int>, favers: array<int, int>, releases: array<int, array{version: string, releasedAt: \DateTimeImmutable|null, license: list<string>}>, tags: array<int, list<string>>}
      */
     protected function getPackagesMetadata(FavoriteManager $favMgr, DownloadManager $dlMgr, iterable $packages): array
     {
         $downloads = [];
         $favorites = [];
+        $ids = [];
 
         try {
-            $ids = [];
-
             $search = false;
             foreach ($packages as $package) {
                 if ($package instanceof Package) {
@@ -70,7 +69,14 @@ abstract class Controller extends AbstractController
         } catch (\Predis\Connection\ConnectionException $e) {
         }
 
-        return ['downloads' => $downloads, 'favers' => $favorites];
+        $packageRepo = $this->doctrine->getRepository(Package::class);
+
+        return [
+            'downloads' => $downloads,
+            'favers' => $favorites,
+            'releases' => $packageRepo->getPackagesLatestReleaseMetadata($ids),
+            'tags' => $packageRepo->getTagsByPackageIds($ids),
+        ];
     }
 
     protected function blockAbusers(Request $req): ?JsonResponse

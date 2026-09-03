@@ -29,6 +29,20 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  *         abandoned?: true|string
  *     }>
  * }
+ * @phpstan-type AlgoliaResults array{
+ *     nbHits: int,
+ *     page: int,
+ *     nbPages: int,
+ *     hits: array<array{
+ *         id: int,
+ *         name: string,
+ *         description: string,
+ *         repository: string,
+ *         meta: array{downloads: int, favers: int},
+ *         abandoned?: bool,
+ *         replacementPackage?: string
+ *     }>
+ * }
  */
 final class ResultTransformer
 {
@@ -37,20 +51,7 @@ final class ResultTransformer
     }
 
     /**
-     * @param array{
-     *     nbHits: int,
-     *     page: int,
-     *     nbPages: int,
-     *     hits: array<array{
-     *         id: int,
-     *         name: string,
-     *         description: string,
-     *         repository: string,
-     *         meta: array{downloads: int, favers: int},
-     *         abandoned?: bool,
-     *         replacementPackage?: string
-     *     }>
-     * } $results
+     * @param AlgoliaResults $results
      *
      * @phpstan-return SearchResult
      */

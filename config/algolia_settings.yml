@@ -35,3 +35,4 @@ paginationLimitedTo: 300
 attributesForFaceting:
     - "type"
     - "searchable(tags)"
+    - "meta.license"
