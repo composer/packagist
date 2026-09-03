@@ -16,11 +16,13 @@ use App\Log\Display\TransparencyLogDisplayFactory;
 use App\Log\TransparencyLogEventType;
 use App\Entity\PackageTransparencyLogRepository;
 use App\QueryFilter\QueryFilterInterface;
+use App\QueryFilter\TransparencyLog\ActorFilter;
 use App\QueryFilter\TransparencyLog\DateTimeFromFilter;
 use App\QueryFilter\TransparencyLog\DateTimeToFilter;
 use App\QueryFilter\TransparencyLog\PackageNameFilter;
 use App\QueryFilter\TransparencyLog\EventTypeFilter;
 use App\QueryFilter\TransparencyLog\UserFilter;
+use App\QueryFilter\TransparencyLog\UserIdFilter;
 use App\QueryFilter\TransparencyLog\VendorFilter;
 use BabDev\PagerfantaBundle\Position\PositionResolver;
 use Pagerfanta\CursorPagerfanta;
@@ -47,7 +49,9 @@ class TransparencyLogController extends Controller
         /** @var QueryFilterInterface[] $filters */
         $filters = [
             EventTypeFilter::fromQuery($request->query, $includeHiddenTypes),
+            ActorFilter::fromQuery($request->query),
             UserFilter::fromQuery($request->query),
+            UserIdFilter::fromQuery($request->query),
             VendorFilter::fromQuery($request->query),
             PackageNameFilter::fromQuery($request->query),
             $dateTimeFromFilter,

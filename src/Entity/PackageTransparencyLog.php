@@ -13,6 +13,7 @@
 namespace App\Entity;
 
 use App\Log\TransparencyLogEventType;
+use App\Log\TransparencyLogSearchType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
@@ -93,6 +94,60 @@ class PackageTransparencyLog
         public readonly ?string $leafHash = null,
     ) {
         $this->id = new Ulid();
+    }
+
+    /**
+     * The people this entry names, one term for each person and role, for
+     * {@see PackageTransparencyLogSearch}.
+     *
+     * A person is indexed only if both the id and the username are known, so string actors such as
+     * 'automation' are skipped.
+     *
+     * `primaryRow` is true on the first term of each account, so a search by account finds the entry once.
+     *
+     * @return list<array{type: TransparencyLogSearchType, name: string, userId: int, primaryRow: bool}>
+     */
+    public function getSearchTerms(): array
+    {
+        $terms = [];
+        $add = static function (TransparencyLogSearchType $type, mixed $person) use (&$terms): void {
+            if (!\is_array($person)) {
+                return;
+            }
+
+            $id = $person['id'] ?? null;
+            $username = $person['username'] ?? null;
+            if (!\is_int($id) || !\is_string($username) || $username === '') {
+                return;
+            }
+
+            $lower = mb_strtolower($username);
+            // a maintainer can be in both lists of a transfer
+            $terms[$type->value."\0".$lower] = ['type' => $type, 'name' => $lower, 'userId' => $id];
+        };
+
+        $add(TransparencyLogSearchType::User, $this->attributes['user'] ?? null);
+
+        // the maintainers before and after a transfer
+        foreach (['previous_maintainers', 'current_maintainers'] as $key) {
+            $maintainers = $this->attributes[$key] ?? null;
+            if (\is_array($maintainers)) {
+                foreach ($maintainers as $maintainer) {
+                    $add(TransparencyLogSearchType::User, $maintainer);
+                }
+            }
+        }
+
+        $add(TransparencyLogSearchType::Actor, $this->attributes['actor'] ?? null);
+
+        $seenUserIds = [];
+        $result = [];
+        foreach ($terms as $term) {
+            $result[] = $term + ['primaryRow' => !isset($seenUserIds[$term['userId']])];
+            $seenUserIds[$term['userId']] = true;
+        }
+
+        return $result;
     }
 
     /**

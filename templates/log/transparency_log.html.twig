@@ -36,11 +36,32 @@
             <div class="row">
                 <div class="col-lg-6 col-md-12">
                     <div class="form-group">
-                        <label for="user-filter">Maintainer</label>
+                        <label for="actor-filter">Actor</label>
+                        <input type="text" name="actor" id="actor-filter" class="form-control" value="{{ selectedFilters.actor }}" placeholder="Filter by username">
+                    </div>
+                </div>
+                <div class="col-lg-6 col-md-12">
+                    <div class="form-group">
+                        <label for="user-filter">User</label>
                         <input type="text" name="user" id="user-filter" class="form-control" value="{{ selectedFilters.user }}" placeholder="Filter by username">
                     </div>
                 </div>
             </div>
+            <div class="form-group">
+                <small class="help-block">
+                    Usernames match the name at the time of the event. Use the account id next to each name to tell accounts apart.
+                </small>
+            </div>
+            {% if selectedFilters.user_id %}
+                {# The user_id filter is currently only used when clicking on the Transparency log link on the profile page #}
+                <div class="form-group">
+                    <small class="help-block">
+                        Showing all entries of a single account.
+                        <a href="{{ url('view_transparency_log') }}">Show all entries</a>
+                    </small>
+                    <input type="hidden" name="user_id" value="{{ selectedFilters.user_id }}">
+                </div>
+            {% endif %}
         {% endblock %}
     {% endembed %}
 

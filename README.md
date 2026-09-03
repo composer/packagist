@@ -102,6 +102,27 @@ Seeding is safe to re-run: it skips anything that already has a `package_transpa
 queue row. Seeded records are appended at the end of `package_transparency_log`, since an append-only
 log cannot take insertions, so they appear as recent entries carrying old timestamps.
 
+### Transparency log search index
+
+The User and Actor filters and the link on a user's profile read `package_transparency_log_search`. It
+has one row for each person and role that an entry names. `package_transparency_log.userId` is not
+enough, because it holds only the subject, and most entries have none.
+
+The table stores the username and the account id. The filters search by username, so the result can
+include more than one account if a username changed owner. The profile link searches by account id, so
+it also finds entries from before a rename.
+
+The projector writes the rows in the same transaction as the entries. Entries projected before the
+table existed need a one-time backfill:
+
+```bash
+bin/console packagist:backfill-transparency-log-search --dry-run
+bin/console packagist:backfill-transparency-log-search
+```
+
+You can run it more than once, and while the projection cron runs. Until it is done, older entries are
+missing only from filtered results.
+
 ### Fixtures
 
 You can get test data by running the fixtures:
