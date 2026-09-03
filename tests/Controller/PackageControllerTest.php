@@ -769,7 +769,7 @@ class PackageControllerTest extends IntegrationTestCase
             ]], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
             $body,
         );
-        self::assertStringContainsString('listvendor\\/abandoned', $body);
+        self::assertStringContainsString('listvendor/abandoned', $body);
     }
 
     public function testListJsonWithFieldsAndNoMatchesEmitsEmptyArray(): void
