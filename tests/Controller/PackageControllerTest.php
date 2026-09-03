@@ -25,6 +25,8 @@ use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
 
@@ -726,5 +728,97 @@ class PackageControllerTest extends IntegrationTestCase
         $v->setUpdatedAt(new \DateTimeImmutable());
 
         return $v;
+    }
+
+    /**
+     * /packages/list.json is streamed, so $client->getResponse()->getContent() returns false and the
+     * body is only reachable via getInternalResponse(), which HttpKernelBrowser captures with ob_start().
+     */
+    private function requestListJson(string $query, string $method = 'GET'): string
+    {
+        $this->client->request($method, '/packages/list.json?'.$query);
+
+        self::assertInstanceOf(StreamedJsonResponse::class, $this->client->getResponse());
+        self::assertResponseIsSuccessful();
+
+        return (string) $this->client->getInternalResponse()->getContent();
+    }
+
+    public function testListJsonWithFieldsStreamsByteIdenticalJson(): void
+    {
+        $withReplacement = self::createPackage('listvendor/abandoned', 'https://example.org/abandoned');
+        $withReplacement->setType('library');
+        $withReplacement->setAbandoned(true);
+        $withReplacement->setReplacementPackage('other/pkg');
+        $active = self::createPackage('listvendor/active', 'https://example.org/active');
+        $active->setType('library');
+        $this->store($withReplacement, $active);
+
+        $body = $this->requestListJson('vendor=listvendor&fields[]=type&fields[]=abandoned');
+
+        self::assertResponseHeaderSame('Content-Type', 'application/json');
+        self::assertStringContainsString('s-maxage=300', (string) $this->client->getResponse()->headers->get('Cache-Control'));
+        self::assertResponseHeaderSame('X-Accel-Expires', '300');
+
+        // StreamedJsonResponse defaults to the same encoding options as JsonResponse, so streaming
+        // must not change a single byte of the payload - including the escaped slashes in names
+        self::assertSame(
+            json_encode(['packages' => [
+                'listvendor/abandoned' => ['type' => 'library', 'abandoned' => 'other/pkg'],
+                'listvendor/active' => ['type' => 'library', 'abandoned' => false],
+            ]], JsonResponse::DEFAULT_ENCODING_OPTIONS),
+            $body,
+        );
+        self::assertStringContainsString('listvendor\\/abandoned', $body);
+    }
+
+    public function testListJsonWithFieldsAndNoMatchesEmitsEmptyArray(): void
+    {
+        self::assertSame('{"packages":[]}', $this->requestListJson('vendor=nosuchvendor&fields[]=type'));
+    }
+
+    public function testListJsonEmitsPackageNamesAsJsonArray(): void
+    {
+        $packages = [];
+        foreach (['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb'] as $name) {
+            $package = self::createPackage($name, 'https://example.org/'.$name);
+            $package->setType('library');
+            $packages[] = $package;
+        }
+        $this->store(...$packages);
+
+        $body = $this->requestListJson('vendor=listvendor');
+
+        self::assertSame(
+            json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS),
+            $body,
+        );
+    }
+
+    public function testListJsonFilterEmitsJsonArrayNotObject(): void
+    {
+        $packages = [];
+        foreach (['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb'] as $name) {
+            $package = self::createPackage($name, 'https://example.org/'.$name);
+            $package->setType('library');
+            $packages[] = $package;
+        }
+        $this->store(...$packages);
+
+        // asserted on the raw string: a stray `yield $key => $name` would emit an object whose
+        // json_decode() looks identical to the array's, so decoding here would hide the regression
+        self::assertSame(
+            json_encode(['packageNames' => ['listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS),
+            $this->requestListJson('vendor=listvendor&filter=listvendor/*bb'),
+        );
+    }
+
+    public function testListJsonHeadRequestSkipsTheStreamEntirely(): void
+    {
+        $package = self::createPackage('listvendor/aaa', 'https://example.org/aaa');
+        $package->setType('library');
+        $this->store($package);
+
+        self::assertSame('', $this->requestListJson('vendor=listvendor&fields[]=type', 'HEAD'));
     }
 }
