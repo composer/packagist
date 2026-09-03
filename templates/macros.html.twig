@@ -12,7 +12,7 @@
             {% endif %}
             <li data-url="{{ packageUrl }}" class="row">
                 <div class="col-12 package-item">
-                    <div class="row">
+                    <div class="row align-items-center">
                         <div class="col-md-9 col-xl-10">
                             {% if package.language is defined and package.language is not empty %}<p class="float-end language">{{ package.language }}</p>{% endif %}
                             <h4 class="font-bold">
@@ -35,6 +35,25 @@
                             </h4>
                             {% if package.description is defined and package.description %}
                                 <p>{{ package.description|u.truncate(300) }}</p>
+                            {% endif %}
+                            {% if meta %}
+                                {% set release = meta.releases[package.id]|default(null) %}
+                                {% if release %}
+                                    <p class="release-metadata">
+                                        <span class="release-metadata-block" title="Latest version">{{ release.version }}</span>
+                                        {% if release.releasedAt %}<span class="release-metadata-block"><i class="bi bi-clock-fill" title="Release date"></i> {{ release.releasedAt|date('Y-m-d') }}</span>{% endif %}
+                                        {% if release.license is not empty %}<span class="release-metadata-block"><i class="bi bi-c-circle" title="License"></i> {{ release.license|join(', ') }}</span>{% endif %}
+                                    </p>
+                                {% endif %}
+                                {% set packageTags = meta.tags[package.id]|default([]) %}
+                                {% if packageTags is not empty %}
+                                    <p class="tags">
+                                        <i class="bi bi-tag-fill" title="Tags"></i>
+                                        {% for tag in packageTags|slice(0, 10) -%}
+                                            <a rel="nofollow noindex" href="{{ path('search_web', {tags: tag}) }}">{{ tag }}</a>
+                                        {%- endfor %}
+                                    </p>
+                                {% endif %}
                             {% endif %}
                             {% if meta.spamScores is defined and meta.spamScores[package.id] is defined %}
                                 {% set score = meta.spamScores[package.id] %}

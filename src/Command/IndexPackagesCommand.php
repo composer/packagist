@@ -12,7 +12,7 @@
 
 namespace App\Command;
 
-use Algolia\AlgoliaSearch\SearchClient;
+use Algolia\AlgoliaSearch\Api\SearchClient;
 use App\Entity\Package;
 use App\Entity\Version;
 use App\Model\DownloadManager;
@@ -84,8 +84,6 @@ class IndexPackagesCommand extends Command
             return 0;
         }
 
-        $index = $this->algolia->initIndex($this->algoliaIndexName);
-
         if ($package) {
             $packageEntity = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package]);
             if ($packageEntity === null) {
@@ -116,7 +114,7 @@ class IndexPackagesCommand extends Command
                 $output->writeln('Deleting existing index');
             }
 
-            $index->clear();
+            $this->algolia->clearObjects($this->algoliaIndexName);
         }
 
         $total = \count($ids);
@@ -127,6 +125,7 @@ class IndexPackagesCommand extends Command
             $indexTime = new \DateTime();
             $idsSlice = array_splice($ids, 0, 50);
             $packages = $this->getEM()->getRepository(Package::class)->findBy(['id' => $idsSlice]);
+            $releaseMetadata = $this->getEM()->getRepository(Package::class)->getPackagesLatestReleaseMetadata(array_map(intval(...), $idsSlice));
 
             $idsToUpdate = [];
             $records = [];
@@ -140,7 +139,7 @@ class IndexPackagesCommand extends Command
                 // delete suppressed (spam/malware) packages from the search index
                 if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage()) {
                     try {
-                        $index->deleteObject($package->getName());
+                        $this->algolia->deleteObject($this->algoliaIndexName, $package->getName());
                         $idsToUpdate[] = $package->getId();
                         continue;
                     } catch (\Algolia\AlgoliaSearch\Exceptions\AlgoliaException $e) {
@@ -150,7 +149,7 @@ class IndexPackagesCommand extends Command
                 try {
                     $tags = $this->getTags($package);
 
-                    $records[] = $this->packageToSearchableArray($package, $tags);
+                    $records[] = $this->packageToSearchableArray($package, $tags, $releaseMetadata[$package->getId()] ?? null);
 
                     $idsToUpdate[] = $package->getId();
                 } catch (\Exception $e) {
@@ -166,7 +165,7 @@ class IndexPackagesCommand extends Command
             }
 
             try {
-                $index->saveObjects($records);
+                $this->algolia->saveObjects($this->algoliaIndexName, $records);
             } catch (\Exception $e) {
                 $output->writeln('<error>'.$e::class.': '.$e->getMessage().', occurred while processing packages: '.implode(',', $idsSlice).'</error>');
                 continue;
@@ -192,10 +191,11 @@ class IndexPackagesCommand extends Command
 
     /**
      * @param string[] $tags
+     * @param array{version: string, releasedAt: \DateTimeImmutable|null, license: list<string>}|null $latestRelease
      *
-     * @return array<string, int|string|float|array<string, string|int>|null>
+     * @return array<string, mixed>
      */
-    private function packageToSearchableArray(Package $package, array $tags): array
+    private function packageToSearchableArray(Package $package, array $tags, ?array $latestRelease): array
     {
         $faversCount = $this->favoriteManager->getFaverCount($package);
         $downloads = $this->downloadManager->getDownloads($package);
@@ -226,6 +226,13 @@ class IndexPackagesCommand extends Command
             ],
         ];
 
+        if ($latestRelease !== null) {
+            $record['meta']['release'] = $latestRelease['version'];
+            $record['meta']['released'] = $latestRelease['releasedAt']?->format('Y-m-d');
+            $record['meta']['released_ts'] = $latestRelease['releasedAt']?->getTimestamp();
+            $record['meta']['license'] = $latestRelease['license'];
+        }
+
         if ($package->isAbandoned()) {
             $record['abandoned'] = 1;
             $record['replacementPackage'] = $package->getReplacementPackage() ?: '';
@@ -238,7 +245,7 @@ class IndexPackagesCommand extends Command
             $record['extension'] = 1;
             $latestVersion = $this->getEM()->getRepository(Version::class)->getQueryBuilderForLatestVersionWithPackage(package: $package->getName())
                 ->getQuery()->setMaxResults(1)->getOneOrNullResult();
-            if ($latestVersion) {
+            if ($latestVersion instanceof Version) {
                 $record['extensionName'] = $latestVersion->getPieName();
             }
         }

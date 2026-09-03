@@ -12,11 +12,12 @@
 
 namespace App\Search;
 
+use Algolia\AlgoliaSearch\Api\SearchClient;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
-use Algolia\AlgoliaSearch\SearchClient;
 
 /**
  * @phpstan-import-type SearchResult from ResultTransformer
+ * @phpstan-import-type AlgoliaResults from ResultTransformer
  */
 final class Algolia
 {
@@ -34,11 +35,12 @@ final class Algolia
      */
     public function search(Query $query): array
     {
-        $index = $this->algolia->initIndex($this->algoliaIndexName);
-
-        return $this->transformer->transform(
-            $query,
-            $index->search($query->query, $query->getOptions())
+        /** @var AlgoliaResults $results */
+        $results = $this->algolia->searchSingleIndex(
+            $this->algoliaIndexName,
+            ['query' => $query->query] + $query->getOptions(),
         );
+
+        return $this->transformer->transform($query, $results);
     }
 }

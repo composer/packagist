@@ -12,7 +12,7 @@
 
 namespace App\Tests\Search;
 
-use Algolia\AlgoliaSearch\SearchClient;
+use Algolia\AlgoliaSearch\Api\SearchClient;
 use App\Search\Query;
 use PHPUnit\Framework\Assert;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -39,21 +39,12 @@ final class AlgoliaMock extends SearchClient
     }
 
     /**
-     * @override \Algolia\AlgoliaSearch\SearchClient::initIndex
+     * @override \Algolia\AlgoliaSearch\Api\SearchClient::searchSingleIndex
      */
-    public function initIndex($indexName): self
+    public function searchSingleIndex($indexName, $searchParams = null, $requestOptions = []): array
     {
-        return $this;
-    }
-
-    /**
-     * @override \Algolia\AlgoliaSearch\SearchIndex::search
-     */
-    public function search($query, $requestOptions = []): array
-    {
-        $queryMessage = \sprintf('AlgoliaMock expected query string \'%s\', but got \'%s\'.', $this->query->query, $query);
-        Assert::assertSame($this->query->query, $query, $queryMessage);
-        Assert::assertSame($this->query->getOptions(), $requestOptions, 'AlgoliaMock expected different request options.');
+        $expected = ['query' => $this->query->query] + $this->query->getOptions();
+        Assert::assertSame($expected, $searchParams, 'AlgoliaMock expected different search parameters.');
 
         return $this->result;
     }

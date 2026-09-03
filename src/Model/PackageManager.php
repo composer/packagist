@@ -12,8 +12,8 @@
 
 namespace App\Model;
 
+use Algolia\AlgoliaSearch\Api\SearchClient;
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
-use Algolia\AlgoliaSearch\SearchClient;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
@@ -198,10 +198,7 @@ class PackageManager
     public function deletePackageSearchIndex(string $packageName): void
     {
         try {
-            $indexName = $this->algoliaIndexName;
-            $algolia = $this->algoliaClient;
-            $index = $algolia->initIndex($indexName);
-            $index->deleteObject($packageName);
+            $this->algoliaClient->deleteObject($this->algoliaIndexName, $packageName);
         } catch (AlgoliaException $e) {
         }
     }
