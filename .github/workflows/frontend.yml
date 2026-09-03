@@ -29,7 +29,7 @@ jobs:
       # .npmrc sets engine-strict against engines.npm so min-release-age is never silently
       # ignored, and that floor is newer than the npm bundled with node
       - name: "Update npm"
-        run: "npm install -g npm@latest"
+        run: "npm install -g npm@latest" # zizmor: ignore[adhoc-packages] npm can't bootstrap itself from a lockfile
 
       - name: "Install dependencies"
         run: "npm ci"
