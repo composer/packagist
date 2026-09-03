@@ -15,6 +15,7 @@ namespace App\QueryFilter\User;
 use App\QueryFilter\QueryFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class GithubIdFilter implements QueryFilterInterface
 {
@@ -34,6 +35,10 @@ class GithubIdFilter implements QueryFilterInterface
     {
         if ($this->value === '') {
             return $qb;
+        }
+
+        if (!is_numeric($this->value)) {
+            throw new BadRequestHttpException('Invalid github id - should be numeric');
         }
 
         return $qb->andWhere('u.githubId = :githubId')->setParameter('githubId', $this->value);
