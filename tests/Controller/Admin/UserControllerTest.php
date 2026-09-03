@@ -63,6 +63,22 @@ class UserControllerTest extends IntegrationTestCase
         self::assertStringNotContainsString('>bob<', $byEmail);
     }
 
+    public function testSearchIntersectsWithOtherFilters(): void
+    {
+        $mod = self::createUser('mod6', 'mod6@example.org', roles: ['ROLE_DISABLE_USERS']);
+        $frozenMatch = self::createUser('needle-frozen', 'needle-frozen@example.org');
+        $frozenMatch->freeze(UserFreezeReason::Temporary);
+        $activeMatch = self::createUser('needle-active', 'needle-active@example.org');
+        $this->store($mod, $frozenMatch, $activeMatch);
+
+        $this->client->loginUser($mod);
+
+        $html = $this->client->request('GET', '/admin/users?search=needle&frozen=any')->html();
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('>needle-frozen<', $html);
+        self::assertStringNotContainsString('>needle-active<', $html);
+    }
+
     public function testUnknownFilterValuesAreRejected(): void
     {
         $mod = self::createUser('modx', 'modx@example.org', roles: ['ROLE_DISABLE_USERS']);

@@ -35,10 +35,15 @@ class UserRepository extends ServiceEntityRepository
      */
     public function getUsersQueryBuilder(bool $orderByFrozenAt = false): QueryBuilder
     {
-        return $this->createQueryBuilder('u')
+        $qb = $this->createQueryBuilder('u')
             ->addSelect('SIZE(u.packages) AS packageCount')
-            ->orderBy($orderByFrozenAt ? 'u.frozenAt' : 'u.id', 'DESC')
-            ->addOrderBy('u.id', 'DESC');
+            ->orderBy($orderByFrozenAt ? 'u.frozenAt' : 'u.id', 'DESC');
+
+        if ($orderByFrozenAt) {
+            $qb->addOrderBy('u.id', 'DESC');
+        }
+
+        return $qb;
     }
 
     public function findOneByUsernameOrEmail(string $usernameOrEmail): ?User

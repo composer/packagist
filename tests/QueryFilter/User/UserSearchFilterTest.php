@@ -46,8 +46,7 @@ class UserSearchFilterTest extends TestCase
         $filter->filter($qb);
 
         $where = (string) $qb->getDQLPart('where');
-        self::assertStringContainsString('u.usernameCanonical LIKE :search', $where);
-        self::assertStringContainsString('u.emailCanonical LIKE :search', $where);
+        self::assertStringContainsString('(u.usernameCanonical LIKE :search OR u.emailCanonical LIKE :search)', $where);
         self::assertSame('%al\_ce\%%', $qb->getParameter('search')->getValue());
     }
 }

@@ -36,7 +36,7 @@ class UserSearchFilter implements QueryFilterInterface
             return $qb;
         }
 
-        return $qb->andWhere('u.usernameCanonical LIKE :search OR u.emailCanonical LIKE :search')
+        return $qb->andWhere('(u.usernameCanonical LIKE :search OR u.emailCanonical LIKE :search)')
             ->setParameter('search', '%'.addcslashes(mb_strtolower($this->value), '%_\\').'%');
     }
 

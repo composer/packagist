@@ -20,7 +20,7 @@
     </div>
 
     <div class="audit-log-filters">
-        <form method="get" action="{{ path('admin_users') }}" name="filters">
+        <form method="get" action="{{ path(app.current_route) }}" name="filters">
             <div class="row">
                 <div class="col-lg-3 col-md-6">
                     <div class="form-group">
@@ -35,9 +35,11 @@
                             <option value=""{{ selectedFilters.frozen == '' ? ' selected' : '' }}>All</option>
                             <option value="none"{{ selectedFilters.frozen == 'none' ? ' selected' : '' }}>Not frozen</option>
                             <option value="any"{{ selectedFilters.frozen == 'any' ? ' selected' : '' }}>Frozen (any reason)</option>
-                            {% for reason in freezeReasons %}
-                                <option value="{{ reason.value }}"{{ selectedFilters.frozen == reason.value ? ' selected' : '' }}>{{ ('user_freeze_reasons.' ~ reason.value)|trans }}</option>
-                            {% endfor %}
+                            <optgroup label="Frozen for reason">
+                                {% for reason in freezeReasons %}
+                                    <option value="{{ reason.value }}"{{ selectedFilters.frozen == reason.value ? ' selected' : '' }}>{{ ('user_freeze_reasons.' ~ reason.value)|trans }}</option>
+                                {% endfor %}
+                            </optgroup>
                         </select>
                     </div>
                 </div>
@@ -90,7 +92,7 @@
                         <button type="submit" class="btn btn-primary">
                             <span class="bi bi-funnel-fill"></span> Apply Filters
                         </button>
-                        <a href="{{ url('admin_users') }}" class="btn btn-secondary">
+                        <a href="{{ path(app.current_route) }}" class="btn btn-secondary">
                             <span class="bi bi-x-circle-fill"></span> Clear All Filters
                         </a>
                     </div>
