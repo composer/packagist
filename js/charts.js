@@ -111,6 +111,7 @@ echarts.use([
         var colorMap = options.colorMap || null;
         var palette = options.palette || MULTI_COLORS;
         var withDatePicker = !!options.withDatePicker;
+        var valueLabel = options.valueLabel || null;
 
         if (!el) {
             return;
@@ -230,7 +231,11 @@ echarts.use([
                         } else {
                             value = formatDigit(value);
                         }
-                        return param.marker + ' ' + echarts.format.encodeHTML(param.seriesName) + ': <strong>' + value + '</strong>';
+                        var rendered = valueLabel
+                            ? echarts.format.encodeHTML(valueLabel).replace('%count%', '<strong>' + value + '</strong>')
+                            : '<strong>' + value + '</strong>';
+
+                        return param.marker + ' ' + echarts.format.encodeHTML(param.seriesName) + ': ' + rendered;
                     }).join('<br>');
 
                     return html;
@@ -319,7 +324,7 @@ echarts.use([
         );
     });
 
-    window.initPackageStats = function (average, date, statsUrl, versionStatsUrl) {
+    window.initPackageStats = function (average, date, statsUrl, versionStatsUrl, perDayLabel) {
         var match,
             hash = document.location.hash,
             versionCache = {},
@@ -341,7 +346,11 @@ echarts.use([
                 return b.name.localeCompare(a.name, undefined, {numeric: true});
             })
 
-            initPackagistChart($('.js-'+type+'-dls')[0], res.labels, series, {withDatePicker: true});
+            initPackagistChart($('.js-'+type+'-dls')[0], res.labels, series, {
+                withDatePicker: true,
+                // averaged buckets hold a per-day mean, not a bucket total
+                valueLabel: average === 'daily' ? null : perDayLabel
+            });
         }
 
         $.ajax({

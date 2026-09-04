@@ -99,7 +99,7 @@
             var average = {{ average|json_encode|raw }};
             var date = {{ date|json_encode|raw }};
 
-            initPackageStats(average, date, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }});
+            initPackageStats(average, date, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }}, {{ 'stats.installs_per_day'|trans|json_encode|raw }});
             {% if releaseChart %}
             initReleaseStats('.js-release-stats', {{ releaseChart|json_encode|raw }}, {{ {one: 'stats.release_count_one'|trans, many: 'stats.release_count_many'|trans}|json_encode|raw }});
             {% endif %}

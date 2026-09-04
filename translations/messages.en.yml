@@ -120,6 +120,7 @@ stats:
     releases_partial: The current month shows partial data.
     release_count_one: "%count% release"
     release_count_many: "%count% releases"
+    installs_per_day: "%count%/day"
     installs_per_day_weekly: "%count% installs/day (weekly avg.)"
 
 statistics:
