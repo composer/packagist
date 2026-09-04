@@ -61,7 +61,7 @@ use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -418,7 +418,7 @@ class PackageController extends Controller
 
                 return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? -1 : 1;
             });
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
         }
 
         if ($req->getRequestFormat() === 'json') {
@@ -581,7 +581,7 @@ class PackageController extends Controller
                 }
                 $data['downloads'] = $this->downloadManager->getDownloads($package);
                 $data['favers'] = $this->favoriteManager->getFaverCount($package);
-            } catch (\RuntimeException|ConnectionException $e) {
+            } catch (\RuntimeException|PredisException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
             }
@@ -681,7 +681,7 @@ class PackageController extends Controller
             if ($user) {
                 $data['is_favorite'] = $this->favoriteManager->isMarked($user, $package);
             }
-        } catch (\RuntimeException|ConnectionException) {
+        } catch (\RuntimeException|PredisException) {
         }
 
         $data['dependents'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getDependentCount($package->getName()) : 0;
@@ -799,7 +799,7 @@ class PackageController extends Controller
         try {
             $data['downloads']['total'] = $this->downloadManager->getDownloads($package);
             $data['favers'] = $this->favoriteManager->getFaverCount($package);
-        } catch (ConnectionException) {
+        } catch (PredisException) {
             $data['downloads']['total'] = null;
             $data['favers'] = null;
         }
@@ -807,7 +807,7 @@ class PackageController extends Controller
         foreach ($versions as $version) {
             try {
                 $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version);
-            } catch (ConnectionException) {
+            } catch (PredisException) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
         }
