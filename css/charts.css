@@ -35,10 +35,6 @@
     display: block;
     margin: 2px 0px 1px;
 }
-.version-stats-chart {
-  width: 70%;
-  margin-right: 5%;
-}
 .stats-toggle-wrapper {
     display: flex;
 }
