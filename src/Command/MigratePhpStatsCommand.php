@@ -70,8 +70,7 @@ class MigratePhpStatsCommand extends Command
             $now = new \DateTimeImmutable();
             $yesterday = new \DateTimeImmutable('yesterday');
             $todaySuffix = ':'.$now->format('Ymd');
-            $keysToUpdate = RedisScanner::keys($this->redis, 'php:*:*:*');
-            $keysToUpdate = array_merge($keysToUpdate, RedisScanner::keys($this->redis, 'phpplatform:*:*:*'));
+            $keysToUpdate = RedisScanner::keys($this->redis, 'phpplatform:*:*:*');
 
             // skip today datapoints as we will store that to the DB tomorrow
             $keysToUpdate = array_filter($keysToUpdate, static function ($key) use ($todaySuffix) {
@@ -80,8 +79,8 @@ class MigratePhpStatsCommand extends Command
 
             // sort by package id then version
             usort($keysToUpdate, static function (string $a, string $b) {
-                $amin = Preg::replace('{^php(?:platform)?:(\d+).*}', '$1', $a);
-                $bmin = Preg::replace('{^php(?:platform)?:(\d+).*}', '$1', $b);
+                $amin = Preg::replace('{^phpplatform:(\d+).*}', '$1', $a);
+                $bmin = Preg::replace('{^phpplatform:(\d+).*}', '$1', $b);
 
                 if ($amin !== $bmin) {
                     return strcmp($amin, $bmin);
