@@ -692,6 +692,49 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testStatsJsonDoesNotExposeReleaseChart(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $version = $this->createStableVersion($package, '1.0.0');
+        $this->store($package, $version);
+
+        $this->client->request('GET', '/packages/test/pkg/stats.json');
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame(['downloads', 'versions', 'average', 'date'], array_keys($data));
+        self::assertSame(['1.0.0'], $data['versions']);
+    }
+
+    public function testStatsPageReleaseChartIgnoresSoftDeletedDevAndPreStatsVersions(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+
+        $counted = $this->createStableVersion($package, '1.0.0');
+        $counted->setReleasedAt(new \DateTimeImmutable('2024-03-10'));
+        $alsoCounted = $this->createStableVersion($package, '1.0.1');
+        $alsoCounted->setReleasedAt(new \DateTimeImmutable('2024-03-20'));
+        $softDeleted = $this->createStableVersion($package, '1.1.0');
+        $softDeleted->setReleasedAt(new \DateTimeImmutable('2024-04-05'));
+        $softDeleted->setSoftDeletedAt(new \DateTimeImmutable());
+        $preStats = $this->createStableVersion($package, '0.9.0');
+        $preStats->setReleasedAt(new \DateTimeImmutable('2005-01-01'));
+        $dev = $this->createStableVersion($package, 'dev-main');
+        $dev->setDevelopment(true);
+        $dev->setReleasedAt(new \DateTimeImmutable('2024-05-01'));
+
+        $this->store($package, $counted, $alsoCounted, $softDeleted, $preStats, $dev);
+
+        $this->client->request('GET', '/packages/test/pkg/stats');
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString(
+            'initReleaseStats(\'.js-release-stats\', {"2024-03":2},',
+            (string) $this->client->getResponse()->getContent()
+        );
+    }
+
     /**
      * @param array<string, mixed> $result
      */

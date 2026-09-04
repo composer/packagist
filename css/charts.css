@@ -1,50 +1,15 @@
 .chart {
-    min-height: 300px;
+    width: 100%;
+    height: 300px;
+    padding-left: 0;
 }
 .version-stats-chart .chart {
-    min-height: 400px;
-}
-svg.chart {
-    display: block !important;
-    width:100% !important;
-    height:100% !important;
-    padding-left: 0;
-    overflow: visible;
+    height: 400px;
 }
 @media (max-width: 767px) {
-  svg.chart {
+  .chart {
     margin-left: -10px;
   }
-}
-.nvd3 text {
-  font: normal 12px 'Open Sans';
-}
-.nv-x text {
-  baseline-shift: -10px;
-}
-.nv-context .nv-x text {
-  baseline-shift: -5px;
-}
-.nvd3 .nv-axis .domain {
-  display: none;
-}
-.nvd3 .nv-axis .nv-axisMaxMin text {
-  font-weight: normal !important;
-}
-.nvd3 .nv-y .nv-axis .nv-axisMaxMin:last-child {
-  display: none;
-}
-.nvd3 .nv-x .nv-axis .nv-axisMaxMin:last-child text {
-  text-anchor: end !important;
-}
-.nvd3.nv-scatter.nv-single-point .nv-groups .nv-point {
-  fill-opacity: 0 !important;
-  stroke-opacity: 0 !important;
-}
-.nvtooltip tr.highlight {
-  border-top: 2px solid #333;
-  border-bottom: 2px solid #333;
-  background: #fff;
 }
 
 .package-installs dt {
@@ -69,7 +34,6 @@ svg.chart {
 .version-stats-chart {
   width: 70%;
   margin-right: 5%;
-  position: relative;
 }
 .stats-toggle-wrapper {
     display: flex;
