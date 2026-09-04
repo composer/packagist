@@ -1743,10 +1743,10 @@ class PackageController extends Controller
             }
         } elseif (null !== $version) {
             $downloads = $this->getEM()->getRepository(Download::class)->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
-            $dlData[$version->getVersion()] = [$downloads ? $downloads->getData() : []];
+            $dlData[$version->getVersion()] = $downloads ? $downloads->getData() : [];
         } else {
             $downloads = $this->getEM()->getRepository(Download::class)->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
-            $dlData[$package->getName()] = [$downloads ? $downloads->getData() : []];
+            $dlData[$package->getName()] = $downloads ? $downloads->getData() : [];
         }
 
         $datePoints = $this->createDatePoints($from, $to, $average);
@@ -1756,9 +1756,7 @@ class PackageController extends Controller
             foreach ($dlData as $seriesName => $seriesData) {
                 $value = 0;
                 foreach ($values as $valueKey) {
-                    foreach ($seriesData as $data) {
-                        $value += $data[$valueKey] ?? 0;
-                    }
+                    $value += $seriesData[$valueKey] ?? 0;
                 }
                 $series[$seriesName][] = ceil($value / \count($values));
             }

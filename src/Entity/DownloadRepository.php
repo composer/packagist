@@ -34,59 +34,77 @@ class DownloadRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<string, list<array<int|numeric-string, int>>>
+     * @return array<string, array<int|numeric-string, int>> series name (x.y) => date (Ymd) => downloads
      */
     public function findDataByMajorVersion(Package $package, int $majorVersion): array
     {
+        // Driven off download.package_id so that only versions which actually have a download row get
+        // looked up, and in ascending id order rather than normalizedVersion order.
         $sql = '
             SELECT v.normalizedVersion, d.data
-            FROM package_version v
-            INNER JOIN download d ON d.id=v.id AND d.type = :versionType
-            WHERE v.package_id = :package AND v.development = 0 AND v.normalizedVersion LIKE :majorVersion
+            FROM download d
+            INNER JOIN package_version v ON v.id = d.id
+            WHERE d.package_id = :package AND d.type = :versionType
+                AND v.development = 0 AND v.normalizedVersion LIKE :majorVersion
         ';
 
-        $stmt = $this->getEntityManager()->getConnection()
-            ->executeQuery(
-                $sql,
-                ['package' => $package->getId(), 'versionType' => Download::TYPE_VERSION, 'majorVersion' => $majorVersion.'.%']
-            );
-        $result = $stmt->fetchAllAssociative();
-        $stmt->free();
-
-        $series = [];
-        foreach ($result as $row) {
-            $name = Preg::replace('{^(\d+\.\d+)(\.|$).*}', '$1', $row['normalizedVersion']);
-            $series[$name][] = $row['data'] ? json_decode($row['data'], true) : [];
-        }
-
-        return $series;
+        return $this->sumDataPerSeries(
+            $sql,
+            ['package' => $package->getId(), 'versionType' => Download::TYPE_VERSION, 'majorVersion' => $majorVersion.'.%'],
+            '{^(\d+\.\d+)(\.|$).*}'
+        );
     }
 
     /**
-     * @return array<string, list<array<int|numeric-string, int>>>
+     * @return array<string, array<int|numeric-string, int>> series name (x) => date (Ymd) => downloads
      */
     public function findDataByMajorVersions(Package $package): array
     {
+        // Driven off download.package_id so that only versions which actually have a download row get
+        // looked up, and in ascending id order rather than normalizedVersion order.
         $sql = '
             SELECT v.normalizedVersion, d.data
-            FROM package_version v
-            INNER JOIN download d ON d.id=v.id AND d.type = :versionType
-            WHERE v.package_id = :package AND v.development = 0 AND v.normalizedVersion REGEXP "^[0-9]+"
+            FROM download d
+            INNER JOIN package_version v ON v.id = d.id
+            WHERE d.package_id = :package AND d.type = :versionType
+                AND v.development = 0 AND v.normalizedVersion REGEXP "^[0-9]+"
         ';
 
-        $stmt = $this->getEntityManager()->getConnection()
-            ->executeQuery(
-                $sql,
-                ['package' => $package->getId(), 'versionType' => Download::TYPE_VERSION]
-            );
-        $result = $stmt->fetchAllAssociative();
-        $stmt->free();
+        return $this->sumDataPerSeries(
+            $sql,
+            ['package' => $package->getId(), 'versionType' => Download::TYPE_VERSION],
+            '{^(\d+)(\.|$).*}'
+        );
+    }
+
+    /**
+     * Sums the per-version download data of every returned row into one array per series, so that
+     * neither the caller nor this method ever holds every version's decoded data at once.
+     *
+     * @param array<string, mixed> $params
+     *
+     * @return array<string, array<int|numeric-string, int>>
+     */
+    private function sumDataPerSeries(string $sql, array $params, string $seriesPattern): array
+    {
+        $stmt = $this->getEntityManager()->getConnection()->executeQuery($sql, $params);
 
         $series = [];
-        foreach ($result as $row) {
-            $name = Preg::replace('{^(\d+)(\.|$).*}', '$1', $row['normalizedVersion']);
-            $series[$name][] = $row['data'] ? json_decode($row['data'], true) : [];
+        foreach ($stmt->iterateAssociative() as $row) {
+            $name = Preg::replace($seriesPattern, '$1', (string) $row['normalizedVersion']);
+            // A series whose rows all carry empty data still has to show up, as an all-zero line
+            $series[$name] ??= [];
+
+            $data = json_decode((string) $row['data'], true);
+            if (!\is_array($data)) {
+                continue;
+            }
+
+            foreach ($data as $date => $downloads) {
+                $series[$name][$date] = ($series[$name][$date] ?? 0) + (int) $downloads;
+            }
         }
+        $stmt->free();
 
         return $series;
     }
