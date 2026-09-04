@@ -149,8 +149,14 @@ class DownloadManager
         }
 
         $now = time();
-        $throttleExpiry = strtotime('tomorrow 12:00:00', $now - 86400 / 2) * 1000;
-        $throttleDay = date('Ymd', $throttleExpiry);
+        $throttleBoundary = strtotime('tomorrow 12:00:00', $now - 86400 / 2);
+        // Spread the expiry over an hour past the boundary. Every key in a window used to share one
+        // absolute PEXPIREAT, so the whole day's throttle keys were freed in a single millisecond and
+        // stalled Redis' main thread. The key name rotates at the boundary, so lingering is harmless.
+        $throttleExpiry = ($throttleBoundary + random_int(0, 3600)) * 1000;
+        // NB the label must come from the un-jittered boundary, or it would vary between requests
+        // inside one window and split the throttle counters across keys.
+        $throttleDay = date('Ymd', $throttleBoundary * 1000);
         $day = date('Ymd', $now);
         $month = date('Ym', $now);
 
