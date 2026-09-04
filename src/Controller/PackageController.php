@@ -31,6 +31,8 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
+use App\Entity\VersionListItem;
+use App\Entity\VersionSummary;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
 use App\FilterList\FilterLists;
@@ -515,11 +517,7 @@ class PackageController extends Controller
             return $this->{$match['method'].'Action'}($req, $match['pkg']);
         }
 
-        if ('json' === $req->getRequestFormat()) {
-            $package = $this->getPackageByName($req, $name);
-        } else {
-            $package = $this->getPartialPackageWithVersions($req, $name);
-        }
+        $package = $this->getPackageByName($req, $name);
         if ($package instanceof Response) {
             return $package;
         }
@@ -601,37 +599,33 @@ class PackageController extends Controller
 
         $version = null;
         $expandedVersion = null;
-        /** @var Version[] $versions */
-        $versions = $package->getVersions()->toArray();
+        $versionRepo = $this->getEM()->getRepository(Version::class);
+        $versions = $versionRepo->getVersionListForPackage($package);
 
         if (!$this->isGranted(PackageActions::ViewHiddenVersion->value, $package)) {
-            $versions = array_values(array_filter($versions, static fn (Version $v): bool => $v->getDeletionReason() !== VersionDeletionReason::Hidden));
+            $versions = array_values(array_filter($versions, static fn (VersionListItem $v): bool => $v->getDeletionReason() !== VersionDeletionReason::Hidden));
         }
 
         usort($versions, Package::class.'::sortVersions');
 
         if (\count($versions)) {
-            $versionRepo = $this->getEM()->getRepository(Version::class);
-
-            // load the default branch version as it is used to display the latest available source.* and homepage info
-            $version = reset($versions);
+            // the default branch version is used to display the latest available source.* and homepage info
+            $defaultBranch = reset($versions);
             foreach ($versions as $v) {
                 if ($v->isDefaultBranch()) {
-                    $version = $v;
+                    $defaultBranch = $v;
                     break;
                 }
             }
-            $version = $versionRepo->find($version->getId());
-            Assert::notNull($version);
 
-            $expandedVersion = $version;
+            $expanded = $defaultBranch;
             $softDeletedFallback = null;
             foreach ($versions as $candidate) {
                 if ($candidate->isDevelopment()) {
                     continue;
                 }
                 if ($candidate->getDeletionReason() === null) {
-                    $expandedVersion = $candidate;
+                    $expanded = $candidate;
                     $softDeletedFallback = null;
                     break;
                 }
@@ -639,18 +633,16 @@ class PackageController extends Controller
                     $softDeletedFallback = $candidate;
                 }
             }
-            if ($softDeletedFallback !== null && $expandedVersion === $version) {
-                $expandedVersion = $softDeletedFallback;
+            if ($softDeletedFallback !== null && $expanded === $defaultBranch) {
+                $expanded = $softDeletedFallback;
             }
 
-            // load the expanded version fully to be able to display all info including tags
-            if ($expandedVersion->getId() !== $version->getId()) {
-                $expandedVersion = $versionRepo->find($expandedVersion->getId());
-                Assert::notNull($expandedVersion);
-            } else {
-                // ensure we get the reloaded $version with full data if it was overwritten above by $candidate
-                $expandedVersion = $version;
-            }
+            // only the two versions that actually get rendered are loaded in full, the list
+            // itself runs off VersionListItem to keep the JSON columns out of the page
+            $version = $versionRepo->find($defaultBranch->getId());
+            Assert::notNull($version);
+            $expandedVersion = $expanded->getId() === $version->getId() ? $version : $versionRepo->find($expanded->getId());
+            Assert::notNull($expandedVersion);
         }
 
         $data = [
@@ -786,12 +778,12 @@ class PackageController extends Controller
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
-        $package = $this->getPartialPackageWithVersions($req, $name);
+        $package = $this->getPackageByName($req, $name);
         if ($package instanceof Response) {
             return $package;
         }
 
-        $versions = $package->getVersions();
+        $versions = $this->getEM()->getRepository(Version::class)->getVersionListForPackage($package);
         $data = [
             'name' => $package->getName(),
         ];
@@ -806,7 +798,7 @@ class PackageController extends Controller
 
         foreach ($versions as $version) {
             try {
-                $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version);
+                $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version->getId());
             } catch (ConnectionException) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
@@ -1047,7 +1039,7 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name}', name: 'delete_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['DELETE'])]
     public function deletePackageAction(Request $req, string $name): Response
     {
-        $package = $this->getPartialPackageWithVersions($req, $name);
+        $package = $this->getPackageByName($req, $name);
         if ($package instanceof Response) {
             return $package;
         }
@@ -1294,13 +1286,12 @@ class PackageController extends Controller
             return $resp;
         }
 
-        $package = $this->getPartialPackageWithVersions($req, $name);
+        $package = $this->getPackageByName($req, $name);
         if ($package instanceof Response) {
             return $package;
         }
 
-        /** @var Version[] $versions */
-        $versions = $package->getVersions()->toArray();
+        $versions = $this->getEM()->getRepository(Version::class)->getVersionListForPackage($package);
         usort($versions, Package::class.'::sortVersions');
         $date = $this->guessStatsStartDate($package);
         $data = [
@@ -1311,10 +1302,7 @@ class PackageController extends Controller
         ];
 
         if ($req->getRequestFormat() === 'json') {
-            $data['versions'] = array_map(static function ($version) {
-                /* @var Version $version */
-                return $version->getVersion();
-            }, $data['versions']);
+            $data['versions'] = array_map(static fn (VersionListItem $version): string => $version->getVersion(), $data['versions']);
 
             return new JsonResponse($data);
         }
@@ -1962,25 +1950,6 @@ class PackageController extends Controller
         return $this->createFormBuilder([])->getForm();
     }
 
-    private function getPartialPackageWithVersions(Request $req, string $name): Package|Response
-    {
-        $repo = $this->getEM()->getRepository(Package::class);
-
-        try {
-            return $repo->getPackageByName($name);
-        } catch (NoResultException) {
-            if ('json' === $req->getRequestFormat()) {
-                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
-            }
-
-            if ($repo->findProviders($name)) {
-                return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
-            }
-
-            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
-        }
-    }
-
     private function getPackageByName(Request $req, string $name): Package|Response
     {
         $repo = $this->getEM()->getRepository(Package::class);
@@ -2035,7 +2004,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @param Version[] $versions
+     * @param VersionSummary[] $versions
      *
      * @return array<string, int>
      */

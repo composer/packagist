@@ -13,7 +13,6 @@
 namespace App\Entity;
 
 use App\Audit\VersionDeletionReason;
-use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -62,8 +61,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Index(name: 'release_idx', columns: ['releasedAt'])]
 #[ORM\Index(name: 'is_devel_idx', columns: ['development'])]
 #[ORM\Index(name: 'softdel_reason_idx', columns: ['softDeletedAt', 'deletionReason'])]
-class Version
+class Version implements VersionSummary
 {
+    use VersionSummaryTrait;
+
     #[ORM\Id]
     #[ORM\Column(type: 'integer')]
     #[ORM\GeneratedValue(strategy: 'AUTO')]
@@ -706,11 +707,6 @@ class Version
         return $this->softDeletedAt;
     }
 
-    public function isSoftDeleted(): bool
-    {
-        return $this->softDeletedAt !== null;
-    }
-
     public function setDeletionReason(?VersionDeletionReason $reason): void
     {
         $this->deletionReason = $reason;
@@ -743,35 +739,6 @@ class Version
     public function getInternalDeletionReasonText(): ?string
     {
         return $this->internalDeletionReasonText;
-    }
-
-    /**
-     * Human-readable tooltip/title for a soft-deleted version, or null if the version is not soft-deleted.
-     *
-     * @param bool $includeInternalReason Whether the viewer may see the admin-only internal reason.
-     *                                    Must be false for any public output.
-     */
-    public function getDeletionTitle(bool $includeInternalReason = false): ?string
-    {
-        if ($this->softDeletedAt === null) {
-            return null;
-        }
-
-        $date = $this->softDeletedAt->format('Y-m-d H:i:s').' UTC';
-        $reasonText = $this->deletionReasonText !== null && $this->deletionReasonText !== ''
-            ? ': '.$this->deletionReasonText
-            : '';
-
-        return match ($this->deletionReason) {
-            VersionDeletionReason::DeletedByMaintainer => 'Deleted by maintainer on '.$date,
-            VersionDeletionReason::DeletedByAdmin => 'Removed by admin on '.$date.$reasonText
-                .($includeInternalReason && $this->internalDeletionReasonText !== null && $this->internalDeletionReasonText !== ''
-                    ? ' (Internal reason: '.$this->internalDeletionReasonText.')'
-                    : ''),
-            VersionDeletionReason::AutoDeletedMissing => 'No longer found in upstream repository',
-            VersionDeletionReason::Hidden => 'Hidden by admin on '.$date.$reasonText,
-            default => 'Deleted', // null reason or any future case → matches the templates' initial fallback
-        };
     }
 
     public function setLastBlockedReference(?string $ref): void
@@ -1011,30 +978,6 @@ class Version
         return $this->suggest;
     }
 
-    public function hasVersionAlias(): bool
-    {
-        return $this->getDevelopment() && $this->getVersionAlias();
-    }
-
-    public function getVersionAlias(): string
-    {
-        $extra = $this->getExtra();
-
-        if (isset($extra['branch-alias'][$this->getVersion()])) {
-            $parser = new VersionParser();
-            $version = $parser->normalizeBranch(str_replace('-dev', '', $extra['branch-alias'][$this->getVersion()]));
-
-            return Preg::replace('{(\.9{7})+}', '.x', $version);
-        }
-
-        return '';
-    }
-
-    public function getRequireVersionAlias(): string
-    {
-        return str_replace('.x-dev', '.*@dev', $this->getVersionAlias());
-    }
-
     public function __toString(): string
     {
         return $this->name.' '.$this->version.' ('.$this->normalizedVersion.')';
@@ -1050,10 +993,5 @@ class Version
         }
 
         return $aIndex <=> $bIndex;
-    }
-
-    public function getMajorVersion(): int
-    {
-        return (int) explode('.', $this->normalizedVersion, 2)[0];
     }
 }

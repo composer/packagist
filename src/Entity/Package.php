@@ -892,7 +892,7 @@ class Package
         }
     }
 
-    public static function sortVersions(Version $a, Version $b): int
+    public static function sortVersions(VersionSummary $a, VersionSummary $b): int
     {
         $aVersion = $a->getNormalizedVersion();
         $bVersion = $b->getNormalizedVersion();

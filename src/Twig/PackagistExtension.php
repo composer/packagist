@@ -15,7 +15,7 @@ namespace App\Twig;
 use App\Entity\OrganizationRepository;
 use App\Entity\PackageLink;
 use App\Entity\UserRepository;
-use App\Entity\Version;
+use App\Entity\VersionSummary;
 use App\Model\ProviderManager;
 use App\Security\RecaptchaHelper;
 use App\Security\Voter\PackageActions;
@@ -196,7 +196,7 @@ class PackagistExtension extends AbstractExtension
         return $this->recaptchaHelper->requiresRecaptcha($context);
     }
 
-    public function deletionTitle(Version $version): ?string
+    public function deletionTitle(VersionSummary $version): ?string
     {
         return $version->getDeletionTitle(
             $this->security->isGranted(PackageActions::AdminDeleteVersion->value, $version->getPackage())

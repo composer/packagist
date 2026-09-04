@@ -692,6 +692,70 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testPackagePageRendersEveryVersionWithItsDeletionState(): void
+    {
+        // the list is built from VersionListItem rather than full Version entities, so the
+        // soft-delete state has to survive that projection - a partial load that silently
+        // dropped it would render deleted versions as live ones
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+
+        $versions = [];
+        for ($i = 0; $i < 25; $i++) {
+            $versions[] = $this->createStableVersion($package, '1.0.'.$i);
+        }
+        $pulled = $this->createStableVersion($package, '2.0.0');
+        $pulled->setSoftDeletedAt(new \DateTimeImmutable('2026-02-03 04:05:06'));
+        $pulled->setDeletionReason(VersionDeletionReason::DeletedByMaintainer);
+        $versions[] = $pulled;
+
+        $this->store($package, ...$versions);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        $rendered = $crawler->filter('ul.versions li.version')->each(static fn ($li): string => (string) $li->attr('data-version-id'));
+        self::assertCount(26, $rendered, 'every version must ship in the initial HTML, the list is only clipped by CSS');
+        self::assertSame('2.0.0', $rendered[0]);
+        self::assertContains('1.0.24', $rendered);
+        self::assertContains('1.0.0', $rendered);
+
+        self::assertCount(1, $crawler->filter('ul.versions li.version-soft-deleted'));
+        self::assertSame(
+            'Deleted by maintainer on 2026-02-03 04:05:06 UTC',
+            $crawler->filter('ul.versions li.version-soft-deleted .deletion-alert')->attr('title')
+        );
+    }
+
+    public function testPackagePageHidesHiddenVersionsFromNonStaff(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+
+        $visible = $this->createStableVersion($package, '1.0.0');
+        $hidden = $this->createStableVersion($package, '1.1.0');
+        $hidden->setSoftDeletedAt(new \DateTimeImmutable());
+        $hidden->setDeletionReason(VersionDeletionReason::Hidden);
+
+        $this->store($admin, $package, $visible, $hidden);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertSame(
+            ['1.0.0'],
+            $crawler->filter('ul.versions li.version')->each(static fn ($li): string => (string) $li->attr('data-version-id'))
+        );
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertSame(
+            ['1.1.0', '1.0.0'],
+            $crawler->filter('ul.versions li.version')->each(static fn ($li): string => (string) $li->attr('data-version-id'))
+        );
+    }
+
     public function testStatsJsonDoesNotExposeReleaseChart(): void
     {
         $package = self::createPackage('test/pkg', 'https://example.org/pkg');
