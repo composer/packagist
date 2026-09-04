@@ -15,6 +15,7 @@ namespace App\Tests\Controller;
 use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
+use App\Entity\Download;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -733,6 +734,108 @@ class PackageControllerTest extends IntegrationTestCase
             'initReleaseStats(\'.js-release-stats\', {"2024-03":2},',
             (string) $this->client->getResponse()->getContent()
         );
+    }
+
+    public function testMajorVersionStatsSumsEveryVersionInTheSeries(): void
+    {
+        [$package] = $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertSame(['2026-01-01', '2026-01-02'], $data['labels']);
+        // 1.0.0 + 1.1.0 on the first day, 1.0.0 alone on the second; 1.9.x-dev must not be counted
+        self::assertSame([15, 1], $data['values']['1']);
+        self::assertSame([0, 7], $data['values']['2']);
+        // 3.0.0 has a download row with empty data, so its series is still drawn, as zeroes
+        self::assertSame([0, 0], $data['values']['3']);
+        // 1.9.x-dev normalizes to 1.9.9999999.9999999-dev, so only development = 0 excludes it.
+        // Keys are ints because json_decode casts numeric object keys.
+        self::assertSame([1, 2, 3], array_keys($data['values']));
+    }
+
+    public function testSingleMajorVersionStatsSeriesByMinorAndSkipsVersionsWithoutDownloads(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/1.json');
+
+        self::assertSame(['2026-01-01', '2026-01-02'], $data['labels']);
+        self::assertSame([10, 1], $data['values']['1.0']);
+        self::assertSame([5, 0], $data['values']['1.1']);
+        // 1.2.0 exists but has no download row, so it is not a series at all
+        self::assertSame(['1.0', '1.1'], array_keys($data['values']));
+    }
+
+    public function testVersionStatsStillReturnsASingleSeries(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/1.0.0.json');
+
+        self::assertSame([10, 1], $data['values']['1.0.0']);
+    }
+
+    /**
+     * @return array{Package, array<string, Version>}
+     */
+    private function createPackageWithDownloads(): array
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+
+        $versions = [];
+        foreach (['1.0.0', '1.1.0', '1.2.0', '2.0.0', '3.0.0', '1.9.x-dev'] as $version) {
+            $versions[$version] = $this->createStableVersion($package, $version);
+        }
+        $versions['1.9.x-dev']->setDevelopment(true);
+
+        $this->store($package, ...array_values($versions));
+
+        $downloads = [
+            '1.0.0' => ['20260101' => 10, '20260102' => 1],
+            '1.1.0' => ['20260101' => 5],
+            '2.0.0' => ['20260102' => 7],
+            // would swamp the "1" series if development versions were not filtered out
+            '1.9.x-dev' => ['20260101' => 1000],
+            // a row that exists but carries no data at all
+            '3.0.0' => [],
+            // 1.2.0 deliberately gets no download row
+        ];
+        foreach ($downloads as $version => $data) {
+            $this->store($this->createDownload($package, $versions[$version], $data));
+        }
+
+        return [$package, $versions];
+    }
+
+    /**
+     * @param array<numeric-string, int> $data
+     */
+    private function createDownload(Package $package, Version $version, array $data): Download
+    {
+        $download = new Download();
+        $download->setId($version->getId());
+        $download->setType(Download::TYPE_VERSION);
+        $download->setPackage($package);
+        $download->setData($data);
+        $download->setLastUpdated(new \DateTimeImmutable());
+        $download->computeSum();
+
+        return $download;
+    }
+
+    /**
+     * The date range is pinned so createDatePoints() yields exactly one Ymd key per label, which keeps
+     * the expected values plain sums rather than averages.
+     *
+     * @return array{labels: list<string>, values: array<string, list<int>>, average: string}
+     */
+    private function requestStatsJson(string $path): array
+    {
+        $this->client->request('GET', $path.'?from=2026-01-01&to=2026-01-02&average=daily');
+        self::assertResponseIsSuccessful();
+
+        return json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
     }
 
     /**
