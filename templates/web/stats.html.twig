@@ -9,23 +9,23 @@
         <div class="col-xl-12">
             <h3>{{ 'statistics.over_time'|trans }}</h3>
 
-            <p class="row">
+            <div class="row">
                 <div class="chart col-12" data-labels="{{ chart.months|join(',') }}" data-values="{{ 'statistics.versions'|trans }}:{{ chart.versions|join(',') }}|{{ 'statistics.packages'|trans }}:{{ chart.packages|join(',') }}"></div>
-            </p>
+            </div>
             <p>{{ 'statistics.last_partial'|trans }}</p>
 
             {% if downloadsChart %}
                 <h3>{{ 'statistics.last_month'|trans }}</h3>
-                <p class="row">
+                <div class="row">
                     <div class="chart col-12" data-labels="{{ downloadsChart.labels|join(',') }}" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChart.values|join(',') }}"></div>
-                </p>
+                </div>
                 <p>{{ 'statistics.last_partial_day'|trans }}</p>
             {% endif %}
             {% if downloadsChartMonthly %}
                 <h3>{{ 'statistics.monthly'|trans }}</h3>
-                <p class="row">
+                <div class="row">
                     <div class="chart col-12" data-labels="{{ downloadsChartMonthly.labels|join(',') }}" data-values="{{ 'statistics.installs'|trans }}:{{ downloadsChartMonthly.values|join(',') }}"></div>
-                </p>
+                </div>
                 <p>{{ 'statistics.last_partial'|trans }}</p>
             {% endif %}
 

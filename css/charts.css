@@ -34,7 +34,6 @@
 .version-stats-chart {
   width: 70%;
   margin-right: 5%;
-  position: relative;
 }
 .stats-toggle-wrapper {
     display: flex;

@@ -41,9 +41,7 @@
             <h3>{{ 'stats.daily_per_version'|trans }}{% if average != 'daily' %}, {{ 'stats.averaged'|trans({ '%avg%':average }) }}{% endif %}</h3>
             <div class="row package version-stats">
                 <div class="col-12 col-lg-9 version-stats-chart">
-                    <div style="position: relative">
-                        <div class="chart js-version-dls"></div>
-                    </div>
+                    <div class="chart js-version-dls"></div>
                 </div>
                 <div class="col-lg-3 no-padding">
                     <div class="stats-toggle-wrapper">
@@ -84,7 +82,7 @@
             <div class="col-lg-12">
                 <h3>{{ 'stats.releases_over_time'|trans }}</h3>
                 <div class="chart js-release-stats"></div>
-                <p>{{ 'statistics.last_partial'|trans }}</p>
+                <p>{{ 'stats.releases_partial'|trans }}</p>
             </div>
         </section>
     {% endif %}
@@ -103,7 +101,7 @@
 
             initPackageStats(average, date, {{ path('package_stats', {name: package.name})|json_encode|raw }}, {{ path('version_stats', {name: package.name, version: '_VERSION_'})|json_encode|raw }});
             {% if releaseChart %}
-            initReleaseStats('.js-release-stats', {{ releaseChart|json_encode|raw }});
+            initReleaseStats('.js-release-stats', {{ releaseChart|json_encode|raw }}, {{ {one: 'stats.release_count_one'|trans, many: 'stats.release_count_many'|trans}|json_encode|raw }});
             {% endif %}
         }());
     </script>

@@ -2,49 +2,50 @@ import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import jQuery from 'jquery';
+import { formatDay, formatDigit } from './chartUtils';
 
 echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
-(function ($) {
+(function () {
     "use strict";
 
-    function formatDigit(value) {
-        if (!isFinite(value)) {
-            return value;
-        }
-        if (value > 1000000) {
-            return (value / 1000000).toFixed(1) + 'mio';
-        }
-        if (value > 1000) {
-            return (value / 1000).toFixed(1) + 'K';
-        }
-        return value;
-    }
+    const instances = new Set();
 
-    window.initPackageDownloads = function (selector, statsUrl) {
-        var el = $(selector)[0];
+    window.addEventListener('resize', function () {
+        instances.forEach(function (chart) {
+            chart.resize();
+        });
+    });
+
+    window.initPackageDownloads = function (selector, statsUrl, label) {
+        var el = document.querySelector(selector);
         if (!el) {
             return;
         }
 
-        $.ajax({
-            url: statsUrl,
-            dataType: 'json',
-            success: function (res) {
+        fetch(statsUrl, {headers: {Accept: 'application/json'}})
+            .then(function (response) {
+                return response.ok ? response.json() : null;
+            })
+            .then(function (res) {
                 var seriesName = res && res.labels && res.labels.length ? Object.keys(res.values || {})[0] : null;
                 if (!seriesName) {
                     return;
                 }
 
                 var values = res.values[seriesName] || [];
-                var points = res.labels.map(function (label, index) {
-                    var parts = label.split('-');
+                var points = res.labels.map(function (dateLabel, index) {
+                    var parts = dateLabel.split('-');
                     var date = new Date(+parts[0], parts[1] - 1, +parts[2]);
                     return [date.getTime(), parseInt(values[index], 10) || 0];
                 });
 
-                var chart = echarts.init(el);
+                var chart = echarts.getInstanceByDom(el);
+                if (!chart) {
+                    chart = echarts.init(el);
+                    instances.add(chart);
+                }
+
                 chart.setOption({
                     animation: false,
                     tooltip: {
@@ -57,7 +58,7 @@ echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
                             params = Array.isArray(params) ? params : [params];
                             var value = params[0].value;
 
-                            return formatDay(value[0]) + '<br><strong>' + formatDigit(value[1]) + '</strong> avg. weekly installs';
+                            return formatDay(value[0]) + '<br>' + echarts.format.encodeHTML(label).replace('%count%', '<strong>' + formatDigit(value[1]) + '</strong>');
                         }
                     },
                     grid: {
@@ -97,20 +98,8 @@ echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
                             ])
                         }
                     }]
-                });
-
-                $(window).on('resize', function () {
-                    chart.resize();
-                });
-            }
-        });
+                }, true);
+            })
+            .catch(function () {});
     };
-
-    function formatDay(value) {
-        var date = new Date(value);
-        var month = ('0' + (date.getMonth() + 1)).slice(-2);
-        var day = ('0' + date.getDate()).slice(-2);
-
-        return date.getFullYear() + '-' + month + '-' + day;
-    }
-})(jQuery);
+})();

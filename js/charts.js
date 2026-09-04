@@ -10,6 +10,7 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import jQuery from 'jquery';
+import { formatDate, formatDay, formatDigit } from './chartUtils';
 import '../css/charts.css';
 
 echarts.use([
@@ -64,7 +65,14 @@ echarts.use([
         '8.2': '#111192',
         '8.3': '#5a4ac1',
         '8.4': '#4a5ce7',
+        '8.5': '#2f8fd6',
         'hhvm': '#cdcdcd',
+    };
+
+    const TOOLTIP_STYLE = {
+        backgroundColor: 'rgba(255, 255, 255, 0.96)',
+        borderColor: '#ddd',
+        textStyle: {color: '#2d2d32', fontSize: 12},
     };
 
     function phpVersionSort(a, b) {
@@ -78,44 +86,14 @@ echarts.use([
         return b.name.localeCompare(a.name, undefined, {numeric: true});
     }
 
-    function formatDate(value) {
-        if (!(value instanceof Date)) {
-            value = new Date(value);
-        }
-        var month = ('0' + (value.getMonth() + 1)).slice(-2);
-        return value.getFullYear() + '-' + month;
-    }
-
-    function formatDay(value) {
-        if (!(value instanceof Date)) {
-            value = new Date(value);
-        }
-        var month = ('0' + (value.getMonth() + 1)).slice(-2);
-        var day = ('0' + value.getDate()).slice(-2);
-        return value.getFullYear() + '-' + month + '-' + day;
-    }
-
-    function formatDigit(value) {
-        if (!isFinite(value)) {
-            return value;
-        }
-        if (value > 1000000) {
-            return (value / 1000000).toFixed(1) + 'mio';
-        }
-        if (value > 1000) {
-            return (value / 1000).toFixed(1) + 'K';
-        }
-        return value;
-    }
-
     const instances = new Set();
 
-    function trackInstance(chart) {
-        instances.add(chart);
-
-        chart.getZr().on('dispose', function () {
-            instances.delete(chart);
-        });
+    function getChart(el) {
+        var chart = echarts.getInstanceByDom(el);
+        if (!chart) {
+            chart = echarts.init(el);
+            instances.add(chart);
+        }
 
         return chart;
     }
@@ -126,11 +104,22 @@ echarts.use([
         });
     });
 
-    function initPackagistChart(el, labels, series, withDatePicker, type, colorMap) {
-        type = type || 'line';
-        colorMap = colorMap || null;
+    function initPackagistChart(el, labels, series, options) {
+        options = options || {};
+        var type = options.type || 'line';
+        var colorMap = options.colorMap || null;
+        var palette = options.palette || MULTI_COLORS;
+        var withDatePicker = !!options.withDatePicker;
 
-        if (!el || !labels.length || !series.length) {
+        if (!el) {
+            return;
+        }
+
+        if (!labels.length || !series.length) {
+            var existing = echarts.getInstanceByDom(el);
+            if (existing) {
+                existing.clear();
+            }
             return;
         }
 
@@ -152,17 +141,31 @@ echarts.use([
             return new Date(+parts[0], parts[1] - 1, +parts[2]).getTime();
         });
 
-        var colors = [];
-        var chartSeries;
+        var rawValues = series.map(function (serie) {
+            return xValues.map(function (_, index) {
+                return (type === 'area' ? parseFloat(serie.values[index]) : parseInt(serie.values[index], 10)) || 0;
+            });
+        });
 
-        if (type === 'area') {
+        function areaSeriesData(selected) {
             var totals = xValues.map(function (_, index) {
-                return series.reduce(function (sum, serie) {
-                    return sum + (parseFloat(serie.values[index]) || 0);
+                return rawValues.reduce(function (sum, values, serieIndex) {
+                    return selected[serieIndex] ? sum + values[index] : sum;
                 }, 0);
             });
 
-            chartSeries = series.map(function (serie) {
+            return rawValues.map(function (values) {
+                return xValues.map(function (x, index) {
+                    var total = totals[index];
+                    return [x, total ? Math.round(values[index] * 1000 / total) / 10 : 0];
+                });
+            });
+        }
+
+        var chartSeries;
+        if (type === 'area') {
+            var initialData = areaSeriesData(series.map(function () { return true; }));
+            chartSeries = series.map(function (serie, index) {
                 return {
                     name: serie.name,
                     type: 'line',
@@ -173,15 +176,11 @@ echarts.use([
                     emphasis: {focus: 'series'},
                     lineStyle: {width: 0},
                     areaStyle: {opacity: 1.0},
-                    data: xValues.map(function (x, index) {
-                        var total = totals[index];
-                        var value = total ? Math.round((parseFloat(serie.values[index]) || 0) * 1000 / total) / 10 : 0;
-                        return [x, value];
-                    }),
+                    data: initialData[index],
                 };
             });
         } else {
-            chartSeries = series.map(function (serie) {
+            chartSeries = series.map(function (serie, index) {
                 return {
                     name: serie.name,
                     type: 'line',
@@ -189,31 +188,19 @@ echarts.use([
                     symbol: 'none',
                     emphasis: {focus: 'series'},
                     lineStyle: {width: 2},
-                    data: xValues.map(function (x, index) {
-                        return [x, parseInt(serie.values[index], 10) || 0];
+                    data: xValues.map(function (x, pointIndex) {
+                        return [x, rawValues[index][pointIndex]];
                     }),
                 };
             });
         }
 
-        // name-based lookup first, then positional palette
-        colors = series.map(function (serie, index) {
-            if (colorMap && colorMap[serie.name] !== undefined) {
+        var colors = series.map(function (serie, index) {
+            if (colorMap && Object.prototype.hasOwnProperty.call(colorMap, serie.name)) {
                 return colorMap[serie.name];
             }
-            if (Array.isArray(colorMap) && colorMap[index] !== undefined) {
-                return colorMap[index];
-            }
-            return MULTI_COLORS[index % MULTI_COLORS.length];
+            return palette[index % palette.length];
         });
-
-        var grid = {
-            left: 10,
-            right: 20,
-            top: 40,
-            bottom: withDatePicker ? 70 : 25,
-            containLabel: true
-        };
 
         var option = {
             animation: false,
@@ -225,19 +212,16 @@ echarts.use([
                 itemWidth: 12,
                 itemHeight: 6
             },
-            tooltip: {
+            tooltip: Object.assign({
                 trigger: 'axis',
                 axisPointer: {type: 'line'},
-                backgroundColor: 'rgba(255, 255, 255, 0.96)',
-                borderColor: '#ddd',
-                textStyle: {color: '#2d2d32', fontSize: 12},
                 formatter: function (params) {
                     if (!Array.isArray(params)) {
                         params = [params];
                     }
 
-                    var title = params[0].axisValueLabel || format(params[0].axisValue);
-                    var html = title + '<br>';
+                    var title = isDaily ? format(params[0].axisValue) : params[0].axisValue;
+                    var html = echarts.format.encodeHTML(String(title)) + '<br>';
                     html += params.map(function (param) {
                         var value = Array.isArray(param.value) ? param.value[1] : param.value;
                         if (type === 'area') {
@@ -245,13 +229,19 @@ echarts.use([
                         } else {
                             value = formatDigit(value);
                         }
-                        return param.marker + ' ' + param.seriesName + ': <strong>' + value + '</strong>';
+                        return param.marker + ' ' + echarts.format.encodeHTML(param.seriesName) + ': <strong>' + value + '</strong>';
                     }).join('<br>');
 
                     return html;
                 }
+            }, TOOLTIP_STYLE),
+            grid: {
+                left: 10,
+                right: 20,
+                top: 40,
+                bottom: withDatePicker ? 70 : 25,
+                containLabel: true
             },
-            grid: grid,
             xAxis: isDaily ? {
                 type: 'time',
                 axisLabel: {formatter: format, hideOverlap: true},
@@ -280,7 +270,9 @@ echarts.use([
             option.dataZoom = [
                 {
                     type: 'inside',
-                    throttle: 50
+                    throttle: 50,
+                    zoomOnMouseWheel: 'ctrl',
+                    moveOnMouseWheel: false
                 },
                 {
                     type: 'slider',
@@ -291,16 +283,25 @@ echarts.use([
             ];
         }
 
-        var existing = echarts.getInstanceByDom(el);
-        if (existing) {
-            existing.dispose();
+        var chart = getChart(el);
+        chart.setOption(option, true);
+
+        chart.off('legendselectchanged');
+        if (type === 'area') {
+            chart.on('legendselectchanged', function (event) {
+                var data = areaSeriesData(series.map(function (serie) {
+                    return event.selected[serie.name] !== false;
+                }));
+                chart.setOption({
+                    series: series.map(function (serie, index) {
+                        return {name: serie.name, data: data[index]};
+                    })
+                });
+            });
         }
 
-        var chart = echarts.init(el);
-        chart.setOption(option);
-
-        return trackInstance(chart);
-    };
+        return chart;
+    }
 
     $('[data-labels]').each(function () {
         initPackagistChart(
@@ -313,9 +314,7 @@ echarts.use([
                     values: values[1].split(',')
                 };
             }),
-            false,
-            'line',
-            DEFAULT_COLORS
+            {palette: DEFAULT_COLORS}
         );
     });
 
@@ -341,14 +340,7 @@ echarts.use([
                 return b.name.localeCompare(a.name, undefined, {numeric: true});
             })
 
-            initPackagistChart(
-                $('.js-'+type+'-dls')[0],
-                res.labels,
-                series,
-                true,
-                'line',
-                MULTI_COLORS
-            );
+            initPackagistChart($('.js-'+type+'-dls')[0], res.labels, series, {withDatePicker: true});
         }
 
         $.ajax({
@@ -454,14 +446,11 @@ echarts.use([
 
             series.sort(phpVersionSort)
 
-            initPackagistChart(
-                $('.js-'+type+'-dls')[0],
-                res.labels,
-                series,
-                true,
-                'area',
-                PHP_VERSION_COLORS
-            );
+            initPackagistChart($('.js-'+type+'-dls')[0], res.labels, series, {
+                withDatePicker: true,
+                type: 'area',
+                colorMap: PHP_VERSION_COLORS
+            });
         }
 
         function loadVersionChart(versionId, type) {
@@ -550,27 +539,37 @@ echarts.use([
 
         series.sort(phpVersionSort)
 
-        initPackagistChart(
-            $(selector)[0],
-            res.labels,
-            series,
-            true,
-            'area',
-            PHP_VERSION_COLORS
-        );
+        initPackagistChart($(selector)[0], res.labels, series, {
+            withDatePicker: true,
+            type: 'area',
+            colorMap: PHP_VERSION_COLORS
+        });
     };
 
-    window.initReleaseStats = function (selector, counts) {
+    function monthNames(style) {
+        var locale = document.documentElement.lang || 'en';
+        var formatter = new Intl.DateTimeFormat(locale, {month: style});
+        var names = [];
+        for (var month = 0; month < 12; month++) {
+            names.push(formatter.format(new Date(2000, month, 1)));
+        }
+
+        return names;
+    }
+
+    window.initReleaseStats = function (selector, counts, labels) {
         var el = $(selector)[0];
-        if (!el || !counts) {
+        if (!el) {
             return;
         }
 
-        var MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        var MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        function hide() {
+            $(el).closest('section').addClass('d-none');
+        }
 
-        var keys = Object.keys(counts).sort();
+        var keys = Object.keys(counts || {}).sort();
         if (!keys.length) {
+            hide();
             return;
         }
 
@@ -580,8 +579,12 @@ echarts.use([
         var endYear = Math.max(now.getFullYear(), startYear);
         var endMonth = endYear === now.getFullYear() ? now.getMonth() + 1 : 12;
         if (endYear === startYear && endMonth < startMonth) {
+            hide();
             return;
         }
+
+        var MONTHS_SHORT = monthNames('short');
+        var MONTHS_LONG = monthNames('long');
 
         var years = [];
         for (var year = endYear; year >= startYear; year--) {
@@ -593,40 +596,28 @@ echarts.use([
 
         var data = [];
         var max = 0;
-        // years is sorted newest-first so the yAxis puts the latest year on top
-        years.slice().reverse().forEach(function (year, yearIndex) {
+        years.forEach(function (year, yearIndex) {
             var firstMonth = year === startYear ? startMonth : 1;
-            var lastMonth = (year === endYear && endYear === now.getFullYear()) ? endMonth : 12;
-            for (var month = 1; month <= 12; month++) {
-                if (month < firstMonth || month > lastMonth) {
-                    continue;
-                }
+            var lastMonth = year === endYear ? endMonth : 12;
+            for (var month = firstMonth; month <= lastMonth; month++) {
                 var count = counts[year + '-' + ('0' + month).slice(-2)] || 0;
                 max = Math.max(max, count);
-                data.push([month - 1, years.length - 1 - yearIndex, count]);
+                data.push([month - 1, yearIndex, count]);
             }
         });
 
-        var existing = echarts.getInstanceByDom(el);
-        if (existing) {
-            existing.dispose();
-        }
-
-        var chart = echarts.init(el);
+        var chart = getChart(el);
         chart.setOption({
             animation: false,
-            tooltip: {
-                backgroundColor: 'rgba(255, 255, 255, 0.96)',
-                borderColor: '#ddd',
-                textStyle: {color: '#2d2d32', fontSize: 12},
+            tooltip: Object.assign({
                 formatter: function (params) {
                     var value = params.value;
-                    var title = MONTHS_LONG[value[0]] + ' ' + years[years.length - 1 - value[1]];
-                    var releases = value[2] + (value[2] === 1 ? ' release' : ' releases');
+                    var title = MONTHS_LONG[value[0]] + ' ' + years[value[1]];
+                    var releases = (value[2] === 1 ? labels.one : labels.many).replace('%count%', value[2]);
 
-                    return title + '<br><strong>' + releases + '</strong>';
+                    return echarts.format.encodeHTML(title) + '<br><strong>' + echarts.format.encodeHTML(releases) + '</strong>';
                 }
-            },
+            }, TOOLTIP_STYLE),
             grid: {
                 left: 10,
                 right: 10,
@@ -643,7 +634,6 @@ echarts.use([
             },
             yAxis: {
                 type: 'category',
-                // years are sorted newest-first, inverted so the latest year renders on top
                 data: years.map(String),
                 inverse: true,
                 axisLine: {show: false},
@@ -679,8 +669,8 @@ echarts.use([
                     }
                 }
             }]
-        });
+        }, true);
 
-        return trackInstance(chart);
+        return chart;
     };
 })(jQuery);

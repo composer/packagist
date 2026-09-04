@@ -459,7 +459,7 @@
         <script nonce="{{ csp_nonce('script') }}">
             (function () {
                 var statsUrl = {{ path('package_stats', {name: package.name})|json_encode|raw }};
-                initPackageDownloads('.js-downloads-chart', statsUrl + '?average=weekly&from={{ '-1year'|date('Y-m-d') }}');
+                initPackageDownloads('.js-downloads-chart', statsUrl + '?average=weekly&from={{ '-1year'|date('Y-m-d') }}', {{ 'stats.installs_per_day_weekly'|trans|json_encode|raw }});
             }());
         </script>
     {% endif %}

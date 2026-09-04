@@ -94,6 +94,7 @@ use Webmozart\Assert\Assert;
 class PackageController extends Controller
 {
     private const int LIST_FLUSH_EVERY = 500;
+    private const string STATS_RECORD_DATE = '2012-04-13 00:00:00';
 
     public function __construct(
         private ProviderManager $providerManager,
@@ -1301,21 +1302,11 @@ class PackageController extends Controller
         $versions = $package->getVersions()->toArray();
         usort($versions, Package::class.'::sortVersions');
         $date = $this->guessStatsStartDate($package);
-        $releaseChart = [];
-        foreach ($versions as $version) {
-            if ($version->isDevelopment() || null === $version->getReleasedAt()) {
-                continue;
-            }
-            $month = $version->getReleasedAt()->format('Y-m');
-            $releaseChart[$month] = ($releaseChart[$month] ?? 0) + 1;
-        }
-        ksort($releaseChart);
         $data = [
             'downloads' => $this->downloadManager->getDownloads($package),
             'versions' => $versions,
             'average' => $this->guessStatsAverage($date),
             'date' => $date->format('Y-m-d'),
-            'releaseChart' => $releaseChart,
         ];
 
         if ($req->getRequestFormat() === 'json') {
@@ -1328,6 +1319,7 @@ class PackageController extends Controller
         }
 
         $data['package'] = $package;
+        $data['releaseChart'] = $this->computeReleaseChart($versions);
 
         $expandedVersion = reset($versions);
         $majorVersions = [];
@@ -1710,6 +1702,14 @@ class PackageController extends Controller
 
     private function computeStats(Request $req, Package $package, ?Version $version = null, ?string $majorVersion = null): JsonResponse
     {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'This page is temporarily disabled, please come back later.'], Response::HTTP_BAD_GATEWAY);
+        }
+
+        if ($resp = $this->blockAbusers($req)) {
+            return $resp;
+        }
+
         if ($from = $req->query->get('from')) {
             try {
                 $from = new \DateTimeImmutable($from);
@@ -2033,6 +2033,28 @@ class PackageController extends Controller
         return $datePoints;
     }
 
+    /**
+     * @param Version[] $versions
+     *
+     * @return array<string, int>
+     */
+    private function computeReleaseChart(array $versions): array
+    {
+        $releaseChart = [];
+        $statsRecordDate = new \DateTimeImmutable(self::STATS_RECORD_DATE);
+        foreach ($versions as $version) {
+            $releasedAt = $version->getReleasedAt();
+            if ($version->isDevelopment() || $version->isSoftDeleted() || null === $releasedAt || $releasedAt < $statsRecordDate) {
+                continue;
+            }
+            $month = $releasedAt->format('Y-m');
+            $releaseChart[$month] = ($releaseChart[$month] ?? 0) + 1;
+        }
+        ksort($releaseChart);
+
+        return $releaseChart;
+    }
+
     private function guessStatsStartDate(Package|Version $packageOrVersion): \DateTimeImmutable
     {
         if ($packageOrVersion instanceof Package) {
@@ -2043,7 +2065,7 @@ class PackageController extends Controller
             throw new \LogicException('Version with release date expected');
         }
 
-        $statsRecordDate = new \DateTimeImmutable('2012-04-13 00:00:00');
+        $statsRecordDate = new \DateTimeImmutable(self::STATS_RECORD_DATE);
         if ($date < $statsRecordDate) {
             $date = $statsRecordDate;
         }

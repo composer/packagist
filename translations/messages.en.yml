@@ -117,6 +117,10 @@ stats:
     daily_per_version: Daily installs per version
     averaged: "averaged %avg%"
     releases_over_time: Releases over time
+    releases_partial: The current month shows partial data.
+    release_count_one: "%count% release"
+    release_count_many: "%count% releases"
+    installs_per_day_weekly: "%count% installs/day (weekly avg.)"
 
 statistics:
     title: Statistics
