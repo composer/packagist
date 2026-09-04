@@ -95,6 +95,7 @@ class PackageController extends Controller
 {
     private const int LIST_FLUSH_EVERY = 500;
     private const string STATS_RECORD_DATE = '2012-04-13 00:00:00';
+    private const string RELEASES_RECORD_DATE = '2011-01-01 00:00:00';
 
     public function __construct(
         private ProviderManager $providerManager,
@@ -2041,7 +2042,7 @@ class PackageController extends Controller
     private function computeReleaseChart(array $versions): array
     {
         $releaseChart = [];
-        $statsRecordDate = new \DateTimeImmutable(self::STATS_RECORD_DATE);
+        $statsRecordDate = new \DateTimeImmutable(self::RELEASES_RECORD_DATE);
         foreach ($versions as $version) {
             $releasedAt = $version->getReleasedAt();
             if ($version->isDevelopment() || $version->isSoftDeleted() || null === $releasedAt || $releasedAt < $statsRecordDate) {

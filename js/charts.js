@@ -165,9 +165,9 @@ echarts.use([
         var chartSeries;
         if (type === 'area') {
             var initialData = areaSeriesData(series.map(function () { return true; }));
-            chartSeries = series.map(function (serie, index) {
+            chartSeries = series.map(function (series, index) {
                 return {
-                    name: serie.name,
+                    name: series.name,
                     type: 'line',
                     stack: 'total',
                     large: true,
@@ -180,9 +180,9 @@ echarts.use([
                 };
             });
         } else {
-            chartSeries = series.map(function (serie, index) {
+            chartSeries = series.map(function (series, index) {
                 return {
-                    name: serie.name,
+                    name: series.name,
                     type: 'line',
                     smooth: false,
                     symbol: 'none',
@@ -547,8 +547,7 @@ echarts.use([
     };
 
     function monthNames(style) {
-        var locale = document.documentElement.lang || 'en';
-        var formatter = new Intl.DateTimeFormat(locale, {month: style});
+        var formatter = new Intl.DateTimeFormat('en', {month: style});
         var names = [];
         for (var month = 0; month < 12; month++) {
             names.push(formatter.format(new Date(2000, month, 1)));
