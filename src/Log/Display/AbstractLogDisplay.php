@@ -12,7 +12,7 @@
 
 namespace App\Log\Display;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 
 abstract readonly class AbstractLogDisplay implements LogDisplayInterface
 {
@@ -23,7 +23,7 @@ abstract readonly class AbstractLogDisplay implements LogDisplayInterface
     ) {
     }
 
-    abstract public function getType(): AuditRecordType;
+    abstract public function getType(): AuditLogEventType;
 
     public function getDateTime(): \DateTimeImmutable
     {

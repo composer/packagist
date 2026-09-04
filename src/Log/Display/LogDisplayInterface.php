@@ -12,11 +12,11 @@
 
 namespace App\Log\Display;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 
 interface LogDisplayInterface
 {
-    public function getType(): AuditRecordType;
+    public function getType(): AuditLogEventType;
 
     public function getDateTime(): \DateTimeImmutable;
 

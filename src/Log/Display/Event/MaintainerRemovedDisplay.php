@@ -12,7 +12,7 @@
 
 namespace App\Log\Display\Event;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 
@@ -28,9 +28,9 @@ readonly class MaintainerRemovedDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditRecordType
+    public function getType(): AuditLogEventType
     {
-        return AuditRecordType::MaintainerRemoved;
+        return AuditLogEventType::MaintainerRemoved;
     }
 
     public function getTemplateName(): string

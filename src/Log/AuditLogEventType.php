@@ -10,9 +10,9 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Audit;
+namespace App\Log;
 
-enum AuditRecordType: string
+enum AuditLogEventType: string
 {
     // package ownership
     case MaintainerAdded = 'maintainer_added';

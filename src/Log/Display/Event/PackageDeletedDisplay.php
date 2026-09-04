@@ -12,7 +12,7 @@
 
 namespace App\Log\Display\Event;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 
@@ -30,9 +30,9 @@ readonly class PackageDeletedDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditRecordType
+    public function getType(): AuditLogEventType
     {
-        return AuditRecordType::PackageDeleted;
+        return AuditLogEventType::PackageDeleted;
     }
 
     public function getTemplateName(): string

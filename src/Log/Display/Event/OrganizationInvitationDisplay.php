@@ -12,7 +12,7 @@
 
 namespace App\Log\Display\Event;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 use App\Log\Display\OrganizationDisplay;
@@ -26,7 +26,7 @@ use App\Log\Display\OrganizationDisplay;
 readonly class OrganizationInvitationDisplay extends AbstractLogDisplay
 {
     public function __construct(
-        private AuditRecordType $type,
+        private AuditLogEventType $type,
         \DateTimeImmutable $datetime,
         public OrganizationDisplay $organization,
         public string $email,
@@ -36,7 +36,7 @@ readonly class OrganizationInvitationDisplay extends AbstractLogDisplay
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditRecordType
+    public function getType(): AuditLogEventType
     {
         return $this->type;
     }

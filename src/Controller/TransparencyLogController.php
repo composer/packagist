@@ -12,13 +12,13 @@
 
 namespace App\Controller;
 
-use App\Audit\AuditRecordType;
 use App\Entity\AuditRecordRepository;
+use App\Log\AuditLogEventType;
 use App\Log\Display\AuditLogDisplayFactory;
 use App\QueryFilter\AuditLog\ActorFilter;
-use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
 use App\QueryFilter\AuditLog\DateTimeFromFilter;
 use App\QueryFilter\AuditLog\DateTimeToFilter;
+use App\QueryFilter\AuditLog\EventTypeFilter;
 use App\QueryFilter\AuditLog\PackageNameFilter;
 use App\QueryFilter\AuditLog\UserFilter;
 use App\QueryFilter\AuditLog\VendorFilter;
@@ -43,7 +43,7 @@ class TransparencyLogController extends Controller
 
         /** @var QueryFilterInterface[] $filters */
         $filters = [
-            AuditRecordTypeFilter::fromQuery($request->query),
+            EventTypeFilter::fromQuery($request->query),
             ActorFilter::fromQuery($request->query, 'actor', $isAdmin),
             UserFilter::fromQuery($request->query, 'user', $isAdmin),
             VendorFilter::fromQuery($request->query, 'vendor', $isAdmin),
@@ -62,8 +62,8 @@ class TransparencyLogController extends Controller
         // Don't display 2FA events in the result list initially
         $qb->andWhere('a.type NOT IN (:hidden_types)')
             ->setParameter('hidden_types', [
-                AuditRecordType::TwoFaAuthenticationActivated->value,
-                AuditRecordType::TwoFaAuthenticationDeactivated->value,
+                AuditLogEventType::TwoFaAuthenticationActivated->value,
+                AuditLogEventType::TwoFaAuthenticationDeactivated->value,
             ]);
 
         $auditLogs = new Pagerfanta(new QueryAdapter($qb, false, false));
@@ -79,9 +79,9 @@ class TransparencyLogController extends Controller
         // Group types by category in desired order
         $categoryOrder = ['ownership', 'package', 'version', 'user', 'filterlist', 'advisory', 'organization'];
         $groupedTypes = [];
-        foreach (AuditRecordType::cases() as $type) {
+        foreach (AuditLogEventType::cases() as $type) {
             // Don't display 2FA events in the type filter initially
-            if ($type === AuditRecordType::TwoFaAuthenticationActivated || $type === AuditRecordType::TwoFaAuthenticationDeactivated) {
+            if ($type === AuditLogEventType::TwoFaAuthenticationActivated || $type === AuditLogEventType::TwoFaAuthenticationDeactivated) {
                 continue;
             }
             $groupedTypes[$type->category()][] = $type;
