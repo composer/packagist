@@ -1912,6 +1912,8 @@ body {
 }
 .notifications-container .toast {
     --bs-toast-max-width: min(92vw, 640px);
+    --bs-toast-bg: var(--bs-body-bg);
+    --bs-toast-header-bg: var(--bs-body-bg);
 }
 .notifications-container .toast-body pre {
     margin: 10px -12px -12px;
