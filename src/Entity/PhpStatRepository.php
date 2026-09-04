@@ -122,7 +122,7 @@ class PhpStatRepository extends ServiceEntityRepository
         $package = $this->getEntityManager()->getRepository(Package::class)->find($packageId);
         // package was deleted in the meantime, abort
         if (!$package) {
-            $this->redis->del($keys);
+            $this->redis->unlink($keys);
 
             return;
         }
@@ -141,7 +141,7 @@ class PhpStatRepository extends ServiceEntityRepository
 
             if ($lastPrefix && $prefix !== $lastPrefix && $buffer) {
                 $addedData = $this->createDbRecordsForKeys($package, $buffer, $now) || $addedData;
-                $this->redis->del(array_keys($buffer));
+                $this->redis->unlink(array_keys($buffer));
                 $buffer = [];
             }
 
@@ -151,7 +151,7 @@ class PhpStatRepository extends ServiceEntityRepository
 
         if ($buffer) {
             $addedData = $this->createDbRecordsForKeys($package, $buffer, $now) || $addedData;
-            $this->redis->del(array_keys($buffer));
+            $this->redis->unlink(array_keys($buffer));
         }
 
         $this->getEntityManager()->flush();

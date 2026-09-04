@@ -149,8 +149,14 @@ class DownloadManager
         }
 
         $now = time();
-        $throttleExpiry = strtotime('tomorrow 12:00:00', $now - 86400 / 2) * 1000;
-        $throttleDay = date('Ymd', $throttleExpiry);
+        $throttleBoundary = strtotime('tomorrow 12:00:00', $now - 86400 / 2);
+        // Spread the expiry over an hour past the boundary. Every key in a window used to share one
+        // absolute PEXPIREAT, so the whole day's throttle keys were freed in a single millisecond and
+        // stalled Redis' main thread. The key name rotates at the boundary, so lingering is harmless.
+        $throttleExpiry = ($throttleBoundary + random_int(0, 3600)) * 1000;
+        // NB the label must come from the un-jittered boundary, or it would vary between requests
+        // inside one window and split the throttle counters across keys.
+        $throttleDay = date('Ymd', $throttleBoundary);
         $day = date('Ymd', $now);
         $month = date('Ym', $now);
 
@@ -161,28 +167,31 @@ class DownloadManager
             'downloads:'.$month,
             'php:'.$phpMinor.':',
             'phpplatform:'.$phpMinorPlatform.':',
+            // one throttle key per IP per window, holding packageId => request count
+            'throttle:'.$ip.':'.$throttleDay,
         ];
 
+        $packageIds = [];
         foreach ($jobs as $job) {
             $package = $job['id'];
             $version = $job['vid'];
             $minorVersion = str_replace(':', '', $job['minor']);
+            $packageIds[] = $package;
 
             // job keys, see numKeysPerJob in lua script
-            // throttle key
-            $args[] = 'throttle:'.$package.':'.$throttleDay;
-            // stats keys
             $args[] = 'dl:'.$package;
             $args[] = 'dl:'.$package.':'.$day;
             $args[] = 'dl:'.$package.'-'.$version.':'.$day;
             $args[] = 'phpplatform:'.$package.'-'.$minorVersion.':'.$phpMinorPlatform.':'.$day;
         }
 
-        // actual args, see ACTUAL ARGS in DownloadsIncr::getKeysCount
-        $args[] = $ip;
+        // actual args, see SCALAR_ARGS in DownloadsIncr, then one package id per job
         $args[] = $day;
         $args[] = $month;
         $args[] = $throttleExpiry;
+        foreach ($packageIds as $packageId) {
+            $args[] = $packageId;
+        }
 
         /* @phpstan-ignore-next-line method.notFound */
         $this->redis->downloadsIncr(...$args);
@@ -196,7 +205,7 @@ class DownloadManager
         $package = $this->getEM()->getRepository(Package::class)->find($packageId);
         // package was deleted in the meantime, abort
         if (!$package) {
-            $this->redis->del($keys);
+            $this->redis->unlink($keys);
 
             return;
         }
@@ -241,7 +250,7 @@ class DownloadManager
 
         $this->getEM()->flush();
 
-        $this->redis->del($keys);
+        $this->redis->unlink($keys);
     }
 
     /**

@@ -158,7 +158,7 @@ class PackageManager
         // delete redis stats
         try {
             $this->redis->del('views:'.$packageId);
-        } catch (\Predis\Connection\ConnectionException $e) {
+        } catch (\Predis\PredisException $e) {
         }
 
         // attempt search index cleanup
