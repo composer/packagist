@@ -112,6 +112,7 @@ echarts.use([
         var palette = options.palette || MULTI_COLORS;
         var withDatePicker = !!options.withDatePicker;
         var valueLabel = options.valueLabel || null;
+        var defaultDays = options.defaultDays || 0;
 
         if (!el) {
             return;
@@ -273,20 +274,27 @@ echarts.use([
         };
 
         if (withDatePicker) {
-            option.dataZoom = [
-                {
-                    type: 'inside',
-                    throttle: 50,
-                    zoomOnMouseWheel: 'ctrl',
-                    moveOnMouseWheel: false
-                },
-                {
-                    type: 'slider',
-                    height: 30,
-                    bottom: 10,
-                    labelFormatter: isDaily ? format : undefined
-                }
-            ];
+            var inside = {
+                type: 'inside',
+                throttle: 50,
+                zoomOnMouseWheel: 'ctrl',
+                moveOnMouseWheel: false
+            };
+            var slider = {
+                type: 'slider',
+                height: 30,
+                bottom: 10,
+                labelFormatter: isDaily ? format : undefined
+            };
+
+            // years of daily points render sub-pixel, and the antialiased seams
+            // between stacked bands then show through as white speckle - open on a
+            // readable window and leave the rest reachable via the slider
+            if (defaultDays && isDaily && xValues.length > defaultDays) {
+                inside.startValue = slider.startValue = xValues[xValues.length - defaultDays];
+            }
+
+            option.dataZoom = [inside, slider];
         }
 
         var chart = getChart(el);
@@ -459,7 +467,8 @@ echarts.use([
             initPackagistChart($('.js-'+type+'-dls')[0], res.labels, series, {
                 withDatePicker: true,
                 type: 'area',
-                colorMap: PHP_VERSION_COLORS
+                colorMap: PHP_VERSION_COLORS,
+                defaultDays: 365
             });
         }
 
@@ -552,7 +561,8 @@ echarts.use([
         initPackagistChart($(selector)[0], res.labels, series, {
             withDatePicker: true,
             type: 'area',
-            colorMap: PHP_VERSION_COLORS
+            colorMap: PHP_VERSION_COLORS,
+            defaultDays: 365
         });
     };
 
