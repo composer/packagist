@@ -21,11 +21,14 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\User;
 use App\Entity\Version;
+use App\Model\ProviderManager;
+use App\Package\PackageListCache;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
@@ -820,5 +823,116 @@ class PackageControllerTest extends IntegrationTestCase
         $this->store($package);
 
         self::assertSame('', $this->requestListJson('vendor=listvendor&fields[]=type', 'HEAD'));
+    }
+
+    /**
+     * The unfiltered listing is the one the CDN fans out to every edge, so it is served from the
+     * prebuilt blob rather than read and sorted out of Redis per request.
+     */
+    public function testUnfilteredListJsonServesThePrebuiltBlobGzipped(): void
+    {
+        $cache = self::getService(PackageListCache::class);
+        $names = ['listvendor/aaa', 'listvendor/bbb'];
+        $cache->write($names, 1);
+
+        try {
+            $this->client->request('GET', '/packages/list.json', [], [], ['HTTP_ACCEPT_ENCODING' => 'gzip, deflate']);
+
+            $response = $this->client->getResponse();
+            self::assertInstanceOf(Response::class, $response);
+            self::assertResponseIsSuccessful();
+            self::assertResponseHeaderSame('Content-Type', 'application/json');
+            self::assertResponseHeaderSame('Content-Encoding', 'gzip');
+            // without Vary the CDN could hand this body to a client that never asked for gzip.
+            // getVary() parses every Vary line; headers->get() would only return the first.
+            self::assertContains('Accept-Encoding', $response->getVary());
+            self::assertContains('Origin', $response->getVary(), 'the CORS Vary must survive');
+            self::assertStringContainsString('s-maxage=300', (string) $response->headers->get('Cache-Control'));
+            self::assertResponseHeaderSame('X-Accel-Expires', '300');
+
+            $body = (string) $response->getContent();
+            self::assertSame((string) \strlen($body), $response->headers->get('Content-Length'));
+            self::assertSame(
+                json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                gzdecode($body),
+            );
+        } finally {
+            $cache->clear();
+        }
+    }
+
+    public function testUnfilteredListJsonDecompressesForClientsThatRefuseGzip(): void
+    {
+        $cache = self::getService(PackageListCache::class);
+        $names = ['listvendor/aaa', 'listvendor/bbb'];
+        $cache->write($names, 1);
+
+        try {
+            // q=0 explicitly refuses gzip, so the body has to go out plain
+            $this->client->request('GET', '/packages/list.json', [], [], ['HTTP_ACCEPT_ENCODING' => 'gzip;q=0']);
+
+            self::assertResponseIsSuccessful();
+            self::assertFalse($this->client->getResponse()->headers->has('Content-Encoding'));
+            self::assertSame(
+                json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                (string) $this->client->getResponse()->getContent(),
+            );
+        } finally {
+            $cache->clear();
+        }
+    }
+
+    public function testUnfilteredListJsonFallsBackToTheLivePathWithoutABlob(): void
+    {
+        $cache = self::getService(PackageListCache::class);
+        $cache->clear();
+
+        $package = self::createPackage('listvendor/fallback', 'https://example.org/fallback');
+        $this->store($package);
+        self::getService(ProviderManager::class)->insertPackage($package);
+
+        try {
+            $body = $this->requestListJson('');
+
+            $decoded = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
+            self::assertIsArray($decoded);
+            self::assertContains('listvendor/fallback', $decoded['packageNames']);
+        } finally {
+            $cache->clear();
+        }
+    }
+
+    public function testFilteredListJsonIgnoresTheBlob(): void
+    {
+        $cache = self::getService(PackageListCache::class);
+        // a blob that does not match the DB at all, to prove the filtered branches never read it
+        $cache->write(['blob/only'], 1);
+
+        try {
+            $providerManager = self::getService(ProviderManager::class);
+            $packages = [];
+            foreach (['listvendor/aaa', 'listvendor/bbb'] as $name) {
+                $package = self::createPackage($name, 'https://example.org/'.$name);
+                $package->setType('library');
+                $packages[] = $package;
+            }
+            $this->store(...$packages);
+            // the filter-only branch reads set:packages rather than the DB, and store() does not
+            // go through the insert path that populates it
+            foreach ($packages as $package) {
+                $providerManager->insertPackage($package);
+            }
+
+            self::assertSame(
+                json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                $this->requestListJson('vendor=listvendor'),
+            );
+            self::assertSame(
+                json_encode(['packageNames' => ['listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                $this->requestListJson('filter=listvendor/bbb'),
+            );
+        } finally {
+            $cache->clear();
+        }
     }
 }
