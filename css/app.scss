@@ -469,6 +469,10 @@ strong {
     padding: 15px 20px 12px;
 }
 
+.nav-user .signin-box .input-group {
+    margin-bottom: 6px;
+}
+
 .nav-user .signin-box .input-group-text {
     background: #fff;
     border-top-left-radius: 3px;
@@ -517,6 +521,7 @@ strong {
 
 .nav-user .btn-github {
     font-weight: 600;
+    line-height: 21px;
     padding: 9px 12px;
     width: 56%;
 }
@@ -882,15 +887,16 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .input-group .form-control:focus {
-    border-color: rgba(82, 168, 236, 0.8);
+    border-color: #52a8ec;
     box-shadow: none;
     z-index: 1;
 }
 
 .input-group:focus-within .input-group-text {
     border-width: 2px;
-    border-color: rgba(82, 168, 236, 0.8);
-    color: rgb(82, 168, 236);
+    padding: 5px 12px 5px 11px;
+    border-color: #52a8ec;
+    color: #52a8ec;
 }
 
 .input-group .form-control:invalid:focus {
@@ -899,6 +905,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 
 .input-group:has(.form-control:invalid:focus) .input-group-text {
     border-width: 2px;
+    padding: 5px 12px 5px 11px;
     border-color: #fa3a15;
     color: #fa3a15;
 }
