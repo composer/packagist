@@ -18,6 +18,7 @@
     --font-sans: var(--font-family-name), sans-serif;
 
     --color-brand-orange: #f28d1a;
+    --color-brand-orange-dark: #d97c10;
     --color-brand-dark: #2d2d32;
     --color-light-grey: #f3f4f5;
 
@@ -603,6 +604,165 @@ strong {
 
 .wrapper-search a:hover {
     text-decoration: none;
+}
+
+// Homepage hero search variant
+.wrapper-search-hero .container {
+    padding: 48px 20px 40px;
+    text-align: center;
+    max-width: 720px;
+}
+
+.hero-search-intro {
+    margin-bottom: 24px;
+
+    .hero-search-claim {
+        margin: 0 auto;
+        max-width: 560px;
+        font-size: 16px;
+    }
+}
+
+.hero-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+.hero-brand-logo {
+    height: 64px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.hero-brand-text {
+    text-align: center;
+}
+
+.hero-brand-title {
+    font-size: 52px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: #fff;
+}
+
+.hero-brand-subtitle {
+    font-size: 20px;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+@media (max-width: 575px) {
+    .hero-brand-row {
+        gap: 14px;
+    }
+
+    .hero-brand-logo {
+        height: 44px;
+    }
+
+    .hero-brand-title {
+        font-size: 32px;
+    }
+
+    .hero-brand-subtitle {
+        font-size: 15px;
+    }
+}
+
+.wrapper-search-hero .js-search-field-wrapper {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.wrapper-search-hero #search-form input[type="search"] {
+    height: 52px;
+    font-size: 18px;
+    padding: 10px 18px 10px 22px;
+    text-align: left;
+    border-radius: 4px;
+}
+
+.hero-search-footer {
+    margin-top: 24px;
+}
+
+// Collapsed while a search is active (see js/search.js), so results aren't pushed below the fold
+.wrapper-search-hero.search-active .hero-search-intro,
+.wrapper-search-hero.search-active .hero-search-footer {
+    display: none;
+}
+
+.hero-search-stats {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 28px;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+    font-size: 13px;
+
+    strong {
+        display: block;
+        font-size: 22px;
+        line-height: 1.3;
+    }
+}
+
+.hero-search-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.hero-btn {
+    display: inline-block;
+    padding: 9px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover, &:focus {
+        text-decoration: none;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+    }
+}
+
+.hero-search-actions .hero-btn-primary {
+    background: #fff;
+    color: var(--color-brand-orange);
+    border: 1px solid #fff;
+
+    &:hover, &:focus {
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--color-brand-orange-dark);
+    }
+}
+
+.hero-search-actions .hero-btn-secondary {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+
+    &:hover, &:focus {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+    }
+}
+
+@media (max-width: 767px) {
+    .hero-search-stats {
+        gap: 20px;
+    }
 }
 
 #search-container {
@@ -1894,12 +2054,7 @@ svg {
     height: auto !important;
 }
 
-@media (max-width: 1199px) {
-    .publishing-packages {
-        margin-top: 40px;
-    }
-}
-#how-to-submit-packages, #how-to-update-packages {
+#getting-started, #how-to-submit-packages, #how-to-update-packages {
     margin-top: 40px;
 }
 

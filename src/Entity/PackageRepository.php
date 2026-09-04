@@ -748,7 +748,7 @@ class PackageRepository extends ServiceEntityRepository
         $result = $stmt->fetchAllAssociative();
         $stmt->free();
 
-        return (int) $result[0]['count'];
+        return (int) ($result[0]['count'] ?? 0);
     }
 
     /**
