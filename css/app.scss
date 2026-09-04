@@ -1289,6 +1289,12 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     width: 100px;
 }
 
+.package .facts .package-downloads-chart {
+    height: 110px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
 .package .tags a:before {
   content: "#";
 }

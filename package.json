@@ -5,10 +5,9 @@
         "algoliasearch": "^4.24.0",
         "bootstrap": "^5.3.8",
         "bootstrap-icons": "^1.13.1",
-        "d3": "^3.5.17",
+        "echarts": "^6.1.0",
         "instantsearch.js": "^4.75.6",
         "jquery": "^3.7.1",
-        "nvd3": "^1.8.6",
         "plausible-tracker": "^0.3"
     },
     "devDependencies": {
