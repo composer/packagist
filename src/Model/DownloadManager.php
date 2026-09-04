@@ -205,7 +205,7 @@ class DownloadManager
         $package = $this->getEM()->getRepository(Package::class)->find($packageId);
         // package was deleted in the meantime, abort
         if (!$package) {
-            $this->redis->del($keys);
+            $this->redis->unlink($keys);
 
             return;
         }
@@ -250,7 +250,7 @@ class DownloadManager
 
         $this->getEM()->flush();
 
-        $this->redis->del($keys);
+        $this->redis->unlink($keys);
     }
 
     /**
