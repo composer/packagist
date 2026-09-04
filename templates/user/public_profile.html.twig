@@ -72,10 +72,15 @@
                     {% endif %}
                 </dd>
 
-                {% if user.totpAuthenticationEnabled() %}
-                    <dt>2FA:</dt>
-                    <dd>Enabled - <a href="{{ path('user_2fa_configure', {name: user.username}) }}">Manage</a></dd>
-                {% endif %}
+                <dt>2FA:</dt>
+                <dd>
+                    {% if user.totpAuthenticationEnabled() %}
+                        <span class="badge bg-success">Yes</span>
+                        - <a href="{{ path('user_2fa_configure', {name: user.username}) }}">Manage</a>
+                    {% else %}
+                        <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                </dd>
             </dl>
         </div>
 

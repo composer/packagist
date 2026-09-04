@@ -153,6 +153,9 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $failureNotifications = true;
 
+    /**
+     * @var non-empty-string|null
+     */
     #[ORM\Column(name: 'totpSecret', type: 'string', nullable: true)]
     private ?string $totpSecret = null;
 
@@ -293,6 +296,9 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return 'https://www.gravatar.com/avatar/'.hash('sha256', strtolower($this->getEmail())).'?d=identicon';
     }
 
+    /**
+     * @param non-empty-string|null $secret
+     */
     public function setTotpSecret(?string $secret): void
     {
         $this->totpSecret = $secret;

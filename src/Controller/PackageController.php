@@ -71,6 +71,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -92,6 +93,8 @@ use Webmozart\Assert\Assert;
  */
 class PackageController extends Controller
 {
+    private const int LIST_FLUSH_EVERY = 500;
+
     public function __construct(
         private ProviderManager $providerManager,
         private PackageManager $packageManager,
@@ -119,7 +122,7 @@ class PackageController extends Controller
         ?string $type = null,
         #[MapQueryParameter]
         ?string $vendor = null,
-    ): JsonResponse {
+    ): StreamedJsonResponse {
         $queryParams = $req->query->all();
         $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
@@ -130,35 +133,76 @@ class PackageController extends Controller
                 'vendor' => $vendor,
             ], static fn ($val) => $val !== null);
 
-            $response = new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);
-            $response->setSharedMaxAge(300);
-            $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
-
-            return $response;
+            return $this->streamedListResponse(['packages' => self::streamPackages($repo->iteratePackagesWithFields($filters, $fields))]);
         }
 
         if ($type !== null || $vendor !== null) {
-            $names = $repo->getPackageNamesByTypeAndVendor($type, $vendor);
+            $names = $repo->iteratePackageNamesByTypeAndVendor($type, $vendor);
         } else {
             $names = $this->providerManager->getPackageNames();
         }
 
+        $packageFilter = null;
         if ($req->query->has('filter')) {
             $packageFilter = '{^'.str_replace('\\*', '.*?', preg_quote($req->query->getString('filter'))).'$}i';
-            $filtered = [];
-            foreach ($names as $name) {
-                if (Preg::isMatch($packageFilter, $name)) {
-                    $filtered[] = $name;
-                }
-            }
-            $names = $filtered;
         }
 
-        $response = new JsonResponse(['packageNames' => $names]);
+        return $this->streamedListResponse(['packageNames' => self::streamNames($names, $packageFilter)]);
+    }
+
+    /**
+     * @param array<string, \Generator<array-key, mixed>> $data
+     */
+    private function streamedListResponse(array $data): StreamedJsonResponse
+    {
+        $response = new StreamedJsonResponse($data, encodingOptions: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $response->setSharedMaxAge(300);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $response;
+    }
+
+    /**
+     * Yields without an explicit key on purpose: StreamedJsonResponse decides list-vs-map from the
+     * first key it sees, so re-yielding the preserved keys of a filtered source would turn
+     * packageNames from a JSON array into a JSON object.
+     *
+     * @param iterable<string>      $names
+     * @param non-empty-string|null $packageFilter
+     *
+     * @return \Generator<int, string>
+     */
+    private static function streamNames(iterable $names, ?string $packageFilter): \Generator
+    {
+        $emitted = 0;
+        foreach ($names as $name) {
+            if ($packageFilter !== null && !Preg::isMatch($packageFilter, $name)) {
+                continue;
+            }
+
+            yield $name;
+
+            if (++$emitted % self::LIST_FLUSH_EVERY === 0) {
+                flush();
+            }
+        }
+    }
+
+    /**
+     * @param iterable<string, array<string, string|int|bool|null>> $packages
+     *
+     * @return \Generator<string, array<string, string|int|bool|null>>
+     */
+    private static function streamPackages(iterable $packages): \Generator
+    {
+        $emitted = 0;
+        foreach ($packages as $name => $fields) {
+            yield $name => $fields;
+
+            if (++$emitted % self::LIST_FLUSH_EVERY === 0) {
+                flush();
+            }
+        }
     }
 
     #[Route(path: '/metadata/changes.json', name: 'metadata_changes', defaults: ['_format' => 'json'], methods: ['GET'])]
