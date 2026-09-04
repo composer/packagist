@@ -1,5 +1,0 @@
-{% import 'audit_log/macros.html.twig' as auditLog %}
-
-<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
-{{ display.title }}{% if display.cve %} ({{ display.cve }}){% endif %}<br>
-Source: {{ display.source }}

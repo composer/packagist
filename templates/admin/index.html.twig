@@ -8,7 +8,7 @@
             <div class="package-header">
                 <h2 class="title">Recent moderation activity</h2>
             </div>
-            {% include 'audit_log/_transparency_log_table.html.twig' with {
+            {% include 'log/_table.html.twig' with {
                 displays: recentModerationActivity,
                 linkSurroundingLogs: true,
                 emptyMessage: 'No recent moderation activity.'

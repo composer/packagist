@@ -1,0 +1,5 @@
+{% import 'log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.organizationLink(display.organization) }}</strong>
+{%- if display.organization.displayName != display.organization.slug %} ({{ display.organization.slug }}){% endif %}<br>
+Created by: {{ auditLog.userLink(display.actor.username) }}

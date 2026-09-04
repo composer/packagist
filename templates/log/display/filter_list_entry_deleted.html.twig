@@ -1,0 +1,4 @@
+{% import 'log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+{{ display.list.value | capitalize }} entry for versions {{ display.version }} reported by {{ display.source.displayName }} was deleted{% if display.actor.id %} by {{ display.actor.username }}{% endif %}.

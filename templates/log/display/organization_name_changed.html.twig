@@ -1,0 +1,5 @@
+{% import 'log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.organizationLink(display.organization) }}</strong>
+<strong>{{ display.displayNameFrom }}</strong> → <strong>{{ display.displayNameTo }}</strong><br>
+Changed by: {{ auditLog.userLink(display.actor.username) }}

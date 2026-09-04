@@ -1,0 +1,4 @@
+{% import 'log/macros.html.twig' as auditLog %}
+
+<strong>{{ auditLog.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
+Deleted by: {{ display.actor.username }}

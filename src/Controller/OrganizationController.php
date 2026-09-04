@@ -13,7 +13,6 @@
 namespace App\Controller;
 
 use App\Audit\AuditRecordType;
-use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\Entity\Organization;
 use App\Entity\OrganizationInvitation;
@@ -40,6 +39,7 @@ use App\Form\Type\RemoveTeamMemberType;
 use App\Form\Type\ResendInvitationType;
 use App\Form\Type\RevokeInvitationType;
 use App\Form\Type\TeamType;
+use App\Log\Display\AuditLogDisplayFactory;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Organization as OrganizationDomain;
 use App\Organization\Domain\Slug;

@@ -1,0 +1,3 @@
+{% import 'log/macros.html.twig' as auditLog %}
+
+Invitation to <strong>{{ display.email }}</strong> expired for <strong>{{ auditLog.organizationLink(display.organization) }}</strong>
