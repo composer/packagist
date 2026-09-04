@@ -8,10 +8,7 @@
         "echarts": "^6.1.0",
         "instantsearch.js": "^4.75.6",
         "jquery": "^3.7.1",
-        "plausible-tracker": "^0.3",
-        "react": "^17.0.2",
-        "react-dom": "^17.0.2",
-        "zustand": "^3.6.9"
+        "plausible-tracker": "^0.3"
     },
     "devDependencies": {
         "esbuild": "^0.15",
