@@ -156,7 +156,7 @@ class DownloadManager
         $throttleExpiry = ($throttleBoundary + random_int(0, 3600)) * 1000;
         // NB the label must come from the un-jittered boundary, or it would vary between requests
         // inside one window and split the throttle counters across keys.
-        $throttleDay = date('Ymd', $throttleBoundary * 1000);
+        $throttleDay = date('Ymd', $throttleBoundary);
         $day = date('Ymd', $now);
         $month = date('Ym', $now);
 
@@ -167,28 +167,31 @@ class DownloadManager
             'downloads:'.$month,
             'php:'.$phpMinor.':',
             'phpplatform:'.$phpMinorPlatform.':',
+            // one throttle key per IP per window, holding packageId => request count
+            'throttle:'.$ip.':'.$throttleDay,
         ];
 
+        $packageIds = [];
         foreach ($jobs as $job) {
             $package = $job['id'];
             $version = $job['vid'];
             $minorVersion = str_replace(':', '', $job['minor']);
+            $packageIds[] = $package;
 
             // job keys, see numKeysPerJob in lua script
-            // throttle key
-            $args[] = 'throttle:'.$package.':'.$throttleDay;
-            // stats keys
             $args[] = 'dl:'.$package;
             $args[] = 'dl:'.$package.':'.$day;
             $args[] = 'dl:'.$package.'-'.$version.':'.$day;
             $args[] = 'phpplatform:'.$package.'-'.$minorVersion.':'.$phpMinorPlatform.':'.$day;
         }
 
-        // actual args, see ACTUAL ARGS in DownloadsIncr::getKeysCount
-        $args[] = $ip;
+        // actual args, see SCALAR_ARGS in DownloadsIncr, then one package id per job
         $args[] = $day;
         $args[] = $month;
         $args[] = $throttleExpiry;
+        foreach ($packageIds as $packageId) {
+            $args[] = $packageId;
+        }
 
         /* @phpstan-ignore-next-line method.notFound */
         $this->redis->downloadsIncr(...$args);
