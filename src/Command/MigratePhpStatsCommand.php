@@ -15,6 +15,7 @@ namespace App\Command;
 use App\Entity\PhpStat;
 use App\Service\Locker;
 use App\Util\DoctrineTrait;
+use App\Util\RedisScanner;
 use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
@@ -69,8 +70,8 @@ class MigratePhpStatsCommand extends Command
             $now = new \DateTimeImmutable();
             $yesterday = new \DateTimeImmutable('yesterday');
             $todaySuffix = ':'.$now->format('Ymd');
-            $keysToUpdate = $this->redis->keys('php:*:*:*');
-            $keysToUpdate = array_merge($keysToUpdate, $this->redis->keys('phpplatform:*:*:*'));
+            $keysToUpdate = RedisScanner::keys($this->redis, 'php:*:*:*');
+            $keysToUpdate = array_merge($keysToUpdate, RedisScanner::keys($this->redis, 'phpplatform:*:*:*'));
 
             // skip today datapoints as we will store that to the DB tomorrow
             $keysToUpdate = array_filter($keysToUpdate, static function ($key) use ($todaySuffix) {
