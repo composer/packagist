@@ -31,6 +31,11 @@ class IntegrationTestCase extends WebTestCase
         $this->client = self::createClient();
         $this->client->disableReboot(); // prevent reboot to keep the transaction
 
+        // The DB is rolled back per test but Redis is not, so cached values keyed by package name
+        // would leak into later tests that reuse a name. The cache client has its own DB in the
+        // test env (REDIS_CACHE_URL) so this cannot clear state the default client owns.
+        static::getContainer()->get('snc_redis.cache')->flushdb();
+
         static::getService(Connection::class)->beginTransaction();
 
         parent::setUp();

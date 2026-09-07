@@ -12,10 +12,13 @@
 
 namespace App\Tests\Entity;
 
+use App\Entity\Dependent;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
+use App\Entity\Suggester;
 use App\Tests\IntegrationTestCase;
+use Predis\Client;
 
 class PackageRepositoryTest extends IntegrationTestCase
 {
@@ -196,5 +199,64 @@ class PackageRepositoryTest extends IntegrationTestCase
         $withFrozen = $names($this->packageRepository->getFilteredQueryBuilder([], true, includeFrozen: true)->getQuery()->getResult());
         self::assertContains('vendor/spam', $withFrozen);
         self::assertContains('vendor/malware', $withFrozen);
+    }
+
+    public function testGetDependentCountIsCachedPerType(): void
+    {
+        $requirer = self::createPackage('test/requirer', 'https://example.org/requirer');
+        $devRequirer = self::createPackage('test/dev-requirer', 'https://example.org/dev-requirer');
+        $this->store($requirer, $devRequirer);
+        $this->store(
+            new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($devRequirer, 'test/required', Dependent::TYPE_REQUIRE_DEV),
+        );
+
+        self::assertSame(2, $this->packageRepository->getDependentCount('test/required'));
+        self::assertSame(1, $this->packageRepository->getDependentCount('test/required', Dependent::TYPE_REQUIRE));
+        self::assertSame(1, $this->packageRepository->getDependentCount('test/required', Dependent::TYPE_REQUIRE_DEV));
+
+        // each variant gets its own key, so the type filter cannot be served from the unfiltered count
+        self::assertSame('2', $this->redisCache()->get('dep-count:test/required:all'));
+        self::assertSame('1', $this->redisCache()->get('dep-count:test/required:'.Dependent::TYPE_REQUIRE));
+        self::assertSame('1', $this->redisCache()->get('dep-count:test/required:'.Dependent::TYPE_REQUIRE_DEV));
+    }
+
+    public function testGetDependentCountReadsTheCacheAndIgnoresNameCasing(): void
+    {
+        $this->redisCache()->set('dep-count:test/required:all', '42');
+
+        self::assertSame(42, $this->packageRepository->getDependentCount('test/required'));
+        // packageName uses a case-insensitive collation, so casing must not produce a second entry
+        self::assertSame(42, $this->packageRepository->getDependentCount('Test/Required'));
+    }
+
+    public function testGetSuggestCountIsCached(): void
+    {
+        $suggester = self::createPackage('test/suggester', 'https://example.org/suggester');
+        $this->store($suggester);
+        $this->store(new Suggester($suggester, 'test/suggested'));
+
+        self::assertSame(1, $this->packageRepository->getSuggestCount('test/suggested'));
+        self::assertSame('1', $this->redisCache()->get('sug-count:test/suggested'));
+
+        $this->redisCache()->set('sug-count:test/suggested', '7');
+        self::assertSame(7, $this->packageRepository->getSuggestCount('test/suggested'));
+    }
+
+    public function testCountsCacheZeroSoUnknownPackagesDoNotRequeryEveryPageView(): void
+    {
+        self::assertSame(0, $this->packageRepository->getDependentCount('test/nothing-requires-this'));
+        self::assertSame(0, $this->packageRepository->getSuggestCount('test/nothing-requires-this'));
+
+        self::assertSame('0', $this->redisCache()->get('dep-count:test/nothing-requires-this:all'));
+        self::assertSame('0', $this->redisCache()->get('sug-count:test/nothing-requires-this'));
+    }
+
+    private function redisCache(): Client
+    {
+        $client = static::getContainer()->get('snc_redis.cache');
+        self::assertInstanceOf(Client::class, $client);
+
+        return $client;
     }
 }

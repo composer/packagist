@@ -55,12 +55,6 @@ parameters:
 			path: src/Entity/AuditRecordRepository.php
 
 		-
-			message: '#^Method App\\Entity\\PackageRepository\:\:getSuggestCount\(\) should return int\<0, max\> but returns int\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: '#^Query error\: Unknown column ''d\.total'' in ''order clause'' \(1054\)\.$#'
 			identifier: dba.syntaxError
 			count: 1
