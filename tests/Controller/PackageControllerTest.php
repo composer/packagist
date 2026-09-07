@@ -47,6 +47,35 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
     }
 
+    public function testPackagePageOmitsManagementFormsForVisitorsWhoCannotUseThem(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        // a second maintainer is required for remove_maintainer to be granted at all
+        $comaintainer = self::createUser('comaintainer', 'comaintainer@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $comaintainer]);
+        $this->store($owner, $comaintainer, $package);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        // The controller skips building these entirely when the visitor lacks the grant, which also
+        // skips the EntityType choice-list query behind the remove-maintainer form.
+        self::assertCount(0, $crawler->filter('[name="add_maintainer_form"]'));
+        self::assertCount(0, $crawler->filter('[name="remove_maintainer_form"]'));
+        self::assertCount(0, $crawler->filter('[name="transfer_package_form"]'));
+        self::assertCount(0, $crawler->filter('form.delete.action'));
+
+        // ...and still builds them for someone who can, so the skip is keyed on the grant only.
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        self::assertCount(1, $crawler->filter('[name="add_maintainer_form"]'));
+        self::assertCount(1, $crawler->filter('[name="remove_maintainer_form"]'));
+        self::assertCount(1, $crawler->filter('[name="transfer_package_form"]'));
+        self::assertCount(1, $crawler->filter('form.delete.action'));
+    }
+
     public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void
     {
         $mod = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
