@@ -2,13 +2,19 @@
     One log table for every log we render: the internal audit log (admin, organization, filter list
     entry) and the public transparency log. The displays only have to implement
     App\Log\Display\LogDisplayInterface.
-
-    displays                   - list of log displays
-    emptyMessage               - shown instead of the table when there is nothing to list
-    showIp                     - render the IP column (audit log only, and only for auditors)
-    surroundingLogsRoute       - when set, the timestamp links to that route filtered to a +/- 2 minute window
-    surroundingLogsRouteParams - extra route params for the link above
 #}
+{% types {
+    ## The log displays to render, one per row.
+    displays: 'iterable',
+    ## Shown instead of the table when there is nothing to list.
+    emptyMessage?: 'string',
+    ## Render the IP column (audit log only, and only for auditors).
+    showIp?: 'boolean',
+    ## When set, the timestamp links to that route filtered to a +/- 2 minute window.
+    surroundingLogsRoute?: 'string|null',
+    ## Extra route params for the link above.
+    surroundingLogsRouteParams?: 'mapping',
+} %}
 {% set emptyMessage = emptyMessage ?? 'No log entries found.' %}
 {% set showIp = showIp ?? false %}
 {% set surroundingLogsRoute = surroundingLogsRoute ?? null %}

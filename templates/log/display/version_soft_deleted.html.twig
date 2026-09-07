@@ -2,6 +2,6 @@
 
 <strong>{{ log.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
 Reason: {{ display.reason }}{% if display.reasonText %} ({{ display.reasonText }}){% endif %}<br>
-{# the public log never has this: the projection scrubs internal moderation notes at write time #}
+{## transparency log never has an internal reason ##}
 {% if display.internalReasonText %}Internal reason: {{ display.internalReasonText }}<br>{% endif %}
 By: {{ display.actor.username }}
