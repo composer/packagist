@@ -12,9 +12,11 @@
 
 namespace App\Tests\Entity;
 
+use App\Entity\Dependent;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
+use App\Entity\Suggester;
 use App\Tests\IntegrationTestCase;
 
 class PackageRepositoryTest extends IntegrationTestCase
@@ -196,5 +198,41 @@ class PackageRepositoryTest extends IntegrationTestCase
         $withFrozen = $names($this->packageRepository->getFilteredQueryBuilder([], true, includeFrozen: true)->getQuery()->getResult());
         self::assertContains('vendor/spam', $withFrozen);
         self::assertContains('vendor/malware', $withFrozen);
+    }
+
+    public function testGetDependentsListsTheRequiringPackages(): void
+    {
+        // Also exercises the MAX_EXECUTION_TIME optimizer hint against a real server: an invalid
+        // hint would be a syntax error here rather than a silently ignored comment.
+        $alpha = self::createPackage('test/alpha', 'https://example.org/alpha');
+        $beta = self::createPackage('test/beta', 'https://example.org/beta');
+        $this->store($alpha, $beta);
+        $this->store(
+            new Dependent($beta, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($alpha, 'test/required', Dependent::TYPE_REQUIRE_DEV),
+        );
+
+        $names = array_column($this->packageRepository->getDependents('test/required'), 'name');
+        self::assertSame(['test/alpha', 'test/beta'], $names, 'ordered by name by default');
+
+        $requireOnly = array_column(
+            $this->packageRepository->getDependents('test/required', type: Dependent::TYPE_REQUIRE),
+            'name',
+        );
+        self::assertSame(['test/beta'], $requireOnly);
+
+        $secondPage = $this->packageRepository->getDependents('test/required', offset: 1, limit: 1);
+        self::assertSame(['test/beta'], array_column($secondPage, 'name'));
+    }
+
+    public function testGetSuggestsListsTheSuggestingPackages(): void
+    {
+        $alpha = self::createPackage('test/alpha', 'https://example.org/alpha');
+        $beta = self::createPackage('test/beta', 'https://example.org/beta');
+        $this->store($alpha, $beta);
+        $this->store(new Suggester($beta, 'test/suggested'), new Suggester($alpha, 'test/suggested'));
+
+        $names = array_column($this->packageRepository->getSuggests('test/suggested'), 'name');
+        self::assertSame(['test/alpha', 'test/beta'], $names);
     }
 }

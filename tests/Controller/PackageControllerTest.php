@@ -19,6 +19,7 @@ use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
+use App\Entity\PackageRepository;
 use App\Entity\User;
 use App\Entity\Version;
 use App\Service\Spam\FeatureExtractor;
@@ -29,6 +30,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
+use Doctrine\DBAL\Driver\PDO\Exception as PDOException;
+use Doctrine\DBAL\Exception\DriverException;
 
 class PackageControllerTest extends IntegrationTestCase
 {
@@ -45,6 +48,38 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $auditLink);
         self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+    }
+
+    #[TestWith(['/packages/test/pkg/dependents', 'text/html'])]
+    #[TestWith(['/packages/test/pkg/dependents.json', 'application/json'])]
+    #[TestWith(['/packages/test/pkg/suggesters', 'text/html'])]
+    #[TestWith(['/packages/test/pkg/suggesters.json', 'application/json'])]
+    public function testListingsDegradeWhenTheStatementTimeoutFires(string $url, string $expectedType): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($package);
+
+        // The listing queries carry a MAX_EXECUTION_TIME hint, so MySQL aborts them for the most
+        // widely required packages instead of letting the sort hold a worker. That must degrade
+        // rather than surface as a 500.
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependents')->willThrowException($this->driverException());
+        $repo->method('getSuggests')->willThrowException($this->driverException());
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', $url);
+
+        self::assertResponseStatusCodeSame(503);
+        self::assertStringStartsWith($expectedType, (string) $this->client->getResponse()->headers->get('Content-Type'));
+    }
+
+    private function driverException(): DriverException
+    {
+        // 3024 is ER_QUERY_TIMEOUT, what MAX_EXECUTION_TIME reports
+        return new DriverException(
+            new PDOException('Query execution was interrupted, maximum statement execution time exceeded', 'HY000', 3024),
+            null,
+        );
     }
 
     public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void
