@@ -59,11 +59,11 @@ class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
                 $attributes['current_maintainers'] ?? [],
                 $this->buildActor($attributes['actor'] ?? null),
             ),
-            TransparencyLogEventType::PackageCreated, TransparencyLogEventType::PackageUnabandoned, TransparencyLogEventType::PackageUnfrozen => new Event\PackageRepositoryDisplay(
+            TransparencyLogEventType::PackageCreated, TransparencyLogEventType::PackageUnabandoned, TransparencyLogEventType::PackageUnfrozen => new Event\PackageWithRepositoryDisplay(
                 $entry->type,
                 $entry->datetime,
                 $attributes['name'],
-                $attributes['repository'] ?? null,
+                $attributes['repository'],
                 null,
                 $this->buildActor($attributes['actor'] ?? null),
             ),
