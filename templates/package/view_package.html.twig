@@ -56,67 +56,128 @@
                 </div>
             </div>
 
-            {% if hasActions %}
-                <div class="package-admin-bar">
-                    <div class="package-admin-buttons">
-                        <div class="package-actions btn-group-xs">
-                            {% if is_granted('abandon', package) %}
-                                {% if package.abandoned %}
-                                    <form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}" method="POST">
-                                        <input class="btn btn-secondary" type="submit" value="Un-abandon" />
-                                    </form>
+            <div class="row">
+                <div class="col-lg-9">
+                    <p class="requireme"><i class="bi bi-terminal"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
+
+                    {% if hasVersionsFlaggedAsMalware %}
+                    <div class="alert alert-danger"><i class="bi bi-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
+                    {% endif %}
+
+                    {% if not package.isAutoUpdated() and is_granted('update', package) %}
+                        {% if "github.com" in package.repository %}
+                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">GitHub Hook</a> for Packagist so that it gets updated whenever you push!</div>
+                        {% elseif "bitbucket.org" in package.repository %}
+                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">BitBucket Webhooks</a> for Packagist so that it gets updated whenever you push!</div>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if package.abandoned %}
+                        <div class="alert alert-danger">
+                            This package is <strong>abandoned</strong> and no longer maintained.
+                            {% if package.replacementPackage is not empty %}
+                                {% if '://' in package.replacementPackage or package.replacementPackage is existing_package %}
+                                    The author suggests using the <a href="{{ '://' in package.replacementPackage ? package.replacementPackage : path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
                                 {% else %}
-                                    <form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
-                                        <input class="btn btn-warning" type="submit" value="Abandon" />
-                                    </form>
+                                    The author suggests using the <em>{{ package.replacementPackage }}</em> package instead.
+                                {% endif %}
+                            {% else %}
+                                No replacement package was suggested.
+                                {% if is_granted('abandon', package) %}
+                                    <a href="{{ path('abandon_package', {name: package.name}) }}">Suggest a replacement.</a>
                                 {% endif %}
                             {% endif %}
-                            {% if is_granted('delete', package) and deleteForm is defined %}
-                                <form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE"{% if is_granted('ROLE_DELETE_PACKAGES') %} data-admin="1"{% endif %}>
-                                    {{ form_widget(deleteForm._token) }}
-                                    <input class="btn btn-danger" type="submit" value="Delete" />
-                                </form>
-                            {% endif %}
-                            {% if is_granted('update', package) %}
-                                <form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
-                                    <input type="hidden" name="update" value="1" />
-                                    <input class="btn btn-success" type="submit" value="Update" />
-                                </form>
-                            {% endif %}
-                            {% if is_granted('edit', package) %}
-                                <form class="action" action="{{ path("edit_package", {name: package.name}) }}">
-                                    <input class="btn btn-primary" type="submit" value="Edit" />
-                                </form>
-                            {% endif %}
-                            {% if is_granted('ROLE_DISABLE_PACKAGES') and package.isSuspect() %}
-                                <form class="action" action="{{ path("mark_nospam") }}" method="POST">
-                                    <input type="hidden" name="vendor[]" value="{{ package.vendor }}" />
-                                    <input type="hidden" name="token" value="{{ markSafeCsrfToken }}" />
-                                    <input class="btn btn-danger" type="submit" value="Mark Not Spam" />
-                                </form>
-                            {% endif %}
-                            {% if freezeCsrfToken is defined and not package.isFrozen() %}
-                                <button type="button" class="btn btn-danger action" data-bs-toggle="modal" data-bs-target="#freeze-package-modal">Freeze</button>
-                            {% endif %}
-                            {% if unfreezeCsrfToken is defined and package.isFrozen() %}
-                                <form class="action" action="{{ path("unfreeze_package", {name: package.name}) }}" method="POST">
-                                    <input type="hidden" name="token" value="{{ unfreezeCsrfToken }}" />
-                                    <input class="btn btn-danger" type="submit" value="Unfreeze" />
-                                </form>
-                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% if package.updateFailureNotified and is_granted('update', package) %}
+                        <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Update" above to see details.</div>
+                    {% endif %}
+
+                    {% if expandedVersion and not expandedVersion.license %}
+                        <div class="alert alert-danger">There is no license information available for the latest version ({{ expandedVersion.version }}) of this package.</div>
+                    {% endif %}
+
+                    <p class="description">{{ package.description|u.truncate(300) }}</p>
+
+                    {% if package.isFrozen() %}
+                        <p class="alert alert-danger">{{ package.getFreezeReason().translationKey()|trans }}</p>
+                    {% endif %}
+                </div>
+
+                {% if hasActions %}
+                <div class="col-lg-3 package-admin-bar">
+                    <div class="package-admin-buttons">
+                        {# these wrap raggedly in a 3/12 column, so they collapse into two menus;
+                           bootstrap's dropdown data-api is already registered by app.js #}
+                        <div class="package-actions dropdown">
+                            <button type="button" class="btn btn-inverse dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-sliders"></i> Manage
+                            </button>
+                            <ul class="dropdown-menu">
+                                {% if is_granted('abandon', package) %}
+                                    {% if package.abandoned %}
+                                        <li><form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}" method="POST">
+                                            <input class="dropdown-item" type="submit" value="Un-abandon" />
+                                        </form></li>
+                                    {% else %}
+                                        <li><form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
+                                            <input class="dropdown-item" type="submit" value="Abandon" />
+                                        </form></li>
+                                    {% endif %}
+                                {% endif %}
+                                {% if is_granted('update', package) %}
+                                    <li><form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
+                                        <input type="hidden" name="update" value="1" />
+                                        <input class="dropdown-item" type="submit" value="Update" />
+                                    </form></li>
+                                {% endif %}
+                                {% if is_granted('edit', package) %}
+                                    <li><form class="action" action="{{ path("edit_package", {name: package.name}) }}">
+                                        <input class="dropdown-item" type="submit" value="Edit" />
+                                    </form></li>
+                                {% endif %}
+                                {% if is_granted('ROLE_DISABLE_PACKAGES') and package.isSuspect() %}
+                                    <li><form class="action" action="{{ path("mark_nospam") }}" method="POST">
+                                        <input type="hidden" name="vendor[]" value="{{ package.vendor }}" />
+                                        <input type="hidden" name="token" value="{{ markSafeCsrfToken }}" />
+                                        <input class="dropdown-item" type="submit" value="Mark Not Spam" />
+                                    </form></li>
+                                {% endif %}
+                                {% if is_granted('delete', package) and deleteForm is defined %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE"{% if is_granted('ROLE_DELETE_PACKAGES') %} data-admin="1"{% endif %}>
+                                        {{ form_widget(deleteForm._token) }}
+                                        <input class="dropdown-item text-danger" type="submit" value="Delete" />
+                                    </form></li>
+                                {% endif %}
+                                {% if freezeCsrfToken is defined and not package.isFrozen() %}
+                                    <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#freeze-package-modal">Freeze</button></li>
+                                {% endif %}
+                                {% if unfreezeCsrfToken is defined and package.isFrozen() %}
+                                    <li><form class="action" action="{{ path("unfreeze_package", {name: package.name}) }}" method="POST">
+                                        <input type="hidden" name="token" value="{{ unfreezeCsrfToken }}" />
+                                        <input class="dropdown-item text-danger" type="submit" value="Unfreeze" />
+                                    </form></li>
+                                {% endif %}
+                            </ul>
                         </div>
 
                         {% if is_granted('remove_maintainer', package) or is_granted('add_maintainer', package) or is_granted('transfer_package', package) %}
-                            <div class="maintainer-actions btn-group-xs">
-                                {% if is_granted('add_maintainer', package) and addMaintainerForm is defined %}
-                                    <button type="button" class="btn btn-inverse action" id="add-maintainer"><i class="bi bi-person-fill-add"></i> Add maintainer</button>
-                                {% endif %}
-                                {% if is_granted('remove_maintainer', package) and removeMaintainerForm is defined %}
-                                    <button type="button" class="btn btn-inverse action" id="remove-maintainer"><i class="bi bi-person-fill-dash"></i> Remove maintainer</button>
-                                {% endif %}
-                                {% if is_granted('transfer_package', package) and transferPackageForm is defined %}
-                                    <button type="button" class="btn btn-inverse action" id="transfer-package"><i class="bi bi-arrow-left-right"></i> Transfer ownership</button>
-                                {% endif %}
+                            <div class="maintainer-actions dropdown">
+                                <button type="button" class="btn btn-inverse dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-people-fill"></i> Maintainers
+                                </button>
+                                <ul class="dropdown-menu">
+                                    {% if is_granted('add_maintainer', package) and addMaintainerForm is defined %}
+                                        <li><button type="button" class="dropdown-item" id="add-maintainer">Add maintainer</button></li>
+                                    {% endif %}
+                                    {% if is_granted('remove_maintainer', package) and removeMaintainerForm is defined %}
+                                        <li><button type="button" class="dropdown-item" id="remove-maintainer">Remove maintainer</button></li>
+                                    {% endif %}
+                                    {% if is_granted('transfer_package', package) and transferPackageForm is defined %}
+                                        <li><button type="button" class="dropdown-item" id="transfer-package">Transfer ownership</button></li>
+                                    {% endif %}
+                                </ul>
                             </div>
                         {% endif %}
                     </div>
@@ -180,55 +241,7 @@
                         {{ form_end(transferPackageForm) }}
                     {% endif %}
                 </div>
-            {% endif %}
-
-            <div class="row">
-                <div class="col-lg-9">
-                    <p class="requireme"><i class="bi bi-terminal"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
-
-                    {% if hasVersionsFlaggedAsMalware %}
-                    <div class="alert alert-danger"><i class="bi bi-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
-                    {% endif %}
-
-                    {% if not package.isAutoUpdated() and is_granted('update', package) %}
-                        {% if "github.com" in package.repository %}
-                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">GitHub Hook</a> for Packagist so that it gets updated whenever you push!</div>
-                        {% elseif "bitbucket.org" in package.repository %}
-                            <div class="alert alert-danger">This package is not auto-updated. Please set up the <a href="{{ path('about') }}#how-to-update-packages">BitBucket Webhooks</a> for Packagist so that it gets updated whenever you push!</div>
-                        {% endif %}
-                    {% endif %}
-
-                    {% if package.abandoned %}
-                        <div class="alert alert-danger">
-                            This package is <strong>abandoned</strong> and no longer maintained.
-                            {% if package.replacementPackage is not empty %}
-                                {% if '://' in package.replacementPackage or package.replacementPackage is existing_package %}
-                                    The author suggests using the <a href="{{ '://' in package.replacementPackage ? package.replacementPackage : path('view_package', {name: package.replacementPackage}) }}">{{ package.replacementPackage }}</a> package instead.
-                                {% else %}
-                                    The author suggests using the <em>{{ package.replacementPackage }}</em> package instead.
-                                {% endif %}
-                            {% else %}
-                                No replacement package was suggested.
-                                {% if is_granted('abandon', package) %}
-                                    <a href="{{ path('abandon_package', {name: package.name}) }}">Suggest a replacement.</a>
-                                {% endif %}
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                    {% if package.updateFailureNotified and is_granted('update', package) %}
-                        <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Update" above to see details.</div>
-                    {% endif %}
-
-                    {% if expandedVersion and not expandedVersion.license %}
-                        <div class="alert alert-danger">There is no license information available for the latest version ({{ expandedVersion.version }}) of this package.</div>
-                    {% endif %}
-
-                    <p class="description">{{ package.description|u.truncate(300) }}</p>
-
-                    {% if package.isFrozen() %}
-                        <p class="alert alert-danger">{{ package.getFreezeReason().translationKey()|trans }}</p>
-                    {% endif %}
-                </div>
+                {% endif %}
             </div>
 
             <div class="row package-facts">

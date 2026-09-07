@@ -1220,13 +1220,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   background-repeat: no-repeat;
   padding-left: 35px;
 }
-// the row mixes inline-block <form>s with a bare <button>, whose inline baselines don't match, so
-// lay it out with flex - which also keeps the wrapping that .btn-group's nowrap took away
-.package .package-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
 .package .action {
   margin-right: 5px;
   margin-bottom: 15px;
@@ -1287,37 +1280,38 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   }
 }
 
-// maintainer/admin-only toolbar under the title, kept apart from the public metadata below it
+// maintainer/admin-only controls: two menus in the column beside the description, with the
+// forms they toggle in their own block below the row
 .package-admin-bar {
   .package-admin-buttons {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-start;
+    gap: 5px;
+    margin-bottom: 15px;
   }
 
-  .maintainer-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-
-    // .package i forces the dark brand colour, which vanishes on the dark fill, and
-    // .btn-group-xs drops these to 12px, where the glyphs get lost anyway
-    .btn i {
-      color: inherit;
-      font-size: 15px;
-      line-height: 0;
-      vertical-align: -2px;
-      margin-right: 2px;
-    }
+  // the action forms keep their class for the submit spinner, but .package .action's
+  // inline-block margins would space the menu items apart
+  .dropdown-menu .action {
+    display: block;
+    margin: 0;
   }
 
+  // caps the width once the column goes full-width below lg
   .package-admin-form {
     max-width: 420px;
     margin-bottom: 15px;
+  }
 
-    h4 {
-      margin-top: 0;
-    }
+  // .package i forces the dark brand colour, which vanishes on the dark fill, and 12px
+  // glyphs get lost there anyway; line-height keeps them out of the button's line box
+  .package-admin-buttons .btn i {
+    color: inherit;
+    font-size: 15px;
+    line-height: 0;
+    vertical-align: -2px;
+    margin-right: 2px;
   }
 }
 .package .details .canonical,
