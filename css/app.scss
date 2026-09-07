@@ -671,6 +671,16 @@ strong {
     .hero-brand-subtitle {
         font-size: 15px;
     }
+
+    .hero-search-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hero-btn {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 .wrapper-search-hero .js-search-field-wrapper {
