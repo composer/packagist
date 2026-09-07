@@ -19,13 +19,13 @@ use App\Log\LogEventType;
 /**
  * Package events whose only detail is the repository URL: created / unabandoned / unfrozen.
  */
-readonly class PackageRepositoryDisplay extends AbstractLogDisplay
+readonly class PackageWithRepositoryDisplay extends AbstractLogDisplay
 {
     public function __construct(
         private LogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
-        public ?string $repository,
+        public string $repository,
         // null unless the package ended up with someone other than the actor
         public ?ActorDisplay $maintainer,
         ActorDisplay $actor,
@@ -41,6 +41,6 @@ readonly class PackageRepositoryDisplay extends AbstractLogDisplay
 
     public function getTemplateName(): string
     {
-        return 'log/display/package_repository.html.twig';
+        return 'log/display/package_with_repository.html.twig';
     }
 }
