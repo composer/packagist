@@ -1148,14 +1148,7 @@ class PackageController extends Controller
             }
         }
 
-        return $this->render('package/view_package.html.twig', [
-            'package' => $package,
-            'versions' => null,
-            'expandedVersion' => null,
-            'version' => null,
-            'removeMaintainerForm' => $removeMaintainerForm,
-            'show_remove_maintainer_form' => true,
-        ]);
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
     #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET', 'POST'])]
