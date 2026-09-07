@@ -100,7 +100,7 @@ class PackageTransparencyLog
          * Signable per-leaf hash. Reserved for the future hashing/publication layer; always null now.
          */
         #[ORM\Column(type: Types::BINARY, length: 32, nullable: true)]
-        public readonly mixed $leafHash = null,
+        public readonly ?string $leafHash = null,
     ) {
         $this->id = new Ulid();
     }
