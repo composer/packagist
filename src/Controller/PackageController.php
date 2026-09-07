@@ -664,12 +664,17 @@ class PackageController extends Controller
             if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
                 throw new \RuntimeException();
             }
-            $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
+            $data['downloads'] = $this->downloadManager->getDownloads($package);
 
+            // The view counter exists only to spot packages that get traffic but no installs, so
+            // it is only worth a Redis write while that can still be concluded. Downloads and
+            // createdAt never move back below these thresholds, and suspect is never unset here,
+            // so a package that fails this check can never need the counter again.
             if (
                 !$package->isSuspect()
-                && $data['downloads']['total'] <= 10 && ($data['downloads']['views'] ?? 0) >= 100
+                && $data['downloads']['total'] <= 10
                 && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
+                && $this->downloadManager->incrementViews($package) >= 100
             ) {
                 $vendorRepo = $this->getEM()->getRepository(Vendor::class);
                 if (!$vendorRepo->isVerified($package->getVendor())) {

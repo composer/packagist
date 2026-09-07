@@ -29,6 +29,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
+use Predis\Client;
 
 class PackageControllerTest extends IntegrationTestCase
 {
@@ -45,6 +46,39 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $auditLink);
         self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+    }
+
+    public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void
+    {
+        $fresh = self::createPackage('test/fresh', 'https://example.com/test/fresh');
+        $established = self::createPackage('test/established', 'https://example.com/test/established');
+        $this->store($fresh, $established);
+
+        $redis = $this->redis();
+        $redis->del(['views:'.$fresh->getId(), 'views:'.$established->getId()]);
+        // getDownloads() reads the package total straight off this key
+        $redis->set('dl:'.$established->getId(), '5000');
+
+        $this->client->request('GET', '/packages/test/fresh');
+        self::assertResponseIsSuccessful();
+        self::assertSame('1', $redis->get('views:'.$fresh->getId()));
+
+        $this->client->request('GET', '/packages/test/established');
+        self::assertResponseIsSuccessful();
+        self::assertNull(
+            $redis->get('views:'.$established->getId()),
+            'a package past the download threshold can never trip the heuristic, so it must not pay for the counter',
+        );
+
+        $redis->del(['views:'.$fresh->getId(), 'dl:'.$established->getId()]);
+    }
+
+    private function redis(): Client
+    {
+        $client = static::getContainer()->get('snc_redis.default');
+        self::assertInstanceOf(Client::class, $client);
+
+        return $client;
     }
 
     public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void
