@@ -3,6 +3,6 @@
 <strong>{{ log.packageLink(display.packageName) }}</strong><br>
 {% if display.repository %}Repository: {{ display.repository }}<br>{% endif %}
 {% if display.reason %}Reason: {{ display.reason }}<br>{% endif %}
-{# the public log never has this: the projection scrubs internal moderation notes at write time #}
+{## transparency log never has an internal reason ##}
 {% if display.internalReason %}Internal reason: {{ display.internalReason }}<br>{% endif %}
 Deleted by: {{ display.actor.username }}

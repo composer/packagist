@@ -5,11 +5,15 @@
         {% block type_options %}...{% endblock %}
         {% block fields %}...{% endblock %}
     {% endembed %}
-
-    route            - the log page's own route, used for submitting and for "clear all filters"
-    routeParams      - extra route params (e.g. the organization slug)
-    typeSelectHeight - height of the type multiselect, which grows with the number of types
 #}
+{% types {
+    ## The log page's own route, used for submitting and for "clear all filters".
+    route: 'string',
+    ## Extra route params (e.g. the organization slug).
+    routeParams?: 'mapping',
+    ## Height of the type multiselect, which grows with the number of types.
+    typeSelectHeight?: 'string',
+} %}
 {% set routeParams = routeParams ?? {} %}
 {% set typeSelectHeight = typeSelectHeight ?? '185px' %}
 
@@ -20,12 +24,14 @@
                 <div class="form-group">
                     <label for="type-filter">Type</label>
                     <select name="type[]" id="type-filter" class="form-select audit-log-type-select" multiple style="height: {{ typeSelectHeight }};">
+                        {## The <option> list of event types to filter on. ##}
                         {% block type_options %}{% endblock %}
                     </select>
                     <small class="help-block">Hold Ctrl/Cmd to select multiple</small>
                 </div>
             </div>
             <div class="col-lg-9 col-md-6">
+                {## The log-specific filter fields (actor, package, vendor, ...). ##}
                 {% block fields %}{% endblock %}
                 <div class="row">
                     <div class="col-lg-6 col-md-12">
