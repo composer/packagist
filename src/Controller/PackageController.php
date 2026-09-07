@@ -1525,7 +1525,7 @@ class PackageController extends Controller
         return $response;
     }
 
-    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
     public function dependentsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
@@ -1610,7 +1610,7 @@ class PackageController extends Controller
         return $this->render('package/dependents.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
     public function suggestersAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
