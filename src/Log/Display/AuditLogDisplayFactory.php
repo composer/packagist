@@ -66,7 +66,7 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::PackageCreated, AuditLogEventType::PackageUnabandoned, AuditLogEventType::PackageUnfrozen => new Event\PackageRepositoryDisplay(
+            AuditLogEventType::PackageCreated, AuditLogEventType::PackageUnabandoned, AuditLogEventType::PackageUnfrozen => new Event\PackageWithRepositoryDisplay(
                 $record->type,
                 $record->datetime,
                 $record->attributes['name'],
