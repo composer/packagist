@@ -57,13 +57,6 @@ class AdminAuditLogController extends Controller
             $filter->filter($qb);
         }
 
-        // Don't display 2FA events in the result list initially
-        $qb->andWhere('a.type NOT IN (:hidden_types)')
-            ->setParameter('hidden_types', [
-                AuditLogEventType::TwoFactorAuthenticationActivated->value,
-                AuditLogEventType::TwoFactorAuthenticationDeactivated->value,
-            ]);
-
         $auditLogs = new Pagerfanta(new QueryAdapter($qb, false, false));
         $auditLogs->setNormalizeOutOfRangePages(true);
         $auditLogs->setMaxPerPage(20);
