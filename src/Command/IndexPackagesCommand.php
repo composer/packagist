@@ -50,7 +50,6 @@ class IndexPackagesCommand extends Command
         $this
             ->setName('packagist:index')
             ->setDefinition([
-                new InputOption('force', null, InputOption::VALUE_NONE, 'Disabled, see --all'),
                 new InputOption('all', null, InputOption::VALUE_NONE, 'Index all packages without clearing the index first'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to index'),
             ])
@@ -61,17 +60,8 @@ class IndexPackagesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $verbose = $input->getOption('verbose');
-        $force = $input->getOption('force');
         $indexAll = $input->getOption('all');
         $package = $input->getArgument('package');
-
-        // --force used to call a method that never existed on the client, so it has always died here
-        // rather than clearing anything. Wiring it up now would empty the live index for the hours a
-        // full reindex takes, so it stays disabled until that is done atomically. --all is the safe
-        // way to reindex everything.
-        if ($force) {
-            throw new \LogicException('--force is disabled: it would empty the live index for the duration of the reindex. Use --all to reindex every package in place.');
-        }
 
         $deployLock = $this->cacheDir.'/deploy.globallock';
         if (file_exists($deployLock)) {

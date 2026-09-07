@@ -61,9 +61,7 @@ class CleanIndexCommand extends Command
             return 0;
         }
 
-        // Browsing uses a cursor, so deleting records while iterating cannot make it skip any -- the
-        // old page-by-page loop drifted every time it deleted something, and ran into
-        // paginationLimitedTo after 3 pages.
+        // Browsing uses a cursor, so deleting records while iterating cannot make it skip any
         /** @var iterable<array{objectID: string, name: string, type: string}> $records */
         $records = $this->packageIndex->browse(['filters' => 'type:"virtual-package" AND trendiness=100']);
 
