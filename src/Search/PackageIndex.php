@@ -19,13 +19,60 @@ use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
  *
  * All contact with the search vendor's client goes through implementations of this, so that a client
  * upgrade touches one class instead of every call site.
+ *
+ * The shapes below stay unsealed: the search API accepts far more parameters than we pass, and
+ * records gain attributes over time, so only what the app actually relies on is spelled out.
+ *
+ * @phpstan-type PackageRecord array{
+ *     id: int|string,
+ *     objectID: string,
+ *     name: string,
+ *     package_organisation: string,
+ *     package_name: string,
+ *     description: string,
+ *     type: string|null,
+ *     repository: string,
+ *     language: string|null,
+ *     trendiness: float|int,
+ *     popularity: float|int,
+ *     abandoned: int,
+ *     replacementPackage: string,
+ *     tags: list<string>,
+ *     meta?: array{downloads: int, downloads_formatted: string, favers: int, favers_formatted: string},
+ *     extension?: int,
+ *     extensionName?: string|null,
+ *     ...<string, mixed>
+ * }
+ * @phpstan-type SearchParams array{
+ *     query: string,
+ *     hitsPerPage?: int,
+ *     page?: int,
+ *     filters?: string,
+ *     facetFilters?: list<string>,
+ *     numericFilters?: list<string>,
+ *     ...<string, mixed>
+ * }
+ * @phpstan-type BrowseParams array{
+ *     filters?: string,
+ *     facetFilters?: list<string>,
+ *     numericFilters?: list<string>,
+ *     hitsPerPage?: int,
+ *     ...<string, mixed>
+ * }
+ * @phpstan-type SearchResponse array{
+ *     nbHits: int,
+ *     page: int,
+ *     nbPages: int,
+ *     hits: list<array<string, mixed>>,
+ *     ...<string, mixed>
+ * }
  */
 interface PackageIndex
 {
     /**
-     * @param array<string, mixed> $searchParams the request body: query, filters, hitsPerPage, page, ...
+     * @phpstan-param SearchParams $searchParams the request body
      *
-     * @return array<string, mixed> the raw search response; callers narrow it to the shape they asked for
+     * @phpstan-return SearchResponse hits stay loose; callers narrow them to what they queried for
      *
      * @throws AlgoliaException          on a transport or API error
      * @throws \InvalidArgumentException on a malformed response body
@@ -35,14 +82,14 @@ interface PackageIndex
     /**
      * Iterates the whole index with a cursor, unaffected by records being deleted while iterating.
      *
-     * @param array<string, mixed> $browseParams
+     * @phpstan-param BrowseParams $browseParams
      *
-     * @return iterable<array<string, mixed>>
+     * @phpstan-return iterable<PackageRecord>
      */
     public function browse(array $browseParams): iterable;
 
     /**
-     * @param list<array<string, mixed>> $records each must carry an objectID
+     * @phpstan-param list<PackageRecord> $records
      */
     public function saveRecords(array $records): void;
 

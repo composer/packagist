@@ -28,6 +28,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * @phpstan-import-type PackageRecord from PackageIndex
+ */
 class IndexPackagesCommand extends Command
 {
     use \App\Util\DoctrineTrait;
@@ -174,9 +177,9 @@ class IndexPackagesCommand extends Command
     }
 
     /**
-     * @param string[] $tags
+     * @param list<string> $tags
      *
-     * @return array<string, int|string|float|array<string, string|int>|null>
+     * @phpstan-return PackageRecord
      */
     private function packageToSearchableArray(Package $package, array $tags): array
     {
@@ -232,7 +235,7 @@ class IndexPackagesCommand extends Command
     }
 
     /**
-     * @return array<string, string|int|array{}>
+     * @phpstan-return PackageRecord
      */
     private function createSearchableProvider(string $provided): array
     {
@@ -272,7 +275,7 @@ class IndexPackagesCommand extends Command
     }
 
     /**
-     * @return string[]
+     * @return list<string>
      */
     private function getTags(Package $package): array
     {

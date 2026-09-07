@@ -62,7 +62,6 @@ class CleanIndexCommand extends Command
         }
 
         // Browsing uses a cursor, so deleting records while iterating cannot make it skip any
-        /** @var iterable<array{objectID: string, name: string, type: string}> $records */
         $records = $this->packageIndex->browse(['filters' => 'type:"virtual-package" AND trendiness=100']);
 
         foreach ($records as $record) {
@@ -75,7 +74,6 @@ class CleanIndexCommand extends Command
             $objectId = $record['objectID'];
 
             if (!str_starts_with($objectId, 'virtual:')) {
-                /** @var array{hits: list<array{objectID: string}>} $duplicate */
                 $duplicate = $this->packageIndex->search(['query' => '', 'facetFilters' => ['objectID:virtual:'.$objectId]]);
                 if (\count($duplicate['hits']) === 1) {
                     if ($verbose) {

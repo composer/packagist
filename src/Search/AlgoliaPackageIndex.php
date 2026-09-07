@@ -15,6 +15,12 @@ namespace App\Search;
 use Algolia\AlgoliaSearch\Api\SearchClient;
 use Algolia\AlgoliaSearch\Exceptions\MissingObjectId;
 
+/**
+ * @phpstan-import-type PackageRecord from PackageIndex
+ * @phpstan-import-type SearchParams from PackageIndex
+ * @phpstan-import-type BrowseParams from PackageIndex
+ * @phpstan-import-type SearchResponse from PackageIndex
+ */
 final class AlgoliaPackageIndex implements PackageIndex
 {
     public function __construct(
@@ -23,22 +29,38 @@ final class AlgoliaPackageIndex implements PackageIndex
     ) {
     }
 
+    /**
+     * @phpstan-param SearchParams $searchParams
+     *
+     * @phpstan-return SearchResponse
+     */
     public function search(array $searchParams): array
     {
         // $searchParams is the request body. Anything passed as the client's third argument instead
         // is silently dropped (RequestOptions only reads headers/queryParameters/body/timeouts), so
         // filters and pagination must never be moved there.
+        /** @var SearchResponse $result */
         $result = $this->algolia->searchSingleIndex($this->algoliaIndexName, $searchParams);
-        \assert(\is_array($result));
 
         return $result;
     }
 
+    /**
+     * @phpstan-param BrowseParams $browseParams
+     *
+     * @phpstan-return iterable<PackageRecord>
+     */
     public function browse(array $browseParams): iterable
     {
-        return $this->algolia->browseObjects($this->algoliaIndexName, $browseParams);
+        /** @var iterable<PackageRecord> $records */
+        $records = $this->algolia->browseObjects($this->algoliaIndexName, $browseParams);
+
+        return $records;
     }
 
+    /**
+     * @phpstan-param list<PackageRecord> $records
+     */
     public function saveRecords(array $records): void
     {
         // v3 rejected records without an objectID client-side; v4's saveObjects() would instead let
