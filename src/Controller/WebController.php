@@ -97,7 +97,7 @@ class WebController extends Controller
 
         try {
             $result = $algolia->search($query);
-        } catch (AlgoliaException) {
+        } catch (AlgoliaException|\InvalidArgumentException) {
             return new JsonResponse([
                 'status' => 'error',
                 'message' => 'Could not connect to the search server',
