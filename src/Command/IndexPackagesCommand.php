@@ -12,11 +12,11 @@
 
 namespace App\Command;
 
-use Algolia\AlgoliaSearch\SearchClient;
 use App\Entity\Package;
 use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Search\PackageIndex;
 use App\Service\Locker;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
@@ -33,13 +33,12 @@ class IndexPackagesCommand extends Command
     use \App\Util\DoctrineTrait;
 
     public function __construct(
-        private SearchClient $algolia,
+        private PackageIndex $packageIndex,
         private Locker $locker,
         private ManagerRegistry $doctrine,
         private Client $redis,
         private DownloadManager $downloadManager,
         private FavoriteManager $favoriteManager,
-        private string $algoliaIndexName,
         private string $cacheDir,
         private \Graze\DogStatsD\Client $statsd,
     ) {
@@ -51,7 +50,7 @@ class IndexPackagesCommand extends Command
         $this
             ->setName('packagist:index')
             ->setDefinition([
-                new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-indexing of all packages'),
+                new InputOption('force', null, InputOption::VALUE_NONE, 'Disabled, see --all'),
                 new InputOption('all', null, InputOption::VALUE_NONE, 'Index all packages without clearing the index first'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to index'),
             ])
@@ -65,6 +64,14 @@ class IndexPackagesCommand extends Command
         $force = $input->getOption('force');
         $indexAll = $input->getOption('all');
         $package = $input->getArgument('package');
+
+        // --force used to call a method that never existed on the client, so it has always died here
+        // rather than clearing anything. Wiring it up now would empty the live index for the hours a
+        // full reindex takes, so it stays disabled until that is done atomically. --all is the safe
+        // way to reindex everything.
+        if ($force) {
+            throw new \LogicException('--force is disabled: it would empty the live index for the duration of the reindex. Use --all to reindex every package in place.');
+        }
 
         $deployLock = $this->cacheDir.'/deploy.globallock';
         if (file_exists($deployLock)) {
@@ -84,8 +91,6 @@ class IndexPackagesCommand extends Command
             return 0;
         }
 
-        $index = $this->algolia->initIndex($this->algoliaIndexName);
-
         if ($package) {
             $packageEntity = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $package]);
             if ($packageEntity === null) {
@@ -94,13 +99,10 @@ class IndexPackagesCommand extends Command
                 return 1;
             }
             $packages = [['id' => $packageEntity->getId()]];
-        } elseif ($force || $indexAll) {
+        } elseif ($indexAll) {
             $this->statsd->increment('nightly_job.start', 1, 1, ['job' => 'index-packages']);
 
             $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
-            if ($force) {
-                $this->getEM()->getConnection()->executeQuery('UPDATE package SET indexedAt = NULL');
-            }
         } else {
             $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForIndexing();
         }
@@ -108,15 +110,6 @@ class IndexPackagesCommand extends Command
         $ids = [];
         foreach ($packages as $row) {
             $ids[] = $row['id'];
-        }
-
-        // clear index before a full-update
-        if ($force && !$package) {
-            if ($verbose) {
-                $output->writeln('Deleting existing index');
-            }
-
-            $index->clear();
         }
 
         $total = \count($ids);
@@ -140,10 +133,10 @@ class IndexPackagesCommand extends Command
                 // delete suppressed (spam/malware) packages from the search index
                 if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage()) {
                     try {
-                        $index->deleteObject($package->getName());
+                        $this->packageIndex->deleteRecord($package->getName());
                         $idsToUpdate[] = $package->getId();
                         continue;
-                    } catch (\Algolia\AlgoliaSearch\Exceptions\AlgoliaException $e) {
+                    } catch (\Algolia\AlgoliaSearch\Exceptions\AlgoliaException|\InvalidArgumentException $e) {
                     }
                 }
 
@@ -166,7 +159,7 @@ class IndexPackagesCommand extends Command
             }
 
             try {
-                $index->saveObjects($records);
+                $this->packageIndex->saveRecords($records);
             } catch (\Exception $e) {
                 $output->writeln('<error>'.$e::class.': '.$e->getMessage().', occurred while processing packages: '.implode(',', $idsSlice).'</error>');
                 continue;
@@ -183,7 +176,7 @@ class IndexPackagesCommand extends Command
         }
 
         $this->locker->unlockCommand(__CLASS__);
-        if ($force || $indexAll) {
+        if ($indexAll) {
             $this->statsd->increment('nightly_job.end', 1, 1, ['job' => 'index-packages']);
         }
 

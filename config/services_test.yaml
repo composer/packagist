@@ -10,9 +10,10 @@ services:
     App\Service\Scheduler:
         public: true
 
-    Algolia\AlgoliaSearch\SearchClient:
+    # public so AlgoliaMock can be swapped in
+    App\Search\PackageIndex:
+        alias: App\Search\AlgoliaPackageIndex
         public: true
-        factory: ['Algolia\AlgoliaSearch\SearchClient', create]
 
     # stub to replace 2FA code generation
     App\Tests\Mock\TotpAuthenticatorStub:

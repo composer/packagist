@@ -15,6 +15,20 @@ namespace App\Search;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
+ * @phpstan-type AlgoliaSearchResponse array{
+ *     nbHits: int,
+ *     page: int,
+ *     nbPages: int,
+ *     hits: array<array{
+ *         id: int,
+ *         name: string,
+ *         description: string,
+ *         repository: string,
+ *         meta: array{downloads: int, favers: int},
+ *         abandoned?: bool,
+ *         replacementPackage?: string
+ *     }>
+ * }
  * @phpstan-type SearchResult array{
  *     total: int,
  *     next?: string,
@@ -37,20 +51,7 @@ final class ResultTransformer
     }
 
     /**
-     * @param array{
-     *     nbHits: int,
-     *     page: int,
-     *     nbPages: int,
-     *     hits: array<array{
-     *         id: int,
-     *         name: string,
-     *         description: string,
-     *         repository: string,
-     *         meta: array{downloads: int, favers: int},
-     *         abandoned?: bool,
-     *         replacementPackage?: string
-     *     }>
-     * } $results
+     * @phpstan-param AlgoliaSearchResponse $results
      *
      * @phpstan-return SearchResult
      */

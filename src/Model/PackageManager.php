@@ -13,7 +13,6 @@
 namespace App\Model;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
-use Algolia\AlgoliaSearch\SearchClient;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
@@ -23,6 +22,7 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\PhpStat;
 use App\Entity\User;
 use App\Entity\Version;
+use App\Search\PackageIndex;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use App\Service\CdnClient;
 use App\Service\GitHubUserMigrationWorker;
@@ -52,8 +52,7 @@ class PackageManager
         /** @var array{from: string, fromName: string} */
         private array $options,
         private ProviderManager $providerManager,
-        private SearchClient $algoliaClient,
-        private string $algoliaIndexName,
+        private PackageIndex $packageIndex,
         private GitHubUserMigrationWorker $githubWorker,
         private string $metadataDir,
         private Client $redis,
@@ -198,11 +197,8 @@ class PackageManager
     public function deletePackageSearchIndex(string $packageName): void
     {
         try {
-            $indexName = $this->algoliaIndexName;
-            $algolia = $this->algoliaClient;
-            $index = $algolia->initIndex($indexName);
-            $index->deleteObject($packageName);
-        } catch (AlgoliaException $e) {
+            $this->packageIndex->deleteRecord($packageName);
+        } catch (AlgoliaException|\InvalidArgumentException $e) {
         }
     }
 
