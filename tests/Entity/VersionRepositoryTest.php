@@ -314,6 +314,23 @@ class VersionRepositoryTest extends IntegrationTestCase
         );
     }
 
+    public function testSoftDeleteOfAlreadySoftDeletedVersionDoesNotMarkForRedump(): void
+    {
+        // An admin hiding an already soft-deleted version only rewrites the reason, and the dumped
+        // metadata never contained the version in the first place, so no bytes change.
+        $version = $this->seedStableVersion('vendor/sd-rehide-dump', '2.0.0', '2.0.0.0');
+        $package = $version->getPackage();
+
+        $this->versionRepository->softDelete($version, VersionDeletionReason::AutoDeletedMissing, null, null, null);
+        self::getEM()->flush();
+        $this->markPackageAsDumped($package);
+
+        $this->versionRepository->softDelete($version, VersionDeletionReason::Hidden, 'spam', 'ticket #7', null);
+        self::getEM()->flush();
+
+        self::assertFalse($package->isDumpRequested(), 'a reason change on an already-pulled version changes no dumped bytes');
+    }
+
     public function testRecoverMarksForRedumpDirectly(): void
     {
         $version = $this->seedStableVersion('vendor/recover-dump', '2.0.0', '2.0.0.0');
