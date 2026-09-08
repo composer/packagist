@@ -22,6 +22,7 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\PhpStat;
 use App\Entity\User;
 use App\Entity\Version;
+use App\Package\PackageListCache;
 use App\Search\PackageIndex;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use App\Service\CdnClient;
@@ -60,6 +61,7 @@ class PackageManager
         private readonly CdnClient $cdnClient,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly Scheduler $scheduler,
+        private readonly PackageListCache $listCache,
         private readonly DownloadManager $downloadManager,
     ) {
     }
@@ -79,6 +81,9 @@ class PackageManager
         $em->flush();
 
         if ($reason->suppressesPackage()) {
+            // the listing is built from the DB, which already excludes suppressed packages, so mark
+            // it stale here rather than waiting for the purge worker's deletePackage() to do it
+            $this->listCache->markStale();
             $this->scheduler->schedulePackagePurge($package, $actorId);
             // the page 404s from here on, so the spam heuristic's view counter has no traffic left
             // to read - and unfreezing legitimately starts the count over
