@@ -47,6 +47,10 @@ class DumpPackageListCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $lockName = $this->getName() ?? __CLASS__;
+        if ($input->getOption('rebuild-set')) {
+            $lockName .= ':rebuild-set';
+        }
+
         if (!$this->locker->lockCommand($lockName)) {
             if ($output->isVerbose()) {
                 $output->writeln('Aborting, another dump is running already');
@@ -56,11 +60,15 @@ class DumpPackageListCommand extends Command
         }
 
         try {
+            if ($input->getOption('rebuild-set')) {
+                $this->providerManager->rebuildPackageSet($this->repo->getPackageNames());
+
+                return 0;
+            }
+
             // read before querying: a change landing during the build leaves the version ahead of
             // what we store as built, so the next run picks it up
             $version = $this->listCache->getVersion();
-            $names = null;
-
             if ($input->getOption('force') || !$this->listCache->exists() || $version !== $this->listCache->getBuiltVersion()) {
                 $names = $this->repo->getPackageNames();
                 $this->listCache->write($names, $version);
@@ -68,10 +76,6 @@ class DumpPackageListCommand extends Command
                 if ($output->isVerbose()) {
                     $output->writeln('Dumped '.\count($names).' package names at version '.$version);
                 }
-            }
-
-            if ($input->getOption('rebuild-set')) {
-                $this->providerManager->rebuildPackageSet($names ?? $this->repo->getPackageNames());
             }
         } finally {
             $this->locker->unlockCommand($lockName);
