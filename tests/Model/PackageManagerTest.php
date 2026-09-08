@@ -17,8 +17,11 @@ use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\User;
+use App\Entity\UserRepository;
 use App\Model\PackageManager;
+use App\Package\Updater;
 use App\Tests\IntegrationTestCase;
+use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\TestWith;
 use Predis\Client;
 
@@ -44,9 +47,9 @@ class PackageManagerTest extends IntegrationTestCase
         $user = new User();
         $user->addPackage($package);
 
-        $repo = $this->createMock('App\Entity\UserRepository');
-        $em = $this->createMock('Doctrine\ORM\EntityManager');
-        $updater = $this->createMock('App\Package\Updater');
+        $repo = $this->createMock(UserRepository::class);
+        $em = $this->createMock(EntityManager::class);
+        $updater = $this->createMock(Updater::class);
 
         $repo->expects($this->once())
             ->method('findOneBy')
@@ -55,7 +58,7 @@ class PackageManagerTest extends IntegrationTestCase
 
         static::$kernel->getContainer()->set('test.user_repo', $repo);
         static::$kernel->getContainer()->set('doctrine.orm.entity_manager', $em);
-        static::$kernel->getContainer()->set('App\Package\Updater', $updater);
+        static::$kernel->getContainer()->set(Updater::class, $updater);
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
         $client->request('POST', '/api/github?username=test&apiToken=token', ['payload' => $payload]);

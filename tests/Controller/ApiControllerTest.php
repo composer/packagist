@@ -11,7 +11,7 @@
  */
 
 namespace App\Tests\Controller;
-
+use App\Service\Scheduler;
 use App\Entity\SecurityAdvisory;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
@@ -45,14 +45,14 @@ class ApiControllerTest extends IntegrationTestCase
         $package = self::createPackage('test/'.bin2hex(random_bytes(10)), $url, maintainers: [$user]);
         $this->store($user, $package);
 
-        $scheduler = $this->createMock('App\Service\Scheduler');
+        $scheduler = $this->createMock(Scheduler::class);
 
         $scheduler->expects($this->once())
             ->method('scheduleUpdate')
             ->with($package);
 
         static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
-        static::$kernel->getContainer()->set('App\Service\Scheduler', $scheduler);
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
         $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload]);
