@@ -16,10 +16,10 @@ use App\Entity\Package;
 use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
-use Doctrine\DBAL\ConnectionException;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
+use Predis\PredisException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,7 +53,7 @@ class ExploreController extends Controller
                     return array_search($a->getId(), $popularIds) > array_search($b->getId(), $popularIds) ? 1 : -1;
                 });
             }
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
             $popular = [];
         }
 
@@ -96,7 +96,7 @@ class ExploreController extends Controller
             $packages->setNormalizeOutOfRangePages(true);
             $packages->setMaxPerPage($perPage);
             $packages->setCurrentPage(max(1, $req->query->getInt('page', 1)));
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
             $packages = new Pagerfanta(new FixedAdapter(0, []));
         }
 

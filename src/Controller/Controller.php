@@ -67,7 +67,7 @@ abstract class Controller extends AbstractController
             if ($search) {
                 $favorites = $favMgr->getFaverCounts($ids);
             }
-        } catch (\Predis\Connection\ConnectionException $e) {
+        } catch (\Predis\PredisException $e) {
         }
 
         return ['downloads' => $downloads, 'favers' => $favorites];

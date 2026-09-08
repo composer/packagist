@@ -86,7 +86,9 @@ permissions.
 
 ### Search
 
-To use the search in your local development environment, setup an
+Search is optional locally: with no Algolia config the rest of the site works
+normally, `/search.json` returns an error response and the search page renders
+without results. To use the search, setup an
 [Algolia Account](https://www.algolia.com/) and configure following keys
 in your `.env.local`:
 
