@@ -61,7 +61,7 @@ use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -418,7 +418,7 @@ class PackageController extends Controller
 
                 return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? -1 : 1;
             });
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
         }
 
         if ($req->getRequestFormat() === 'json') {
@@ -581,7 +581,7 @@ class PackageController extends Controller
                 }
                 $data['downloads'] = $this->downloadManager->getDownloads($package);
                 $data['favers'] = $this->favoriteManager->getFaverCount($package);
-            } catch (\RuntimeException|ConnectionException $e) {
+            } catch (\RuntimeException|PredisException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
             }
@@ -664,24 +664,35 @@ class PackageController extends Controller
             if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
                 throw new \RuntimeException();
             }
-            $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
+            $data['downloads'] = $this->downloadManager->getDownloads($package);
 
+            // The view counter exists only to spot packages that get traffic but no installs, so
+            // it is only worth a Redis write while that can still be concluded. Downloads and
+            // createdAt never move back below these thresholds, and suspect is never unset here,
+            // so a package that fails this check can never need the counter again.
             if (
                 !$package->isSuspect()
-                && $data['downloads']['total'] <= 10 && ($data['downloads']['views'] ?? 0) >= 100
-                && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
+                && $data['downloads']['total'] <= PackageRepository::SUSPECT_VIEWS_MAX_DOWNLOADS
+                && $package->getCreatedAt()->getTimestamp() >= strtotime(PackageRepository::SUSPECT_VIEWS_MIN_CREATED_AT)
+                && $this->downloadManager->incrementViews($package) >= 100
             ) {
                 $vendorRepo = $this->getEM()->getRepository(Vendor::class);
                 if (!$vendorRepo->isVerified($package->getVendor())) {
                     $package->setSuspect('Too many views');
                     $repo->markPackageSuspect($package);
                 }
+
+                // The counter has served its purpose either way, so drop it: a package we just
+                // marked suspect stops counting above, and for a verified vendor nothing can ever
+                // come of it. Restarting from zero also spaces the isVerified() lookup back out to
+                // once per 100 views instead of once per view from here on.
+                $this->downloadManager->deleteViews($package->getId());
             }
 
             if ($user) {
                 $data['is_favorite'] = $this->favoriteManager->isMarked($user, $package);
             }
-        } catch (\RuntimeException|ConnectionException) {
+        } catch (\RuntimeException|PredisException) {
         }
 
         $data['dependents'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getDependentCount($package->getName()) : 0;
@@ -806,7 +817,7 @@ class PackageController extends Controller
         try {
             $data['downloads']['total'] = $this->downloadManager->getDownloads($package);
             $data['favers'] = $this->favoriteManager->getFaverCount($package);
-        } catch (ConnectionException) {
+        } catch (PredisException) {
             $data['downloads']['total'] = null;
             $data['favers'] = null;
         }
@@ -814,7 +825,7 @@ class PackageController extends Controller
         foreach ($versions as $version) {
             try {
                 $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version);
-            } catch (ConnectionException) {
+            } catch (PredisException) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
         }
@@ -1155,14 +1166,7 @@ class PackageController extends Controller
             }
         }
 
-        return $this->render('package/view_package.html.twig', [
-            'package' => $package,
-            'versions' => null,
-            'expandedVersion' => null,
-            'version' => null,
-            'removeMaintainerForm' => $removeMaintainerForm,
-            'show_remove_maintainer_form' => true,
-        ]);
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
     #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET', 'POST'])]

@@ -20,6 +20,7 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\User;
+use App\Entity\Vendor;
 use App\Entity\Version;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
@@ -29,6 +30,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
+use Predis\Client;
 
 class PackageControllerTest extends IntegrationTestCase
 {
@@ -74,6 +76,85 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $crawler->filter('[name="remove_maintainer_form"]'));
         self::assertCount(1, $crawler->filter('[name="transfer_package_form"]'));
         self::assertCount(1, $crawler->filter('form.delete.action'));
+    }
+
+    public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void
+    {
+        $fresh = self::createPackage('test/fresh', 'https://example.com/test/fresh');
+        $established = self::createPackage('test/established', 'https://example.com/test/established');
+        $this->store($fresh, $established);
+
+        $redis = $this->redis();
+        $redis->del(['views:'.$fresh->getId(), 'views:'.$established->getId()]);
+        // getDownloads() reads the package total straight off this key
+        $redis->set('dl:'.$established->getId(), '5000');
+
+        $this->client->request('GET', '/packages/test/fresh');
+        self::assertResponseIsSuccessful();
+        self::assertSame('1', $redis->get('views:'.$fresh->getId()));
+
+        $this->client->request('GET', '/packages/test/established');
+        self::assertResponseIsSuccessful();
+        self::assertNull(
+            $redis->get('views:'.$established->getId()),
+            'a package past the download threshold can never trip the heuristic, so it must not pay for the counter',
+        );
+
+        $redis->del(['views:'.$fresh->getId(), 'dl:'.$established->getId()]);
+    }
+
+    public function testPackagePageDropsTheViewCounterOnceTheHeuristicHasFired(): void
+    {
+        $package = self::createPackage('test/spammy', 'https://example.com/test/spammy');
+        $this->store($package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/test/spammy');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame('Too many views', $reloaded->getSuspect());
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'the counter has done its job, keeping it would only grow a key nothing reads',
+        );
+    }
+
+    public function testPackagePageDropsTheViewCounterOfAVerifiedVendor(): void
+    {
+        $vendor = new Vendor('verifiedvendor');
+        $vendor->setVerified(true);
+        $package = self::createPackage('verifiedvendor/pkg', 'https://example.com/verifiedvendor/pkg');
+        $this->store($vendor, $package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/verifiedvendor/pkg');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertFalse($reloaded->isSuspect(), 'a verified vendor is never flagged');
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'nothing can ever come of this counter, and resetting it stops the isVerified() lookup running on every view',
+        );
+    }
+
+    private function redis(): Client
+    {
+        $client = static::getContainer()->get('snc_redis.default');
+        self::assertInstanceOf(Client::class, $client);
+
+        return $client;
     }
 
     public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void
