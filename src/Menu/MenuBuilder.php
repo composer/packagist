@@ -56,7 +56,7 @@ class MenuBuilder
     public function createProfileMenu(): ItemInterface
     {
         $menu = $this->factory->createItem('root');
-        $menu->setChildrenAttribute('class', 'nav nav-tabs nav-stacked');
+        $menu->setChildrenAttribute('class', 'nav nav-tabs flex-column');
 
         $this->addProfileMenu($menu);
 
@@ -83,6 +83,11 @@ class MenuBuilder
             ]);
         }
         if ($this->security->isGranted('ROLE_DISABLE_USERS')) {
+            $menu->addChild('Users', [
+                'label' => '<span class="icon-vcard"></span>Users',
+                'route' => 'admin_users',
+                'extras' => ['safe_label' => true, 'translation_domain' => false],
+            ]);
             $menu->addChild('Frozen users', [
                 'label' => '<span class="icon-lock"></span>Frozen users',
                 'route' => 'admin_frozen_users',
@@ -115,7 +120,7 @@ class MenuBuilder
     public function createOrganizationMenu(): ItemInterface
     {
         $menu = $this->factory->createItem('root');
-        $menu->setChildrenAttribute('class', 'nav nav-tabs nav-stacked');
+        $menu->setChildrenAttribute('class', 'nav nav-tabs flex-column');
 
         $slug = $this->requestStack->getCurrentRequest()?->attributes->get('organization');
         if (!\is_string($slug)) {
@@ -156,6 +161,9 @@ class MenuBuilder
                     ['route' => 'organization_members', 'parameters' => ['organization' => $slug]],
                     ['route' => 'organization_member_remove', 'parameters' => ['organization' => $slug]],
                     ['route' => 'organization_member_leave', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_invitation_create', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_invitation_resend', 'parameters' => ['organization' => $slug]],
+                    ['route' => 'organization_invitation_revoke', 'parameters' => ['organization' => $slug]],
                 ],
             ],
         ]);

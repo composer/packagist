@@ -4,7 +4,7 @@
 
 {% block admin_content %}
     <div class="row">
-        <div class="col-xs-12 package">
+        <div class="col-12 package">
             <div class="package-header">
                 <h2 class="title">Create an organization</h2>
                 <p>Create an organization and assign its first owner.</p>
@@ -13,7 +13,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-lg-8">
             {{ form_start(form, { 'attr': { 'class': 'admin_create_organization' } }) }}
                 {{ form_errors(form) }}
 
@@ -39,7 +39,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-success">Create organization</button>
-                <a class="btn btn-default" href="{{ path('admin_organization_list') }}">Cancel</a>
+                <a class="btn btn-secondary" href="{{ path('admin_organization_list') }}">Cancel</a>
             {{ form_end(form) }}
         </div>
     </div>

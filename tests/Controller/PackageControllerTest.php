@@ -20,13 +20,17 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\User;
+use App\Entity\Vendor;
 use App\Entity\Version;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
+use Predis\Client;
 
 class PackageControllerTest extends IntegrationTestCase
 {
@@ -43,6 +47,85 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $auditLink);
         self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+    }
+
+    public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void
+    {
+        $fresh = self::createPackage('test/fresh', 'https://example.com/test/fresh');
+        $established = self::createPackage('test/established', 'https://example.com/test/established');
+        $this->store($fresh, $established);
+
+        $redis = $this->redis();
+        $redis->del(['views:'.$fresh->getId(), 'views:'.$established->getId()]);
+        // getDownloads() reads the package total straight off this key
+        $redis->set('dl:'.$established->getId(), '5000');
+
+        $this->client->request('GET', '/packages/test/fresh');
+        self::assertResponseIsSuccessful();
+        self::assertSame('1', $redis->get('views:'.$fresh->getId()));
+
+        $this->client->request('GET', '/packages/test/established');
+        self::assertResponseIsSuccessful();
+        self::assertNull(
+            $redis->get('views:'.$established->getId()),
+            'a package past the download threshold can never trip the heuristic, so it must not pay for the counter',
+        );
+
+        $redis->del(['views:'.$fresh->getId(), 'dl:'.$established->getId()]);
+    }
+
+    public function testPackagePageDropsTheViewCounterOnceTheHeuristicHasFired(): void
+    {
+        $package = self::createPackage('test/spammy', 'https://example.com/test/spammy');
+        $this->store($package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/test/spammy');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame('Too many views', $reloaded->getSuspect());
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'the counter has done its job, keeping it would only grow a key nothing reads',
+        );
+    }
+
+    public function testPackagePageDropsTheViewCounterOfAVerifiedVendor(): void
+    {
+        $vendor = new Vendor('verifiedvendor');
+        $vendor->setVerified(true);
+        $package = self::createPackage('verifiedvendor/pkg', 'https://example.com/verifiedvendor/pkg');
+        $this->store($vendor, $package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/verifiedvendor/pkg');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertFalse($reloaded->isSuspect(), 'a verified vendor is never flagged');
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'nothing can ever come of this counter, and resetting it stops the isVerified() lookup running on every view',
+        );
+    }
+
+    private function redis(): Client
+    {
+        $client = static::getContainer()->get('snc_redis.default');
+        self::assertInstanceOf(Client::class, $client);
+
+        return $client;
     }
 
     public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void
@@ -72,6 +155,36 @@ class PackageControllerTest extends IntegrationTestCase
         $job = $em->getRepository(Job::class)->findOneBy(['type' => 'package:purge']);
         self::assertNotNull($job, 'a package:purge job should be scheduled for a suppressing freeze');
         self::assertSame('test/pkg', $job->getPayload()['name']);
+    }
+
+    public function testFreezePackageAsGoneDoesNotPurge(): void
+    {
+        $mod = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($mod, $package);
+        $packageId = $package->getId();
+
+        $this->client->loginUser($mod);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $form = $crawler->filter('#freeze-package-modal form')->form();
+        $form['reason'] = 'gone';
+        $this->client->submit($form);
+        self::assertResponseStatusCodeSame(302);
+
+        $em = self::getEM();
+        $em->clear();
+        $package = $em->find(Package::class, $packageId);
+        self::assertSame(PackageFreezeReason::Gone, $package->getFreezeReason());
+
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::PackageFrozen->value, 'packageId' => $packageId]);
+        self::assertNotNull($record, 'a PackageFrozen audit record should be created');
+        self::assertSame('gone', $record->attributes['reason']);
+        // a manual freeze is attributed to the moderator, unlike the crawler's 'automation'
+        self::assertIsArray($record->attributes['actor']);
+        self::assertSame('mod', $record->attributes['actor']['username']);
+
+        // Gone is a gentle freeze: the package stops being crawled but its metadata keeps being served.
+        self::assertNull($em->getRepository(Job::class)->findOneBy(['type' => 'package:purge']), 'no purge should be scheduled for a gentle freeze');
     }
 
     public function testFreezePackageDeniedWithoutRole(): void
@@ -117,7 +230,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('auto-safe', $listing, 'the metadata-safe package should be flagged auto-safe');
         self::assertStringContainsString('review', $listing, 'the spammy package should be flagged for review');
         self::assertStringContainsString('readme', $listing, 'the spam package has a README so its readme score should show');
-        self::assertGreaterThanOrEqual(2, $crawler->filter('.packages .label')->count());
+        self::assertGreaterThanOrEqual(2, $crawler->filter('.packages .badge')->count());
     }
 
     public function testViewVendor(): void
@@ -398,6 +511,332 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('s-maxage=86400', $cacheControl);
     }
 
+    /**
+     * Admins can hide a version that is already soft-deleted as gone-from-upstream or
+     * maintainer-pulled; admin-pulled and already-hidden rows must be recovered first.
+     */
+    #[TestWith([null, true, 200])]
+    #[TestWith([VersionDeletionReason::AutoDeletedMissing, true, 200])]
+    #[TestWith([VersionDeletionReason::DeletedByMaintainer, true, 200])]
+    #[TestWith([VersionDeletionReason::DeletedByAdmin, false, 403])]
+    #[TestWith([VersionDeletionReason::Hidden, false, 403])]
+    public function testAdminHideVersionAllowedTransitions(?VersionDeletionReason $reason, bool $buttonShown, int $expectedStatus): void
+    {
+        $removedAt = new \DateTimeImmutable('2024-01-02 03:04:05');
+
+        $maintainer = self::createUser('owner', 'owner@example.org');
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$maintainer]);
+
+        $target = $this->createStableVersion($package, '1.0.0');
+        if ($reason !== null) {
+            $target->setSoftDeletedAt($removedAt);
+            $target->setDeletionReason($reason);
+        }
+        // A never-deleted version always renders a hide form, giving us a valid CSRF token even in
+        // the cases where the target row must not offer one.
+        $live = $this->createStableVersion($package, '1.1.0');
+
+        $this->store($maintainer, $admin, $package, $target, $live);
+        $targetId = $target->getId();
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        self::assertSame(
+            $buttonShown ? 1 : 0,
+            $crawler->filter('li.version[data-version-id="1.0.0"] .hide-version')->count(),
+            'hide button visibility for reason '.($reason?->value ?? 'none')
+        );
+
+        $token = $crawler->filter('li.version[data-version-id="1.1.0"] .hide-version input[name="_token"]')->attr('value');
+        $this->client->request('POST', '/versions/'.$targetId.'/admin-hide', ['_token' => $token, 'reason' => 'spam']);
+        self::assertResponseStatusCodeSame($expectedStatus);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Version::class)->find($targetId);
+        self::assertNotNull($reloaded);
+
+        if ($expectedStatus !== 200) {
+            self::assertSame($reason, $reloaded->getDeletionReason(), 'rejected request must not change the reason');
+
+            return;
+        }
+
+        self::assertSame(VersionDeletionReason::Hidden, $reloaded->getDeletionReason());
+        self::assertSame('spam', $reloaded->getDeletionReasonText());
+        self::assertNotNull($reloaded->getSoftDeletedAt());
+
+        if ($reason !== null) {
+            self::assertGreaterThan(
+                $removedAt,
+                $reloaded->getSoftDeletedAt(),
+                'hiding an already soft-deleted version restamps it with the time of the hide'
+            );
+        }
+    }
+
+    public function testAdminHideVersionDeniedForMaintainer(): void
+    {
+        $maintainer = self::createUser('owner', 'owner@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$maintainer]);
+        $version = $this->createStableVersion($package, '1.0.0');
+        $version->setSoftDeletedAt(new \DateTimeImmutable());
+        $version->setDeletionReason(VersionDeletionReason::AutoDeletedMissing);
+        $this->store($maintainer, $package, $version);
+        $versionId = $version->getId();
+
+        $this->client->loginUser($maintainer);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('.hide-version'), 'maintainers are never offered the hide action');
+
+        $this->client->request('POST', '/versions/'.$versionId.'/admin-hide', ['_token' => 'x', 'reason' => 'spam']);
+        self::assertResponseStatusCodeSame(403);
+
+        self::getEM()->clear();
+        self::assertSame(
+            VersionDeletionReason::AutoDeletedMissing,
+            self::getEM()->getRepository(Version::class)->find($versionId)->getDeletionReason()
+        );
+    }
+
+    public function testUpdateHistoryDeniedWithoutUpdatePackagesRole(): void
+    {
+        $maintainer = self::createUser('maintainer', 'maintainer@example.org');
+        $other = self::createUser('other', 'other@example.org', apiToken: 'api-token-2', safeApiToken: 'safe-api-token-2', githubId: '23456');
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg', maintainers: [$maintainer]);
+        $this->store($maintainer, $other, $package);
+
+        // anonymous is bounced to the login form
+        $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseRedirects('http://localhost/login/');
+
+        // a maintainer of the package is not enough: the PackageActions::Update voter grants them the
+        // View Log toast, but the full history is staff-only
+        $this->client->loginUser($maintainer);
+        $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseStatusCodeSame(403);
+
+        $this->client->loginUser($other);
+        $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseStatusCodeSame(403);
+    }
+
+    public function testUpdateHistoryListsOnlyThisPackagesUpdateJobs(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $otherPackage = self::createPackage('test/other', 'https://example.org/other');
+        $this->store($admin, $package, $otherPackage);
+
+        $older = $this->createUpdateJob($package, 'aaaa0000', '2026-08-01 10:00:00', ['status' => Job::STATUS_COMPLETED, 'message' => 'OLDER JOB MESSAGE']);
+        $newer = $this->createUpdateJob($package, 'bbbb0000', '2026-08-02 10:00:00', ['status' => Job::STATUS_FAILED, 'message' => 'NEWER JOB MESSAGE']);
+        $foreignPackageJob = $this->createUpdateJob($otherPackage, 'cccc0000', '2026-08-03 10:00:00', ['status' => Job::STATUS_COMPLETED, 'message' => 'OTHER PACKAGE MESSAGE']);
+
+        // packageId is overloaded across job types - it holds a *user* id for githubuser:migrate - so a
+        // job carrying this package's id under another type must not leak into the listing
+        $foreignTypeJob = new Job('dddd0000', 'githubuser:migrate', ['id' => $package->getId(), 'old_scope' => 'a', 'new_scope' => 'b']);
+        $foreignTypeJob->setPackageId($package->getId());
+        $foreignTypeJob->setCreatedAt(new \DateTimeImmutable('2026-08-04 10:00:00'));
+        $foreignTypeJob->complete(['status' => Job::STATUS_COMPLETED, 'message' => 'FOREIGN TYPE MESSAGE']);
+
+        $this->store($older, $newer, $foreignPackageJob, $foreignTypeJob);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseIsSuccessful();
+
+        $rows = $crawler->filter('tr[data-bs-toggle="collapse"]');
+        self::assertCount(2, $rows);
+        // the whole summary row is the trigger, not just a cell in it
+        self::assertSame('#update-job-bbbb0000', $rows->first()->attr('data-bs-target'));
+        self::assertCount(1, $crawler->filter('#update-job-bbbb0000'));
+
+        $html = (string) $this->client->getResponse()->getContent();
+        self::assertStringNotContainsString('OTHER PACKAGE MESSAGE', $html);
+        self::assertStringNotContainsString('FOREIGN TYPE MESSAGE', $html);
+        self::assertLessThan(
+            strpos($html, 'OLDER JOB MESSAGE'),
+            strpos($html, 'NEWER JOB MESSAGE'),
+            'jobs should be listed newest first'
+        );
+    }
+
+    public function testUpdateHistoryRendersLogAndEscapesResultJson(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($admin, $package);
+
+        $job = $this->createUpdateJob($package, 'aaaa0000', '2026-08-01 10:00:00', [
+            'status' => Job::STATUS_ERRORED,
+            'message' => 'Update of test/pkg failed',
+            'details' => '<pre>ok <span style="color:green;">done</span></pre>',
+            'exceptionMsg' => '<script>alert(1)</script>',
+        ]);
+        $this->store($job);
+
+        $this->client->loginUser($admin);
+        $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseIsSuccessful();
+
+        $html = (string) $this->client->getResponse()->getContent();
+
+        // the sanitized log HTML is rendered as HTML, not escaped
+        self::assertStringContainsString('<span style="color:green;">done</span>', $html);
+        // ..and only once, i.e. details is excluded from the result JSON block rather than duplicated
+        self::assertSame(1, substr_count($html, 'color:green'));
+
+        // the payload block is pretty printed, and autoescaped (hence &quot; rather than ")
+        self::assertStringContainsString('&quot;force_dump&quot;: false', $html);
+
+        // the JSON blocks are autoescaped, so an exception message cannot inject markup
+        self::assertStringNotContainsString('<script>', $html);
+        self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $html);
+    }
+
+    public function testUpdateHistoryHandlesQueuedJobWithNoResult(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($admin, $package);
+
+        // no result at all, as for any job that has not completed yet
+        $job = $this->createUpdateJob($package, 'aaaa0000', '2026-08-01 10:00:00');
+        $this->store($job);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseIsSuccessful();
+
+        self::assertCount(1, $crawler->filter('tr[data-bs-toggle="collapse"]'));
+
+        $html = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('No log output recorded for this job.', $html);
+        self::assertStringContainsString('No result recorded yet.', $html);
+    }
+
+    public function testUpdateHistoryEmptyState(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($admin, $package);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg/update-history');
+        self::assertResponseIsSuccessful();
+
+        self::assertCount(1, $crawler->filter('.alert-info'));
+        self::assertCount(0, $crawler->filter('tr[data-bs-toggle="collapse"]'));
+    }
+
+    public function testPackagePageShowsUpdateHistoryLinkOnlyToStaff(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $maintainer = self::createUser('maintainer', 'maintainer@example.org', apiToken: 'api-token-2', safeApiToken: 'safe-api-token-2', githubId: '23456');
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg', maintainers: [$maintainer]);
+        $package->setUpdatedAt(new \DateTimeImmutable());
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $version = $this->createStableVersion($package, '1.0.0');
+        $this->store($admin, $maintainer, $package, $version);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('a[href$="/update-history"]'));
+
+        $this->client->loginUser($maintainer);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('a[href$="/update-history"]'));
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertGreaterThan(0, $crawler->filter('a[href$="/update-history"]')->count());
+    }
+
+    public function testPackageStatsPageStillRendersForStaff(): void
+    {
+        // stats.html.twig includes version_list.html.twig without package/showUpdated, so the new link
+        // must stay behind the showUpdated guard
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_UPDATE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $version = $this->createStableVersion($package, '1.0.0');
+        $this->store($admin, $package, $version);
+
+        $this->client->loginUser($admin);
+        $this->client->request('GET', '/packages/test/pkg/stats');
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testStatsJsonDoesNotExposeReleaseChart(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $version = $this->createStableVersion($package, '1.0.0');
+        $this->store($package, $version);
+
+        $this->client->request('GET', '/packages/test/pkg/stats.json');
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame(['downloads', 'versions', 'average', 'date'], array_keys($data));
+        self::assertSame(['1.0.0'], $data['versions']);
+    }
+
+    public function testStatsPageReleaseChartIgnoresSoftDeletedDevAndPreStatsVersions(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+
+        $counted = $this->createStableVersion($package, '1.0.0');
+        $counted->setReleasedAt(new \DateTimeImmutable('2024-03-10'));
+        $alsoCounted = $this->createStableVersion($package, '1.0.1');
+        $alsoCounted->setReleasedAt(new \DateTimeImmutable('2024-03-20'));
+        $softDeleted = $this->createStableVersion($package, '1.1.0');
+        $softDeleted->setReleasedAt(new \DateTimeImmutable('2024-04-05'));
+        $softDeleted->setSoftDeletedAt(new \DateTimeImmutable());
+        $preStats = $this->createStableVersion($package, '0.9.0');
+        $preStats->setReleasedAt(new \DateTimeImmutable('2005-01-01'));
+        $dev = $this->createStableVersion($package, 'dev-main');
+        $dev->setDevelopment(true);
+        $dev->setReleasedAt(new \DateTimeImmutable('2024-05-01'));
+
+        $this->store($package, $counted, $alsoCounted, $softDeleted, $preStats, $dev);
+
+        $this->client->request('GET', '/packages/test/pkg/stats');
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString(
+            'initReleaseStats(\'.js-release-stats\', {"2024-03":2},',
+            (string) $this->client->getResponse()->getContent()
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function createUpdateJob(Package $package, string $id, string $createdAt, array $result = []): Job
+    {
+        $job = new Job($id, 'package:updates', [
+            'id' => $package->getId(),
+            'update_source_dist_url' => false,
+            'delete_before' => false,
+            'force_dump' => false,
+            'source' => 'test',
+        ]);
+        $job->setPackageId($package->getId());
+        $job->setCreatedAt(new \DateTimeImmutable($createdAt));
+        if ($result !== []) {
+            $job->complete($result);
+        }
+
+        return $job;
+    }
+
     private function createStableVersion(Package $package, string $version): Version
     {
         $v = new Version();
@@ -413,5 +852,97 @@ class PackageControllerTest extends IntegrationTestCase
         $v->setUpdatedAt(new \DateTimeImmutable());
 
         return $v;
+    }
+
+    /**
+     * /packages/list.json is streamed, so $client->getResponse()->getContent() returns false and the
+     * body is only reachable via getInternalResponse(), which HttpKernelBrowser captures with ob_start().
+     */
+    private function requestListJson(string $query, string $method = 'GET'): string
+    {
+        $this->client->request($method, '/packages/list.json?'.$query);
+
+        self::assertInstanceOf(StreamedJsonResponse::class, $this->client->getResponse());
+        self::assertResponseIsSuccessful();
+
+        return (string) $this->client->getInternalResponse()->getContent();
+    }
+
+    public function testListJsonWithFieldsStreamsByteIdenticalJson(): void
+    {
+        $withReplacement = self::createPackage('listvendor/abandoned', 'https://example.org/abandoned');
+        $withReplacement->setType('library');
+        $withReplacement->setAbandoned(true);
+        $withReplacement->setReplacementPackage('other/pkg');
+        $active = self::createPackage('listvendor/active', 'https://example.org/active');
+        $active->setType('library');
+        $this->store($withReplacement, $active);
+
+        $body = $this->requestListJson('vendor=listvendor&fields[]=type&fields[]=abandoned');
+
+        self::assertResponseHeaderSame('Content-Type', 'application/json');
+        self::assertStringContainsString('s-maxage=300', (string) $this->client->getResponse()->headers->get('Cache-Control'));
+        self::assertResponseHeaderSame('X-Accel-Expires', '300');
+
+        // StreamedJsonResponse defaults to the same encoding options as JsonResponse, so streaming
+        // must not change a single byte of the payload - including the escaped slashes in names
+        self::assertSame(
+            json_encode(['packages' => [
+                'listvendor/abandoned' => ['type' => 'library', 'abandoned' => 'other/pkg'],
+                'listvendor/active' => ['type' => 'library', 'abandoned' => false],
+            ]], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+            $body,
+        );
+        self::assertStringContainsString('listvendor/abandoned', $body);
+    }
+
+    public function testListJsonWithFieldsAndNoMatchesEmitsEmptyArray(): void
+    {
+        self::assertSame('{"packages":[]}', $this->requestListJson('vendor=nosuchvendor&fields[]=type'));
+    }
+
+    public function testListJsonEmitsPackageNamesAsJsonArray(): void
+    {
+        $packages = [];
+        foreach (['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb'] as $name) {
+            $package = self::createPackage($name, 'https://example.org/'.$name);
+            $package->setType('library');
+            $packages[] = $package;
+        }
+        $this->store(...$packages);
+
+        $body = $this->requestListJson('vendor=listvendor');
+
+        self::assertSame(
+            json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+            $body,
+        );
+    }
+
+    public function testListJsonFilterEmitsJsonArrayNotObject(): void
+    {
+        $packages = [];
+        foreach (['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb'] as $name) {
+            $package = self::createPackage($name, 'https://example.org/'.$name);
+            $package->setType('library');
+            $packages[] = $package;
+        }
+        $this->store(...$packages);
+
+        // asserted on the raw string: a stray `yield $key => $name` would emit an object whose
+        // json_decode() looks identical to the array's, so decoding here would hide the regression
+        self::assertSame(
+            json_encode(['packageNames' => ['listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+            $this->requestListJson('vendor=listvendor&filter=listvendor/*bb'),
+        );
+    }
+
+    public function testListJsonHeadRequestSkipsTheStreamEntirely(): void
+    {
+        $package = self::createPackage('listvendor/aaa', 'https://example.org/aaa');
+        $package->setType('library');
+        $this->store($package);
+
+        self::assertSame('', $this->requestListJson('vendor=listvendor&fields[]=type', 'HEAD'));
     }
 }

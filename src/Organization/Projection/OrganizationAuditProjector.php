@@ -15,10 +15,13 @@ namespace App\Organization\Projection;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\Organization;
+use App\Entity\OrganizationInvitationRepository;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Entity\UserRepository;
+use App\Organization\Domain\Event\InvitationEvent;
+use App\Organization\Domain\Event\MemberJoined;
 use App\Organization\Domain\Event\MemberLeft;
 use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
@@ -29,27 +32,43 @@ use App\Organization\Domain\Event\TeamDeleted;
 use App\Organization\Domain\Event\TeamMemberAdded;
 use App\Organization\Domain\Event\TeamMemberRemoved;
 use App\Organization\Domain\Event\TeamRenamed;
+use App\Organization\Domain\Event\UserInvitationAccepted;
+use App\Organization\Domain\Event\UserInvitationDeclined;
+use App\Organization\Domain\Event\UserInvitationExpired;
+use App\Organization\Domain\Event\UserInvitationResent;
+use App\Organization\Domain\Event\UserInvitationRevoked;
+use App\Organization\Domain\Event\UserInvitationSent;
 use App\Organization\EventStore\RecordedEvent;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * Projects organization events into the public transparency log (`audit_log`). Pre-membership
- * invitation events are not published (a later stage); every event handled here concerns a member
- * who has actually joined or a team lifecycle change, and is identified solely by username.
+ * Projects organization events into the public transparency log (`audit_log`). Membership and team
+ * lifecycle changes are identified by username; invitation events additionally carry the invited email
+ * (obfuscated at display time from anyone who is neither an auditor nor a member of the organization).
  */
 final readonly class OrganizationAuditProjector implements Projector
 {
     public function __construct(
         private AuditRecordRepository $auditRecordRepo,
-        private UserRepository $users,
+        private UserRepository $userRepo,
         private OrganizationRepository $organizationRepo,
         private OrganizationTeamRepository $organizationTeamRepo,
+        private OrganizationInvitationRepository $organizationInvitationRepo,
     ) {
     }
 
     public function project(RecordedEvent $recorded): void
     {
         $event = $recorded->event;
+
+        // Invitation events live on their own stream (aggregate id = invitation ULID, not the org) and
+        // an automation actor (expiry) has no user id, so they are projected before the actor check.
+        if ($event instanceof InvitationEvent) {
+            $this->auditRecordRepo->insert($this->invitationRecord($recorded, $event));
+
+            return;
+        }
+
         $actor = $this->user($recorded->actor->userId);
         if ($actor === null) {
             throw new \RuntimeException('Missing actor: ' . $recorded->actor->userId);
@@ -76,13 +95,46 @@ final readonly class OrganizationAuditProjector implements Projector
                 $event instanceof TeamCreated => AuditRecord::organizationTeamCreated($event->organizationId, $org->slug, $org->displayName, $event->name, $actor),
                 $event instanceof TeamRenamed => AuditRecord::organizationTeamRenamed($event->organizationId, $org->slug, $org->displayName, $event->previousName, $event->name, $actor),
                 $event instanceof TeamDeleted => AuditRecord::organizationTeamDeleted($event->organizationId, $org->slug, $org->displayName, $event->name, $actor),
-                $event instanceof TeamMemberAdded => AuditRecord::organizationTeamMemberAdded($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
-                $event instanceof TeamMemberRemoved => AuditRecord::organizationTeamMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->user($event->userId), $actor),
-                $event instanceof MemberRemoved => AuditRecord::organizationMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId), $actor),
-                $event instanceof MemberLeft => AuditRecord::organizationMemberLeft($event->organizationId, $org->slug, $org->displayName, $this->user($event->userId)),
+                $event instanceof TeamMemberAdded => AuditRecord::organizationTeamMemberAdded($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->requireUser($event->userId), $actor),
+                $event instanceof MemberJoined => AuditRecord::organizationMemberJoined($event->organizationId, $org->slug, $org->displayName, $this->requireUser($event->userId), $actor),
+                $event instanceof TeamMemberRemoved => AuditRecord::organizationTeamMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->requireUser($event->userId), $actor),
+                $event instanceof MemberRemoved => AuditRecord::organizationMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->requireUser($event->userId), $actor),
+                $event instanceof MemberLeft => AuditRecord::organizationMemberLeft($event->organizationId, $org->slug, $org->displayName, $this->requireUser($event->userId), $actor),
                 default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
             }
         );
+    }
+
+    private function invitationRecord(RecordedEvent $recorded, InvitationEvent $event): AuditRecord
+    {
+        // Only UserInvitationSent carries the org id; the later events are resolved via the read model
+        // row created by that first event (a prior, already-committed transaction).
+        $orgId = $event instanceof UserInvitationSent
+            ? $event->organizationId
+            : $this->invitationOrganizationId($event->aggregateId());
+        $org = $this->organization($orgId);
+        $actor = $this->user($recorded->actor->userId);
+        $email = $event->email();
+
+        return match (true) {
+            $event instanceof UserInvitationSent => AuditRecord::organizationInvitationSent($orgId, $org->slug, $org->displayName, $email, $actor),
+            $event instanceof UserInvitationResent => AuditRecord::organizationInvitationResent($orgId, $org->slug, $org->displayName, $email, $actor),
+            $event instanceof UserInvitationRevoked => AuditRecord::organizationInvitationRevoked($orgId, $org->slug, $org->displayName, $email, $actor),
+            $event instanceof UserInvitationDeclined => AuditRecord::organizationInvitationDeclined($orgId, $org->slug, $org->displayName, $email, $actor),
+            $event instanceof UserInvitationAccepted => AuditRecord::organizationInvitationAccepted($orgId, $org->slug, $org->displayName, $email, $actor),
+            $event instanceof UserInvitationExpired => AuditRecord::organizationInvitationExpired($orgId, $org->slug, $org->displayName, $email),
+            default => throw new \LogicException('Unhandled invitation event: '.$event->eventType()->value),
+        };
+    }
+
+    private function invitationOrganizationId(Ulid $invitationId): Ulid
+    {
+        $invitation = $this->organizationInvitationRepo->find($invitationId);
+        if ($invitation === null) {
+            throw new \LogicException('Organization invitation read model not found for '.$invitationId->toRfc4122().'.');
+        }
+
+        return $invitation->orgId;
     }
 
     private function teamName(Ulid $teamId): string
@@ -99,7 +151,21 @@ final readonly class OrganizationAuditProjector implements Projector
 
     private function user(?int $userId): ?User
     {
-        return $userId !== null ? $this->users->find($userId) : null;
+        return $userId !== null ? $this->userRepo->find($userId) : null;
+    }
+
+    /**
+     * The user an event names by id. Projections run in the append transaction, so the row is there;
+     * a miss signals an inconsistent projection rather than a normal state.
+     */
+    private function requireUser(int $userId): User
+    {
+        $user = $this->user($userId);
+        if ($user === null) {
+            throw new \LogicException('User read model not found for '.$userId.'.');
+        }
+
+        return $user;
     }
 
     private function organization(Ulid $id): Organization

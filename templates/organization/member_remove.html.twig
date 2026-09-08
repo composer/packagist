@@ -10,14 +10,14 @@
 
         <p>To remove this owner, first <a href="{{ path('organization_team_member_add', { organization: organization.slug, team: organization.ownersTeamId }) }}">add another member to the "Owners" team</a>, then come back and remove "{{ member.username }}".</p>
 
-        <a class="btn btn-default" href="{{ path('organization_members', { organization: organization.slug }) }}">Back</a>
+        <a class="btn btn-secondary" href="{{ path('organization_members', { organization: organization.slug }) }}">Back</a>
     {% else %}
         <p>This removes the member from the organization and all of its teams. This action cannot be undone.</p>
 
         {{ form_start(form, { 'attr': { 'class': 'organization_member_remove' } }) }}
             {{ form_errors(form) }}
             <input class="btn btn-danger" type="submit" value="Remove member" />
-            <a class="btn btn-default" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
+            <a class="btn btn-secondary" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
         {{ form_end(form) }}
     {% endif %}
 {% endblock %}

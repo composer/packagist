@@ -46,7 +46,7 @@ class FreezeType extends AbstractType
         // The package controls only appear for moderators allowed to act on packages.
         if ($options['package_reasons'] !== []) {
             $builder
-                ->add('freezePackages', CheckboxType::class, ['required' => false])
+                ->add('freezePackages', CheckboxType::class, ['required' => false, 'label' => "Also act on the user's packages"])
                 ->add('packageFreezeReason', EnumType::class, [
                     'class' => PackageFreezeReason::class,
                     'choices' => $options['package_reasons'],

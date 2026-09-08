@@ -77,4 +77,17 @@ enum VersionDeletionReason: string
             self::DeletedByAdmin, self::Hidden => false,
         };
     }
+
+    /**
+     * Whether an admin can switch this soft-delete straight to Hidden. Admin-pulled rows already
+     * carry a deliberate admin decision, and Hidden rows are already hidden — both go through
+     * recover first.
+     */
+    public function isHideableByAdmin(): bool
+    {
+        return match ($this) {
+            self::AutoDeletedMissing, self::DeletedByMaintainer => true,
+            self::DeletedByAdmin, self::Hidden => false,
+        };
+    }
 }

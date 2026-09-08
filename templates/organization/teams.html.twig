@@ -12,24 +12,24 @@
     <h3 class="title clearfix">
         Teams
         {% if canCreateTeam %}
-            <a class="btn btn-success btn-sm pull-right" href="{{ path('organization_team_create', { organization: organization.slug }) }}">Create team</a>
+            <a class="btn btn-success btn-sm float-end" href="{{ path('organization_team_create', { organization: organization.slug }) }}">Create team</a>
         {% endif %}
     </h3>
 
     {% for entry in teams %}
         {% set team = entry.team %}
         {% set isAllMembersTeam = team.teamId == organization.allMembersTeamId %}
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
+        <div class="card mb-3">
+            <div class="card-header clearfix">
                 <strong>{{ team.name }}</strong>
                 {% if team.system %}
-                    <span class="label label-info">system</span>
+                    <span class="badge bg-info">system</span>
                 {% endif %}
 
                 {% if not team.system %}
-                    <span class="pull-right">
+                    <span class="float-end">
                         {% if canRenameTeam %}
-                            <a class="btn btn-xs btn-default" href="{{ path('organization_team_rename', { organization: organization.slug, team: team.teamId }) }}">Rename</a>
+                            <a class="btn btn-xs btn-secondary" href="{{ path('organization_team_rename', { organization: organization.slug, team: team.teamId }) }}">Rename</a>
                         {% endif %}
                         {% if canDeleteTeam %}
                             <a class="btn btn-xs btn-danger" href="{{ path('organization_team_delete', { organization: organization.slug, team: team.teamId }) }}">Delete team</a>
@@ -38,15 +38,15 @@
                 {% endif %}
             </div>
 
-            <div class="panel-body">
-                <table class="table table-condensed">
+            <div class="card-body">
+                <table class="table table-sm">
                     <tbody>
                         {% for member in entry.members %}
                             <tr>
                                 <td>{{ member.user ? member.user.username : '(unknown user #' ~ member.userId ~ ')' }}</td>
-                                <td class="text-right">
+                                <td class="text-end">
                                     {% if canRemoveTeamMember and member.user and not isAllMembersTeam %}
-                                        <a class="btn btn-xs btn-default" href="{{ path('organization_team_member_remove', { organization: organization.slug, team: team.teamId, teamMember: member.user.username }) }}">Remove</a>
+                                        <a class="btn btn-xs btn-secondary" href="{{ path('organization_team_member_remove', { organization: organization.slug, team: team.teamId, teamMember: member.user.username }) }}">Remove</a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -59,7 +59,7 @@
                 {% if isAllMembersTeam %}
                     <p class="text-muted">Membership is managed automatically: everyone in the organization belongs to this team.</p>
                 {% elseif canAddTeamMember %}
-                    <a class="btn btn-sm btn-default" href="{{ path('organization_team_member_add', { organization: organization.slug, team: team.teamId }) }}">Add member</a>
+                    <a class="btn btn-sm btn-secondary" href="{{ path('organization_team_member_add', { organization: organization.slug, team: team.teamId }) }}">Add member</a>
                 {% endif %}
             </div>
         </div>

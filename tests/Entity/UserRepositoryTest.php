@@ -25,44 +25,41 @@ class UserRepositoryTest extends IntegrationTestCase
     {
         parent::setUp();
 
-        $this->userRepository = self::getEM()->getRepository(\App\Entity\User::class);
+        $this->userRepository = self::getEM()->getRepository(User::class);
     }
 
-    public function testGetFrozenUsersQueryBuilderExcludesUnfrozenAndFiltersByReason(): void
+    public function testGetUsersQueryBuilderIncludesPackageCount(): void
     {
-        $spammer = self::createUser('spammer', 'spammer@example.org');
-        $spammer->freeze(UserFreezeReason::Spam);
-        $temp = self::createUser('temphold', 'temp@example.org');
-        $temp->freeze(UserFreezeReason::Temporary);
-        $active = self::createUser('active', 'active@example.org');
-        $this->store($spammer, $temp, $active);
+        $maintainer = self::createUser('withpkgs', 'withpkgs@example.org');
+        $loner = self::createUser('nopkgs', 'nopkgs@example.org');
+        $this->store($maintainer, $loner);
+        $this->store(
+            self::createPackage('acme/one', 'https://example.org/acme/one', maintainers: [$maintainer]),
+            self::createPackage('acme/two', 'https://example.org/acme/two', maintainers: [$maintainer]),
+        );
 
-        $usernames = static fn (array $users): array => array_map(static fn (User $u): string => $u->getUsername(), $users);
+        $rows = $this->userRepository->getUsersQueryBuilder()->getQuery()->getResult();
+        $countsByName = [];
+        foreach ($rows as $row) {
+            $countsByName[$row[0]->getUsername()] = (int) $row['packageCount'];
+        }
 
-        $all = $usernames($this->userRepository->getFrozenUsersQueryBuilder()->getQuery()->getResult());
-        self::assertContains('spammer', $all);
-        self::assertContains('temphold', $all);
-        self::assertNotContains('active', $all, 'unfrozen accounts must not appear');
-
-        $temporaryOnly = $usernames($this->userRepository->getFrozenUsersQueryBuilder(UserFreezeReason::Temporary)->getQuery()->getResult());
-        self::assertSame(['temphold'], $temporaryOnly);
+        self::assertSame(2, $countsByName['withpkgs']);
+        self::assertSame(0, $countsByName['nopkgs']);
     }
 
-    public function testGetFrozenUsersQueryBuilderOrdersByMostRecentlyFrozen(): void
+    public function testGetUsersQueryBuilderOrdersByFrozenAtWhenRequested(): void
     {
         $older = self::createUser('olderfreeze', 'older@example.org');
         $older->freeze(UserFreezeReason::Temporary);
         $newer = self::createUser('newerfreeze', 'newer@example.org');
         $newer->freeze(UserFreezeReason::Temporary);
-        // DATETIME has no sub-second precision, so pin explicit distinct freeze times.
         new \ReflectionProperty(User::class, 'frozenAt')->setValue($older, new \DateTimeImmutable('2026-01-01 00:00:00'));
         new \ReflectionProperty(User::class, 'frozenAt')->setValue($newer, new \DateTimeImmutable('2026-06-01 00:00:00'));
         $this->store($older, $newer);
 
-        $names = array_map(
-            static fn (User $u): string => $u->getUsername(),
-            $this->userRepository->getFrozenUsersQueryBuilder()->getQuery()->getResult(),
-        );
+        $rows = $this->userRepository->getUsersQueryBuilder(orderByFrozenAt: true)->getQuery()->getResult();
+        $names = array_map(static fn (array $row): string => $row[0]->getUsername(), $rows);
 
         self::assertSame(['newerfreeze', 'olderfreeze'], $names);
     }

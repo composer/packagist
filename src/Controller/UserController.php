@@ -48,6 +48,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Webmozart\Assert\Assert;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -317,6 +318,8 @@ class UserController extends Controller
         }
 
         $secret = (string) $req->getSession()->get('2fa_secret') ?: $authenticator->generateSecret();
+        // An empty secret would leave isTotpAuthenticationEnabled() reporting 2FA off while one is set.
+        Assert::stringNotEmpty($secret);
         // Temporarily store this code on the user, as we'll need it there to generate the
         // QR code and to check the confirmation code.  We won't actually save this change
         // until we've confirmed the code

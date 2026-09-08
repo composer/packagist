@@ -100,12 +100,16 @@ class VersionRepository extends ServiceEntityRepository
     }
 
     /**
-     * Soft-delete a version with a reason. Schedules a fresh Updater run so dependents/suggesters
-     * and the V2 dump get recomputed without the version (frozen packages only get marked for dump).
+     * Soft-delete a version with a reason. On a first soft-delete this schedules a fresh Updater run
+     * so dependents/suggesters and the V2 dump get recomputed without the version (frozen packages
+     * only get marked for dump). Changing the reason on an already soft-deleted version only
+     * restamps and audits it; the audit log keeps the detailed timeline.
      */
     public function softDelete(Version $version, VersionDeletionReason $reason, ?string $reasonText, ?string $internalReasonText, ?User $actor): void
     {
         $em = $this->getEntityManager();
+        $wasSoftDeleted = $version->isSoftDeleted();
+
         $version->setSoftDeletedAt(new \DateTimeImmutable());
         $version->setDeletionReason($reason);
         $version->setDeletionReasonText($reasonText);
@@ -113,6 +117,12 @@ class VersionRepository extends ServiceEntityRepository
         $em->persist($version);
 
         $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $internalReasonText, $actor));
+
+        // Dumps and dependent/suggester data key off isSoftDeleted() only, never the reason, so a
+        // reason change on an already-deleted row has nothing to recompute, and no bytes change.
+        if ($wasSoftDeleted) {
+            return;
+        }
 
         // Mark directly rather than leaning on the scheduled job: pulling a version is the security
         // path, and the job's force_dump only lands if the crawl succeeds, so a repository that 404s

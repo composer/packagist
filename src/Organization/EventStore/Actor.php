@@ -38,4 +38,12 @@ final readonly class Actor
     {
         return new self($admin->getId(), ActorLabel::PackagistAdmin);
     }
+
+    /**
+     * A system actor with no user behind it, e.g. background workers or crons.
+     */
+    public static function automation(): self
+    {
+        return new self(null, ActorLabel::Automation);
+    }
 }

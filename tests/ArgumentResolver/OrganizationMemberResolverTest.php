@@ -14,9 +14,9 @@ namespace App\Tests\ArgumentResolver;
 
 use App\ArgumentResolver\OrganizationMemberResolver;
 use App\Entity\Organization;
+use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationStatus;
-use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\User;
 use App\Security\Voter\OrganizationActions;
 use PHPUnit\Framework\TestCase;
@@ -30,9 +30,9 @@ class OrganizationMemberResolverTest extends TestCase
 {
     public function testReturnsEmptyForNonUserArgument(): void
     {
-        $teamMembers = $this->createMock(OrganizationTeamMemberRepository::class);
-        $teamMembers->expects(self::never())->method('findOrgMember');
-        $resolver = new OrganizationMemberResolver($teamMembers, $this->createStub(OrganizationRepository::class), $this->security(true));
+        $members = $this->createMock(OrganizationMemberRepository::class);
+        $members->expects(self::never())->method('findOrgMember');
+        $resolver = new OrganizationMemberResolver($members, $this->createStub(OrganizationRepository::class), $this->security(true));
 
         $request = new Request(attributes: ['organization' => 'acme', 'organizationMember' => 'jane']);
 
@@ -42,16 +42,16 @@ class OrganizationMemberResolverTest extends TestCase
     public function testReturnsEmptyForUserArgumentWithDifferentName(): void
     {
         // Any other User argument stays with UserResolver; only `organizationMember` belongs here.
-        $teamMembers = $this->createMock(OrganizationTeamMemberRepository::class);
-        $teamMembers->expects(self::never())->method('findOrgMember');
-        $resolver = new OrganizationMemberResolver($teamMembers, $this->createStub(OrganizationRepository::class), $this->security(true));
+        $members = $this->createMock(OrganizationMemberRepository::class);
+        $members->expects(self::never())->method('findOrgMember');
+        $resolver = new OrganizationMemberResolver($members, $this->createStub(OrganizationRepository::class), $this->security(true));
 
         $request = new Request(attributes: ['organization' => 'acme', 'organizationMember' => 'jane']);
 
         self::assertSame([], $resolver->resolve($request, $this->argument(name: 'user')));
     }
 
-    public function testResolvesMemberByOrgSlugAndUsername(): void
+    public function testResolvesMemberByOrganizationAndUsername(): void
     {
         $member = new User();
         $organization = $this->organization();
@@ -62,10 +62,10 @@ class OrganizationMemberResolverTest extends TestCase
             ->with('acme')
             ->willReturn($organization);
 
-        $teamMembers = $this->createMock(OrganizationTeamMemberRepository::class);
-        $teamMembers->expects(self::once())
+        $members = $this->createMock(OrganizationMemberRepository::class);
+        $members->expects(self::once())
             ->method('findOrgMember')
-            ->with('acme', 'JANE')
+            ->with($organization->id, 'JANE')
             ->willReturn($member);
 
         // Read access to the organization is required as defense in depth.
@@ -74,7 +74,7 @@ class OrganizationMemberResolverTest extends TestCase
             ->method('isGranted')
             ->with(OrganizationActions::View->value, $organization)
             ->willReturn(true);
-        $resolver = new OrganizationMemberResolver($teamMembers, $organizations, $security);
+        $resolver = new OrganizationMemberResolver($members, $organizations, $security);
 
         $request = new Request(attributes: ['organization' => 'acme', 'organizationMember' => 'JANE']);
 
@@ -86,9 +86,9 @@ class OrganizationMemberResolverTest extends TestCase
         $organizations = $this->createStub(OrganizationRepository::class);
         $organizations->method('findOneBySlug')->willReturn(null);
 
-        $teamMembers = $this->createMock(OrganizationTeamMemberRepository::class);
-        $teamMembers->expects(self::never())->method('findOrgMember');
-        $resolver = new OrganizationMemberResolver($teamMembers, $organizations, $this->security(true));
+        $members = $this->createMock(OrganizationMemberRepository::class);
+        $members->expects(self::never())->method('findOrgMember');
+        $resolver = new OrganizationMemberResolver($members, $organizations, $this->security(true));
 
         $request = new Request(attributes: ['organization' => 'acme', 'organizationMember' => 'jane']);
 
@@ -102,10 +102,10 @@ class OrganizationMemberResolverTest extends TestCase
         $organizations = $this->createStub(OrganizationRepository::class);
         $organizations->method('findOneBySlug')->willReturn($this->organization());
 
-        $teamMembers = $this->createMock(OrganizationTeamMemberRepository::class);
+        $members = $this->createMock(OrganizationMemberRepository::class);
         // A user who cannot read the org must not learn the member exists.
-        $teamMembers->expects(self::never())->method('findOrgMember');
-        $resolver = new OrganizationMemberResolver($teamMembers, $organizations, $this->security(false));
+        $members->expects(self::never())->method('findOrgMember');
+        $resolver = new OrganizationMemberResolver($members, $organizations, $this->security(false));
 
         $request = new Request(attributes: ['organization' => 'acme', 'organizationMember' => 'jane']);
 
@@ -119,10 +119,10 @@ class OrganizationMemberResolverTest extends TestCase
         $organizations = $this->createStub(OrganizationRepository::class);
         $organizations->method('findOneBySlug')->willReturn($this->organization());
 
-        $teamMembers = $this->createStub(OrganizationTeamMemberRepository::class);
+        $members = $this->createStub(OrganizationMemberRepository::class);
         // A non-member (or missing user) has no membership row in the joined query.
-        $teamMembers->method('findOrgMember')->willReturn(null);
-        $resolver = new OrganizationMemberResolver($teamMembers, $organizations, $this->security(true));
+        $members->method('findOrgMember')->willReturn(null);
+        $resolver = new OrganizationMemberResolver($members, $organizations, $this->security(true));
 
         $request = new Request(attributes: ['organization' => 'acme', 'organizationMember' => 'jane']);
 

@@ -8,7 +8,11 @@ It is a Symfony app using modern up to date versions of everything (MySQL, Redis
 
 ### Styling
 - Main CSS: `css/app.scss` (compiled to `web/build/app.css`)
-- Uses Bootstrap 3 imported from `node_modules/bootstrap/dist/css/bootstrap.min.css`
+- Uses Bootstrap 5 and Bootstrap Icons, imported at the top of `css/app.scss` from
+  `node_modules/bootstrap/dist/css/bootstrap.min.css` and
+  `node_modules/bootstrap-icons/font/bootstrap-icons.css`
+- Since the compiled CSS is imported rather than the sources, customisation goes through the
+  `:root` CSS variable overrides in `css/app.scss`, not SCSS variables
 
 ### Templates
 - API documentation: `templates/api_doc/index.html.twig`

@@ -2,7 +2,7 @@
 
 {% block content %}
 <section class="row">
-    <section class="col-lg-6 getting-started">
+    <section class="col-xl-6 getting-started">
         <h2 class="title">Getting Started</h2>
         <div>
             <h3>Define Your Dependencies</h3>
@@ -34,7 +34,7 @@
         </div>
     </section>
 
-    <section class="col-lg-6 publishing-packages">
+    <section class="col-xl-6 publishing-packages">
         <h2 class="title">Publishing Packages</h2>
         <div>
             <h3>Define Your Package</h3>
@@ -68,7 +68,7 @@
 
 {% if newsItems is defined and newsItems|length > 0 %}
 <section class="row">
-    <section class="col-lg-6">
+    <section class="col-xl-6">
         <h2 class="title">Latest News</h2>
         {% for item in newsItems %}
             <h3><a href="{{ item.link }}" rel="noopener noreferrer">{{ item.title }}</a> <small class="text-muted">- {{ item.datePublished|date('M d, Y') }}</small></h3>

@@ -1,0 +1,181 @@
+{% extends "admin/layout.html.twig" %}
+
+{% block title %}{{ heading }} - {{ parent() }}{% endblock %}
+
+{% block admin_content %}
+    <div class="row">
+        <div class="col-12 package">
+            <div class="package-header">
+                <h2 class="title">
+                    {{ heading }}
+                    <small>({{ users.nbResults }})</small>
+                </h2>
+                {% if showFreezeContext %}
+                    <p>Frozen accounts. Temporary holds are meant to be revisited &mdash; unfreeze or escalate them from each user's profile.</p>
+                {% else %}
+                    <p>All registered accounts. Use the freeze filter to review frozen/held accounts (e.g. the Temporary queue).</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="audit-log-filters">
+        <form method="GET" action="{{ path('admin_users') }}" name="filters">
+            <div class="row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="user-search">Search</label>
+                        <input type="text" name="search" id="user-search" class="form-control" value="{{ selectedFilters.search }}" placeholder="Filter by username or email">
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="frozen-filter">Freeze status</label>
+                        <select name="frozen" id="frozen-filter" class="form-select">
+                            <option value=""{{ selectedFilters.frozen == '' ? ' selected' : '' }}>All</option>
+                            <option value="none"{{ selectedFilters.frozen == 'none' ? ' selected' : '' }}>Not frozen</option>
+                            <option value="any"{{ selectedFilters.frozen == 'any' ? ' selected' : '' }}>Frozen (any reason)</option>
+                            <optgroup label="Frozen for reason">
+                                {% for reason in freezeReasons %}
+                                    <option value="{{ reason.value }}"{{ selectedFilters.frozen == reason.value ? ' selected' : '' }}>{{ ('user_freeze_reasons.' ~ reason.value)|trans }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="twofa-filter">2FA</label>
+                        <select name="twofa" id="twofa-filter" class="form-select">
+                            <option value=""{{ selectedFilters.twofa == '' ? ' selected' : '' }}>All</option>
+                            <option value="enabled"{{ selectedFilters.twofa == 'enabled' ? ' selected' : '' }}>Enabled</option>
+                            <option value="disabled"{{ selectedFilters.twofa == 'disabled' ? ' selected' : '' }}>Disabled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="github-linked-filter">GitHub account</label>
+                        <select name="github_linked" id="github-linked-filter" class="form-select">
+                            <option value=""{{ selectedFilters.github_linked == '' ? ' selected' : '' }}>All</option>
+                            <option value="yes"{{ selectedFilters.github_linked == 'yes' ? ' selected' : '' }}>Linked</option>
+                            <option value="no"{{ selectedFilters.github_linked == 'no' ? ' selected' : '' }}>Not linked</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="github-id-filter">GitHub ID</label>
+                        <input type="text" name="github_id" id="github-id-filter" class="form-control" value="{{ selectedFilters.github_id }}" placeholder="Filter by numeric GitHub user id">
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="registered-from-filter">Registered From</label>
+                        <input type="date" name="registered_from" id="registered-from-filter" class="form-control" value="{{ selectedFilters.registered_from }}">
+                        <small class="help-block">Accounts created on or after this date (UTC)</small>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="form-group">
+                        <label for="registered-to-filter">Registered To</label>
+                        <input type="date" name="registered_to" id="registered-to-filter" class="form-control" value="{{ selectedFilters.registered_to }}">
+                        <small class="help-block">Accounts created on or before this date (UTC)</small>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="audit-log-filter-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="bi bi-funnel-fill"></span> Apply Filters
+                        </button>
+                        <a href="{{ path(app.current_route) }}" class="btn btn-secondary">
+                            <span class="bi bi-x-circle-fill"></span> Clear All Filters
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <section class="row">
+        <section class="col-lg-12">
+            {% if users|length %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Status</th>
+                            <th>2FA</th>
+                            <th>GitHub ID</th>
+                            <th>Packages</th>
+                            <th>Registered</th>
+                            <th>Last login</th>
+                            {% if showFreezeContext %}
+                                <th>Frozen at</th>
+                                <th>Frozen by</th>
+                                <th>Public reason</th>
+                                {% if is_granted('ROLE_AUDITOR') %}
+                                    <th>Internal note</th>
+                                {% endif %}
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in users %}
+                            {% set user = row[0] %}
+                            {% set extraRoles = user.roles|filter(r => r != 'ROLE_USER') %}
+                            {% set ctx = freezeContext[user.id]|default(null) %}
+                            <tr>
+                                <td><a href="{{ path('user_profile', {name: user.username}) }}">{{ user.username }}</a></td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ extraRoles|length ? extraRoles|join(', ') : '—' }}</td>
+                                <td>
+                                    {% if user.frozen %}
+                                        <span class="badge bg-danger">Frozen: {{ ('user_freeze_reasons.' ~ user.freezeReason.value)|trans }}</span>
+                                    {% elseif not user.enabled %}
+                                        <span class="badge bg-warning">Pending confirmation</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.totpAuthenticationEnabled %}
+                                        <span class="badge bg-success">Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.githubId ?: '—' }}</td>
+                                <td>{{ row.packageCount }}</td>
+                                <td>{{ user.createdAt|date('Y-m-d') }}</td>
+                                <td>{{ user.lastLogin ? user.lastLogin|date('Y-m-d H:i:s') ~ ' UTC' : 'Never' }}</td>
+                                {% if showFreezeContext %}
+                                    <td>{{ ctx ? ctx.datetime|date('Y-m-d H:i:s') ~ ' UTC' : '—' }}</td>
+                                    <td>{{ ctx ? (ctx.attributes.actor.username ?? ctx.attributes.actor) : '—' }}</td>
+                                    <td>{{ ctx and ctx.attributes.reasonText ? ctx.attributes.reasonText : '—' }}</td>
+                                    {% if is_granted('ROLE_AUDITOR') %}
+                                        <td>{{ ctx and ctx.attributes.internalReason ? ctx.attributes.internalReason : '—' }}</td>
+                                    {% endif %}
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% if users.haveToPaginate() %}
+                    {{ pagerfanta(users, 'twitter_bootstrap5', {'proximity': 2}) }}
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <p>No users match this search/filter.</p>
+                </div>
+            {% endif %}
+        </section>
+    </section>
+{% endblock %}

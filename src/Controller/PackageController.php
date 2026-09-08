@@ -20,6 +20,7 @@ use App\Entity\Download;
 use App\Entity\FilterListEntry;
 use App\Entity\FilterListEntryRepository;
 use App\Entity\Job;
+use App\Entity\JobRepository;
 use App\Entity\Package;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
@@ -57,9 +58,10 @@ use Composer\Semver\Constraint\MatchNoneConstraint;
 use Composer\Semver\Constraint\MultiConstraint;
 use Doctrine\ORM\NoResultException;
 use Pagerfanta\Adapter\FixedAdapter;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -69,6 +71,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
 use Symfony\Component\HttpKernel\EventListener\AbstractSessionListener;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -90,6 +93,10 @@ use Webmozart\Assert\Assert;
  */
 class PackageController extends Controller
 {
+    private const int LIST_FLUSH_EVERY = 500;
+    private const string STATS_RECORD_DATE = '2012-04-13 00:00:00';
+    private const string RELEASES_RECORD_DATE = '2011-01-01 00:00:00';
+
     public function __construct(
         private ProviderManager $providerManager,
         private PackageManager $packageManager,
@@ -117,7 +124,7 @@ class PackageController extends Controller
         ?string $type = null,
         #[MapQueryParameter]
         ?string $vendor = null,
-    ): JsonResponse {
+    ): StreamedJsonResponse {
         $queryParams = $req->query->all();
         $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
@@ -128,35 +135,76 @@ class PackageController extends Controller
                 'vendor' => $vendor,
             ], static fn ($val) => $val !== null);
 
-            $response = new JsonResponse(['packages' => $repo->getPackagesWithFields($filters, $fields)]);
-            $response->setSharedMaxAge(300);
-            $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
-
-            return $response;
+            return $this->streamedListResponse(['packages' => self::streamPackages($repo->iteratePackagesWithFields($filters, $fields))]);
         }
 
         if ($type !== null || $vendor !== null) {
-            $names = $repo->getPackageNamesByTypeAndVendor($type, $vendor);
+            $names = $repo->iteratePackageNamesByTypeAndVendor($type, $vendor);
         } else {
             $names = $this->providerManager->getPackageNames();
         }
 
+        $packageFilter = null;
         if ($req->query->has('filter')) {
             $packageFilter = '{^'.str_replace('\\*', '.*?', preg_quote($req->query->getString('filter'))).'$}i';
-            $filtered = [];
-            foreach ($names as $name) {
-                if (Preg::isMatch($packageFilter, $name)) {
-                    $filtered[] = $name;
-                }
-            }
-            $names = $filtered;
         }
 
-        $response = new JsonResponse(['packageNames' => $names]);
+        return $this->streamedListResponse(['packageNames' => self::streamNames($names, $packageFilter)]);
+    }
+
+    /**
+     * @param array<string, \Generator<array-key, mixed>> $data
+     */
+    private function streamedListResponse(array $data): StreamedJsonResponse
+    {
+        $response = new StreamedJsonResponse($data, encodingOptions: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $response->setSharedMaxAge(300);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $response;
+    }
+
+    /**
+     * Yields without an explicit key on purpose: StreamedJsonResponse decides list-vs-map from the
+     * first key it sees, so re-yielding the preserved keys of a filtered source would turn
+     * packageNames from a JSON array into a JSON object.
+     *
+     * @param iterable<string>      $names
+     * @param non-empty-string|null $packageFilter
+     *
+     * @return \Generator<int, string>
+     */
+    private static function streamNames(iterable $names, ?string $packageFilter): \Generator
+    {
+        $emitted = 0;
+        foreach ($names as $name) {
+            if ($packageFilter !== null && !Preg::isMatch($packageFilter, $name)) {
+                continue;
+            }
+
+            yield $name;
+
+            if (++$emitted % self::LIST_FLUSH_EVERY === 0) {
+                flush();
+            }
+        }
+    }
+
+    /**
+     * @param iterable<string, array<string, string|int|bool|null>> $packages
+     *
+     * @return \Generator<string, array<string, string|int|bool|null>>
+     */
+    private static function streamPackages(iterable $packages): \Generator
+    {
+        $emitted = 0;
+        foreach ($packages as $name => $fields) {
+            yield $name => $fields;
+
+            if (++$emitted % self::LIST_FLUSH_EVERY === 0) {
+                flush();
+            }
+        }
     }
 
     #[Route(path: '/metadata/changes.json', name: 'metadata_changes', defaults: ['_format' => 'json'], methods: ['GET'])]
@@ -370,7 +418,7 @@ class PackageController extends Controller
 
                 return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? -1 : 1;
             });
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
         }
 
         if ($req->getRequestFormat() === 'json') {
@@ -533,7 +581,7 @@ class PackageController extends Controller
                 }
                 $data['downloads'] = $this->downloadManager->getDownloads($package);
                 $data['favers'] = $this->favoriteManager->getFaverCount($package);
-            } catch (\RuntimeException|ConnectionException $e) {
+            } catch (\RuntimeException|PredisException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
             }
@@ -616,24 +664,35 @@ class PackageController extends Controller
             if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
                 throw new \RuntimeException();
             }
-            $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
+            $data['downloads'] = $this->downloadManager->getDownloads($package);
 
+            // The view counter exists only to spot packages that get traffic but no installs, so
+            // it is only worth a Redis write while that can still be concluded. Downloads and
+            // createdAt never move back below these thresholds, and suspect is never unset here,
+            // so a package that fails this check can never need the counter again.
             if (
                 !$package->isSuspect()
-                && $data['downloads']['total'] <= 10 && ($data['downloads']['views'] ?? 0) >= 100
-                && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
+                && $data['downloads']['total'] <= PackageRepository::SUSPECT_VIEWS_MAX_DOWNLOADS
+                && $package->getCreatedAt()->getTimestamp() >= strtotime(PackageRepository::SUSPECT_VIEWS_MIN_CREATED_AT)
+                && $this->downloadManager->incrementViews($package) >= 100
             ) {
                 $vendorRepo = $this->getEM()->getRepository(Vendor::class);
                 if (!$vendorRepo->isVerified($package->getVendor())) {
                     $package->setSuspect('Too many views');
                     $repo->markPackageSuspect($package);
                 }
+
+                // The counter has served its purpose either way, so drop it: a package we just
+                // marked suspect stops counting above, and for a verified vendor nothing can ever
+                // come of it. Restarting from zero also spaces the isVerified() lookup back out to
+                // once per 100 views instead of once per view from here on.
+                $this->downloadManager->deleteViews($package->getId());
             }
 
             if ($user) {
                 $data['is_favorite'] = $this->favoriteManager->isMarked($user, $package);
             }
-        } catch (\RuntimeException|ConnectionException) {
+        } catch (\RuntimeException|PredisException) {
         }
 
         $data['dependents'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getDependentCount($package->getName()) : 0;
@@ -751,7 +810,7 @@ class PackageController extends Controller
         try {
             $data['downloads']['total'] = $this->downloadManager->getDownloads($package);
             $data['favers'] = $this->favoriteManager->getFaverCount($package);
-        } catch (ConnectionException) {
+        } catch (PredisException) {
             $data['downloads']['total'] = null;
             $data['favers'] = null;
         }
@@ -759,7 +818,7 @@ class PackageController extends Controller
         foreach ($versions as $version) {
             try {
                 $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version);
-            } catch (ConnectionException) {
+            } catch (PredisException) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
         }
@@ -845,7 +904,6 @@ class PackageController extends Controller
         }
 
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         return new JsonResponse(['softDeleted' => $softDeleted, 'deletionTitle' => $deletionTitle]);
     }
@@ -871,7 +929,6 @@ class PackageController extends Controller
 
         $repo->softDelete($version, VersionDeletionReason::DeletedByAdmin, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         // deletionTitle becomes a public tooltip, so it only carries the public reason.
         $deletionTitle = 'Removed by admin on '.gmdate('Y-m-d H:i:s').' UTC'
@@ -896,17 +953,24 @@ class PackageController extends Controller
             throw new AccessDeniedException('Invalid CSRF token');
         }
 
+        // Admins may hide a version that is already soft-deleted as gone-from-upstream or
+        // maintainer-pulled, without recovering it first. Admin-pulled rows already carry a
+        // deliberate admin decision and Hidden rows are already hidden, so those go through recover.
+        $currentReason = $version->getDeletionReason() ?? VersionDeletionReason::AutoDeletedMissing;
+        if ($version->isSoftDeleted() && !$currentReason->isHideableByAdmin()) {
+            throw new AccessDeniedException('This version must be recovered before it can be hidden.');
+        }
+
         $reasonText = trim($req->request->getString('reason')) ?: null;
         $internalReasonText = trim($req->request->getString('internalReason')) ?: null;
 
         $repo->softDelete($version, VersionDeletionReason::Hidden, $reasonText, $internalReasonText, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
-        $deletionTitle = 'Hidden by admin on '.gmdate('Y-m-d H:i:s').' UTC'
-            .($reasonText !== null ? ': '.$reasonText : '');
+        // Read off the entity so the ajax tooltip matches what a page reload renders.
+        $deletionTitle = $version->getDeletionTitle();
 
-        return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'glyphicon-eye-close']);
+        return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'bi-eye-slash-fill']);
     }
 
     #[Route(path: '/versions/{versionId}/recover', name: 'recover_version', requirements: ['versionId' => '[0-9]+'], methods: ['POST'])]
@@ -935,7 +999,6 @@ class PackageController extends Controller
 
         $repo->recover($version, $user);
         $this->getEM()->flush();
-        $this->getEM()->clear();
 
         return new Response('', 204);
     }
@@ -1096,14 +1159,7 @@ class PackageController extends Controller
             }
         }
 
-        return $this->render('package/view_package.html.twig', [
-            'package' => $package,
-            'versions' => null,
-            'expandedVersion' => null,
-            'version' => null,
-            'removeMaintainerForm' => $removeMaintainerForm,
-            'show_remove_maintainer_form' => true,
-        ]);
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
     #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET', 'POST'])]
@@ -1266,6 +1322,7 @@ class PackageController extends Controller
         }
 
         $data['package'] = $package;
+        $data['releaseChart'] = $this->computeReleaseChart($versions);
 
         $expandedVersion = reset($versions);
         $majorVersions = [];
@@ -1470,7 +1527,7 @@ class PackageController extends Controller
         return $response;
     }
 
-    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
     public function dependentsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
@@ -1555,7 +1612,7 @@ class PackageController extends Controller
         return $this->render('package/dependents.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
     public function suggestersAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
@@ -1648,6 +1705,14 @@ class PackageController extends Controller
 
     private function computeStats(Request $req, Package $package, ?Version $version = null, ?string $majorVersion = null): JsonResponse
     {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'This page is temporarily disabled, please come back later.'], Response::HTTP_BAD_GATEWAY);
+        }
+
+        if ($resp = $this->blockAbusers($req)) {
+            return $resp;
+        }
+
         if ($from = $req->query->get('from')) {
             try {
                 $from = new \DateTimeImmutable($from);
@@ -1834,6 +1899,32 @@ class PackageController extends Controller
     }
 
     /**
+     * Staff-only history of every package:updates job of one package, with each run's log and raw
+     * payload/result. Gated on the role, not the PackageActions::Update voter, as that voter also grants
+     * maintainers and the history exposes internal exception classes/messages. Frozen and suppressed
+     * packages stay viewable here (unlike viewPackageAction) as that is when the log is most needed.
+     */
+    #[IsGranted('ROLE_UPDATE_PACKAGES')]
+    #[Route(path: '/packages/{name}/update-history', name: 'view_package_update_history', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET'])]
+    public function updateHistoryAction(Request $req, string $name, JobRepository $jobRepository): Response
+    {
+        $package = $this->getPackageByName($req, $name);
+        if ($package instanceof Response) {
+            return $package;
+        }
+
+        $jobs = new Pagerfanta(new QueryAdapter($jobRepository->getPackageUpdateJobsQueryBuilder($package->getId()), false, false));
+        $jobs->setNormalizeOutOfRangePages(true);
+        $jobs->setMaxPerPage(20);
+        $jobs->setCurrentPage(max(1, $req->query->getInt('page', 1)));
+
+        return $this->render('package/update_history.html.twig', [
+            'package' => $package,
+            'jobs' => $jobs,
+        ]);
+    }
+
+    /**
      * @return FormInterface<MaintainerRequest>
      */
     private function createAddMaintainerForm(Package $package): FormInterface
@@ -1945,6 +2036,28 @@ class PackageController extends Controller
         return $datePoints;
     }
 
+    /**
+     * @param Version[] $versions
+     *
+     * @return array<string, int>
+     */
+    private function computeReleaseChart(array $versions): array
+    {
+        $releaseChart = [];
+        $statsRecordDate = new \DateTimeImmutable(self::RELEASES_RECORD_DATE);
+        foreach ($versions as $version) {
+            $releasedAt = $version->getReleasedAt();
+            if ($version->isDevelopment() || $version->isSoftDeleted() || null === $releasedAt || $releasedAt < $statsRecordDate) {
+                continue;
+            }
+            $month = $releasedAt->format('Y-m');
+            $releaseChart[$month] = ($releaseChart[$month] ?? 0) + 1;
+        }
+        ksort($releaseChart);
+
+        return $releaseChart;
+    }
+
     private function guessStatsStartDate(Package|Version $packageOrVersion): \DateTimeImmutable
     {
         if ($packageOrVersion instanceof Package) {
@@ -1955,7 +2068,7 @@ class PackageController extends Controller
             throw new \LogicException('Version with release date expected');
         }
 
-        $statsRecordDate = new \DateTimeImmutable('2012-04-13 00:00:00');
+        $statsRecordDate = new \DateTimeImmutable(self::STATS_RECORD_DATE);
         if ($date < $statsRecordDate) {
             $date = $statsRecordDate;
         }

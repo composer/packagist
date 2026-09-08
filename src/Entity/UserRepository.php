@@ -30,21 +30,17 @@ class UserRepository extends ServiceEntityRepository
     }
 
     /**
-     * Currently-frozen accounts for the admin review queue, optionally filtered by reason and ordered
-     * most-recently-frozen first. Ordering uses the denormalized frozenAt column (backed by the
-     * user_frozen_idx index); who/notes are looked up per displayed page from the UserFrozen audit log,
-     * which stays canonical.
+     * Base query for the admin user directory; rows are `[0 => User, 'packageCount' => int]`.
+     * App\QueryFilter\User filters narrow it on the `u` alias.
      */
-    public function getFrozenUsersQueryBuilder(?UserFreezeReason $reason = null): QueryBuilder
+    public function getUsersQueryBuilder(bool $orderByFrozenAt = false): QueryBuilder
     {
         $qb = $this->createQueryBuilder('u')
-            ->where('u.frozen IS NOT NULL')
-            ->orderBy('u.frozenAt', 'DESC')
-            ->addOrderBy('u.id', 'DESC');
+            ->addSelect('SIZE(u.packages) AS packageCount')
+            ->orderBy($orderByFrozenAt ? 'u.frozenAt' : 'u.id', 'DESC');
 
-        if ($reason !== null) {
-            $qb->andWhere('u.frozen = :reason')
-                ->setParameter('reason', $reason);
+        if ($orderByFrozenAt) {
+            $qb->addOrderBy('u.id', 'DESC');
         }
 
         return $qb;

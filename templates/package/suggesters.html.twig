@@ -8,7 +8,7 @@
 
 {% block content %}
     <div class="row">
-        <div class="col-xs-12 package">
+        <div class="col-12 package">
             <div class="package-header">
                 <h2 class="title">
                     <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a> {{ 'packages.suggesters'|trans }}
@@ -19,7 +19,7 @@
     </div>
 
     <section class="row">
-        <section class="col-md-12">
+        <section class="col-lg-12">
             {% embed "web/list.html.twig" with {noLayout: 'true', showAutoUpdateWarning: false} %}
                 {% block content_title %}
                 {% endblock %}

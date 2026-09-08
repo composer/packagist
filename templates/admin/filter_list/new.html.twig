@@ -4,7 +4,7 @@
 
 {% block admin_content %}
     <div class="row">
-        <div class="col-xs-12 package">
+        <div class="col-12 package">
             <div class="package-header">
                 <h2 class="title">Add filter list entry</h2>
                 <p>
@@ -16,7 +16,7 @@
     </div>
 
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-lg-8">
             {{ form_start(form) }}
             {{ form_errors(form) }}
 
@@ -29,7 +29,7 @@
             {{ form_row(form.internalNote) }}
 
             <button type="submit" class="btn btn-success">Create</button>
-            <a class="btn btn-default" href="{{ path('admin_filter_lists') }}">Cancel</a>
+            <a class="btn btn-secondary" href="{{ path('admin_filter_lists') }}">Cancel</a>
 
             {{ form_end(form) }}
         </div>

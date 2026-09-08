@@ -2,7 +2,7 @@
     <div class="container {% if showSearchDesc == 'show' %}with-description{% endif %}">
         <form name="search_query" method="get" action="{{ path('search_web') }}" id="search-form" autocomplete="off">
             <div class="sortable row">
-                <div class="col-xs-12 js-search-field-wrapper col-md-9">
+                <div class="col-12 js-search-field-wrapper col-lg-9">
                     {% set query = app.request.query %}
                     {% set searchQuery = query.has('q') ? query.get('q') : query.get('query') %}
                     <input type="search" id="search_query_query" name="query" required="required" autocomplete="off" placeholder="Search {% if app.current_route == 'browse_extensions' %}extension {% endif %}packages..." tabindex="1" class=" form-control" value="{{ searchQuery }}" />
@@ -12,10 +12,10 @@
 
         {%- if showSearchDesc == 'show' %}
             <div class="row">
-                <div class="col-sm-9 hidden-xs">
+                <div class="col-md-9 d-none d-md-block search-claim">
                     <img src="{{ asset('img/logo-small.png') }}" class="logo" alt="Packagist logo">
                     <p>{{ 'search.claim_html'|trans|raw }}</p>
-                    <img src="{{ asset('img/logo-composer.png') }}" alt="Composer logo" class="logo-composer hidden-sm hidden-xs">
+                    <img src="{{ asset('img/logo-composer.png') }}" alt="Composer logo" class="logo-composer d-none d-lg-inline-block">
                 </div>
             </div>
         {%- endif %}

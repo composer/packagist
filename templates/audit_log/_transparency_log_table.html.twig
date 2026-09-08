@@ -21,10 +21,10 @@
                             {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
                             {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
                             <a href="{{ path('view_transparency_log', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
-                                <span class="glyphicon glyphicon-time"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
+                                <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
                             </a>
                         {% else %}
-                            <span class="glyphicon glyphicon-time"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
+                            <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
                         {% endif %}
                     </td>
                     <td class="audit-log-type" data-test="audit-log-type">{{ display.typeTranslationKey|trans }}</td>

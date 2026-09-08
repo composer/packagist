@@ -163,7 +163,7 @@ class RegistrationControllerTest extends IntegrationTestCase
         $this->assertResponseStatusCodeSame(422);
 
         // Should display validation error
-        $this->assertCount(1, $crawler->filter('.alert-danger'));
+        $this->assertCount(1, $crawler->filter('.alert-danger, .invalid-feedback'));
     }
 
     public function testExpiredTokenRejected(): void

@@ -28,6 +28,14 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class PackageRepository extends ServiceEntityRepository
 {
+    /**
+     * Bounds of the "lots of views, no installs" spam heuristic implemented in
+     * PackageController::viewPackageAction(), shared so packagist:clean-view-counters can tell which
+     * view counters are still live by exactly the same rules.
+     */
+    public const SUSPECT_VIEWS_MIN_CREATED_AT = '2019-05-01';
+    public const SUSPECT_VIEWS_MAX_DOWNLOADS = 10;
+
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
@@ -109,13 +117,18 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<string>
+     * Sorts in SQL rather than with PHP's SORT_STRING|SORT_FLAG_CASE like the lookups above, because
+     * a stream cannot be sorted after the fact. Over the legal package name charset the two orders
+     * differ only in where `_` lands: utf8mb4_unicode_ci puts it before `-`, `.`, `/` and the digits.
+     *
+     * @return \Generator<int, string>
      */
-    public function getPackageNamesByTypeAndVendor(?string $type, ?string $vendor): array
+    public function iteratePackageNamesByTypeAndVendor(?string $type, ?string $vendor): \Generator
     {
         $qb = $this->getEntityManager()->getRepository(Package::class)->createQueryBuilder('p')
             ->select('p.name')
             ->where('(p.frozen IS NULL OR p.frozen NOT IN (:suppressed))')
+            ->orderBy('p.name', 'ASC')
             ->setParameter('suppressed', PackageFreezeReason::suppressingCases());
         if ($type !== null) {
             $qb->andWhere('p.type = :type')
@@ -126,7 +139,7 @@ class PackageRepository extends ServiceEntityRepository
                 ->setParameter('vendor', $vendor);
         }
 
-        return $this->getPackageNamesForQuery($qb->getQuery());
+        return $this->iteratePackageNamesForQuery($qb->getQuery());
     }
 
     /**
@@ -175,9 +188,9 @@ class PackageRepository extends ServiceEntityRepository
      * @param array<string, string|int|bool> $filters
      * @param array<string>                  $fields
      *
-     * @return array<string, array<string, string|int|bool|null>>
+     * @return \Generator<string, array<string, string|int|bool|null>>
      */
-    public function getPackagesWithFields(array $filters, array $fields): array
+    public function iteratePackagesWithFields(array $filters, array $fields): \Generator
     {
         $selector = '';
         foreach ($fields as $field) {
@@ -196,19 +209,34 @@ class PackageRepository extends ServiceEntityRepository
             ->createQuery("SELECT p.name $selector FROM App\Entity\Package p WHERE $where ORDER BY p.name")
             ->setParameters(array_merge($filters, ['suppressedReasons' => PackageFreezeReason::suppressingCases()]));
 
-        $result = [];
+        // yielded row by row so the caller can stream it out without materialising the result set
         /** @var array{name: string, abandoned?: string, replacementPackage?: string|null} $row */
-        foreach ($query->getScalarResult() as $row) {
+        foreach ($query->toIterable([], Query::HYDRATE_SCALAR) as $row) {
             $name = $row['name'];
             unset($row['name']);
             if (isset($row['abandoned']) && \array_key_exists('replacementPackage', $row)) {
                 $row['abandoned'] = $row['abandoned'] == '1' ? ($row['replacementPackage'] ?? true) : false;
             }
             unset($row['replacementPackage']);
-            $result[$name] = $row;
-        }
 
-        return $result;
+            yield $name => $row;
+        }
+    }
+
+    /**
+     * @param Query<mixed, array{name: string}> $query
+     *
+     * @return \Generator<int, string>
+     */
+    private function iteratePackageNamesForQuery(Query $query): \Generator
+    {
+        foreach ($query->toIterable([], Query::HYDRATE_SCALAR) as $row) {
+            if (!\is_array($row) || !isset($row['name']) || !\is_string($row['name'])) {
+                throw new \LogicException('Excepted rows with a name field, got '.json_encode($row));
+            }
+
+            yield $row['name'];
+        }
     }
 
     /**
@@ -514,6 +542,41 @@ class PackageRepository extends ServiceEntityRepository
             FROM package p WHERE p.suspect IS NOT NULL AND p.frozen IS NULL ORDER BY p.vendor ASC, p.name ASC';
 
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
+    }
+
+    /**
+     * Narrows a list of package ids down to those the "too many views" heuristic could still flag:
+     * still present, not already suspect, still publicly viewable, new enough, and not owned by a
+     * vendor a moderator has verified (which blocks the flagging for good). The download half of
+     * the check lives in Redis, so callers have to apply SUSPECT_VIEWS_MAX_DOWNLOADS themselves.
+     *
+     * @param list<int> $ids
+     *
+     * @return list<int>
+     */
+    public function getPackageIdsFlaggableByViews(array $ids): array
+    {
+        if (\count($ids) === 0) {
+            return [];
+        }
+
+        // a suppressing freeze 404s the package page for everyone, so no views can come in anymore,
+        // while a gentle freeze keeps serving it and thus keeps the counter live
+        $sql = 'SELECT p.id FROM package p
+            LEFT JOIN vendor v ON v.name = p.vendor
+            WHERE p.id IN (:ids)
+                AND p.suspect IS NULL
+                AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
+                AND p.createdAt >= :minCreatedAt
+                AND COALESCE(v.verified, 0) = 0';
+
+        $rows = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            $sql,
+            ['ids' => $ids, 'suppressed' => PackageFreezeReason::suppressingValues(), 'minCreatedAt' => self::SUSPECT_VIEWS_MIN_CREATED_AT],
+            ['ids' => ArrayParameterType::INTEGER, 'suppressed' => ArrayParameterType::STRING]
+        );
+
+        return array_map('intval', $rows);
     }
 
     /**

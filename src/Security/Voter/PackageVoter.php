@@ -15,7 +15,7 @@ namespace App\Security\Voter;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Model\DownloadManager;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
@@ -85,7 +85,7 @@ class PackageVoter extends Voter
 
         try {
             $downloads = $this->downloadManager->getDownloads($package);
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
             return false;
         }
 

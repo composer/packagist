@@ -1,12 +1,12 @@
 <section class="row">
-    <section class="col-md-12">
+    <section class="col-lg-12">
         {% if securityAdvisories|length %}
             <ul class="packages list-unstyled">
                 {% for advisory in securityAdvisories %}
                     <li class="row">
-                        <div class="col-xs-12 package-item">
+                        <div class="col-12 package-item">
                             <div class="row">
-                                <div class="col-sm-8 col-lg-9">
+                                <div class="col-md-8 col-xl-9">
                                     <h4 class="font-bold">
                                         {% if advisory.severity %}[{{ advisory.severity.value|upper }}]{% endif %}
                                         <a href="{{ advisory.link }}">{{ advisory.title }}</a>
@@ -25,7 +25,7 @@
                                     {% if withPackage|default(false) %}<p>Affected package: {% if advisory.packageName is existing_package %}<a href="{{ path('view_package', { 'name': advisory.packageName }) }}">{{ advisory.packageName }}</a>{% else %}{{ advisory.packageName }}{% endif %}</p>{% endif %}
                                     <p>Affected version: {{ advisory.affectedVersions }}</p>
                                 </div>
-                                <div class="col-sm-4 col-lg-3">
+                                <div class="col-md-4 col-xl-3">
                                     <p>Reported by:<br/>{% for source in advisory.sources %}{{ source.source }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
                                 </div>
                             </div>

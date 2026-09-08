@@ -1,4 +1,5 @@
 import jQuery from "jquery";
+import { Modal, Tooltip } from 'bootstrap';
 import notifier from './notifier';
 
 const init = function ($) {
@@ -8,10 +9,10 @@ const init = function ($) {
         ongoingRequest = false;
 
     const togglePackageForm = function (selector) {
-        $('#remove-maintainer-form').addClass('hidden');
-        $('#add-maintainer-form').addClass('hidden');
-        $('#transfer-package-form').addClass('hidden');
-        $(selector).removeClass('hidden');
+        $('#remove-maintainer-form').addClass('d-none');
+        $('#add-maintainer-form').addClass('d-none');
+        $('#transfer-package-form').addClass('d-none');
+        $(selector).removeClass('d-none');
     }
 
     $('#add-maintainer').on('click', function (e) {
@@ -101,13 +102,14 @@ const init = function ($) {
         modal.find('.deletion-reason-confirm').text(opts.confirmLabel || 'Confirm');
         modal.find('.deletion-reason-public').val('');
         modal.find('.deletion-reason-internal').val('');
+        var modalInstance = Modal.getOrCreateInstance(modal.get(0));
         modal.find('.deletion-reason-confirm').off('click').on('click', function () {
             var publicReason = modal.find('.deletion-reason-public').val().trim();
             var internalReason = modal.find('.deletion-reason-internal').val().trim();
-            modal.modal('hide');
+            modalInstance.hide();
             onConfirm(publicReason, internalReason);
         });
-        modal.modal('show');
+        modalInstance.show();
     }
 
     function forceUpdatePackage(e, updateAll) {
@@ -239,18 +241,39 @@ const init = function ($) {
         return $(form).closest('.version').find('.version-number').text().trim();
     }
 
-    function applyVersionDeleteResponse(form, data, deletedToast) {
+    // Point a deletion tooltip at a new title. BS5 has no "update the title" call, so dispose any
+    // existing instance and rebuild it; the text goes on data-bs-title, not the native title
+    // attribute, so the browser does not render its own tooltip on top.
+    function setDeletionTooltip($el, title) {
+        $el.each(function () {
+            var existing = Tooltip.getInstance(this);
+            if (existing) {
+                existing.dispose();
+            }
+            this.removeAttribute('title');
+            this.setAttribute('data-bs-title', title);
+            new Tooltip(this, {placement: 'top', container: 'body'});
+        });
+    }
+
+    function applyVersionDeleteResponse(form, data, deletedToast, softDeletedToast) {
         var row = $(form).closest('.version');
         if (data && data.softDeleted) {
-            notifier.log('Version soft-deleted. Reload the page to access the recovery action.', {timeout: 4000});
+            notifier.log(softDeletedToast || 'Version soft-deleted. Reload the page to access the recovery action.', {timeout: 4000});
             row.addClass('version-soft-deleted');
-            if (!row.find('.deletion-alert').length) {
-                var icon = data.deletionIcon || 'glyphicon-trash';
-                var alert = $('<span class="action-alert deletion-alert"><i class="glyphicon"></i></span>');
-                alert.find('i').addClass(icon);
-                alert.attr('title', data.deletionTitle || 'Deleted');
+            // The row may already carry a badge (hiding an already soft-deleted version), so reuse
+            // and refresh it rather than leaving the previous icon and title in place.
+            var alert = row.find('.deletion-alert');
+            if (!alert.length) {
+                alert = $('<span class="action-alert deletion-alert" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-container="body"><i class="bi"></i></span>');
                 alert.insertBefore(row.find('form').first());
             }
+            alert.find('i').attr('class', 'bi ' + (data.deletionIcon || 'bi-trash-fill'));
+            // The version number carries the same title, and has no tooltip at all until the row is
+            // soft-deleted, so it needs the same treatment as the badge.
+            var title = data.deletionTitle || 'Deleted';
+            setDeletionTooltip(alert, title);
+            setDeletionTooltip(row.find('.version-number a'), title);
             row.find('.delete-version, .hide-version').remove();
         } else {
             notifier.log(deletedToast, {timeout: 3000});
@@ -330,7 +353,7 @@ const init = function ($) {
             if (publicReason) data.push({name: 'reason', value: publicReason});
             if (internalReason) data.push({name: 'internalReason', value: internalReason});
             dispatchVersionAction(form, function (resp) {
-                applyVersionDeleteResponse(form, resp, 'Version hidden');
+                applyVersionDeleteResponse(form, resp, 'Version hidden.', 'Version hidden.');
             }, {data: data});
         });
     });
@@ -358,8 +381,8 @@ const init = function ($) {
 
     var versionsList = $('.package .versions')[0];
     if (versionsList && versionsList.offsetHeight < versionsList.scrollHeight) {
-        $('.package .versions-expander').removeClass('hidden').on('click', function () {
-            $(this).addClass('hidden');
+        $('.package .versions-expander').removeClass('d-none').on('click', function () {
+            $(this).addClass('d-none');
             $(versionsList).css('max-height', 'inherit');
         });
     }
@@ -383,7 +406,7 @@ const init = function ($) {
     });
 
     function addMaintainerRemoveButton(item) {
-        var removeButton = $('<button type="button" class="btn btn-danger btn-sm"><i class="glyphicon glyphicon-remove"></i></button>');
+        var removeButton = $('<button type="button" class="btn btn-danger btn-sm"><i class="bi bi-x-lg"></i></button>');
         removeButton.on('click', function(e) {
             e.preventDefault();
 

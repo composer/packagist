@@ -72,8 +72,17 @@ enum AuditRecordType: string
     case OrganizationTeamDeleted = 'organization_team_deleted';
     case OrganizationTeamMemberAdded = 'organization_team_member_added';
     case OrganizationTeamMemberRemoved = 'organization_team_member_removed';
+    case OrganizationMemberJoined = 'organization_member_joined';
     case OrganizationMemberRemoved = 'organization_member_removed';
     case OrganizationMemberLeft = 'organization_member_left';
+
+    // organization invitations (pre-membership lifecycle; carry the invited email)
+    case OrganizationInvitationSent = 'organization_invitation_sent';
+    case OrganizationInvitationResent = 'organization_invitation_resent';
+    case OrganizationInvitationRevoked = 'organization_invitation_revoked';
+    case OrganizationInvitationAccepted = 'organization_invitation_accepted';
+    case OrganizationInvitationDeclined = 'organization_invitation_declined';
+    case OrganizationInvitationExpired = 'organization_invitation_expired';
 
     /**
      * @return list<self>
@@ -105,7 +114,11 @@ enum AuditRecordType: string
             self::OrganizationCreated, self::OrganizationNameChanged, self::OrganizationSlugChanged,
             self::OrganizationTeamCreated, self::OrganizationTeamRenamed, self::OrganizationTeamDeleted,
             self::OrganizationTeamMemberAdded, self::OrganizationTeamMemberRemoved,
-            self::OrganizationMemberRemoved, self::OrganizationMemberLeft => 'organization',
+            self::OrganizationMemberJoined,
+            self::OrganizationMemberRemoved, self::OrganizationMemberLeft,
+            self::OrganizationInvitationSent, self::OrganizationInvitationResent,
+            self::OrganizationInvitationRevoked, self::OrganizationInvitationAccepted,
+            self::OrganizationInvitationDeclined, self::OrganizationInvitationExpired => 'organization',
         };
     }
 }

@@ -36,6 +36,8 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
 
     /**
      * Enable two-factor auth on the given user account and send confirmation email.
+     *
+     * @param non-empty-string $secret
      */
     public function enableTwoFactorAuth(User $user, User $actor, string $secret): void
     {

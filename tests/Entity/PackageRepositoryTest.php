@@ -15,6 +15,7 @@ namespace App\Tests\Entity;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
+use App\Entity\Vendor;
 use App\Tests\IntegrationTestCase;
 
 class PackageRepositoryTest extends IntegrationTestCase
@@ -47,7 +48,7 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertNotContains('vendor/malware', $names, 'malware is a suppressing reason and must be excluded like spam');
     }
 
-    public function testGetPackageNamesByTypeAndVendorExcludesSuppressedFrozenPackages(): void
+    public function testIteratePackageNamesByTypeAndVendorExcludesSuppressedFrozenPackages(): void
     {
         // Mirrors getPackageNames(): the /packages/list.json filtered branch must agree with it.
         $active = self::createPackage('vendor/active', 'https://example.org/active');
@@ -63,12 +64,72 @@ class PackageRepositoryTest extends IntegrationTestCase
         $malware->freeze(PackageFreezeReason::Malware);
         $this->store($active, $temporary, $spam, $malware);
 
-        $names = $this->packageRepository->getPackageNamesByTypeAndVendor('library', 'vendor');
+        $names = iterator_to_array($this->packageRepository->iteratePackageNamesByTypeAndVendor('library', 'vendor'));
 
         self::assertContains('vendor/active', $names);
         self::assertContains('vendor/temporary', $names, 'gentle (non-suppressing) freezes stay listed');
         self::assertNotContains('vendor/spam', $names);
         self::assertNotContains('vendor/malware', $names);
+    }
+
+    public function testIteratePackageNamesByTypeAndVendorSortsInSql(): void
+    {
+        // Pins the ordering contract for the streamed branch: utf8mb4_unicode_ci, not PHP's
+        // SORT_STRING|SORT_FLAG_CASE, which would put `_` after the digits rather than first.
+        $packages = [];
+        foreach (['sortvendor/ab', 'sortvendor/a-b', 'sortvendor/a_b', 'sortvendor/a0b', 'sortvendor/a.b'] as $name) {
+            $package = self::createPackage($name, 'https://example.org/'.$name);
+            $package->setType('library');
+            $packages[] = $package;
+        }
+        $this->store(...$packages);
+
+        $names = iterator_to_array($this->packageRepository->iteratePackageNamesByTypeAndVendor('library', 'sortvendor'));
+
+        self::assertSame(['sortvendor/a_b', 'sortvendor/a-b', 'sortvendor/a.b', 'sortvendor/a0b', 'sortvendor/ab'], $names);
+    }
+
+    public function testIteratePackagesWithFieldsCollapsesAbandonedIntoReplacementOrBool(): void
+    {
+        $withReplacement = self::createPackage('fieldvendor/abandoned-with-replacement', 'https://example.org/awr');
+        $withReplacement->setType('library');
+        $withReplacement->setAbandoned(true);
+        $withReplacement->setReplacementPackage('other/pkg');
+        $bare = self::createPackage('fieldvendor/abandoned-bare', 'https://example.org/ab');
+        $bare->setType('library');
+        $bare->setAbandoned(true);
+        $active = self::createPackage('fieldvendor/active', 'https://example.org/active');
+        $active->setType('library');
+        $this->store($withReplacement, $bare, $active);
+
+        $packages = iterator_to_array($this->packageRepository->iteratePackagesWithFields(['vendor' => 'fieldvendor'], ['type', 'abandoned']));
+
+        // name-keyed, ordered by name, and replacementPackage is folded into abandoned rather than exposed
+        self::assertSame([
+            'fieldvendor/abandoned-bare' => ['type' => 'library', 'abandoned' => true],
+            'fieldvendor/abandoned-with-replacement' => ['type' => 'library', 'abandoned' => 'other/pkg'],
+            'fieldvendor/active' => ['type' => 'library', 'abandoned' => false],
+        ], $packages);
+    }
+
+    public function testIteratePackagesWithFieldsExcludesSuppressedFrozenPackages(): void
+    {
+        // Mirrors getPackageNames(): every /packages/list.json branch must agree on what is listed.
+        $active = self::createPackage('vendor/active', 'https://example.org/active');
+        $temporary = self::createPackage('vendor/temporary', 'https://example.org/temporary');
+        $temporary->freeze(PackageFreezeReason::Temporary);
+        $spam = self::createPackage('vendor/spam', 'https://example.org/spam');
+        $spam->freeze(PackageFreezeReason::Spam);
+        $malware = self::createPackage('vendor/malware', 'https://example.org/malware');
+        $malware->freeze(PackageFreezeReason::Malware);
+        $this->store($active, $temporary, $spam, $malware);
+
+        $names = array_keys(iterator_to_array($this->packageRepository->iteratePackagesWithFields([], ['repository'])));
+
+        self::assertContains('vendor/active', $names);
+        self::assertContains('vendor/temporary', $names, 'gentle (non-suppressing) freezes stay listed');
+        self::assertNotContains('vendor/spam', $names);
+        self::assertNotContains('vendor/malware', $names, 'malware is a suppressing reason and must be excluded like spam');
     }
 
     public function testGetQueryBuilderForNewestPackagesExcludesSuppressedButKeepsGentleFreezes(): void
@@ -136,5 +197,34 @@ class PackageRepositoryTest extends IntegrationTestCase
         $withFrozen = $names($this->packageRepository->getFilteredQueryBuilder([], true, includeFrozen: true)->getQuery()->getResult());
         self::assertContains('vendor/spam', $withFrozen);
         self::assertContains('vendor/malware', $withFrozen);
+    }
+
+    public function testGetPackageIdsFlaggableByViewsKeepsOnlyPackagesTheHeuristicCanStillReach(): void
+    {
+        $live = self::createPackage('vendor/live', 'https://example.org/live');
+        $suspect = self::createPackage('vendor/suspect', 'https://example.org/suspect');
+        $suspect->setSuspect('Too many views');
+        $old = self::createPackage('vendor/old', 'https://example.org/old');
+        $old->setCreatedAt(new \DateTimeImmutable('2018-01-01'));
+        $spam = self::createPackage('vendor/spam', 'https://example.org/spam');
+        $spam->freeze(PackageFreezeReason::Spam);
+        $temporary = self::createPackage('vendor/temporary', 'https://example.org/temporary');
+        $temporary->freeze(PackageFreezeReason::Temporary);
+        $verified = self::createPackage('verifiedvendor/pkg', 'https://example.org/verifiedvendor/pkg');
+        $vendor = new Vendor('verifiedvendor');
+        $vendor->setVerified(true);
+        $this->store($live, $suspect, $old, $spam, $temporary, $verified, $vendor);
+
+        $ids = $this->packageRepository->getPackageIdsFlaggableByViews([
+            $live->getId(), $suspect->getId(), $old->getId(), $spam->getId(), $temporary->getId(), $verified->getId(), 999999999,
+        ]);
+
+        self::assertContains($live->getId(), $ids);
+        self::assertContains($temporary->getId(), $ids, 'a gentle freeze keeps serving the page, so views still come in');
+        self::assertNotContains($suspect->getId(), $ids);
+        self::assertNotContains($old->getId(), $ids);
+        self::assertNotContains($spam->getId(), $ids, 'a suppressing freeze 404s the page, so no more views can arrive');
+        self::assertNotContains($verified->getId(), $ids, 'a verified vendor can never be flagged again');
+        self::assertNotContains(999999999, $ids, 'a deleted package cannot be flagged either');
     }
 }
