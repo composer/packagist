@@ -20,6 +20,7 @@ use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -32,8 +33,10 @@ class PackageRepository extends ServiceEntityRepository
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
-    public function __construct(ManagerRegistry $registry)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+        private Client $redisCache,
+    ) {
         parent::__construct($registry, Package::class);
     }
 
@@ -627,14 +630,16 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getDependentCount(string $name, ?int $type = null): int
     {
-        $sql = 'SELECT COUNT(*) count FROM dependent WHERE packageName = :name';
-        $args = ['name' => $name];
-        if (null !== $type) {
-            $sql .= ' AND type = :type';
-            $args['type'] = $type;
-        }
+        return $this->getCachedCount('dep-count:'.strtolower($name).':'.($type ?? 'all'), function () use ($name, $type): int {
+            $sql = 'SELECT COUNT(*) count FROM dependent WHERE packageName = :name';
+            $args = ['name' => $name];
+            if (null !== $type) {
+                $sql .= ' AND type = :type';
+                $args['type'] = $type;
+            }
 
-        return max(0, (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args));
+            return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args);
+        });
     }
 
     /**
@@ -709,10 +714,37 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getSuggestCount(string $name): int
     {
-        $sql = 'SELECT COUNT(*) count FROM suggester WHERE packageName = :name';
-        $args = ['name' => $name];
+        return $this->getCachedCount('sug-count:'.strtolower($name), function () use ($name): int {
+            $sql = 'SELECT COUNT(*) count FROM suggester WHERE packageName = :name';
 
-        return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args);
+            return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, ['name' => $name]);
+        });
+    }
+
+    /**
+     * Both counts are rendered as tab labels on every package page view, where the COUNT(*) is a
+     * large index scan for widely-required packages like psr/log. Being an hour out of date on a
+     * badge is harmless, so this is TTL-only with no explicit invalidation.
+     *
+     * Keys are lowercased because the packageName columns use a case-insensitive collation, so
+     * differently-cased requests must not get separate entries.
+     *
+     * @param callable(): int $compute
+     *
+     * @return int<0, max>
+     */
+    private function getCachedCount(string $cacheKey, callable $compute): int
+    {
+        $cached = $this->redisCache->get($cacheKey);
+        if ($cached !== null) {
+            return max(0, (int) $cached);
+        }
+
+        $count = max(0, $compute());
+        // random variance spreads out the refresh of the most-requested packages
+        $this->redisCache->setex($cacheKey, 3600 + random_int(0, 600), (string) $count);
+
+        return $count;
     }
 
     /**
