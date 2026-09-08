@@ -1965,6 +1965,21 @@ body {
     --bs-toast-bg: var(--bs-body-bg);
     --bs-toast-header-bg: var(--bs-body-bg);
 }
+// The container is fixed to the viewport, so a long log has to scroll inside the toast rather than grow
+// past the bottom of the screen where nothing can reach it. Column flex leaves the header (and its
+// close button) at its natural height and gives the rest to the body.
+.notifications-container .toast:has(> .toast-header) {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 2rem); // container's p-3
+}
+// details is worker-produced HTML injected via innerHTML: only <span style> survives cleanupOutput()'s
+// sanitizer, and `contain` neutralises a crafted style trying to overlay the page via position:fixed.
+// Same reasoning as .update-history-log.
+.notifications-container .toast-body {
+    overflow-y: auto;
+    contain: layout paint style;
+}
 .notifications-container .toast-body pre {
     margin: 10px -12px -12px;
     padding: 12px;
