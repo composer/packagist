@@ -1196,6 +1196,14 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     margin-bottom: -1px !important;
     position: relative;
 }
+#view-package-page .package-header {
+    border-bottom: 1px solid var(--color-brand-orange);
+    margin-bottom: 15px;
+}
+#view-package-page h2.title {
+    border-bottom: 0;
+    margin-bottom: 0 !important;
+}
 .package .force-update-trigger {
     cursor: pointer;
 }
@@ -1211,13 +1219,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   background-image: url("../web/img/loader.gif");
   background-repeat: no-repeat;
   padding-left: 35px;
-}
-// the row mixes inline-block <form>s with a bare <button>, whose inline baselines don't match, so
-// lay it out with flex - which also keeps the wrapping that .btn-group's nowrap took away
-.package .package-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
 }
 .package .action {
   margin-right: 5px;
@@ -1249,19 +1250,69 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .details p, .package .facts p {
     margin: 0;
 }
-.package .details .maintainers {
-  padding-bottom: 6px;
+// the tiny font-size collapses the whitespace between the inline <a>s so the avatars pack tightly
+.package .package-maintainers {
+  text-align: right;
+}
+.package .package-maintainers .maintainers {
+  // the negative top margin lets bigger avatars grow into the title's line box
+  // rather than making the header row taller
+  margin: -8px 0 15px;
   font-size: 0.0001px;
 }
-.package .details .maintainers img {
-  margin-bottom: 4px;
-  margin-right: 4px;
+.package .package-maintainers .maintainers img {
+  margin-left: 4px;
+  border-radius: 2px;
 }
-.package .details .maintainer-actions {
-    a {
-        font-size: 34px;
-        cursor: pointer;
-    }
+.package .package-maintainers .more-maintainers {
+  margin-left: 6px;
+  font-size: 14px;
+  color: var(--color-muted);
+  vertical-align: top;
+}
+@media (max-width: 767px) {
+  .package .package-maintainers {
+    text-align: left;
+  }
+  .package .package-maintainers .maintainers img {
+    margin-left: 0;
+    margin-right: 4px;
+  }
+}
+
+// maintainer/admin-only controls: two menus in the column beside the description, with the
+// forms they toggle in their own block below the row
+.package-admin-bar {
+  .package-admin-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 5px;
+    margin-bottom: 15px;
+  }
+
+  // the action forms keep their class for the submit spinner, but .package .action's
+  // inline-block margins would space the menu items apart
+  .dropdown-menu .action {
+    display: block;
+    margin: 0;
+  }
+
+  // caps the width once the column goes full-width below lg
+  .package-admin-form {
+    max-width: 420px;
+    margin-bottom: 15px;
+  }
+
+  // .package i forces the dark brand colour, which vanishes on the dark fill, and 12px
+  // glyphs get lost there anyway; line-height keeps them out of the button's line box
+  .package-admin-buttons .btn i {
+    color: inherit;
+    font-size: 15px;
+    line-height: 0;
+    vertical-align: -2px;
+    margin-right: 2px;
+  }
 }
 .package .details .canonical,
 .package .details .purl,
@@ -1272,12 +1323,15 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   white-space: nowrap;
 }
 
-.package .facts span {
+// label column for "Installs: 123" / "Language: C" rows. .purl is excluded because its span
+// is the whole value, not a label - a fixed width would move where its ellipsis lands.
+.package .facts span,
+.package .details p:not(.purl) > span {
     display: inline-block;
     width: 100px;
 }
 
-.package .facts .package-downloads-chart {
+.package .package-downloads-chart {
     height: 110px;
     width: 100%;
     margin-bottom: 10px;
@@ -1371,17 +1425,10 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 
   margin: 10px 0 0;
   padding: 0;
-
-  &:first-child {
-      margin-top: 0;
-  }
 }
 .package .package-aside.versions-wrapper {
   margin-left: 15px;
   margin-right: 15px;
-}
-.package-aside .details {
-  padding-left: 0;
 }
 .package .package-aside i {
   color: var(--color-secondary);
@@ -1505,16 +1552,21 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
         margin-left: auto;
     }
 
-    .package-aside .details {
-      padding-left: 15px;
-    }
     .package .package-aside {
       background: #fff;
       border-radius: 2px;
       border-top: 0;
-      padding: 0 0 10px 0;
-      margin-left: -15px;
-      margin-right: -15px;
+      margin: 0;
+      padding: 10px 15px;
+    }
+    // equal-height cards across the band, whatever each one contains
+    #view-package-page .package-facts .package-aside {
+      height: 100%;
+    }
+    // long unbreakable strings (purl, repo URL) would otherwise set a min-content
+    // floor and push one card past its share of the row
+    #view-package-page .package-facts > [class*="col-"] {
+      min-width: 0;
     }
     .package .package-aside.versions-wrapper {
       margin-left: 0;
@@ -1529,9 +1581,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     }
 }
 @media (max-width: 767px) {
-  .package-aside .facts {
-    padding-left: 0;
-  }
   .wrapper-footer {
     font-size: 12px;
   }
