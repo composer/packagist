@@ -60,6 +60,7 @@ class PackageManager
         private readonly CdnClient $cdnClient,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly Scheduler $scheduler,
+        private readonly DownloadManager $downloadManager,
     ) {
     }
 
@@ -79,6 +80,9 @@ class PackageManager
 
         if ($reason->suppressesPackage()) {
             $this->scheduler->schedulePackagePurge($package, $actorId);
+            // the page 404s from here on, so the spam heuristic's view counter has no traffic left
+            // to read - and unfreezing legitimately starts the count over
+            $this->downloadManager->deleteViews($package->getId());
         }
     }
 
@@ -155,10 +159,7 @@ class PackageManager
         $this->deletePackageMetadata($packageName);
 
         // delete redis stats
-        try {
-            $this->redis->del('views:'.$packageId);
-        } catch (\Predis\PredisException $e) {
-        }
+        $this->downloadManager->deleteViews($packageId);
 
         // attempt search index cleanup
         $this->deletePackageSearchIndex($packageName);

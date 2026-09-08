@@ -28,6 +28,14 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class PackageRepository extends ServiceEntityRepository
 {
+    /**
+     * Bounds of the "lots of views, no installs" spam heuristic implemented in
+     * PackageController::viewPackageAction(), shared so packagist:clean-view-counters can tell which
+     * view counters are still live by exactly the same rules.
+     */
+    public const SUSPECT_VIEWS_MIN_CREATED_AT = '2019-05-01';
+    public const SUSPECT_VIEWS_MAX_DOWNLOADS = 10;
+
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
@@ -562,6 +570,41 @@ class PackageRepository extends ServiceEntityRepository
             FROM package p WHERE p.suspect IS NOT NULL AND p.frozen IS NULL ORDER BY p.vendor ASC, p.name ASC';
 
         return $this->getEntityManager()->getConnection()->fetchAllAssociative($sql);
+    }
+
+    /**
+     * Narrows a list of package ids down to those the "too many views" heuristic could still flag:
+     * still present, not already suspect, still publicly viewable, new enough, and not owned by a
+     * vendor a moderator has verified (which blocks the flagging for good). The download half of
+     * the check lives in Redis, so callers have to apply SUSPECT_VIEWS_MAX_DOWNLOADS themselves.
+     *
+     * @param list<int> $ids
+     *
+     * @return list<int>
+     */
+    public function getPackageIdsFlaggableByViews(array $ids): array
+    {
+        if (\count($ids) === 0) {
+            return [];
+        }
+
+        // a suppressing freeze 404s the package page for everyone, so no views can come in anymore,
+        // while a gentle freeze keeps serving it and thus keeps the counter live
+        $sql = 'SELECT p.id FROM package p
+            LEFT JOIN vendor v ON v.name = p.vendor
+            WHERE p.id IN (:ids)
+                AND p.suspect IS NULL
+                AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
+                AND p.createdAt >= :minCreatedAt
+                AND COALESCE(v.verified, 0) = 0';
+
+        $rows = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            $sql,
+            ['ids' => $ids, 'suppressed' => PackageFreezeReason::suppressingValues(), 'minCreatedAt' => self::SUSPECT_VIEWS_MIN_CREATED_AT],
+            ['ids' => ArrayParameterType::INTEGER, 'suppressed' => ArrayParameterType::STRING]
+        );
+
+        return array_map('intval', $rows);
     }
 
     /**
