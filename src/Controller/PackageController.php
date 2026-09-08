@@ -62,7 +62,7 @@ use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -96,6 +96,8 @@ use Webmozart\Assert\Assert;
 class PackageController extends Controller
 {
     private const int LIST_FLUSH_EVERY = 500;
+    private const string STATS_RECORD_DATE = '2012-04-13 00:00:00';
+    private const string RELEASES_RECORD_DATE = '2011-01-01 00:00:00';
 
     public function __construct(
         private ProviderManager $providerManager,
@@ -462,7 +464,7 @@ class PackageController extends Controller
 
                 return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? -1 : 1;
             });
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
         }
 
         if ($req->getRequestFormat() === 'json') {
@@ -625,7 +627,7 @@ class PackageController extends Controller
                 }
                 $data['downloads'] = $this->downloadManager->getDownloads($package);
                 $data['favers'] = $this->favoriteManager->getFaverCount($package);
-            } catch (\RuntimeException|ConnectionException $e) {
+            } catch (\RuntimeException|PredisException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
             }
@@ -708,24 +710,35 @@ class PackageController extends Controller
             if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
                 throw new \RuntimeException();
             }
-            $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
+            $data['downloads'] = $this->downloadManager->getDownloads($package);
 
+            // The view counter exists only to spot packages that get traffic but no installs, so
+            // it is only worth a Redis write while that can still be concluded. Downloads and
+            // createdAt never move back below these thresholds, and suspect is never unset here,
+            // so a package that fails this check can never need the counter again.
             if (
                 !$package->isSuspect()
-                && $data['downloads']['total'] <= 10 && ($data['downloads']['views'] ?? 0) >= 100
-                && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
+                && $data['downloads']['total'] <= PackageRepository::SUSPECT_VIEWS_MAX_DOWNLOADS
+                && $package->getCreatedAt()->getTimestamp() >= strtotime(PackageRepository::SUSPECT_VIEWS_MIN_CREATED_AT)
+                && $this->downloadManager->incrementViews($package) >= 100
             ) {
                 $vendorRepo = $this->getEM()->getRepository(Vendor::class);
                 if (!$vendorRepo->isVerified($package->getVendor())) {
                     $package->setSuspect('Too many views');
                     $repo->markPackageSuspect($package);
                 }
+
+                // The counter has served its purpose either way, so drop it: a package we just
+                // marked suspect stops counting above, and for a verified vendor nothing can ever
+                // come of it. Restarting from zero also spaces the isVerified() lookup back out to
+                // once per 100 views instead of once per view from here on.
+                $this->downloadManager->deleteViews($package->getId());
             }
 
             if ($user) {
                 $data['is_favorite'] = $this->favoriteManager->isMarked($user, $package);
             }
-        } catch (\RuntimeException|ConnectionException) {
+        } catch (\RuntimeException|PredisException) {
         }
 
         $data['dependents'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getDependentCount($package->getName()) : 0;
@@ -766,10 +779,17 @@ class PackageController extends Controller
                 }
             }
 
-            $data['addMaintainerForm'] = $this->createAddMaintainerForm($package)->createView();
-            $data['removeMaintainerForm'] = $this->createRemoveMaintainerForm($package)->createView();
-            $data['transferPackageForm'] = $this->createTransferPackageForm($package)->createView();
-            $data['deleteForm'] = $this->createDeletePackageForm($package)->createView();
+            // The template renders each of these behind the matching voter grant, and building them
+            // is not free - createView() on the remove-maintainer form materialises an EntityType
+            // choice list with a DB query - so visitors who cannot see a form must not pay for it.
+            $data['addMaintainerForm'] = $this->isGranted(PackageActions::AddMaintainer->value, $package)
+                ? $this->createAddMaintainerForm($package)->createView() : null;
+            $data['removeMaintainerForm'] = $this->isGranted(PackageActions::RemoveMaintainer->value, $package)
+                ? $this->createRemoveMaintainerForm($package)->createView() : null;
+            $data['transferPackageForm'] = $this->isGranted(PackageActions::TransferPackage->value, $package)
+                ? $this->createTransferPackageForm($package)->createView() : null;
+            $data['deleteForm'] = $this->isGranted(PackageActions::Delete->value, $package)
+                ? $this->createDeletePackageForm($package)->createView() : null;
         } else {
             $data['hasVersionSecurityAdvisories'] = [];
             $data['hasVersionsFlaggedAsMalware'] = [];
@@ -843,7 +863,7 @@ class PackageController extends Controller
         try {
             $data['downloads']['total'] = $this->downloadManager->getDownloads($package);
             $data['favers'] = $this->favoriteManager->getFaverCount($package);
-        } catch (ConnectionException) {
+        } catch (PredisException) {
             $data['downloads']['total'] = null;
             $data['favers'] = null;
         }
@@ -851,7 +871,7 @@ class PackageController extends Controller
         foreach ($versions as $version) {
             try {
                 $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version);
-            } catch (ConnectionException) {
+            } catch (PredisException) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
         }
@@ -1192,14 +1212,7 @@ class PackageController extends Controller
             }
         }
 
-        return $this->render('package/view_package.html.twig', [
-            'package' => $package,
-            'versions' => null,
-            'expandedVersion' => null,
-            'version' => null,
-            'removeMaintainerForm' => $removeMaintainerForm,
-            'show_remove_maintainer_form' => true,
-        ]);
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
     #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET', 'POST'])]
@@ -1364,6 +1377,7 @@ class PackageController extends Controller
         }
 
         $data['package'] = $package;
+        $data['releaseChart'] = $this->computeReleaseChart($versions);
 
         $expandedVersion = reset($versions);
         $majorVersions = [];
@@ -1568,7 +1582,7 @@ class PackageController extends Controller
         return $response;
     }
 
-    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
     public function dependentsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
@@ -1653,7 +1667,7 @@ class PackageController extends Controller
         return $this->render('package/dependents.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
     public function suggestersAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
@@ -1746,6 +1760,14 @@ class PackageController extends Controller
 
     private function computeStats(Request $req, Package $package, ?Version $version = null, ?string $majorVersion = null): JsonResponse
     {
+        if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'This page is temporarily disabled, please come back later.'], Response::HTTP_BAD_GATEWAY);
+        }
+
+        if ($resp = $this->blockAbusers($req)) {
+            return $resp;
+        }
+
         if ($from = $req->query->get('from')) {
             try {
                 $from = new \DateTimeImmutable($from);
@@ -2069,6 +2091,28 @@ class PackageController extends Controller
         return $datePoints;
     }
 
+    /**
+     * @param Version[] $versions
+     *
+     * @return array<string, int>
+     */
+    private function computeReleaseChart(array $versions): array
+    {
+        $releaseChart = [];
+        $statsRecordDate = new \DateTimeImmutable(self::RELEASES_RECORD_DATE);
+        foreach ($versions as $version) {
+            $releasedAt = $version->getReleasedAt();
+            if ($version->isDevelopment() || $version->isSoftDeleted() || null === $releasedAt || $releasedAt < $statsRecordDate) {
+                continue;
+            }
+            $month = $releasedAt->format('Y-m');
+            $releaseChart[$month] = ($releaseChart[$month] ?? 0) + 1;
+        }
+        ksort($releaseChart);
+
+        return $releaseChart;
+    }
+
     private function guessStatsStartDate(Package|Version $packageOrVersion): \DateTimeImmutable
     {
         if ($packageOrVersion instanceof Package) {
@@ -2079,7 +2123,7 @@ class PackageController extends Controller
             throw new \LogicException('Version with release date expected');
         }
 
-        $statsRecordDate = new \DateTimeImmutable('2012-04-13 00:00:00');
+        $statsRecordDate = new \DateTimeImmutable(self::STATS_RECORD_DATE);
         if ($date < $statsRecordDate) {
             $date = $statsRecordDate;
         }

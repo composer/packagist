@@ -21,7 +21,7 @@ use App\Search\Query;
 use App\Service\BlogRssFetcher;
 use App\Util\Killswitch;
 use Predis\Client as RedisClient;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Psr\Cache\CacheItemInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -97,7 +97,7 @@ class WebController extends Controller
 
         try {
             $result = $algolia->search($query);
-        } catch (AlgoliaException) {
+        } catch (AlgoliaException|\InvalidArgumentException) {
             return new JsonResponse([
                 'status' => 'error',
                 'message' => 'Could not connect to the search server',
@@ -181,7 +181,7 @@ class WebController extends Controller
                 'labels' => array_keys($dlChartMonthly),
                 'values' => $redis->mget(array_values($dlChartMonthly)),
             ];
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
             $downloads = 'N/A';
             $dlChart = $dlChartMonthly = null;
         }

@@ -17,7 +17,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @phpstan-import-type SearchOptions from \App\Search\Query
+ * @phpstan-import-type SearchParams from \App\Search\Query
  */
 final class QueryTest extends TestCase
 {
@@ -136,52 +136,52 @@ final class QueryTest extends TestCase
     }
 
     /**
-     * @phpstan-param SearchOptions $expectedOptions
+     * @phpstan-param SearchParams $expectedParams
      */
-    #[DataProvider('provideQueryWithOptions')]
-    public function testGetOptions(Query $query, array $expectedOptions): void
+    #[DataProvider('provideQueryWithSearchParams')]
+    public function testGetSearchParams(Query $query, array $expectedParams): void
     {
-        static::assertSame($expectedOptions, $query->getOptions());
+        static::assertSame($expectedParams, $query->getSearchParams());
     }
 
     /**
-     * @phpstan-return iterable<string, array{0: Query, 1: SearchOptions}>
+     * @phpstan-return iterable<string, array{0: Query, 1: SearchParams}>
      */
-    public static function provideQueryWithOptions(): iterable
+    public static function provideQueryWithSearchParams(): iterable
     {
         yield 'empty_tag_type' => [
             new Query('monolog', [], '', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0],
+            ['query' => 'monolog', 'hitsPerPage' => 15, 'page' => 0],
         ];
 
         yield 'with_single_tag' => [
             new Query('monolog', ['testing"quote'], '', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing\"quote")'],
+            ['query' => 'monolog', 'hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing\"quote")'],
         ];
 
         yield 'with_single_tag_but_space' => [
             new Query('monolog', ['testing mock'], '', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing mock" OR tags:"testing-mock")'],
+            ['query' => 'monolog', 'hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing mock" OR tags:"testing-mock")'],
         ];
 
         yield 'with_multiple_tags' => [
             new Query('monolog', ['testing', 'mock'], '', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing" OR tags:"mock")'],
+            ['query' => 'monolog', 'hitsPerPage' => 15, 'page' => 0, 'filters' => '(tags:"testing" OR tags:"mock")'],
         ];
 
         yield 'with_type' => [
             new Query('monolog', [], 'symfony-bundle"quote', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:"symfony-bundle\"quote"'],
+            ['query' => 'monolog', 'hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:"symfony-bundle\"quote"'],
         ];
 
         yield 'with_single_tag_and_type' => [
             new Query('monolog', ['testing'], 'symfony-bundle', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:"symfony-bundle" AND (tags:"testing")'],
+            ['query' => 'monolog', 'hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:"symfony-bundle" AND (tags:"testing")'],
         ];
 
         yield 'with_multiple_tags_and_type' => [
             new Query('monolog', ['testing', 'mock'], 'symfony-bundle', 15, 1),
-            ['hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:"symfony-bundle" AND (tags:"testing" OR tags:"mock")'],
+            ['query' => 'monolog', 'hitsPerPage' => 15, 'page' => 0, 'filters' => 'type:"symfony-bundle" AND (tags:"testing" OR tags:"mock")'],
         ];
     }
 }

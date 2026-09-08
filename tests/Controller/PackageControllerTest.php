@@ -20,6 +20,7 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\User;
+use App\Entity\Vendor;
 use App\Entity\Version;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
@@ -32,6 +33,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
+use Predis\Client;
 
 class PackageControllerTest extends IntegrationTestCase
 {
@@ -48,6 +50,114 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $auditLink);
         self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+    }
+
+    public function testPackagePageOmitsManagementFormsForVisitorsWhoCannotUseThem(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        // a second maintainer is required for remove_maintainer to be granted at all
+        $comaintainer = self::createUser('comaintainer', 'comaintainer@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $comaintainer]);
+        $this->store($owner, $comaintainer, $package);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        // The controller skips building these entirely when the visitor lacks the grant, which also
+        // skips the EntityType choice-list query behind the remove-maintainer form.
+        self::assertCount(0, $crawler->filter('[name="add_maintainer_form"]'));
+        self::assertCount(0, $crawler->filter('[name="remove_maintainer_form"]'));
+        self::assertCount(0, $crawler->filter('[name="transfer_package_form"]'));
+        self::assertCount(0, $crawler->filter('form.delete.action'));
+
+        // ...and still builds them for someone who can, so the skip is keyed on the grant only.
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        self::assertCount(1, $crawler->filter('[name="add_maintainer_form"]'));
+        self::assertCount(1, $crawler->filter('[name="remove_maintainer_form"]'));
+        self::assertCount(1, $crawler->filter('[name="transfer_package_form"]'));
+        self::assertCount(1, $crawler->filter('form.delete.action'));
+    }
+
+    public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void
+    {
+        $fresh = self::createPackage('test/fresh', 'https://example.com/test/fresh');
+        $established = self::createPackage('test/established', 'https://example.com/test/established');
+        $this->store($fresh, $established);
+
+        $redis = $this->redis();
+        $redis->del(['views:'.$fresh->getId(), 'views:'.$established->getId()]);
+        // getDownloads() reads the package total straight off this key
+        $redis->set('dl:'.$established->getId(), '5000');
+
+        $this->client->request('GET', '/packages/test/fresh');
+        self::assertResponseIsSuccessful();
+        self::assertSame('1', $redis->get('views:'.$fresh->getId()));
+
+        $this->client->request('GET', '/packages/test/established');
+        self::assertResponseIsSuccessful();
+        self::assertNull(
+            $redis->get('views:'.$established->getId()),
+            'a package past the download threshold can never trip the heuristic, so it must not pay for the counter',
+        );
+
+        $redis->del(['views:'.$fresh->getId(), 'dl:'.$established->getId()]);
+    }
+
+    public function testPackagePageDropsTheViewCounterOnceTheHeuristicHasFired(): void
+    {
+        $package = self::createPackage('test/spammy', 'https://example.com/test/spammy');
+        $this->store($package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/test/spammy');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame('Too many views', $reloaded->getSuspect());
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'the counter has done its job, keeping it would only grow a key nothing reads',
+        );
+    }
+
+    public function testPackagePageDropsTheViewCounterOfAVerifiedVendor(): void
+    {
+        $vendor = new Vendor('verifiedvendor');
+        $vendor->setVerified(true);
+        $package = self::createPackage('verifiedvendor/pkg', 'https://example.com/verifiedvendor/pkg');
+        $this->store($vendor, $package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/verifiedvendor/pkg');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertFalse($reloaded->isSuspect(), 'a verified vendor is never flagged');
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'nothing can ever come of this counter, and resetting it stops the isVerified() lookup running on every view',
+        );
+    }
+
+    private function redis(): Client
+    {
+        $client = static::getContainer()->get('snc_redis.default');
+        self::assertInstanceOf(Client::class, $client);
+
+        return $client;
     }
 
     public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void
@@ -693,6 +803,49 @@ class PackageControllerTest extends IntegrationTestCase
         $this->client->loginUser($admin);
         $this->client->request('GET', '/packages/test/pkg/stats');
         self::assertResponseIsSuccessful();
+    }
+
+    public function testStatsJsonDoesNotExposeReleaseChart(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $version = $this->createStableVersion($package, '1.0.0');
+        $this->store($package, $version);
+
+        $this->client->request('GET', '/packages/test/pkg/stats.json');
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertSame(['downloads', 'versions', 'average', 'date'], array_keys($data));
+        self::assertSame(['1.0.0'], $data['versions']);
+    }
+
+    public function testStatsPageReleaseChartIgnoresSoftDeletedDevAndPreStatsVersions(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+
+        $counted = $this->createStableVersion($package, '1.0.0');
+        $counted->setReleasedAt(new \DateTimeImmutable('2024-03-10'));
+        $alsoCounted = $this->createStableVersion($package, '1.0.1');
+        $alsoCounted->setReleasedAt(new \DateTimeImmutable('2024-03-20'));
+        $softDeleted = $this->createStableVersion($package, '1.1.0');
+        $softDeleted->setReleasedAt(new \DateTimeImmutable('2024-04-05'));
+        $softDeleted->setSoftDeletedAt(new \DateTimeImmutable());
+        $preStats = $this->createStableVersion($package, '0.9.0');
+        $preStats->setReleasedAt(new \DateTimeImmutable('2005-01-01'));
+        $dev = $this->createStableVersion($package, 'dev-main');
+        $dev->setDevelopment(true);
+        $dev->setReleasedAt(new \DateTimeImmutable('2024-05-01'));
+
+        $this->store($package, $counted, $alsoCounted, $softDeleted, $preStats, $dev);
+
+        $this->client->request('GET', '/packages/test/pkg/stats');
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString(
+            'initReleaseStats(\'.js-release-stats\', {"2024-03":2},',
+            (string) $this->client->getResponse()->getContent()
+        );
     }
 
     /**

@@ -11,11 +11,12 @@
  */
 
 namespace App\Tests\Controller;
-
+use App\Service\Scheduler;
 use App\Entity\SecurityAdvisory;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;
+use App\Model\VersionIdCache;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
@@ -44,14 +45,14 @@ class ApiControllerTest extends IntegrationTestCase
         $package = self::createPackage('test/'.bin2hex(random_bytes(10)), $url, maintainers: [$user]);
         $this->store($user, $package);
 
-        $scheduler = $this->createMock('App\Service\Scheduler');
+        $scheduler = $this->createMock(Scheduler::class);
 
         $scheduler->expects($this->once())
             ->method('scheduleUpdate')
             ->with($package);
 
         static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
-        static::$kernel->getContainer()->set('App\Service\Scheduler', $scheduler);
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
         $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload]);
@@ -329,5 +330,56 @@ class ApiControllerTest extends IntegrationTestCase
 
         $this->assertSame(502, $response->getStatusCode());
         $this->assertJsonStringEqualsJsonString('{"status":"error","message":"Failed to fetch upstream version data, please try again later."}', (string) $response->getContent());
+    }
+
+    public function testTrackDownloadsCountsAResolvableVersion(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($package);
+
+        // the endpoint resolves name+version to ids straight out of Redis, never MySQL
+        self::getService(VersionIdCache::class)->insertVersionRaw($package->getId(), 'test/pkg', 4242, '1.0.0.0');
+
+        $this->client->request(
+            'POST',
+            '/downloads/',
+            server: ['HTTP_USER_AGENT' => 'Composer/2.8.0 (Linux; 6.1.0; PHP 8.4.0; curl 8.5)'],
+            content: json_encode(['downloads' => [['name' => 'test/pkg', 'version' => '1.0.0.0']]], flags: \JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame(['status' => 'success'], $this->decodeResponse());
+    }
+
+    public function testTrackDownloadsReportsUnresolvableVersionsAsPartial(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($package);
+
+        // Composer 1 sent the default branch as 9999999-dev. Support for it was shut down on
+        // 2025-09-01 and there is no longer a MySQL fallback resolving it via defaultBranch, so an
+        // unknown version is reported back like any other.
+        $this->client->request(
+            'POST',
+            '/downloads/',
+            server: ['HTTP_USER_AGENT' => 'Composer/1.10.26 (Linux; 6.1.0; PHP 8.4.0; curl 8.5)'],
+            content: json_encode(['downloads' => [['name' => 'test/pkg', 'version' => '9999999-dev']]], flags: \JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseStatusCodeSame(200);
+        $body = $this->decodeResponse();
+        self::assertSame('partial', $body['status']);
+        self::assertStringContainsString('9999999-dev', $body['message'], 'the unresolved entry is reported back to the client');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeResponse(): array
+    {
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($body);
+
+        return $body;
     }
 }
