@@ -119,7 +119,7 @@ class VersionRepository extends ServiceEntityRepository
         $em->persist(AuditRecord::versionSoftDeleted($version, $reason, $reasonText, $internalReasonText, $actor));
 
         // Dumps and dependent/suggester data key off isSoftDeleted() only, never the reason, so a
-        // reason change on an already-deleted row has nothing to recompute.
+        // reason change on an already-deleted row has nothing to recompute, and no bytes change.
         if ($wasSoftDeleted) {
             return;
         }
