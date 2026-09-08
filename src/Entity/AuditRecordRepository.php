@@ -18,9 +18,11 @@ use App\Log\AuditLogEventType;
 use App\Service\AuditRecordsManager;
 use App\Util\IpAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Types\UlidType;
+use Symfony\Component\Uid\Ulid;
 
 /**
  * @extends ServiceEntityRepository<AuditRecord>
@@ -126,6 +128,30 @@ class AuditRecordRepository extends ServiceEntityRepository
 
         /** @var list<AuditRecord> $records */
         $records = $qb->getQuery()->getResult();
+
+        return $records;
+    }
+
+    /**
+     * @param list<Ulid> $ids
+     *
+     * @return array<string, AuditRecord> map of ULID string => record (only ids that exist)
+     */
+    public function getRecordsByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('a')
+            ->where('a.id IN (:ids)')
+            ->setParameter('ids', array_map(static fn (Ulid $id): string => $id->toBinary(), $ids), ArrayParameterType::BINARY);
+
+        $records = [];
+        /** @var AuditRecord $record */
+        foreach ($qb->getQuery()->getResult() as $record) {
+            $records[(string) $record->id] = $record;
+        }
 
         return $records;
     }

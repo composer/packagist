@@ -20,7 +20,6 @@ use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
 use App\Log\TransparencyLogEventType;
 use App\Log\TransparencyLogScrubber;
-use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler;
@@ -98,7 +97,7 @@ class TransparencyLogProjector
 
         do {
             $pendingIds = $this->queueRepository->fetchPendingIds($after, self::BATCH_SIZE);
-            $records = $this->fetchRecords($pendingIds);
+            $records = $this->auditRecordRepository->getRecordsByIds($pendingIds);
 
             foreach ($pendingIds as $id) {
                 $after = $id;
@@ -149,37 +148,6 @@ class TransparencyLogProjector
         } while (\count($pendingIds) === self::BATCH_SIZE);
 
         return $projected;
-    }
-
-    /**
-     * The audit rows behind a batch of queued ids, keyed by ULID string. One primary-key batch
-     * lookup, so nothing ever scans audit_log.
-     *
-     * The safety lag is deliberately not applied here: leaving it out is what makes an id missing
-     * from the result unambiguously an orphan, rather than conflating "does not exist" with "too
-     * fresh to project yet" and dequeueing live records.
-     *
-     * @param list<Ulid> $ids
-     *
-     * @return array<string, AuditRecord>
-     */
-    private function fetchRecords(array $ids): array
-    {
-        if ($ids === []) {
-            return [];
-        }
-
-        $qb = $this->auditRecordRepository->createQueryBuilder('a')
-            ->where('a.id IN (:ids)')
-            ->setParameter('ids', array_map(static fn (Ulid $id): string => $id->toBinary(), $ids), ArrayParameterType::BINARY);
-
-        $records = [];
-        /** @var AuditRecord $record */
-        foreach ($qb->getQuery()->getResult() as $record) {
-            $records[(string) $record->id] = $record;
-        }
-
-        return $records;
     }
 
     /**
