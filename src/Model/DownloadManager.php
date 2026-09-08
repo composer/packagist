@@ -20,6 +20,7 @@ use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
+use Predis\PredisException;
 
 /**
  * Manages the download counts for packages.
@@ -35,9 +36,9 @@ class DownloadManager
     /**
      * Gets the total, monthly, and daily download counts for an entire package or optionally a version.
      *
-     * @return array{total: int, monthly: int, daily: float, views?: int}
+     * @return array{total: int, monthly: int, daily: float}
      */
-    public function getDownloads(Package|int $package, Version|int|null $version = null, bool $incrViews = false): array
+    public function getDownloads(Package|int $package, Version|int|null $version = null): array
     {
         if ($package instanceof Package) {
             $package = $package->getId();
@@ -92,11 +93,43 @@ class DownloadManager
             'daily' => round(($redisData[0] ?? $dlData[$todayDate] ?? 0) + (($redisData[1] ?? $dlData[$yesterdayDate] ?? 0) * $dayRatio)),
         ];
 
-        if ($incrViews) {
-            $result['views'] = $this->redis->incr('views:'.$package);
+        return $result;
+    }
+
+    /**
+     * Counts a page view of the package and returns the running total.
+     *
+     * Only the "too many views with no downloads" spam heuristic reads this, so callers should
+     * skip it once that heuristic can no longer fire for the package - it is a Redis write on an
+     * otherwise read-only request.
+     */
+    public function incrementViews(Package|int $package): int
+    {
+        if ($package instanceof Package) {
+            $package = $package->getId();
         }
 
-        return $result;
+        return $this->redis->incr('views:'.$package);
+    }
+
+    /**
+     * Drops the view counters of the given packages.
+     *
+     * Safe to call as soon as the spam heuristic can no longer fire for a package: nothing else
+     * reads the counter, so from that point on the key is only taking up space in Redis. Losing a
+     * counter costs nothing either, hence the swallowed Redis failure - callers are mid-way through
+     * more important work (verifying a vendor, deleting a package) and must not fail over this.
+     */
+    public function deleteViews(int ...$packageIds): void
+    {
+        if (\count($packageIds) === 0) {
+            return;
+        }
+
+        try {
+            $this->redis->del(array_map(static fn (int $id) => 'views:'.$id, $packageIds));
+        } catch (PredisException) {
+        }
     }
 
     /**
