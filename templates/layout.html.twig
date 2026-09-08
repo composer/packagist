@@ -234,6 +234,8 @@
             </nav>
         </footer>
 
+        <div class="notifications-container toast-container position-fixed top-0 start-50 translate-middle-x p-3"></div>
+
         <script nonce="{{ csp_nonce('script') }}">
             {% if 'Chrome/112.0.0.0' in app.request.headers.get('User-Agent') %}
             var algoliaConfig = {};
