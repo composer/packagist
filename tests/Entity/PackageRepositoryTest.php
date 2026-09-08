@@ -198,33 +198,4 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertContains('vendor/spam', $withFrozen);
         self::assertContains('vendor/malware', $withFrozen);
     }
-
-    public function testGetPackageIdsFlaggableByViewsKeepsOnlyPackagesTheHeuristicCanStillReach(): void
-    {
-        $live = self::createPackage('vendor/live', 'https://example.org/live');
-        $suspect = self::createPackage('vendor/suspect', 'https://example.org/suspect');
-        $suspect->setSuspect('Too many views');
-        $old = self::createPackage('vendor/old', 'https://example.org/old');
-        $old->setCreatedAt(new \DateTimeImmutable('2018-01-01'));
-        $spam = self::createPackage('vendor/spam', 'https://example.org/spam');
-        $spam->freeze(PackageFreezeReason::Spam);
-        $temporary = self::createPackage('vendor/temporary', 'https://example.org/temporary');
-        $temporary->freeze(PackageFreezeReason::Temporary);
-        $verified = self::createPackage('verifiedvendor/pkg', 'https://example.org/verifiedvendor/pkg');
-        $vendor = new Vendor('verifiedvendor');
-        $vendor->setVerified(true);
-        $this->store($live, $suspect, $old, $spam, $temporary, $verified, $vendor);
-
-        $ids = $this->packageRepository->getPackageIdsFlaggableByViews([
-            $live->getId(), $suspect->getId(), $old->getId(), $spam->getId(), $temporary->getId(), $verified->getId(), 999999999,
-        ]);
-
-        self::assertContains($live->getId(), $ids);
-        self::assertContains($temporary->getId(), $ids, 'a gentle freeze keeps serving the page, so views still come in');
-        self::assertNotContains($suspect->getId(), $ids);
-        self::assertNotContains($old->getId(), $ids);
-        self::assertNotContains($spam->getId(), $ids, 'a suppressing freeze 404s the page, so no more views can arrive');
-        self::assertNotContains($verified->getId(), $ids, 'a verified vendor can never be flagged again');
-        self::assertNotContains(999999999, $ids, 'a deleted package cannot be flagged either');
-    }
 }

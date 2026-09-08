@@ -573,41 +573,6 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * Narrows a list of package ids down to those the "too many views" heuristic could still flag:
-     * still present, not already suspect, still publicly viewable, new enough, and not owned by a
-     * vendor a moderator has verified (which blocks the flagging for good). The download half of
-     * the check lives in Redis, so callers have to apply SUSPECT_VIEWS_MAX_DOWNLOADS themselves.
-     *
-     * @param list<int> $ids
-     *
-     * @return list<int>
-     */
-    public function getPackageIdsFlaggableByViews(array $ids): array
-    {
-        if (\count($ids) === 0) {
-            return [];
-        }
-
-        // a suppressing freeze 404s the package page for everyone, so no views can come in anymore,
-        // while a gentle freeze keeps serving it and thus keeps the counter live
-        $sql = 'SELECT p.id FROM package p
-            LEFT JOIN vendor v ON v.name = p.vendor
-            WHERE p.id IN (:ids)
-                AND p.suspect IS NULL
-                AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
-                AND p.createdAt >= :minCreatedAt
-                AND COALESCE(v.verified, 0) = 0';
-
-        $rows = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-            $sql,
-            ['ids' => $ids, 'suppressed' => PackageFreezeReason::suppressingValues(), 'minCreatedAt' => self::SUSPECT_VIEWS_MIN_CREATED_AT],
-            ['ids' => ArrayParameterType::INTEGER, 'suppressed' => ArrayParameterType::STRING]
-        );
-
-        return array_map('intval', $rows);
-    }
-
-    /**
      * @param list<int> $ids
      *
      * @return array<int, list<string>> map of package id => list of tag names (across all versions)
