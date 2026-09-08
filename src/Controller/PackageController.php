@@ -672,8 +672,8 @@ class PackageController extends Controller
             // so a package that fails this check can never need the counter again.
             if (
                 !$package->isSuspect()
-                && $data['downloads']['total'] <= 10
-                && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
+                && $data['downloads']['total'] <= PackageRepository::SUSPECT_VIEWS_MAX_DOWNLOADS
+                && $package->getCreatedAt()->getTimestamp() >= strtotime(PackageRepository::SUSPECT_VIEWS_MIN_CREATED_AT)
                 && $this->downloadManager->incrementViews($package) >= 100
             ) {
                 $vendorRepo = $this->getEM()->getRepository(Vendor::class);
@@ -681,6 +681,12 @@ class PackageController extends Controller
                     $package->setSuspect('Too many views');
                     $repo->markPackageSuspect($package);
                 }
+
+                // The counter has served its purpose either way, so drop it: a package we just
+                // marked suspect stops counting above, and for a verified vendor nothing can ever
+                // come of it. Restarting from zero also spaces the isVerified() lookup back out to
+                // once per 100 views instead of once per view from here on.
+                $this->downloadManager->deleteViews($package->getId());
             }
 
             if ($user) {

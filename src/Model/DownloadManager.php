@@ -20,6 +20,7 @@ use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
+use Predis\PredisException;
 
 /**
  * Manages the download counts for packages.
@@ -109,6 +110,26 @@ class DownloadManager
         }
 
         return $this->redis->incr('views:'.$package);
+    }
+
+    /**
+     * Drops the view counters of the given packages.
+     *
+     * Safe to call as soon as the spam heuristic can no longer fire for a package: nothing else
+     * reads the counter, so from that point on the key is only taking up space in Redis. Losing a
+     * counter costs nothing either, hence the swallowed Redis failure - callers are mid-way through
+     * more important work (verifying a vendor, deleting a package) and must not fail over this.
+     */
+    public function deleteViews(int ...$packageIds): void
+    {
+        if (\count($packageIds) === 0) {
+            return;
+        }
+
+        try {
+            $this->redis->del(array_map(static fn (int $id) => 'views:'.$id, $packageIds));
+        } catch (PredisException) {
+        }
     }
 
     /**

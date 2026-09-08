@@ -20,6 +20,7 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\User;
+use App\Entity\Vendor;
 use App\Entity\Version;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
@@ -71,6 +72,52 @@ class PackageControllerTest extends IntegrationTestCase
         );
 
         $redis->del(['views:'.$fresh->getId(), 'dl:'.$established->getId()]);
+    }
+
+    public function testPackagePageDropsTheViewCounterOnceTheHeuristicHasFired(): void
+    {
+        $package = self::createPackage('test/spammy', 'https://example.com/test/spammy');
+        $this->store($package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/test/spammy');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame('Too many views', $reloaded->getSuspect());
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'the counter has done its job, keeping it would only grow a key nothing reads',
+        );
+    }
+
+    public function testPackagePageDropsTheViewCounterOfAVerifiedVendor(): void
+    {
+        $vendor = new Vendor('verifiedvendor');
+        $vendor->setVerified(true);
+        $package = self::createPackage('verifiedvendor/pkg', 'https://example.com/verifiedvendor/pkg');
+        $this->store($vendor, $package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/verifiedvendor/pkg');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertFalse($reloaded->isSuspect(), 'a verified vendor is never flagged');
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'nothing can ever come of this counter, and resetting it stops the isVerified() lookup running on every view',
+        );
     }
 
     private function redis(): Client
