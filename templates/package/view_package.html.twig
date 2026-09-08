@@ -104,144 +104,152 @@
                     {% endif %}
                 </div>
 
-                {% if hasActions %}
-                <div class="col-lg-3 package-admin-bar">
-                    <div class="package-admin-buttons">
-                        {# these wrap raggedly in a 3/12 column, so they collapse into two menus;
-                           bootstrap's dropdown data-api is already registered by app.js #}
-                        <div class="package-actions dropdown">
-                            <button type="button" class="btn btn-inverse dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-sliders"></i> Manage
-                            </button>
-                            <ul class="dropdown-menu">
-                                {% if is_granted('abandon', package) %}
-                                    {% if package.abandoned %}
-                                        <li><form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}" method="POST">
-                                            <input class="dropdown-item" type="submit" value="Un-abandon" />
-                                        </form></li>
-                                    {% else %}
-                                        <li><form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
-                                            <input class="dropdown-item" type="submit" value="Abandon" />
-                                        </form></li>
-                                    {% endif %}
-                                {% endif %}
-                                {% if is_granted('update', package) %}
-                                    <li><form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
-                                        <input type="hidden" name="update" value="1" />
-                                        <input class="dropdown-item" type="submit" value="Update" />
-                                    </form></li>
-                                {% endif %}
-                                {% if is_granted('edit', package) %}
-                                    <li><form class="action" action="{{ path("edit_package", {name: package.name}) }}">
-                                        <input class="dropdown-item" type="submit" value="Edit" />
-                                    </form></li>
-                                {% endif %}
-                                {% if is_granted('ROLE_DISABLE_PACKAGES') and package.isSuspect() %}
-                                    <li><form class="action" action="{{ path("mark_nospam") }}" method="POST">
-                                        <input type="hidden" name="vendor[]" value="{{ package.vendor }}" />
-                                        <input type="hidden" name="token" value="{{ markSafeCsrfToken }}" />
-                                        <input class="dropdown-item" type="submit" value="Mark Not Spam" />
-                                    </form></li>
-                                {% endif %}
-                                {% if is_granted('delete', package) and deleteForm is defined %}
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE"{% if is_granted('ROLE_DELETE_PACKAGES') %} data-admin="1"{% endif %}>
-                                        {{ form_widget(deleteForm._token) }}
-                                        <input class="dropdown-item text-danger" type="submit" value="Delete" />
-                                    </form></li>
-                                {% endif %}
-                                {% if freezeCsrfToken is defined and not package.isFrozen() %}
-                                    <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#freeze-package-modal">Freeze</button></li>
-                                {% endif %}
-                                {% if unfreezeCsrfToken is defined and package.isFrozen() %}
-                                    <li><form class="action" action="{{ path("unfreeze_package", {name: package.name}) }}" method="POST">
-                                        <input type="hidden" name="token" value="{{ unfreezeCsrfToken }}" />
-                                        <input class="dropdown-item text-danger" type="submit" value="Unfreeze" />
-                                    </form></li>
-                                {% endif %}
-                            </ul>
-                        </div>
-
-                        {% if is_granted('remove_maintainer', package) or is_granted('add_maintainer', package) or is_granted('transfer_package', package) %}
-                            <div class="maintainer-actions dropdown">
+                <div class="col-lg-3">
+                    {% if hasActions %}
+                        <div class="package-admin-bar">
+                        <div class="package-admin-buttons">
+                            {# these wrap raggedly in a 3/12 column, so they collapse into two menus;
+                               bootstrap's dropdown data-api is already registered by app.js #}
+                            <div class="package-actions dropdown">
                                 <button type="button" class="btn btn-inverse dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-people-fill"></i> Maintainers
+                                    <i class="bi bi-sliders"></i> Manage
                                 </button>
                                 <ul class="dropdown-menu">
-                                    {% if is_granted('add_maintainer', package) and addMaintainerForm is defined %}
-                                        <li><button type="button" class="dropdown-item" id="add-maintainer">Add maintainer</button></li>
+                                    {% if is_granted('abandon', package) %}
+                                        {% if package.abandoned %}
+                                            <li><form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}" method="POST">
+                                                <input class="dropdown-item" type="submit" value="Un-abandon" />
+                                            </form></li>
+                                        {% else %}
+                                            <li><form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
+                                                <input class="dropdown-item" type="submit" value="Abandon" />
+                                            </form></li>
+                                        {% endif %}
                                     {% endif %}
-                                    {% if is_granted('remove_maintainer', package) and removeMaintainerForm is defined %}
-                                        <li><button type="button" class="dropdown-item" id="remove-maintainer">Remove maintainer</button></li>
+                                    {% if is_granted('update', package) %}
+                                        <li><form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
+                                            <input type="hidden" name="update" value="1" />
+                                            <input class="dropdown-item" type="submit" value="Update" />
+                                        </form></li>
                                     {% endif %}
-                                    {% if is_granted('transfer_package', package) and transferPackageForm is defined %}
-                                        <li><button type="button" class="dropdown-item" id="transfer-package">Transfer ownership</button></li>
+                                    {% if is_granted('edit', package) %}
+                                        <li><form class="action" action="{{ path("edit_package", {name: package.name}) }}">
+                                            <input class="dropdown-item" type="submit" value="Edit" />
+                                        </form></li>
+                                    {% endif %}
+                                    {% if is_granted('ROLE_DISABLE_PACKAGES') and package.isSuspect() %}
+                                        <li><form class="action" action="{{ path("mark_nospam") }}" method="POST">
+                                            <input type="hidden" name="vendor[]" value="{{ package.vendor }}" />
+                                            <input type="hidden" name="token" value="{{ markSafeCsrfToken }}" />
+                                            <input class="dropdown-item" type="submit" value="Mark Not Spam" />
+                                        </form></li>
+                                    {% endif %}
+                                    {% if is_granted('delete', package) and deleteForm is defined %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE"{% if is_granted('ROLE_DELETE_PACKAGES') %} data-admin="1"{% endif %}>
+                                            {{ form_widget(deleteForm._token) }}
+                                            <input class="dropdown-item text-danger" type="submit" value="Delete" />
+                                        </form></li>
+                                    {% endif %}
+                                    {% if freezeCsrfToken is defined and not package.isFrozen() %}
+                                        <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#freeze-package-modal">Freeze</button></li>
+                                    {% endif %}
+                                    {% if unfreezeCsrfToken is defined and package.isFrozen() %}
+                                        <li><form class="action" action="{{ path("unfreeze_package", {name: package.name}) }}" method="POST">
+                                            <input type="hidden" name="token" value="{{ unfreezeCsrfToken }}" />
+                                            <input class="dropdown-item text-danger" type="submit" value="Unfreeze" />
+                                        </form></li>
                                     {% endif %}
                                 </ul>
                             </div>
+
+                            {% if is_granted('remove_maintainer', package) or is_granted('add_maintainer', package) or is_granted('transfer_package', package) %}
+                                <div class="maintainer-actions dropdown">
+                                    <button type="button" class="btn btn-inverse dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-people-fill"></i> Maintainers
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% if is_granted('add_maintainer', package) and addMaintainerForm is defined %}
+                                            <li><button type="button" class="dropdown-item" id="add-maintainer">Add maintainer</button></li>
+                                        {% endif %}
+                                        {% if is_granted('remove_maintainer', package) and removeMaintainerForm is defined %}
+                                            <li><button type="button" class="dropdown-item" id="remove-maintainer">Remove maintainer</button></li>
+                                        {% endif %}
+                                        {% if is_granted('transfer_package', package) and transferPackageForm is defined %}
+                                            <li><button type="button" class="dropdown-item" id="transfer-package">Transfer ownership</button></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {% if lastJobWarning is defined and lastJobWarning is not empty %}
+                            <p class="alert alert-danger">{{ lastJobWarning|raw }} <br /> <a href="#" data-msg="{{ lastJobMsg }}" data-details="{{ lastJobDetails }}" class="view-log">View Last Update Log</a>{% if is_granted('ROLE_UPDATE_PACKAGES') %} &middot; <a rel="nofollow noindex" href="{{ path('view_package_update_history', {name: package.name}) }}">Update History</a>{% endif %}</p>
                         {% endif %}
-                    </div>
 
-                    {% if lastJobWarning is defined and lastJobWarning is not empty %}
-                        <p class="alert alert-danger">{{ lastJobWarning|raw }} <br /> <a href="#" data-msg="{{ lastJobMsg }}" data-details="{{ lastJobDetails }}" class="view-log">View Last Update Log</a>{% if is_granted('ROLE_UPDATE_PACKAGES') %} &middot; <a rel="nofollow noindex" href="{{ path('view_package_update_history', {name: package.name}) }}">Update History</a>{% endif %}</p>
+                        {% if is_granted('add_maintainer', package) and addMaintainerForm is defined %}
+                            {{ form_start(addMaintainerForm, {
+                                attr: { id: 'add-maintainer-form', class: 'package-admin-form' ~ (show_add_maintainer_form|default(false) ? '' : ' d-none') },
+                                action: path('add_maintainer', { 'name': package.name })
+                            }) }}
+                                <h4>Add Maintainer</h4>
+                                <p>
+                                    {{ form_label(addMaintainerForm.user, "Username") }}
+                                    {{ form_errors(addMaintainerForm.user) }}
+                                    {{ form_widget(addMaintainerForm.user) }}
+                                </p>
+                                {{ form_rest(addMaintainerForm) }}
+                                <input class="btn btn-success" type="submit" value="Add Maintainer" />
+                            {{ form_end(addMaintainerForm) }}
+                        {% endif %}
+
+                        {% if is_granted('remove_maintainer', package) and removeMaintainerForm is defined %}
+                            {{ form_start(removeMaintainerForm, {
+                                attr: { id: 'remove-maintainer-form', class: 'package-admin-form' ~ (show_remove_maintainer_form|default(false) ? '' : ' d-none') },
+                                action: path('remove_maintainer', { 'name': package.name })
+                            }) }}
+                                <h4>Remove Maintainer</h4>
+                                <p>
+                                    {{ form_label(removeMaintainerForm.user, "Username") }}
+                                    {{ form_errors(removeMaintainerForm.user) }}
+                                    {{ form_widget(removeMaintainerForm.user) }}
+                                </p>
+                                {{ form_rest(removeMaintainerForm) }}
+                                <input class="btn btn-danger" type="submit" value="Remove Maintainer" />
+                            {{ form_end(removeMaintainerForm) }}
+                        {% endif %}
+
+                        {% if is_granted('transfer_package', package) and transferPackageForm is defined %}
+                            {{ form_start(transferPackageForm, {
+                                attr: { id: 'transfer-package-form', class: 'package-admin-form' ~ (show_transfer_package_form|default(false) ? '' : ' d-none') },
+                                action: path('transfer_package', { 'name': package.name })
+                            }) }}
+                                <h4>Transfer Ownership</h4>
+                                <div class="maintainers-collection-wrapper">
+                                    {{ form_errors(transferPackageForm.maintainers) }}
+                                    <ul class="maintainers-list" data-prototype="{{ form_widget(transferPackageForm.maintainers.vars.prototype)|e('html_attr') }}">
+                                        {% for maintainerField in transferPackageForm.maintainers %}
+                                            <li>
+                                                {{ form_errors(maintainerField) }}
+                                                {{ form_widget(maintainerField) }}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                    <button type="button" class="btn btn-info btn-sm add-maintainer-item">Add Maintainer</button>
+                                </div>
+                                {{ form_rest(transferPackageForm) }}
+                                <input class="btn btn-success" type="submit" value="Transfer Ownership" />
+                            {{ form_end(transferPackageForm) }}
+                        {% endif %}
+                        </div>
                     {% endif %}
 
-                    {% if is_granted('add_maintainer', package) and addMaintainerForm is defined %}
-                        {{ form_start(addMaintainerForm, {
-                            attr: { id: 'add-maintainer-form', class: 'package-admin-form' ~ (show_add_maintainer_form|default(false) ? '' : ' d-none') },
-                            action: path('add_maintainer', { 'name': package.name })
-                        }) }}
-                            <h4>Add Maintainer</h4>
-                            <p>
-                                {{ form_label(addMaintainerForm.user, "Username") }}
-                                {{ form_errors(addMaintainerForm.user) }}
-                                {{ form_widget(addMaintainerForm.user) }}
-                            </p>
-                            {{ form_rest(addMaintainerForm) }}
-                            <input class="btn btn-success" type="submit" value="Add Maintainer" />
-                        {{ form_end(addMaintainerForm) }}
-                    {% endif %}
-
-                    {% if is_granted('remove_maintainer', package) and removeMaintainerForm is defined %}
-                        {{ form_start(removeMaintainerForm, {
-                            attr: { id: 'remove-maintainer-form', class: 'package-admin-form' ~ (show_remove_maintainer_form|default(false) ? '' : ' d-none') },
-                            action: path('remove_maintainer', { 'name': package.name })
-                        }) }}
-                            <h4>Remove Maintainer</h4>
-                            <p>
-                                {{ form_label(removeMaintainerForm.user, "Username") }}
-                                {{ form_errors(removeMaintainerForm.user) }}
-                                {{ form_widget(removeMaintainerForm.user) }}
-                            </p>
-                            {{ form_rest(removeMaintainerForm) }}
-                            <input class="btn btn-danger" type="submit" value="Remove Maintainer" />
-                        {{ form_end(removeMaintainerForm) }}
-                    {% endif %}
-
-                    {% if is_granted('transfer_package', package) and transferPackageForm is defined %}
-                        {{ form_start(transferPackageForm, {
-                            attr: { id: 'transfer-package-form', class: 'package-admin-form' ~ (show_transfer_package_form|default(false) ? '' : ' d-none') },
-                            action: path('transfer_package', { 'name': package.name })
-                        }) }}
-                            <h4>Transfer Ownership</h4>
-                            <div class="maintainers-collection-wrapper">
-                                {{ form_errors(transferPackageForm.maintainers) }}
-                                <ul class="maintainers-list" data-prototype="{{ form_widget(transferPackageForm.maintainers.vars.prototype)|e('html_attr') }}">
-                                    {% for maintainerField in transferPackageForm.maintainers %}
-                                        <li>
-                                            {{ form_errors(maintainerField) }}
-                                            {{ form_widget(maintainerField) }}
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                                <button type="button" class="btn btn-info btn-sm add-maintainer-item">Add Maintainer</button>
-                            </div>
-                            {{ form_rest(transferPackageForm) }}
-                            <input class="btn btn-success" type="submit" value="Transfer Ownership" />
-                        {{ form_end(transferPackageForm) }}
+                    {% if downloads.total is defined %}
+                        <div class="package-aside facts">
+                            <div class="package-downloads-chart js-downloads-chart"></div>
+                        </div>
                     {% endif %}
                 </div>
-                {% endif %}
             </div>
 
             <div class="row package-facts">
@@ -283,7 +291,6 @@
                             <p><span>Ext name:</span>{{ version.pieName }}</p>
                         {% endif %}
                         <p class="purl"><span title="PURL / Package-URL">pkg:composer/{{ package.name }}</span></p>
-                        <p><a rel="nofollow noindex" href="{{ path('view_transparency_log', {package: package.name}) }}">Transparency log</a></p>
                     </div>
                 </div>
 
@@ -306,6 +313,7 @@
                                 Aikido package health analysis
                             </a>
                         </p>
+                        <p><a rel="nofollow noindex" href="{{ path('view_transparency_log', {package: package.name}) }}">Transparency log</a></p>
                     </div>
                 </div>
 
@@ -334,9 +342,6 @@
                 <div class="col-12 col-md-6 col-lg">
                     <div class="package-aside facts">
                         <h5>Statistics</h5>
-                        {% if downloads.total is defined %}
-                            <div class="package-downloads-chart js-downloads-chart"></div>
-                        {% endif %}
                         <p>
                             <span>
                                 <a href="{{ path('view_package_stats', {name: package.name}) }}" rel="nofollow">Installs</a>:

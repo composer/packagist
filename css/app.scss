@@ -1323,12 +1323,15 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   white-space: nowrap;
 }
 
-.package .facts span {
+// label column for "Installs: 123" / "Language: C" rows. .purl is excluded because its span
+// is the whole value, not a label - a fixed width would move where its ellipsis lands.
+.package .facts span,
+.package .details p:not(.purl) > span {
     display: inline-block;
     width: 100px;
 }
 
-.package .facts .package-downloads-chart {
+.package .package-downloads-chart {
     height: 110px;
     width: 100%;
     margin-bottom: 10px;
