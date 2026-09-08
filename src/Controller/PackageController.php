@@ -56,6 +56,7 @@ use Composer\Pcre\Preg;
 use Composer\Semver\Constraint\Constraint;
 use Composer\Semver\Constraint\MatchNoneConstraint;
 use Composer\Semver\Constraint\MultiConstraint;
+use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\NoResultException;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -1554,7 +1555,11 @@ class PackageController extends Controller
 
         $repo = $this->getEM()->getRepository(Package::class);
         $depCount = $repo->getDependentCount($name, $requireType);
-        $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
+        try {
+            $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
+        } catch (DriverException) {
+            return $this->listingTooExpensiveResponse($req);
+        }
 
         $defaultBranchRequires = $repo->getDefaultBranchRequireFor(array_column($packages, 'name'), $name);
         foreach ($packages as $index => $pkg) {
@@ -1626,7 +1631,11 @@ class PackageController extends Controller
 
         $repo = $this->getEM()->getRepository(Package::class);
         $suggestCount = $repo->getSuggestCount($name);
-        $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
+        try {
+            $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
+        } catch (DriverException) {
+            return $this->listingTooExpensiveResponse($req);
+        }
 
         $paginator = new Pagerfanta(new FixedAdapter($suggestCount, $packages));
         $paginator->setNormalizeOutOfRangePages(true);
@@ -1972,6 +1981,21 @@ class PackageController extends Controller
 
             return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
         }
+    }
+
+    /**
+     * The dependents/suggesters listing query carries a statement timeout, so it can be cut short
+     * for the most widely required packages rather than hold a worker for the full sort.
+     */
+    private function listingTooExpensiveResponse(Request $req): Response
+    {
+        $message = 'This listing is too large to sort right now, please try again later.';
+
+        if ($req->getRequestFormat() === 'json') {
+            return new JsonResponse(['status' => 'error', 'message' => $message], Response::HTTP_SERVICE_UNAVAILABLE);
+        }
+
+        return new Response($message, Response::HTTP_SERVICE_UNAVAILABLE);
     }
 
     private function getPackageByName(Request $req, string $name): Package|Response

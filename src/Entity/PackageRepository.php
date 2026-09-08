@@ -29,6 +29,15 @@ use Doctrine\Persistence\ManagerRegistry;
 class PackageRepository extends ServiceEntityRepository
 {
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
+
+    /**
+     * The dependents/suggesters listings materialise every row for the required package name and
+     * sort the whole joined set before paginating, so for the most widely required packages the
+     * sort is unbounded work that has been seen to run for over a minute. 99.9% of these requests
+     * finish inside 1.3s, so cap the statement rather than let one hold a PHP-FPM worker; callers
+     * degrade on the resulting DriverException.
+     */
+    private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
@@ -662,7 +671,7 @@ class PackageRepository extends ServiceEntityRepository
             $args['type'] = $type;
         }
 
-        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
             ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
@@ -720,7 +729,7 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getSuggests(string $name, int $offset = 0, int $limit = 15): array
     {
-        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
             ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
