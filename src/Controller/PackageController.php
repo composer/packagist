@@ -685,9 +685,19 @@ class PackageController extends Controller
 
             // only the two versions that actually get rendered are loaded in full, the list
             // itself runs off VersionListItem to keep the JSON columns out of the page
-            $version = $versionRepo->find($defaultBranch->getId());
+            $fullVersionIds = [$defaultBranch->getId()];
+            if ($expanded->getId() !== $defaultBranch->getId()) {
+                $fullVersionIds[] = $expanded->getId();
+            }
+            $fullVersions = $versionRepo->findBy(['id' => $fullVersionIds]);
+            $versionMap = [];
+            foreach ($fullVersions as $v) {
+                $versionMap[$v->getId()] = $v;
+            }
+            unset($fullVersions, $v, $fullVersionIds);
+            $version = $versionMap[$defaultBranch->getId()];
             Assert::notNull($version);
-            $expandedVersion = $expanded->getId() === $version->getId() ? $version : $versionRepo->find($expanded->getId());
+            $expandedVersion = $versionMap[$expanded->getId()] ?? $version;
             Assert::notNull($expandedVersion);
         }
 
