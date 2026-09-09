@@ -941,6 +941,390 @@ class UpdaterTest extends IntegrationTestCase
         self::assertNull($recovered->getDeletionReason());
     }
 
+    public function testMarksForDumpWhenAVersionChanges(): void
+    {
+        $this->markPackageAsDumped();
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $this->getEM()->refresh($this->package);
+        self::assertTrue($this->package->isDumpRequested(), 'a created version must mark the package for re-dump');
+    }
+
+    public function testDoesNotMarkForDumpWhileVersionsAreStillBeingWritten(): void
+    {
+        // Marking mid-loop lets a dumper dump a half-written package and stamp dumpedAtV2 past the
+        // mark, and the crawl has no reason to mark twice, so the rows written after it never get
+        // dumped. insertVersion() runs once per stored version, i.e. exactly in the window that must
+        // stay unmarked.
+        $this->markPackageAsDumped();
+
+        $package = $this->package;
+        $marksSeenWhileWriting = [];
+        $versionIdCache = $this->createStub(VersionIdCache::class);
+        $versionIdCache->method('insertVersion')->willReturnCallback(
+            static function () use ($package, &$marksSeenWhileWriting): void {
+                $marksSeenWhileWriting[] = $package->getDumpRequestedAt();
+            }
+        );
+        $this->rebuildUpdater($this->createStub(PackageManager::class), versionIdCache: $versionIdCache);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890'),
+            $this->buildCompletePackage('test/pkg', '1.1.0', '1.1.0.0', 'abcdef1234567891'),
+            $this->buildCompletePackage('test/pkg', '1.2.0', '1.2.0.0', 'abcdef1234567892'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        self::assertCount(3, $marksSeenWhileWriting, 'all three versions must have been stored');
+        self::assertSame([null, null, null], $marksSeenWhileWriting, 'the package must stay unmarked until the version loop is done');
+
+        $this->getEM()->refresh($this->package);
+        self::assertTrue($this->package->isDumpRequested(), 'the mark still has to land once the crawl is done writing');
+    }
+
+    public function testMarksForDumpEvenWhenTheCrawlFailsAfterTheVersionWasWritten(): void
+    {
+        // Version writes are committed as they happen, so a failure in the crawl's network-bound tail
+        // must not lose the mark: the next crawl finds the row already matching upstream and marks
+        // nothing, leaving the change unpublished until some later crawl trips the crawledAt clause.
+        $this->markPackageAsDumped();
+
+        $providerManager = $this->createStub(ProviderManager::class);
+        $providerManager->method('packageExists')->willThrowException(new \RuntimeException('provider list unreachable'));
+        $this->rebuildUpdater($this->createStub(PackageManager::class), $providerManager);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        try {
+            $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+            self::fail('the crawl was expected to fail after the version had been written');
+        } catch (\RuntimeException $e) {
+            self::assertSame('provider list unreachable', $e->getMessage());
+        }
+
+        self::assertNotNull(
+            $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']),
+            'the version must have been committed before the failure, or this test proves nothing'
+        );
+
+        $this->getEM()->refresh($this->package);
+        self::assertTrue($this->package->isDumpRequested(), 'a committed version change must stay marked when the rest of the crawl fails');
+    }
+
+    public function testDoesNotMarkForDumpOnUnchangedStableRecrawl(): void
+    {
+        // an existing stable version already present with a reference matching the upstream below
+        $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->markPackageAsDumped();
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $this->getEM()->refresh($this->package);
+        self::assertNull($this->package->getDumpRequestedAt(), 'an unchanged re-crawl must not re-stale the metadata');
+        self::assertFalse($this->package->isDumpRequested());
+    }
+
+    public function testForceDumpEscalatesAnUnchangedRecrawlToAFullRewrite(): void
+    {
+        // The manual update button schedules with force_dump, which must republish the files even
+        // though nothing changed — that is what busts the CDN cache and can unstick replication.
+        $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->markPackageAsDumped();
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', '1.0.0', '1.0.0.0', 'abcdef1234567890'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::FORCE_DUMP);
+
+        $this->getEM()->refresh($this->package);
+        self::assertTrue($this->package->isDumpForced(), 'FORCE_DUMP must escalate past the dumper content comparison');
+        self::assertNotNull($this->package->getDumpRequestedAt(), 'forcing must mark too, or an in-flight dump run erases the null');
+    }
+
+    public function testDoesNotMarkForDumpOnUnchangedDevRecrawl(): void
+    {
+        // The stable path short-circuits at the immutability gate, so it never reaches the dev flow —
+        // cover a dev branch whose reference has not moved separately.
+        $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        $this->markPackageAsDumped();
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $this->getEM()->refresh($this->package);
+        self::assertNull($this->package->getDumpRequestedAt(), 'a dev branch at an unchanged ref must not re-stale the metadata');
+        self::assertFalse($this->package->isDumpRequested());
+    }
+
+    public function testMarksForDumpWhenAVersionDisappearsUpstream(): void
+    {
+        // 1.1.0 stays put at an unchanged ref so it contributes no marking of its own; only 1.0.0
+        // vanishing (and so being auto-soft-deleted out of the dump) should mark the package.
+        $this->seedStableVersion($this->package, '1.0.0', '1.0.0.0', 'abcdef1234567890');
+        $this->seedStableVersion($this->package, '1.1.0', '1.1.0.0', 'fedcba0987654321');
+        $this->markPackageAsDumped();
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', '1.1.0', '1.1.0.0', 'fedcba0987654321'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $this->getEM()->refresh($this->package);
+        self::assertTrue($this->package->isDumpRequested(), 'a version dropping out of the dump must mark the package for re-dump');
+    }
+
+    public function testMarksForDumpWhenAnAutoSoftDeletedVersionReappears(): void
+    {
+        $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'sameref1234567890');
+        $existing->setSoftDeletedAt(new \DateTimeImmutable('-2 hours'));
+        $existing->setDeletionReason(VersionDeletionReason::AutoDeletedMissing);
+        self::getEM()->persist($existing);
+        $this->markPackageAsDumped();
+
+        // same ref as the soft-deleted row, so only the auto-recovery — not a version rewrite — can
+        // be what marks the package here
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([
+            $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'sameref1234567890'),
+        ]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $this->getEM()->refresh($this->package);
+        self::assertTrue($this->package->isDumpRequested(), 'a recovered version rejoining the dump must mark the package for re-dump');
+    }
+
+    public function testAbandonedReplacementMismatchConvergesInsteadOfRebuildingEveryCrawl(): void
+    {
+        $em = self::getEM();
+        $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        $existing->setIsDefaultBranch(true);
+        $em->persist($existing);
+        $versionId = $existing->getId();
+
+        // package already abandoned with a replacement that disagrees with composer.json — before the
+        // reconciliation this mismatch could never be written back, so every crawl rebuilt the version
+        $this->package->setAbandoned(true);
+        $this->package->setReplacementPackage('old/replacement');
+        $this->markPackageAsDumped();
+
+        $upstream = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890');
+        $upstream->setIsDefaultBranch(true);
+        $upstream->setAbandoned('new/replacement');
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertSame('new/replacement', $package->getReplacementPackage(), 'the crawl must reconcile the replacement, not just rebuild around it');
+        self::assertTrue($package->isDumpRequested(), 'the reconciling crawl did change the version, so it marks for re-dump');
+
+        $updatedAtAfterFirstCrawl = $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt();
+        self::assertNotNull($updatedAtAfterFirstCrawl);
+
+        // second crawl against the very same upstream must now be a no-op
+        $package->setDumpedAtV2(new \DateTimeImmutable('+1 minute'));
+        $em->flush();
+
+        $repo2 = $this->createStub(VcsRepository::class);
+        $repo2->method('getPackages')->willReturn([$upstream]);
+        $repo2->method('getDriver')->willReturn($this->stableDriver());
+        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertFalse($package->isDumpRequested(), 'a converged abandoned package must not re-stale its metadata on every crawl');
+        self::assertEquals(
+            $updatedAtAfterFirstCrawl,
+            $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt(),
+            'the version must not be rebuilt again, which would bump published-time and force a real CDN write'
+        );
+    }
+
+    public function testAbandonmentDeclaredOnANonDefaultBranchDoesNotRebuildItOnEveryCrawl(): void
+    {
+        $em = self::getEM();
+        $default = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        $default->setIsDefaultBranch(true);
+        $em->persist($default);
+        $legacy = $this->seedDevVersion($this->package, 'dev-legacy', 'dev-legacy', 'legacyref12345678');
+        $legacyId = $legacy->getId();
+        // a distinctly old timestamp, so a rebuild during the crawl cannot hide in the same second
+        $legacyUpdatedAt = new \DateTimeImmutable('2026-01-01 00:00:00');
+        $legacy->setUpdatedAt($legacyUpdatedAt);
+        $em->flush();
+        $this->markPackageAsDumped();
+
+        // only the non-default branch declares abandonment. The package-level reconciliation runs for
+        // the default branch only, so the package stays unabandoned — and the trigger has to be scoped
+        // the same way, or it can never agree with the package and rebuilds dev-legacy forever.
+        $upstreamDefault = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890');
+        $upstreamDefault->setIsDefaultBranch(true);
+        $upstreamLegacy = $this->buildCompletePackage('test/pkg', 'dev-legacy', 'dev-legacy', 'legacyref12345678');
+        $upstreamLegacy->setAbandoned('some/replacement');
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstreamDefault, $upstreamLegacy]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertFalse($package->isAbandoned(), 'only the default branch composer.json may abandon a package');
+        self::assertFalse($package->isDumpRequested(), 'nothing dumpable changed, so the crawl must not re-stale the metadata');
+        self::assertEquals(
+            $legacyUpdatedAt,
+            $em->getRepository(Version::class)->find($legacyId)?->getUpdatedAt(),
+            'the non-default branch must not be rebuilt, which would bump published-time and force a real CDN write'
+        );
+    }
+
+    public function testAReplacementThatNeedsSanitizingStillConverges(): void
+    {
+        $em = self::getEM();
+        $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        $existing->setIsDefaultBranch(true);
+        $em->persist($existing);
+        $versionId = $existing->getId();
+        $this->markPackageAsDumped();
+
+        // the control char is stripped on the way into the DB, so comparing the stored value against the
+        // raw upstream one could never agree — the trigger has to normalize before comparing
+        $upstream = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890');
+        $upstream->setIsDefaultBranch(true);
+        $upstream->setAbandoned("new/replace\x08ment");
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertSame('new/replacement', $package->getReplacementPackage());
+
+        $updatedAtAfterFirstCrawl = $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt();
+        self::assertNotNull($updatedAtAfterFirstCrawl);
+
+        // second crawl against the very same upstream must now be a no-op
+        $package->setDumpedAtV2(new \DateTimeImmutable('+1 minute'));
+        $em->flush();
+
+        $repo2 = $this->createStub(VcsRepository::class);
+        $repo2->method('getPackages')->willReturn([$upstream]);
+        $repo2->method('getDriver')->willReturn($this->stableDriver());
+        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertFalse($package->isDumpRequested(), 'a sanitized replacement must converge like any other');
+        self::assertEquals(
+            $updatedAtAfterFirstCrawl,
+            $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt(),
+            'the version must not be rebuilt again on an unchanged crawl'
+        );
+    }
+
+    public function testAnOverlongReplacementIsCappedAndStillConverges(): void
+    {
+        $em = self::getEM();
+        $existing = $this->seedDevVersion($this->package, 'dev-main', 'dev-main', 'devref1234567890');
+        $existing->setIsDefaultBranch(true);
+        $em->persist($existing);
+        $versionId = $existing->getId();
+        $this->markPackageAsDumped();
+
+        // replacementPackage is a 255 char column, so an over-long value has to be capped before it is
+        // stored or the flush fails under strict mode — and truncating it in the DB instead would leave
+        // stored and declared forever unequal, rebuilding the version on every crawl
+        $overlong = 'new/'.str_repeat('a', 300);
+        $upstream = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890');
+        $upstream->setIsDefaultBranch(true);
+        $upstream->setAbandoned($overlong);
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertSame(mb_substr($overlong, 0, 255), $package->getReplacementPackage());
+
+        $updatedAtAfterFirstCrawl = $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt();
+        self::assertNotNull($updatedAtAfterFirstCrawl);
+
+        // second crawl against the very same upstream must now be a no-op
+        $package->setDumpedAtV2(new \DateTimeImmutable('+1 minute'));
+        $em->flush();
+
+        $repo2 = $this->createStub(VcsRepository::class);
+        $repo2->method('getPackages')->willReturn([$upstream]);
+        $repo2->method('getDriver')->willReturn($this->stableDriver());
+        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        self::assertFalse($package->isDumpRequested(), 'a capped replacement must converge like any other');
+        self::assertEquals(
+            $updatedAtAfterFirstCrawl,
+            $em->getRepository(Version::class)->find($versionId)?->getUpdatedAt(),
+            'the version must not be rebuilt again on an unchanged crawl'
+        );
+    }
+
+    /**
+     * Puts the package in a "freshly dumped, nothing pending" state, i.e. isDumpRequested() === false.
+     */
+    private function markPackageAsDumped(): void
+    {
+        $this->package->setDumpedAtV2(new \DateTimeImmutable());
+        $this->store($this->package);
+    }
+
     private function stableDriver(): VcsDriverInterface&Stub
     {
         $driver = $this->createStub(GitDriver::class);
@@ -990,11 +1374,11 @@ class UpdaterTest extends IntegrationTestCase
         return $p;
     }
 
-    private function rebuildUpdater(PackageManager $packageManager): void
+    private function rebuildUpdater(PackageManager $packageManager, ?ProviderManager $providerManager = null, ?VersionIdCache $versionIdCache = null): void
     {
         $registry = static::getContainer()->get(ManagerRegistry::class);
-        $providerManagerMock = $this->createStub(ProviderManager::class);
-        $versionIdCache = $this->createStub(VersionIdCache::class);
+        $providerManagerMock = $providerManager ?? $this->createStub(ProviderManager::class);
+        $versionIdCache ??= $this->createStub(VersionIdCache::class);
         $mailerMock = $this->createStub(MailerInterface::class);
         $routerMock = $this->createStub(UrlGeneratorInterface::class);
         $eventDispatcherMock = $this->createStub(EventDispatcher::class);

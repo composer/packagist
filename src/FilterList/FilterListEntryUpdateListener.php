@@ -66,9 +66,11 @@ class FilterListEntryUpdateListener
         }
 
         $packageNames = array_keys($this->packagesToMarkStale);
+        // Records the request rather than nulling dumpedAtV2, so an in-flight dumper run cannot
+        // overwrite the mark. App clock, to match the one V2Dumper compares against.
         $this->getEM()->getConnection()->executeStatement(
-            'UPDATE package SET dumpedAtV2 = null WHERE name IN (:names)',
-            ['names' => $packageNames],
+            'UPDATE package SET dumpRequestedAt = :now WHERE name IN (:names)',
+            ['now' => date('Y-m-d H:i:s'), 'names' => $packageNames],
             ['names' => ArrayParameterType::STRING]
         );
 

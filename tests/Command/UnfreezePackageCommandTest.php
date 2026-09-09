@@ -54,6 +54,13 @@ class UnfreezePackageCommandTest extends IntegrationTestCase
         self::assertNotNull($package);
         self::assertFalse($package->isFrozen());
 
+        // A suppressing freeze purged the published metadata, so unfreeze is the one path that nulls
+        // dumpedAtV2 outright — plus marks, so a dumper run already in flight cannot erase the null
+        // when it records its dump times at the end.
+        self::assertNull($package->getDumpedAtV2(), 'unfreeze should treat the package as never dumped');
+        self::assertNotNull($package->getDumpRequestedAt(), 'unfreeze must also mark, or an in-flight dump run overwrites the null');
+        self::assertTrue($package->isDumpRequested());
+
         $job = $em->getRepository(Job::class)->findOneBy(['type' => 'package:updates', 'packageId' => $packageId]);
         self::assertNotNull($job, 'unfreeze should schedule a package update');
         self::assertTrue($job->getPayload()['force_dump'] ?? false, 'the scheduled update should force a re-dump');
