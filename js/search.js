@@ -65,6 +65,15 @@ var customSearchClient = {
     },
 };
 
+// Collapses the hero (see css/app.scss .wrapper-search-hero.search-active) whenever a search is
+// active, whether that's on initial page load (below) or a later state change (onStateChange).
+function toggleHero(hasSearch) {
+    var hero = document.querySelector('.wrapper-search-hero');
+    if (hero) {
+        hero.classList.toggle('search-active', hasSearch);
+    }
+}
+
 // Show search container on initial load if URL has search params
 var urlParams = new URLSearchParams(window.location.search);
 var hasQuery = (urlParams.get('query') || '').trim() !== '' || (urlParams.get('q') || '').trim() !== '';
@@ -74,6 +83,7 @@ if (!isSearchPage && !hasQuery && hasFilters) {
     location.replace('/search/' + location.search);
 } else if (hasQuery || (isSearchPage && hasFilters)) {
     document.querySelector('#search-container').classList.remove('d-none');
+    toggleHero(true);
 }
 
 var opts = {
@@ -87,6 +97,8 @@ var opts = {
         var hasFilters = (indexState.menu && indexState.menu.type)
             || (indexState.refinementList && indexState.refinementList.tags && indexState.refinementList.tags.length > 0);
         var hasSearch = hasQuery || (isSearchPage && hasFilters);
+
+        toggleHero(hasSearch);
 
         if (!hasSearch) {
             searchResults.classList.add('d-none');

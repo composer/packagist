@@ -22,7 +22,8 @@ class WebControllerTest extends IntegrationTestCase
     public function testHomepage(): void
     {
         $crawler = $this->client->request('GET', '/');
-        $this->assertEquals('Getting Started', $crawler->filter('.getting-started h2')->text());
+        static::assertResponseIsSuccessful();
+        $this->assertStringContainsString('Packagist is the main', $crawler->filter('.hero-search-claim')->text());
     }
 
     public function testRedirectsOnMatch(): void
