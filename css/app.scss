@@ -1520,7 +1520,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   color: #b87800;
 }
 
-.package .versions .version.version-soft-deleted .version-number a {
+.package .versions .version.version-soft-deleted a.version-number {
   color: var(--color-muted);
   text-decoration: line-through;
   text-decoration-color: rgba(153, 153, 153, 0.5);

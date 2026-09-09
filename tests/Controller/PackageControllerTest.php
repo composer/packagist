@@ -52,6 +52,33 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
     }
 
+    public function testVersionListMakesTheWholeVersionNumberCellALink(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $version = new Version();
+        $version->setPackage($package);
+        $version->setName($package->getName());
+        $version->setVersion('1.0.0');
+        $version->setNormalizedVersion('1.0.0.0');
+        $version->setDevelopment(false);
+        $version->setLicense(['MIT']);
+        $version->setAutoload([]);
+        $package->getVersions()->add($version);
+        $this->store($package, $version);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        // .version-number is the flex item spanning the row, so it has to be the anchor itself:
+        // wrapped in a div, only the version text links and clicking the rest of the cell leaves
+        // the URL hash on the previously opened version. css/app.scss and js/view.js both resolve
+        // .version-number to this element.
+        $link = $crawler->filter('.versions .version a.version-number');
+        self::assertCount(1, $link);
+        self::assertSame('#1.0.0', $link->attr('href'));
+        self::assertCount(0, $crawler->filter('.versions .version div.version-number'));
+    }
+
     public function testPackagePageOmitsManagementFormsForVisitorsWhoCannotUseThem(): void
     {
         $owner = self::createUser('owner', 'owner@example.org');

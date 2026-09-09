@@ -59,14 +59,26 @@ const init = function ($) {
         target.addClass('open');
     });
 
-    // initializer for #<version-id> present on page load
-    (function () {
-        var hash = document.location.hash;
-        if (hash.length > 1) {
-            hash = hash.substring(1);
-            $('.package .details-toggler[data-version-id="'+hash+'"]').click();
+    // Opens the row named by #<version-id>, on page load and on back/forward.
+    function openVersionFromHash() {
+        var hash = document.location.hash.substring(1);
+        if (!hash.length) {
+            return;
         }
-    }());
+        // matched by attribute rather than an interpolated selector, as version strings are
+        // user-controlled and a quote in one would break the selector parse
+        var row = $('.package .details-toggler').filter(function () {
+            return this.getAttribute('data-version-id') === hash;
+        });
+        // clicking a version anchor writes the hash itself, so the hashchange that follows would
+        // otherwise redo the load the click just did
+        if (row.length && !row.hasClass('open')) {
+            row.click();
+        }
+    }
+
+    openVersionFromHash();
+    $(window).on('hashchange', openVersionFromHash);
 
     function dispatchAjaxForm(form, success, className, extraData) {
         var data = $(form).serializeArray();
@@ -273,7 +285,7 @@ const init = function ($) {
             // soft-deleted, so it needs the same treatment as the badge.
             var title = data.deletionTitle || 'Deleted';
             setDeletionTooltip(alert, title);
-            setDeletionTooltip(row.find('.version-number a'), title);
+            setDeletionTooltip(row.find('.version-number'), title);
             row.find('.delete-version, .hide-version').remove();
         } else {
             notifier.log(deletedToast, {timeout: 3000});
