@@ -244,6 +244,43 @@ class VersionRepository extends ServiceEntityRepository
     }
 
     /**
+     * Everything the version list needs, and nothing else. Skips the ten JSON and three TEXT
+     * columns a full Version carries, which is the whole cost of the package page for packages
+     * with thousands of versions.
+     *
+     * @return list<VersionListItem>
+     */
+    public function getVersionListForPackage(Package $package): array
+    {
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT id, version, normalizedVersion, development, defaultBranch, releasedAt, extra, softDeletedAt, deletionReason, deletionReasonText, internalDeletionReasonText, lastBlockedReference FROM package_version WHERE package_id = :id',
+            ['id' => $package->getId()]
+        );
+
+        $versions = [];
+        foreach ($rows as $row) {
+            $extra = json_decode((string) $row['extra'], true);
+            $versions[] = new VersionListItem(
+                (int) $row['id'],
+                $package,
+                (string) $row['version'],
+                (string) $row['normalizedVersion'],
+                (bool) $row['development'],
+                (bool) $row['defaultBranch'],
+                $row['releasedAt'] !== null ? new \DateTimeImmutable((string) $row['releasedAt']) : null,
+                \is_array($extra) ? $extra : [],
+                $row['softDeletedAt'] !== null ? new \DateTimeImmutable((string) $row['softDeletedAt']) : null,
+                $row['deletionReason'] !== null ? VersionDeletionReason::from((string) $row['deletionReason']) : null,
+                $row['deletionReasonText'] !== null ? (string) $row['deletionReasonText'] : null,
+                $row['internalDeletionReasonText'] !== null ? (string) $row['internalDeletionReasonText'] : null,
+                $row['lastBlockedReference'] !== null ? (string) $row['lastBlockedReference'] : null,
+            );
+        }
+
+        return $versions;
+    }
+
+    /**
      * @return ExistingVersionsForUpdate
      */
     public function getVersionMetadataForUpdate(Package $package): array

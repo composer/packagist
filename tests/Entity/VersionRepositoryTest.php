@@ -16,7 +16,9 @@ use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\Job;
+use App\Entity\Package;
 use App\Entity\Version;
+use App\Entity\VersionListItem;
 use App\Entity\VersionRepository;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -241,6 +243,119 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::getEM()->clear();
 
         self::assertNull($this->versionRepository->find($versionId), 'allowStable must permit hard-deleting a stable version');
+    }
+
+    public function testGetVersionListForPackageMatchesTheFullEntities(): void
+    {
+        $em = self::getEM();
+        $package = self::createPackage('vendor/listpkg', 'https://github.com/vendor/listpkg');
+
+        $stable = $this->buildVersion($package, '1.0.0', '1.0.0.0');
+
+        $dev = $this->buildVersion($package, 'dev-main', 'dev-main');
+        $dev->setDevelopment(true);
+        $dev->setIsDefaultBranch(true);
+        $dev->setExtra(['branch-alias' => ['dev-main' => '2.x-dev']]);
+        $dev->setReleasedAt(new \DateTimeImmutable('2026-01-02 03:04:05'));
+
+        $deleted = $this->buildVersion($package, '0.9.0', '0.9.0.0');
+        $deleted->setSoftDeletedAt(new \DateTimeImmutable('2026-02-03 04:05:06'));
+        $deleted->setDeletionReason(VersionDeletionReason::DeletedByAdmin);
+        $deleted->setDeletionReasonText('bogus release');
+        $deleted->setInternalDeletionReasonText('reported by upstream');
+        $deleted->setLastBlockedReference('abc123');
+
+        $this->store($package, $stable, $dev, $deleted);
+        $em->clear();
+
+        $package = $em->getRepository(Package::class)->getPackageByName('vendor/listpkg');
+        $items = $this->versionRepository->getVersionListForPackage($package);
+        self::assertCount(3, $items);
+
+        /** @var array<int, VersionListItem> $byId */
+        $byId = [];
+        foreach ($items as $item) {
+            $byId[$item->getId()] = $item;
+        }
+
+        // every list item must be indistinguishable from the entity it stands in for, since the
+        // template, the sort comparator and the deletion-title filter run on both
+        foreach ($this->versionRepository->findBy(['package' => $package]) as $entity) {
+            $item = $byId[$entity->getId()];
+            self::assertSame($entity->getVersion(), $item->getVersion());
+            self::assertSame($entity->getNormalizedVersion(), $item->getNormalizedVersion());
+            self::assertSame($entity->getMajorVersion(), $item->getMajorVersion());
+            self::assertSame($entity->isDevelopment(), $item->isDevelopment());
+            self::assertSame($entity->isDefaultBranch(), $item->isDefaultBranch());
+            self::assertSame($entity->isSoftDeleted(), $item->isSoftDeleted());
+            self::assertSame($entity->getDeletionReason(), $item->getDeletionReason());
+            self::assertSame($entity->getDeletionReasonText(), $item->getDeletionReasonText());
+            self::assertSame($entity->getInternalDeletionReasonText(), $item->getInternalDeletionReasonText());
+            self::assertSame($entity->getLastBlockedReference(), $item->getLastBlockedReference());
+            self::assertSame($entity->getExtra(), $item->getExtra());
+            self::assertSame($entity->hasVersionAlias(), $item->hasVersionAlias());
+            self::assertSame($entity->getVersionAlias(), $item->getVersionAlias());
+            self::assertSame($entity->getDeletionTitle(), $item->getDeletionTitle());
+            self::assertSame($entity->getDeletionTitle(true), $item->getDeletionTitle(true));
+            self::assertEquals($entity->getReleasedAt(), $item->getReleasedAt());
+            self::assertEquals($entity->getSoftDeletedAt(), $item->getSoftDeletedAt());
+            self::assertSame($package, $item->getPackage());
+        }
+
+        self::assertSame('2.x-dev', $byId[$dev->getId()]->getVersionAlias());
+        self::assertSame(
+            'Removed by admin on 2026-02-03 04:05:06 UTC: bogus release (Internal reason: reported by upstream)',
+            $byId[$deleted->getId()]->getDeletionTitle(true)
+        );
+        self::assertSame('Removed by admin on 2026-02-03 04:05:06 UTC: bogus release', $byId[$deleted->getId()]->getDeletionTitle());
+        self::assertNull($byId[$stable->getId()]->getDeletionTitle());
+    }
+
+    public function testGetVersionListForPackageSortsLikeTheFullEntities(): void
+    {
+        $em = self::getEM();
+        $package = self::createPackage('vendor/sortpkg', 'https://github.com/vendor/sortpkg');
+
+        $versions = [];
+        foreach ([['1.0.0', '1.0.0.0'], ['1.10.0', '1.10.0.0'], ['1.2.0', '1.2.0.0'], ['2.0.0', '2.0.0.0']] as [$v, $normalized]) {
+            $versions[] = $this->buildVersion($package, $v, $normalized);
+        }
+        $dev = $this->buildVersion($package, 'dev-main', 'dev-main');
+        $dev->setDevelopment(true);
+        $dev->setIsDefaultBranch(true);
+        $versions[] = $dev;
+
+        $this->store($package, ...$versions);
+        $em->clear();
+
+        $package = $em->getRepository(Package::class)->getPackageByName('vendor/sortpkg');
+
+        $entities = $this->versionRepository->findBy(['package' => $package]);
+        usort($entities, Package::class.'::sortVersions');
+
+        $items = $this->versionRepository->getVersionListForPackage($package);
+        usort($items, Package::class.'::sortVersions');
+
+        self::assertSame(
+            array_map(static fn (Version $v): string => $v->getVersion(), $entities),
+            array_map(static fn (VersionListItem $v): string => $v->getVersion(), $items)
+        );
+        self::assertSame(['dev-main', '2.0.0', '1.10.0', '1.2.0', '1.0.0'], array_map(static fn (VersionListItem $v): string => $v->getVersion(), $items));
+    }
+
+    private function buildVersion(Package $package, string $version, string $normalized): Version
+    {
+        $v = new Version();
+        $v->setPackage($package);
+        $v->setName($package->getName());
+        $v->setVersion($version);
+        $v->setNormalizedVersion($normalized);
+        $v->setDevelopment(false);
+        $v->setLicense([]);
+        $v->setAutoload([]);
+        $package->getVersions()->add($v);
+
+        return $v;
     }
 
     private function seedStableVersion(string $packageName, string $version, string $normalized): Version
