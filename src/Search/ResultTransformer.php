@@ -15,6 +15,22 @@ namespace App\Search;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
+ * @phpstan-type AlgoliaSearchResponse array{
+ *     nbHits: int,
+ *     page: int,
+ *     nbPages: int,
+ *     hits: list<array{
+ *         id: int|string,
+ *         name: string,
+ *         description: string,
+ *         repository: string,
+ *         meta?: array{downloads: int, favers: int},
+ *         abandoned?: bool|int,
+ *         replacementPackage?: string,
+ *         ...<string, mixed>
+ *     }>,
+ *     ...<string, mixed>
+ * }
  * @phpstan-type SearchResult array{
  *     total: int,
  *     next?: string,
@@ -37,20 +53,7 @@ final class ResultTransformer
     }
 
     /**
-     * @param array{
-     *     nbHits: int,
-     *     page: int,
-     *     nbPages: int,
-     *     hits: array<array{
-     *         id: int,
-     *         name: string,
-     *         description: string,
-     *         repository: string,
-     *         meta: array{downloads: int, favers: int},
-     *         abandoned?: bool,
-     *         replacementPackage?: string
-     *     }>
-     * } $results
+     * @phpstan-param AlgoliaSearchResponse $results
      *
      * @phpstan-return SearchResult
      */
@@ -75,8 +78,8 @@ final class ResultTransformer
                 'repository' => $package['repository'],
             ];
             if (ctype_digit((string) $package['id'])) {
-                $row['downloads'] = $package['meta']['downloads'];
-                $row['favers'] = $package['meta']['favers'];
+                $row['downloads'] = $package['meta']['downloads'] ?? 0;
+                $row['favers'] = $package['meta']['favers'] ?? 0;
             } else {
                 $row['virtual'] = true;
             }

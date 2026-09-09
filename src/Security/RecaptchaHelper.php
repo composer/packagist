@@ -14,7 +14,7 @@ namespace App\Security;
 
 use App\Entity\User;
 use Predis\Client;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
@@ -52,7 +52,7 @@ class RecaptchaHelper
 
         try {
             $result = $this->redisCache->mget($keys);
-        } catch (ConnectionException) {
+        } catch (PredisException) {
             return false;
         }
         foreach ($result as $count) {

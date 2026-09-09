@@ -27,6 +27,14 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class PackageRepository extends ServiceEntityRepository
 {
+    /**
+     * Bounds of the "lots of views, no installs" spam heuristic implemented in
+     * PackageController::viewPackageAction(), shared so packagist:clean-view-counters can tell which
+     * view counters are still live by exactly the same rules.
+     */
+    public const SUSPECT_VIEWS_MIN_CREATED_AT = '2019-05-01';
+    public const SUSPECT_VIEWS_MAX_DOWNLOADS = 10;
+
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';

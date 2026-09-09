@@ -47,6 +47,7 @@ use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
+use App\Package\PackageListCache;
 use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\GitHubUserMigrationWorker;
@@ -63,12 +64,13 @@ use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\AcceptHeader;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -101,6 +103,7 @@ class PackageController extends Controller
 
     public function __construct(
         private ProviderManager $providerManager,
+        private PackageListCache $listCache,
         private PackageManager $packageManager,
         private Scheduler $scheduler,
         private FavoriteManager $favoriteManager,
@@ -126,7 +129,7 @@ class PackageController extends Controller
         ?string $type = null,
         #[MapQueryParameter]
         ?string $vendor = null,
-    ): StreamedJsonResponse {
+    ): Response {
         $queryParams = $req->query->all();
         $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
@@ -138,6 +141,15 @@ class PackageController extends Controller
             ], static fn ($val) => $val !== null);
 
             return $this->streamedListResponse(['packages' => self::streamPackages($repo->iteratePackagesWithFields($filters, $fields))]);
+        }
+
+        // the unfiltered listing is the one the CDN fans out to every edge, so it is served from a
+        // prebuilt blob; everything below stays on the live path
+        if ($type === null && $vendor === null && !$req->query->has('filter')) {
+            $response = $this->cachedListResponse($req);
+            if ($response !== null) {
+                return $response;
+            }
         }
 
         if ($type !== null || $vendor !== null) {
@@ -152,6 +164,40 @@ class PackageController extends Controller
         }
 
         return $this->streamedListResponse(['packageNames' => self::streamNames($names, $packageFilter)]);
+    }
+
+    /**
+     * Serves the prebuilt list.json body, gzipped when the client takes it. Returns null when the
+     * blob is missing or unreadable so the caller falls back to building the listing live.
+     */
+    private function cachedListResponse(Request $req): ?Response
+    {
+        $blob = $this->listCache->read();
+        if ($blob === null) {
+            return null;
+        }
+
+        $gzip = AcceptHeader::fromString($req->headers->get('Accept-Encoding'))->get('gzip');
+        $acceptsGzip = $gzip !== null && $gzip->getQuality() > 0;
+
+        if (!$acceptsGzip) {
+            $blob = gzdecode($blob);
+            if ($blob === false) {
+                return null;
+            }
+        }
+
+        $response = new Response($blob, Response::HTTP_OK, ['Content-Type' => 'application/json']);
+        if ($acceptsGzip) {
+            $response->headers->set('Content-Encoding', 'gzip');
+        }
+        $response->headers->set('Content-Length', (string) \strlen($blob));
+        // without this the CDN could hand a gzipped body to a client that did not ask for one
+        $response->setVary('Accept-Encoding');
+        $response->setSharedMaxAge(300);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+        return $response;
     }
 
     /**
@@ -420,7 +466,7 @@ class PackageController extends Controller
 
                 return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? -1 : 1;
             });
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
         }
 
         if ($req->getRequestFormat() === 'json') {
@@ -579,7 +625,7 @@ class PackageController extends Controller
                 }
                 $data['downloads'] = $this->downloadManager->getDownloads($package);
                 $data['favers'] = $this->favoriteManager->getFaverCount($package);
-            } catch (\RuntimeException|ConnectionException $e) {
+            } catch (\RuntimeException|PredisException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
             }
@@ -656,24 +702,35 @@ class PackageController extends Controller
             if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
                 throw new \RuntimeException();
             }
-            $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
+            $data['downloads'] = $this->downloadManager->getDownloads($package);
 
+            // The view counter exists only to spot packages that get traffic but no installs, so
+            // it is only worth a Redis write while that can still be concluded. Downloads and
+            // createdAt never move back below these thresholds, and suspect is never unset here,
+            // so a package that fails this check can never need the counter again.
             if (
                 !$package->isSuspect()
-                && $data['downloads']['total'] <= 10 && ($data['downloads']['views'] ?? 0) >= 100
-                && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
+                && $data['downloads']['total'] <= PackageRepository::SUSPECT_VIEWS_MAX_DOWNLOADS
+                && $package->getCreatedAt()->getTimestamp() >= strtotime(PackageRepository::SUSPECT_VIEWS_MIN_CREATED_AT)
+                && $this->downloadManager->incrementViews($package) >= 100
             ) {
                 $vendorRepo = $this->getEM()->getRepository(Vendor::class);
                 if (!$vendorRepo->isVerified($package->getVendor())) {
                     $package->setSuspect('Too many views');
                     $repo->markPackageSuspect($package);
                 }
+
+                // The counter has served its purpose either way, so drop it: a package we just
+                // marked suspect stops counting above, and for a verified vendor nothing can ever
+                // come of it. Restarting from zero also spaces the isVerified() lookup back out to
+                // once per 100 views instead of once per view from here on.
+                $this->downloadManager->deleteViews($package->getId());
             }
 
             if ($user) {
                 $data['is_favorite'] = $this->favoriteManager->isMarked($user, $package);
             }
-        } catch (\RuntimeException|ConnectionException) {
+        } catch (\RuntimeException|PredisException) {
         }
 
         $data['dependents'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getDependentCount($package->getName()) : 0;
@@ -714,10 +771,17 @@ class PackageController extends Controller
                 }
             }
 
-            $data['addMaintainerForm'] = $this->createAddMaintainerForm($package)->createView();
-            $data['removeMaintainerForm'] = $this->createRemoveMaintainerForm($package)->createView();
-            $data['transferPackageForm'] = $this->createTransferPackageForm($package)->createView();
-            $data['deleteForm'] = $this->createDeletePackageForm($package)->createView();
+            // The template renders each of these behind the matching voter grant, and building them
+            // is not free - createView() on the remove-maintainer form materialises an EntityType
+            // choice list with a DB query - so visitors who cannot see a form must not pay for it.
+            $data['addMaintainerForm'] = $this->isGranted(PackageActions::AddMaintainer->value, $package)
+                ? $this->createAddMaintainerForm($package)->createView() : null;
+            $data['removeMaintainerForm'] = $this->isGranted(PackageActions::RemoveMaintainer->value, $package)
+                ? $this->createRemoveMaintainerForm($package)->createView() : null;
+            $data['transferPackageForm'] = $this->isGranted(PackageActions::TransferPackage->value, $package)
+                ? $this->createTransferPackageForm($package)->createView() : null;
+            $data['deleteForm'] = $this->isGranted(PackageActions::Delete->value, $package)
+                ? $this->createDeletePackageForm($package)->createView() : null;
         } else {
             $data['hasVersionSecurityAdvisories'] = [];
             $data['hasVersionsFlaggedAsMalware'] = [];
@@ -791,7 +855,7 @@ class PackageController extends Controller
         try {
             $data['downloads']['total'] = $this->downloadManager->getDownloads($package);
             $data['favers'] = $this->favoriteManager->getFaverCount($package);
-        } catch (ConnectionException) {
+        } catch (PredisException) {
             $data['downloads']['total'] = null;
             $data['favers'] = null;
         }
@@ -799,7 +863,7 @@ class PackageController extends Controller
         foreach ($versions as $version) {
             try {
                 $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version->getId());
-            } catch (ConnectionException) {
+            } catch (PredisException) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
         }
@@ -1140,14 +1204,7 @@ class PackageController extends Controller
             }
         }
 
-        return $this->render('package/view_package.html.twig', [
-            'package' => $package,
-            'versions' => null,
-            'expandedVersion' => null,
-            'version' => null,
-            'removeMaintainerForm' => $removeMaintainerForm,
-            'show_remove_maintainer_form' => true,
-        ]);
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
     #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET', 'POST'])]
@@ -1513,7 +1570,7 @@ class PackageController extends Controller
         return $response;
     }
 
-    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
     public function dependentsAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
@@ -1598,7 +1655,7 @@ class PackageController extends Controller
         return $this->render('package/dependents.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX], defaults: ['_format' => 'html'])]
+    #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
     public function suggestersAction(Request $req, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {

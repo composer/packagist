@@ -305,15 +305,6 @@ class ApiController extends Controller
         ];
         $jobs = $failed = [];
         foreach ($payload as $package) {
-            // support legacy composer v1 normalized default branches
-            if ($package['version'] === '9999999-dev' && !isset($package['id'], $package['vid'])) {
-                $result = $this->getDefaultPackageAndVersionId($package['name']);
-                if ($result) {
-                    $package['id'] = $result['id'];
-                    $package['vid'] = $result['vid'];
-                }
-            }
-
             if (!isset($package['id'], $package['vid'])) {
                 $failed[] = $package;
                 continue;
@@ -432,29 +423,6 @@ class ApiController extends Controller
         }
 
         return new JsonResponse($response, 200);
-    }
-
-    /**
-     * @return array{id: int, vid: int}|false
-     */
-    protected function getDefaultPackageAndVersionId(string $name): array|false
-    {
-        /** @var array{id: string, vid: string}|false $result */
-        $result = $this->getEM()->getConnection()->fetchAssociative(
-            'SELECT p.id, v.id vid
-            FROM package p
-            LEFT JOIN package_version v ON p.id = v.package_id
-            WHERE p.name = ?
-            AND v.defaultBranch = true
-            LIMIT 1',
-            [$name]
-        );
-
-        if (false === $result) {
-            return false;
-        }
-
-        return ['id' => (int) $result['id'], 'vid' => (int) $result['vid']];
     }
 
     /**

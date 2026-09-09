@@ -20,15 +20,20 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\User;
+use App\Entity\Vendor;
 use App\Entity\Version;
+use App\Model\ProviderManager;
+use App\Package\PackageListCache;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
+use Predis\Client;
 
 class PackageControllerTest extends IntegrationTestCase
 {
@@ -45,6 +50,114 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $auditLink);
         self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+    }
+
+    public function testPackagePageOmitsManagementFormsForVisitorsWhoCannotUseThem(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        // a second maintainer is required for remove_maintainer to be granted at all
+        $comaintainer = self::createUser('comaintainer', 'comaintainer@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $comaintainer]);
+        $this->store($owner, $comaintainer, $package);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        // The controller skips building these entirely when the visitor lacks the grant, which also
+        // skips the EntityType choice-list query behind the remove-maintainer form.
+        self::assertCount(0, $crawler->filter('[name="add_maintainer_form"]'));
+        self::assertCount(0, $crawler->filter('[name="remove_maintainer_form"]'));
+        self::assertCount(0, $crawler->filter('[name="transfer_package_form"]'));
+        self::assertCount(0, $crawler->filter('form.delete.action'));
+
+        // ...and still builds them for someone who can, so the skip is keyed on the grant only.
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        self::assertCount(1, $crawler->filter('[name="add_maintainer_form"]'));
+        self::assertCount(1, $crawler->filter('[name="remove_maintainer_form"]'));
+        self::assertCount(1, $crawler->filter('[name="transfer_package_form"]'));
+        self::assertCount(1, $crawler->filter('form.delete.action'));
+    }
+
+    public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void
+    {
+        $fresh = self::createPackage('test/fresh', 'https://example.com/test/fresh');
+        $established = self::createPackage('test/established', 'https://example.com/test/established');
+        $this->store($fresh, $established);
+
+        $redis = $this->redis();
+        $redis->del(['views:'.$fresh->getId(), 'views:'.$established->getId()]);
+        // getDownloads() reads the package total straight off this key
+        $redis->set('dl:'.$established->getId(), '5000');
+
+        $this->client->request('GET', '/packages/test/fresh');
+        self::assertResponseIsSuccessful();
+        self::assertSame('1', $redis->get('views:'.$fresh->getId()));
+
+        $this->client->request('GET', '/packages/test/established');
+        self::assertResponseIsSuccessful();
+        self::assertNull(
+            $redis->get('views:'.$established->getId()),
+            'a package past the download threshold can never trip the heuristic, so it must not pay for the counter',
+        );
+
+        $redis->del(['views:'.$fresh->getId(), 'dl:'.$established->getId()]);
+    }
+
+    public function testPackagePageDropsTheViewCounterOnceTheHeuristicHasFired(): void
+    {
+        $package = self::createPackage('test/spammy', 'https://example.com/test/spammy');
+        $this->store($package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/test/spammy');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame('Too many views', $reloaded->getSuspect());
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'the counter has done its job, keeping it would only grow a key nothing reads',
+        );
+    }
+
+    public function testPackagePageDropsTheViewCounterOfAVerifiedVendor(): void
+    {
+        $vendor = new Vendor('verifiedvendor');
+        $vendor->setVerified(true);
+        $package = self::createPackage('verifiedvendor/pkg', 'https://example.com/verifiedvendor/pkg');
+        $this->store($vendor, $package);
+
+        $redis = $this->redis();
+        $redis->set('views:'.$package->getId(), '99');
+
+        $this->client->request('GET', '/packages/verifiedvendor/pkg');
+        self::assertResponseIsSuccessful();
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->find(Package::class, $package->getId());
+        self::assertNotNull($reloaded);
+        self::assertFalse($reloaded->isSuspect(), 'a verified vendor is never flagged');
+        self::assertNull(
+            $redis->get('views:'.$package->getId()),
+            'nothing can ever come of this counter, and resetting it stops the isVerified() lookup running on every view',
+        );
+    }
+
+    private function redis(): Client
+    {
+        $client = static::getContainer()->get('snc_redis.default');
+        self::assertInstanceOf(Client::class, $client);
+
+        return $client;
     }
 
     public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void
@@ -927,5 +1040,116 @@ class PackageControllerTest extends IntegrationTestCase
         $this->store($package);
 
         self::assertSame('', $this->requestListJson('vendor=listvendor&fields[]=type', 'HEAD'));
+    }
+
+    /**
+     * The unfiltered listing is the one the CDN fans out to every edge, so it is served from the
+     * prebuilt blob rather than read and sorted out of Redis per request.
+     */
+    public function testUnfilteredListJsonServesThePrebuiltBlobGzipped(): void
+    {
+        $cache = self::getService(PackageListCache::class);
+        $names = ['listvendor/aaa', 'listvendor/bbb'];
+        $cache->write($names, 1);
+
+        try {
+            $this->client->request('GET', '/packages/list.json', [], [], ['HTTP_ACCEPT_ENCODING' => 'gzip, deflate']);
+
+            $response = $this->client->getResponse();
+            self::assertInstanceOf(Response::class, $response);
+            self::assertResponseIsSuccessful();
+            self::assertResponseHeaderSame('Content-Type', 'application/json');
+            self::assertResponseHeaderSame('Content-Encoding', 'gzip');
+            // without Vary the CDN could hand this body to a client that never asked for gzip.
+            // getVary() parses every Vary line; headers->get() would only return the first.
+            self::assertContains('Accept-Encoding', $response->getVary());
+            self::assertContains('Origin', $response->getVary(), 'the CORS Vary must survive');
+            self::assertStringContainsString('s-maxage=300', (string) $response->headers->get('Cache-Control'));
+            self::assertResponseHeaderSame('X-Accel-Expires', '300');
+
+            $body = (string) $response->getContent();
+            self::assertSame((string) \strlen($body), $response->headers->get('Content-Length'));
+            self::assertSame(
+                json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                gzdecode($body),
+            );
+        } finally {
+            $cache->clear();
+        }
+    }
+
+    public function testUnfilteredListJsonDecompressesForClientsThatRefuseGzip(): void
+    {
+        $cache = self::getService(PackageListCache::class);
+        $names = ['listvendor/aaa', 'listvendor/bbb'];
+        $cache->write($names, 1);
+
+        try {
+            // q=0 explicitly refuses gzip, so the body has to go out plain
+            $this->client->request('GET', '/packages/list.json', [], [], ['HTTP_ACCEPT_ENCODING' => 'gzip;q=0']);
+
+            self::assertResponseIsSuccessful();
+            self::assertFalse($this->client->getResponse()->headers->has('Content-Encoding'));
+            self::assertSame(
+                json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                (string) $this->client->getResponse()->getContent(),
+            );
+        } finally {
+            $cache->clear();
+        }
+    }
+
+    public function testUnfilteredListJsonFallsBackToTheLivePathWithoutABlob(): void
+    {
+        $cache = self::getService(PackageListCache::class);
+        $cache->clear();
+
+        $package = self::createPackage('listvendor/fallback', 'https://example.org/fallback');
+        $this->store($package);
+        self::getService(ProviderManager::class)->insertPackage($package);
+
+        try {
+            $body = $this->requestListJson('');
+
+            $decoded = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
+            self::assertIsArray($decoded);
+            self::assertContains('listvendor/fallback', $decoded['packageNames']);
+        } finally {
+            $cache->clear();
+        }
+    }
+
+    public function testFilteredListJsonIgnoresTheBlob(): void
+    {
+        $cache = self::getService(PackageListCache::class);
+        // a blob that does not match the DB at all, to prove the filtered branches never read it
+        $cache->write(['blob/only'], 1);
+
+        try {
+            $providerManager = self::getService(ProviderManager::class);
+            $packages = [];
+            foreach (['listvendor/aaa', 'listvendor/bbb'] as $name) {
+                $package = self::createPackage($name, 'https://example.org/'.$name);
+                $package->setType('library');
+                $packages[] = $package;
+            }
+            $this->store(...$packages);
+            // the filter-only branch reads set:packages rather than the DB, and store() does not
+            // go through the insert path that populates it
+            foreach ($packages as $package) {
+                $providerManager->insertPackage($package);
+            }
+
+            self::assertSame(
+                json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                $this->requestListJson('vendor=listvendor'),
+            );
+            self::assertSame(
+                json_encode(['packageNames' => ['listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                $this->requestListJson('filter=listvendor/bbb'),
+            );
+        } finally {
+            $cache->clear();
+        }
     }
 }

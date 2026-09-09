@@ -15,6 +15,7 @@ namespace App\Tests\Entity;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
+use App\Entity\Vendor;
 use App\Tests\IntegrationTestCase;
 
 class PackageRepositoryTest extends IntegrationTestCase

@@ -14,6 +14,7 @@ namespace App\Command;
 
 use App\Model\DownloadManager;
 use App\Service\Locker;
+use App\Util\RedisScanner;
 use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
@@ -65,7 +66,7 @@ class MigrateDownloadCountsCommand extends Command
 
             $now = new \DateTimeImmutable();
             $todaySuffix = ':'.$now->format('Ymd');
-            $keysToUpdate = $this->redis->keys('dl:*:*');
+            $keysToUpdate = RedisScanner::keys($this->redis, 'dl:*:*');
 
             // skip today datapoints as we will store that to the DB tomorrow
             $keysToUpdate = array_filter($keysToUpdate, static function ($key) use ($todaySuffix) {

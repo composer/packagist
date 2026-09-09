@@ -13,7 +13,6 @@
 namespace App\Model;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
-use Algolia\AlgoliaSearch\SearchClient;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
@@ -23,6 +22,8 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\PhpStat;
 use App\Entity\User;
 use App\Entity\Version;
+use App\Package\PackageListCache;
+use App\Search\PackageIndex;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use App\Service\CdnClient;
 use App\Service\GitHubUserMigrationWorker;
@@ -52,8 +53,7 @@ class PackageManager
         /** @var array{from: string, fromName: string} */
         private array $options,
         private ProviderManager $providerManager,
-        private SearchClient $algoliaClient,
-        private string $algoliaIndexName,
+        private PackageIndex $packageIndex,
         private GitHubUserMigrationWorker $githubWorker,
         private string $metadataDir,
         private Client $redis,
@@ -61,6 +61,8 @@ class PackageManager
         private readonly CdnClient $cdnClient,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly Scheduler $scheduler,
+        private readonly PackageListCache $listCache,
+        private readonly DownloadManager $downloadManager,
     ) {
     }
 
@@ -79,7 +81,13 @@ class PackageManager
         $em->flush();
 
         if ($reason->suppressesPackage()) {
+            // the listing is built from the DB, which already excludes suppressed packages, so mark
+            // it stale here rather than waiting for the purge worker's deletePackage() to do it
+            $this->listCache->markStale();
             $this->scheduler->schedulePackagePurge($package, $actorId);
+            // the page 404s from here on, so the spam heuristic's view counter has no traffic left
+            // to read - and unfreezing legitimately starts the count over
+            $this->downloadManager->deleteViews($package->getId());
         }
     }
 
@@ -156,10 +164,7 @@ class PackageManager
         $this->deletePackageMetadata($packageName);
 
         // delete redis stats
-        try {
-            $this->redis->del('views:'.$packageId);
-        } catch (\Predis\Connection\ConnectionException $e) {
-        }
+        $this->downloadManager->deleteViews($packageId);
 
         // attempt search index cleanup
         $this->deletePackageSearchIndex($packageName);
@@ -198,11 +203,8 @@ class PackageManager
     public function deletePackageSearchIndex(string $packageName): void
     {
         try {
-            $indexName = $this->algoliaIndexName;
-            $algolia = $this->algoliaClient;
-            $index = $algolia->initIndex($indexName);
-            $index->deleteObject($packageName);
-        } catch (AlgoliaException $e) {
+            $this->packageIndex->deleteRecord($packageName);
+        } catch (AlgoliaException|\InvalidArgumentException $e) {
         }
     }
 

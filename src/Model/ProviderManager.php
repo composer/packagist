@@ -14,13 +14,14 @@ namespace App\Model;
 
 use App\Entity\Package;
 use App\Entity\PackageRepository;
+use App\Package\PackageListCache;
 use Predis\Client;
 
 class ProviderManager
 {
     protected bool $initializedProviders = false;
 
-    public function __construct(private Client $redis, private PackageRepository $repo)
+    public function __construct(private Client $redis, private PackageRepository $repo, private PackageListCache $listCache)
     {
     }
 
@@ -88,11 +89,50 @@ class ProviderManager
     public function insertPackage(Package $package): void
     {
         $this->redis->sadd('set:packages', [strtolower($package->getName())]);
+        $this->listCache->markStale();
     }
 
     public function deletePackage(Package $package): void
     {
         $this->redis->srem('set:packages', strtolower($package->getName()));
+        $this->listCache->markStale();
+    }
+
+    /**
+     * Swaps in a set rebuilt from the DB, to reset any drift accumulated by writes that bypassed
+     * insertPackage()/deletePackage(). Swapped atomically so packageExists() never observes a
+     * partial set, and so getPackageNames()'s scard() guard cannot be tripped into a full DB
+     * repopulate by a momentarily missing key.
+     *
+     * @param string[] $names
+     */
+    public function rebuildPackageSet(array $names): void
+    {
+        // never let a failed query wipe the set every packageExists() check reads
+        if (\count($names) === 0) {
+            throw new \RuntimeException('Refusing to rebuild set:packages from an empty name list');
+        }
+
+        $this->redis->del('set:packages:new');
+        while ($names) {
+            $nameSlice = array_splice($names, 0, 1000);
+            $this->redis->sadd('set:packages:new', $nameSlice);
+        }
+
+        if (!(bool) $this->redis->exists('set:packages')) {
+            $this->redis->rename('set:packages:new', 'set:packages');
+
+            return;
+        }
+
+        $this->redis->transaction(static function ($tx): void {
+            $tx->rename('set:packages', 'set:packages:old');
+            $tx->rename('set:packages:new', 'set:packages');
+        });
+
+        // UNLINK frees the old members on a background thread; DEL, or RENAME's implicit
+        // overwrite, would free them inline and stall the event loop
+        $this->redis->unlink('set:packages:old');
     }
 
     private function populateProviders(): void

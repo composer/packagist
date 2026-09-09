@@ -15,10 +15,15 @@ namespace App\Tests\Model;
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Entity\User;
+use App\Entity\UserRepository;
 use App\Model\PackageManager;
+use App\Package\Updater;
 use App\Tests\IntegrationTestCase;
+use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\TestWith;
+use Predis\Client;
 
 class PackageManagerTest extends IntegrationTestCase
 {
@@ -42,9 +47,9 @@ class PackageManagerTest extends IntegrationTestCase
         $user = new User();
         $user->addPackage($package);
 
-        $repo = $this->createMock('App\Entity\UserRepository');
-        $em = $this->createMock('Doctrine\ORM\EntityManager');
-        $updater = $this->createMock('App\Package\Updater');
+        $repo = $this->createMock(UserRepository::class);
+        $em = $this->createMock(EntityManager::class);
+        $updater = $this->createMock(Updater::class);
 
         $repo->expects($this->once())
             ->method('findOneBy')
@@ -53,7 +58,7 @@ class PackageManagerTest extends IntegrationTestCase
 
         static::$kernel->getContainer()->set('test.user_repo', $repo);
         static::$kernel->getContainer()->set('doctrine.orm.entity_manager', $em);
-        static::$kernel->getContainer()->set('App\Package\Updater', $updater);
+        static::$kernel->getContainer()->set(Updater::class, $updater);
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
         $client->request('POST', '/api/github?username=test&apiToken=token', ['payload' => $payload]);
@@ -129,5 +134,28 @@ class PackageManagerTest extends IntegrationTestCase
         $callable = fn (array $user) => $user['username'];
         $this->assertEqualsCanonicalizing($oldMaintainers, array_map($callable, $record->attributes['previous_maintainers']));
         $this->assertEqualsCanonicalizing($newMaintainers, array_map($callable, $record->attributes['current_maintainers']));
+    }
+
+    #[TestWith([PackageFreezeReason::Spam, true])]
+    #[TestWith([PackageFreezeReason::Temporary, false])]
+    public function testFreezeDropsTheViewCounterOnlyWhenThePageStopsBeingServed(PackageFreezeReason $reason, bool $expectDropped): void
+    {
+        $package = self::createPackage('test/frozen', 'https://example.org/test/frozen');
+        $this->store($package);
+
+        $redis = self::getContainer()->get('snc_redis.default');
+        self::assertInstanceOf(Client::class, $redis);
+        $key = 'views:'.$package->getId();
+        $redis->set($key, '42');
+
+        $this->packageManager->freeze($package, $reason);
+
+        if ($expectDropped) {
+            self::assertNull($redis->get($key), 'a suppressed package 404s, so nothing can read the counter anymore');
+        } else {
+            self::assertSame('42', $redis->get($key), 'a gentle freeze keeps serving the page, so the counter stays live');
+        }
+
+        $redis->del([$key]);
     }
 }

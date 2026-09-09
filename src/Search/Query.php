@@ -16,7 +16,7 @@ use Composer\Pcre\Preg;
 use Symfony\Component\String\UnicodeString;
 
 /**
- * @phpstan-type SearchOptions array{hitsPerPage: int, page: int, filters?: string}
+ * @phpstan-type SearchParams array{query: string, hitsPerPage: int, page: int, filters?: string}
  */
 final class Query
 {
@@ -52,11 +52,15 @@ final class Query
     }
 
     /**
-     * @phpstan-return SearchOptions
+     * The search request body. These must not be passed as the client's request options instead:
+     * unknown request-option keys are silently discarded, which would drop filters and pagination.
+     *
+     * @phpstan-return SearchParams
      */
-    public function getOptions(): array
+    public function getSearchParams(): array
     {
         $queryParams = [
+            'query' => $this->query,
             'hitsPerPage' => $this->perPage,
             'page' => $this->page,
         ];
