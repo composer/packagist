@@ -1568,6 +1568,16 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     #view-package-page .package-facts > [class*="col-"] {
       min-width: 0;
     }
+    // the cards are opaque here, so bands that touch read as one surface - most visibly the
+    // downloads chart running straight into the Statistics card below it
+    #view-package-page > .package > .row + .row {
+      margin-top: 15px;
+    }
+    // the versions band brings its own top margin, which would stack on that gutter
+    #view-package-page .versions-section .version-details,
+    #view-package-page .versions-section .package-aside.versions-wrapper {
+      margin-top: 0;
+    }
     .package .package-aside.versions-wrapper {
       margin-left: 0;
       margin-right: 0;
