@@ -215,6 +215,11 @@ log:
         composer_json: Marked abandoned in composer.json
         repository_archived_and_composer_json: Repository archived and marked abandoned in composer.json
         unknown: Unknown
+    deletion_reason:
+        auto_missing: No longer found in upstream repository
+        maintainer: Deleted by maintainer
+        admin: Removed by admin
+        hidden: Hidden by admin
 
     type:
         maintainer_added: Maintainer added

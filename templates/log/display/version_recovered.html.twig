@@ -1,5 +1,5 @@
 {% import 'log/macros.html.twig' as log %}
 
 <strong>{{ log.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
-Recovered from previous soft-delete ({{ display.previousReason }})<br>
+Recovered from previous soft-delete{% if display.reasonTranslationKey %} ({{ display.reasonTranslationKey|trans }}){% endif %}<br>
 By: {{ display.actor.username }}

@@ -12,6 +12,7 @@
 
 namespace App\Log\Display\Event;
 
+use App\Audit\VersionDeletionReason;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 use App\Log\LogEventType;
@@ -28,6 +29,11 @@ readonly class VersionRecoveredDisplay extends AbstractLogDisplay
         ?string $ip = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
+    }
+
+    public function getReasonTranslationKey(): ?string
+    {
+        return $this->reasonTranslationKey($this->previousReason, VersionDeletionReason::class, 'deletion_reason');
     }
 
     public function getType(): LogEventType
