@@ -42,7 +42,7 @@ use Symfony\Component\Uid\Ulid;
  * id, so a record whose transaction outlives the window is already past the cutoff the instant it
  * committed; holding events back reorders the near-simultaneous ones and nothing else. A record that
  * arrives once a newer one already has a leaf gets the next leafIndex rather than one in between,
- * and is logged by {@see self::reportLateArrival()}. leafIndex is insertion order, not chronology.
+ * and is logged by {@see self::logIfAppendedOutOfOrder()}. leafIndex is insertion order, not chronology.
  *
  * Scope is controlled by what is enqueued, so historical events are only ever projected when they
  * are explicitly seeded ({@see \App\Command\SeedTransparencyLogQueueCommand}). Account events must
@@ -117,7 +117,6 @@ class TransparencyLogProjector
                 }
 
                 try {
-                    $this->reportLateArrival($record, $highestProjected, $minEventAgeSeconds, $leafIndex + 1);
                     $inserted = $this->projectAndDequeue($record, $leafIndex);
                     $failures = 0;
                 } catch (\Throwable $e) {
@@ -129,6 +128,10 @@ class TransparencyLogProjector
                     }
 
                     continue;
+                }
+
+                if ($inserted > 0) {
+                    $this->logIfAppendedOutOfOrder($record, $highestProjected, $minEventAgeSeconds, $leafIndex + 1);
                 }
 
                 // each inserted row consumes exactly one leaf index
@@ -277,12 +280,12 @@ class TransparencyLogProjector
     }
 
     /**
-     * Logs a record committed after a newer event had already been projected. Both ULIDs are
-     * created at AuditRecord construction, so the delta is how far back in event time this entry lands
-     * behind the newest already-published one, which is what the safety lag would have had to be to
-     * publish it in order.
+     * Logs a warning when the record we just appended is older than the newest record already in the log.
+     *
+     * A ULID is set when the AuditRecord is created, so the gap between the two ULIDs says how late this
+     * record was. The safety lag would have had to be at least that long to keep the log in order.
      */
-    private function reportLateArrival(AuditRecord $record, ?Ulid $highestProjected, int $minEventAgeSeconds, int $leafIndex): void
+    private function logIfAppendedOutOfOrder(AuditRecord $record, ?Ulid $highestProjected, int $minEventAgeSeconds, int $leafIndex): void
     {
         if ($highestProjected === null || $record->id->compare($highestProjected) >= 0) {
             return;
