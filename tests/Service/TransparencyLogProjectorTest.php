@@ -24,6 +24,7 @@ use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\AbstractLogger;
+use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Symfony\Component\Uid\Ulid;
 
@@ -149,15 +150,7 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
             }
         };
 
-        $projector = new TransparencyLogProjector(
-            self::getService(ManagerRegistry::class),
-            self::getService(TransparencyLogScrubber::class),
-            self::getService(AuditRecordRepository::class),
-            self::getService(PackageTransparencyLogRepository::class),
-            self::getService(PackageTransparencyLogQueueRepository::class),
-            self::getService(PackageRepository::class),
-            $logger,
-        );
+        $projector = $this->createProjectorLoggingTo($logger);
 
         $user = self::createUser('logged', 'logged@example.org');
         $em->persist($user);
@@ -191,6 +184,58 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         self::assertSame((string) $lateRecord->id, $warnings[0]['context']['auditLogId']);
         self::assertGreaterThan(0, $warnings[0]['context']['behindNewestProjectedSeconds']);
         self::assertSame(0, $warnings[0]['context']['safetyLagSeconds']);
+    }
+
+    /**
+     * A record that projects nothing takes no leaf, so it was not appended anywhere and the
+     * diagnostic has to stay silent: the index it would have named goes to the next record.
+     */
+    public function testLateRecordThatProjectsNothingIsNotReportedAsAppended(): void
+    {
+        $em = $this->getEM();
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+
+        $projector = $this->createProjectorLoggingTo($logger);
+
+        $user = self::createUser('silent', 'silent@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        // Built before the package below, so its ULID lands behind the leaf projected from it.
+        $unprojectable = AuditRecord::userCreated($user, UserRegistrationMethod::REGISTRATION_FORM);
+
+        // A ULID's timestamp has millisecond resolution, so without a gap the two can share one.
+        usleep(2000);
+
+        $package = self::createPackage('acme/test', 'https://github.com/acme/test');
+        $em->persist($package);
+        $em->flush();
+        // The premise of the test: this run gives the log a tip for the late record to land behind.
+        self::assertGreaterThan(0, $projector->project(0));
+
+        $em->getRepository(AuditRecord::class)->insert($unprojectable);
+        // A seed naming a type we do not project is the only way to get such a record queued.
+        self::getService(Connection::class)->executeStatement(
+            'INSERT IGNORE INTO package_transparency_log_queue (auditLogId) VALUES (?)',
+            [$unprojectable->id->toBinary()],
+        );
+
+        self::assertSame(0, $projector->project(0));
+
+        $warnings = array_values(array_filter(
+            $logger->records,
+            static fn (array $record): bool => $record['level'] === LogLevel::WARNING,
+        ));
+
+        self::assertSame([], $warnings);
     }
 
     public function testOutOfScopeQueuedRecordIsDequeuedWithoutProjecting(): void
@@ -251,5 +296,22 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         self::assertSame(0, self::getService(TransparencyLogProjector::class)->project(3600));
 
         self::assertSame(501, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+    }
+
+    /**
+     * The container-wired projector logs where the test cannot see it, so the log assertions build
+     * their own around a collecting logger.
+     */
+    private function createProjectorLoggingTo(LoggerInterface $logger): TransparencyLogProjector
+    {
+        return new TransparencyLogProjector(
+            self::getService(ManagerRegistry::class),
+            self::getService(TransparencyLogScrubber::class),
+            self::getService(AuditRecordRepository::class),
+            self::getService(PackageTransparencyLogRepository::class),
+            self::getService(PackageTransparencyLogQueueRepository::class),
+            self::getService(PackageRepository::class),
+            $logger,
+        );
     }
 }
