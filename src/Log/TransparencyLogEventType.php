@@ -89,7 +89,10 @@ enum TransparencyLogEventType: string implements LogEventType
 
     /**
      * Account-security events carry no package of their own; the projector fans them out to every
-     * package the affected user maintains (direct maintainer or via an owning organization).
+     * package the affected user is a direct maintainer of, see
+     * {@see \App\Entity\PackageRepository::getPackageRefsByMaintainer()}.
+     *
+     * Organization-owned packages are deliberately out of scope for now
      */
     public function fansOutToMaintainedPackages(): bool
     {
