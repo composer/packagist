@@ -16,6 +16,7 @@ use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageTransparencyLog;
 use App\Log\Display\Event\MaintainerAccountEventDisplay;
+use App\Log\Display\Event\VersionCreatedDisplay;
 use App\Log\Display\TransparencyLogDisplayFactory;
 use App\Log\TransparencyLogEventType;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -40,6 +41,10 @@ class TransparencyLogDisplayFactoryTest extends TestCase
         'ref_to' => 'bbbbbbb',
         'previous_maintainers' => [['id' => 1, 'username' => 'before']],
         'current_maintainers' => [['id' => 2, 'username' => 'after']],
+        'metadata' => [
+            'source' => ['reference' => 'aaaaaaabbbbbbb'],
+            'dist' => ['reference' => 'aaaaaaabbbbbbb', 'shasum' => 'ccccccc'],
+        ],
         'user' => ['id' => 1, 'username' => 'maintainer'],
         'actor' => ['id' => 2, 'username' => 'moderator'],
     ];
@@ -96,7 +101,43 @@ class TransparencyLogDisplayFactoryTest extends TestCase
         self::assertSame('maintainer', $display->maintainerUsername);
     }
 
-    private function entry(TransparencyLogEventType $type, string $packageName = 'acme/logged'): PackageTransparencyLog
+    /**
+     * The published part of the version metadata blob is the reason a version_created leaf can be
+     * checked against anything, so it has to reach the row rather than just sit in the column.
+     */
+    public function testVersionCreatedExposesThePublishedReferences(): void
+    {
+        $display = new TransparencyLogDisplayFactory()->buildSingle($this->entry(TransparencyLogEventType::VersionCreated));
+
+        self::assertInstanceOf(VersionCreatedDisplay::class, $display);
+        self::assertSame('1.2.3', $display->version);
+        self::assertSame('aaaaaaabbbbbbb', $display->sourceReference);
+        self::assertSame('aaaaaaabbbbbbb', $display->distReference);
+        self::assertSame('ccccccc', $display->distShasum);
+    }
+
+    /**
+     * Entries projected before the references were published carry no metadata at all, and a blob
+     * can also be reduced to nothing (a driver reporting no usable reference), so the row has to
+     * render without one.
+     */
+    public function testVersionCreatedWithoutMetadataStillBuilds(): void
+    {
+        $attributes = self::ATTRIBUTES;
+        unset($attributes['metadata']);
+
+        $display = new TransparencyLogDisplayFactory()->buildSingle($this->entry(TransparencyLogEventType::VersionCreated, attributes: $attributes));
+
+        self::assertInstanceOf(VersionCreatedDisplay::class, $display);
+        self::assertNull($display->sourceReference);
+        self::assertNull($display->distReference);
+        self::assertNull($display->distShasum);
+    }
+
+    /**
+     * @param array<string, mixed>|null $attributes
+     */
+    private function entry(TransparencyLogEventType $type, string $packageName = 'acme/logged', ?array $attributes = null): PackageTransparencyLog
     {
         $package = new Package();
         $package->setName('acme/logged');
@@ -107,7 +148,7 @@ class TransparencyLogDisplayFactoryTest extends TestCase
             AuditRecord::packageCreated($package, null),
             $type,
             1,
-            self::ATTRIBUTES,
+            $attributes ?? self::ATTRIBUTES,
             1,
             'acme',
             $packageName,

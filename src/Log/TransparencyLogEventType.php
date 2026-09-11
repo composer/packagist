@@ -57,6 +57,12 @@ enum TransparencyLogEventType: string implements LogEventType
     /**
      * Maps an internal audit record type onto its public transparency-log type, or null when the
      * event is out of scope for the package transparency log.
+     *
+     * Deliberately exhaustive, with no default arm: this is the only gate into the log
+     * ({@see \App\Entity\PackageTransparencyLogQueueRepository::enqueue()}), so a default would let a
+     * new audit record type be left out of the public log by omission rather than by decision. Adding
+     * a case to {@see AuditLogEventType} therefore fails here until someone maps it or lists it below
+     * as out of scope.
      */
     public static function fromAuditLogEventType(AuditLogEventType $type): ?self
     {
@@ -83,7 +89,36 @@ enum TransparencyLogEventType: string implements LogEventType
             AuditLogEventType::EmailChanged => self::EmailChanged,
             AuditLogEventType::GitHubLinkedWithUser => self::GitHubLinkedWithUser,
             AuditLogEventType::GitHubDisconnectedFromUser => self::GitHubDisconnectedFromUser,
-            default => null,
+
+            // Out of scope, each for its own reason.
+            //
+            // User lifecycle says nothing about a package, and a reset *request* comes from an
+            // unauthenticated visitor, so publishing it would leak account existence (only the
+            // completed reset is projected). A rename is the one open case: it is the mitigation
+            // agreed for the log's frozen usernames, and projecting it is deferred, not rejected.
+            AuditLogEventType::UserCreated, AuditLogEventType::UserVerified, AuditLogEventType::UserDeleted,
+            AuditLogEventType::UserFrozen, AuditLogEventType::UserUnfrozen,
+            AuditLogEventType::PasswordResetRequested, AuditLogEventType::UsernameChanged,
+            // Moderation tooling: the filter list is not public, and its entries name packages we
+            // have not published anything about.
+            AuditLogEventType::FilterListEntryAdded, AuditLogEventType::FilterListEntryDeleted,
+            AuditLogEventType::FilterListEntryDisabled, AuditLogEventType::FilterListEntryEnabled,
+            AuditLogEventType::FilterListEntryEdited,
+            // Advisories have their own public feed and API, which is the record for them.
+            AuditLogEventType::SecurityAdvisoryCreated, AuditLogEventType::SecurityAdvisoryEdited,
+            AuditLogEventType::SecurityAdvisoryWithdrawn,
+            // Organization internals are not package events, and an org may not want its membership
+            // public; invitations additionally carry the invited email. Org-owned packages are
+            // deliberately out of scope for the fan-out for the same reason.
+            AuditLogEventType::OrganizationCreated, AuditLogEventType::OrganizationNameChanged,
+            AuditLogEventType::OrganizationSlugChanged, AuditLogEventType::OrganizationTeamCreated,
+            AuditLogEventType::OrganizationTeamRenamed, AuditLogEventType::OrganizationTeamDeleted,
+            AuditLogEventType::OrganizationTeamMemberAdded, AuditLogEventType::OrganizationTeamMemberRemoved,
+            AuditLogEventType::OrganizationMemberJoined, AuditLogEventType::OrganizationMemberRemoved,
+            AuditLogEventType::OrganizationMemberLeft,
+            AuditLogEventType::OrganizationInvitationSent, AuditLogEventType::OrganizationInvitationResent,
+            AuditLogEventType::OrganizationInvitationRevoked, AuditLogEventType::OrganizationInvitationAccepted,
+            AuditLogEventType::OrganizationInvitationDeclined, AuditLogEventType::OrganizationInvitationExpired => null,
         };
     }
 
