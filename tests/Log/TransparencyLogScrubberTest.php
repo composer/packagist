@@ -38,23 +38,45 @@ class TransparencyLogScrubberTest extends TestCase
     private const PRIVATE_KEYS_AT_ANY_DEPTH = ['email', 'email_from', 'email_to', 'internalReason', 'internalReasonText', 'internal_note'];
 
     /**
-     * Keys that must never survive scrubbing at the top level of the attributes.
+     * The only keys a scrubbed version_created `metadata` blob may contain, as dotted paths: the
+     * artifact identity {@see TransparencyLogScrubber} publishes. Anything else in the blob is
+     * free-form publisher content and must not reach the log.
      */
-    private const PRIVATE_KEYS_AT_TOP_LEVEL = ['metadata'];
+    private const PUBLISHABLE_METADATA_PATHS = [
+        'version_normalized',
+        'source.type', 'source.url', 'source.reference',
+        'dist.type', 'dist.url', 'dist.reference', 'dist.shasum',
+    ];
+
+    /**
+     * Top-level attributes deliberately kept out of the public log, per record type. Types absent
+     * here publish every attribute they carry.
+     *
+     * `version_created`'s metadata is reduced rather than withheld, so the key survives and the
+     * pinned public set above is what covers its contents.
+     *
+     * @var array<string, list<string>>
+     */
+    private const WITHHELD_ATTRIBUTES = [
+        'package_deleted' => ['internalReason'],
+        'version_soft_deleted' => ['internalReasonText'],
+        'email_changed' => ['email_from', 'email_to'],
+    ];
 
     private const PACKAGE_NAME = 'acme/widget';
     private const REPOSITORY = 'https://github.com/acme/widget';
     private const VERSION = '1.2.3';
+    private const SOURCE_REFERENCE = 'aaaaaaabbbbbbbcccccccdddddddeeeeeeefffffff';
 
     private const MAINTAINER = ['id' => 11, 'username' => 'maintainer'];
     private const ADMIN = ['id' => 22, 'username' => 'admin'];
     private const NEW_OWNER = ['id' => 33, 'username' => 'newowner'];
 
-    public function testRemovesEmailsInternalNotesAndMetadataButKeepsPublicData(): void
+    public function testRemovesEmailsAndInternalNotesButKeepsPublicData(): void
     {
         $scrubber = new TransparencyLogScrubber();
 
-        $scrubbed = $scrubber->scrub([
+        $scrubbed = $scrubber->scrub(AuditLogEventType::PackageDeleted, [
             'name' => 'acme/widget',
             'repository' => 'https://github.com/acme/widget',
             'reason' => 'public takedown notice',
@@ -66,7 +88,6 @@ class TransparencyLogScrubberTest extends TestCase
             'email_from' => 'old@example.com',
             'email_to' => 'new@example.com',
             'actor' => ['id' => 7, 'username' => 'bob'],
-            'metadata' => ['source' => ['reference' => 'abc123']],
             'nested' => ['internalReason' => 'deep secret', 'keep' => 'ok'],
         ]);
 
@@ -77,7 +98,6 @@ class TransparencyLogScrubberTest extends TestCase
         self::assertArrayNotHasKey('email', $scrubbed);
         self::assertArrayNotHasKey('email_from', $scrubbed);
         self::assertArrayNotHasKey('email_to', $scrubbed);
-        self::assertArrayNotHasKey('metadata', $scrubbed);
 
         // kept
         self::assertSame('acme/widget', $scrubbed['name']);
@@ -91,6 +111,71 @@ class TransparencyLogScrubberTest extends TestCase
     }
 
     /**
+     * The blob is reduced to the artifact identity: keeping the reference is what makes a
+     * version_created leaf verifiable, keeping the rest would put unbounded publisher content into
+     * bytes that can never be redacted.
+     */
+    public function testVersionMetadataIsReducedToTheArtifactIdentity(): void
+    {
+        $scrubbed = new TransparencyLogScrubber()->scrub(AuditLogEventType::VersionCreated, [
+            'name' => self::PACKAGE_NAME,
+            'version' => self::VERSION,
+            'metadata' => self::versionMetadata(),
+        ]);
+
+        self::assertSame([
+            'version_normalized' => '1.2.3.0',
+            'source' => ['type' => 'git', 'url' => self::REPOSITORY.'.git', 'reference' => self::SOURCE_REFERENCE],
+            'dist' => ['type' => 'zip', 'url' => 'https://api.github.com/repos/acme/widget/zipball/'.self::SOURCE_REFERENCE, 'reference' => self::SOURCE_REFERENCE],
+        ], $scrubbed['metadata']);
+    }
+
+    /**
+     * Nested structures cannot be smuggled through a published section, and a missing or empty value
+     * is left out rather than published as null, so the leaf bytes stay trivially canonical.
+     */
+    public function testOnlyNonEmptyStringsSurviveTheMetadataReduction(): void
+    {
+        $scrubbed = new TransparencyLogScrubber()->scrub(AuditLogEventType::VersionCreated, [
+            'metadata' => [
+                'version_normalized' => '',
+                'source' => ['type' => 'git', 'url' => null, 'reference' => ['nested' => self::PRIVATE_MARKER]],
+                'dist' => ['reference' => 'abc123', 'shasum' => 'def456'],
+            ],
+        ]);
+
+        self::assertSame([
+            'source' => ['type' => 'git'],
+            'dist' => ['reference' => 'abc123', 'shasum' => 'def456'],
+        ], $scrubbed['metadata']);
+    }
+
+    public function testMetadataIsDroppedWhenNothingPublishableIsLeft(): void
+    {
+        $scrubbed = new TransparencyLogScrubber()->scrub(AuditLogEventType::VersionCreated, [
+            'name' => self::PACKAGE_NAME,
+            'metadata' => ['description' => 'no references at all', 'source' => [], 'dist' => null],
+        ]);
+
+        self::assertArrayNotHasKey('metadata', $scrubbed);
+        self::assertSame(self::PACKAGE_NAME, $scrubbed['name']);
+    }
+
+    /**
+     * Only version_created carries a blob today. Should another record type grow one, it is dropped
+     * until someone decides what of it is publishable, rather than published by omission.
+     */
+    public function testMetadataOnAnyOtherRecordTypeIsDropped(): void
+    {
+        $scrubbed = new TransparencyLogScrubber()->scrub(AuditLogEventType::VersionDeleted, [
+            'name' => self::PACKAGE_NAME,
+            'metadata' => ['source' => ['reference' => 'abc123']],
+        ]);
+
+        self::assertArrayNotHasKey('metadata', $scrubbed);
+    }
+
+    /**
      * Scrubs a real audit record of every type we project and pins the exact result.
      *
      * @param array<string, mixed> $expectedScrubbedAttributes
@@ -101,7 +186,7 @@ class TransparencyLogScrubberTest extends TestCase
         self::assertSame($type, $record->type, 'the fixture must build the record type it claims to cover');
         self::assertNotNull(TransparencyLogEventType::fromAuditLogEventType($type), $type->value.' is not projected, so it does not belong in this data set');
 
-        $scrubbed = new TransparencyLogScrubber()->scrub($record->attributes);
+        $scrubbed = new TransparencyLogScrubber()->scrub($type, $record->attributes);
 
         self::assertSame(
             self::flatten($expectedScrubbedAttributes),
@@ -111,6 +196,17 @@ class TransparencyLogScrubberTest extends TestCase
 
         self::assertSame([], self::privateValuePaths($scrubbed), $type->value.': private data survived scrubbing');
         self::assertSame([], self::privateKeyPaths($scrubbed), $type->value.': a private key survived scrubbing');
+
+        // The other direction: an attribute the record carries but the log does not publish is only
+        // acceptable if it was pinned as withheld, so a new attribute cannot be quietly left out
+        // either.
+        $withheld = array_values(array_diff(array_keys($record->attributes), array_keys($scrubbed)));
+        sort($withheld);
+        self::assertSame(
+            self::WITHHELD_ATTRIBUTES[$type->value] ?? [],
+            $withheld,
+            $type->value.': an attribute is kept out of the public log without being pinned as withheld (or a pinned one is now published).',
+        );
     }
 
     /**
@@ -263,7 +359,17 @@ class TransparencyLogScrubberTest extends TestCase
         yield 'version_created' => [
             AuditLogEventType::VersionCreated,
             AuditRecord::versionCreated($version, self::versionMetadata(), null),
-            ['name' => self::PACKAGE_NAME, 'version' => self::VERSION, 'actor' => 'automation'],
+            [
+                'name' => self::PACKAGE_NAME,
+                'version' => self::VERSION,
+                'actor' => 'automation',
+                // the artifact identity survives, the rest of the publisher's composer.json does not
+                'metadata' => [
+                    'version_normalized' => '1.2.3.0',
+                    'source' => ['type' => 'git', 'url' => self::REPOSITORY.'.git', 'reference' => self::SOURCE_REFERENCE],
+                    'dist' => ['type' => 'zip', 'url' => 'https://api.github.com/repos/acme/widget/zipball/'.self::SOURCE_REFERENCE, 'reference' => self::SOURCE_REFERENCE],
+                ],
+            ],
         ];
 
         yield 'version_reference_change_blocked' => [
@@ -350,8 +456,9 @@ class TransparencyLogScrubberTest extends TestCase
     }
 
     /**
-     * A trimmed-down version metadata blob: it is dropped wholesale, and its author emails are the
-     * reason it must never be copied verbatim.
+     * A trimmed-down version metadata blob. Only the source/dist identity is published; the author
+     * emails and the free-form fields around them are the reason the blob must never be copied
+     * verbatim into an immutable log.
      *
      * @return array<string, mixed>
      */
@@ -360,9 +467,15 @@ class TransparencyLogScrubberTest extends TestCase
         return [
             'name' => self::PACKAGE_NAME,
             'version' => self::VERSION,
+            'version_normalized' => '1.2.3.0',
+            'description' => 'a widget',
             'authors' => [['name' => 'Jane Doe', 'email' => 'jane.'.self::PRIVATE_MARKER.'@example.org']],
-            'source' => ['type' => 'git', 'url' => self::REPOSITORY.'.git', 'reference' => 'aaaaaaa'],
-            'support' => ['email' => 'support.'.self::PRIVATE_MARKER.'@example.org'],
+            'source' => ['type' => 'git', 'url' => self::REPOSITORY.'.git', 'reference' => self::SOURCE_REFERENCE],
+            // GitHub reports no checksum for a zipball, so an empty shasum is the common case
+            'dist' => ['type' => 'zip', 'url' => 'https://api.github.com/repos/acme/widget/zipball/'.self::SOURCE_REFERENCE, 'reference' => self::SOURCE_REFERENCE, 'shasum' => ''],
+            'support' => ['email' => 'support.'.self::PRIVATE_MARKER.'@example.org', 'issues' => 'https://github.com/acme/widget/issues'],
+            'require' => ['php' => '^8.4'],
+            'extra' => ['branch-alias' => ['dev-main' => '1.x-dev'], 'private-note' => self::PRIVATE_MARKER],
         ];
     }
 
@@ -422,7 +535,8 @@ class TransparencyLogScrubberTest extends TestCase
     }
 
     /**
-     * Paths held under a key that must have been scrubbed, regardless of the value it carries.
+     * Paths held under a key that must have been scrubbed, regardless of the value it carries: a
+     * denylisted key at any depth, or anything inside the metadata blob that is not published.
      *
      * @param array<string, mixed> $attributes
      *
@@ -431,9 +545,9 @@ class TransparencyLogScrubberTest extends TestCase
     private static function privateKeyPaths(array $attributes): array
     {
         $found = [];
-        foreach (self::PRIVATE_KEYS_AT_TOP_LEVEL as $key) {
-            if (\array_key_exists($key, $attributes)) {
-                $found[] = $key;
+        foreach (array_keys(self::flatten($attributes['metadata'] ?? [])) as $path) {
+            if (!\in_array($path, self::PUBLISHABLE_METADATA_PATHS, true)) {
+                $found[] = 'metadata.'.$path;
             }
         }
 
