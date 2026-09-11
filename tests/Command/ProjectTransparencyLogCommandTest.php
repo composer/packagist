@@ -14,6 +14,7 @@ namespace App\Tests\Command;
 
 use App\Command\ProjectTransparencyLogCommand;
 use App\Entity\AuditRecord;
+use App\Entity\Version;
 use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -113,6 +114,51 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
 
         self::assertSame('public takedown notice', $attributes['reason']);
         self::assertArrayNotHasKey('internalReason', $attributes);
+    }
+
+    public function testProjectedVersionKeepsItsReferencesAndNothingElseFromTheMetadataBlob(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $package = self::createPackage('acme/versioned', 'https://github.com/acme/versioned');
+
+        $version = new Version();
+        $version->setPackage($package);
+        $version->setName($package->getName());
+        $version->setVersion('1.2.3');
+        $version->setNormalizedVersion('1.2.3.0');
+        $version->setDevelopment(false);
+        $version->setLicense([]);
+        $version->setAutoload([]);
+        $version->setDescription('a versioned widget');
+        $version->setAuthors([['name' => 'Jane Doe', 'email' => 'jane@example.org']]);
+        $version->setSource(['type' => 'git', 'url' => 'https://github.com/acme/versioned.git', 'reference' => 'source-ref']);
+        $version->setDist(['type' => 'zip', 'url' => 'https://example.org/dist.zip', 'reference' => 'dist-ref', 'shasum' => 'dist-shasum']);
+
+        $em->persist($package);
+        $em->persist($version);
+        $em->flush();
+
+        $this->runProjector('0');
+
+        /** @var string|false $attributesJson */
+        $attributesJson = $conn->fetchOne("SELECT attributes FROM package_transparency_log WHERE type = 'version_created'");
+        self::assertIsString($attributesJson);
+        $attributes = json_decode($attributesJson, true);
+
+        self::assertSame('1.2.3', $attributes['version']);
+        // what the version resolved to stays verifiable...
+        self::assertSame('source-ref', $attributes['metadata']['source']['reference']);
+        self::assertSame('dist-ref', $attributes['metadata']['dist']['reference']);
+        self::assertSame('dist-shasum', $attributes['metadata']['dist']['shasum']);
+        // ...the publisher's own composer.json content does not get published into an immutable log.
+        // Compared sorted: MySQL's JSON type normalises object key order, so the stored order is not
+        // the order the scrubber wrote (which is one more reason the hashing layer cannot take its
+        // canonical bytes from this column).
+        $publishedKeys = array_keys($attributes['metadata']);
+        sort($publishedKeys);
+        self::assertSame(['dist', 'source', 'version_normalized'], $publishedKeys);
     }
 
     public function testAccountEventKeepsItsReason(): void

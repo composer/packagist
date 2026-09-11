@@ -34,11 +34,38 @@ class TransparencyLogScrubber
     ];
 
     /**
-     * Top-level keys scrubbed because they are bulky and already public elsewhere (the full version
-     * metadata blob is available on the package version page).
+     * Record types whose `metadata` attribute is a version metadata blob
+     * ({@see \App\Entity\Version::toArray()}), and which are therefore reduced to the published
+     * subset below instead of having the blob dropped.
+     *
+     * Any other type's `metadata` is dropped, so a new record type that grows one is held out of the
+     * public log until someone decides what of it is publishable. A new type carrying a version blob
+     * belongs in this list; a new type carrying a different blob needs its own reduction rather than
+     * an entry here.
      */
-    private const SCRUB_AT_TOP_LEVEL = [
-        'metadata',
+    private const VERSION_METADATA_TYPES = [
+        AuditLogEventType::VersionCreated,
+    ];
+
+    /**
+     * Scalar keys published out of a version metadata blob.
+     */
+    private const PUBLISHED_METADATA_KEYS = [
+        'version_normalized',
+    ];
+
+    /**
+     * Sections of a version metadata blob, and the keys published out of each: what the version
+     * resolved to at publication time.
+     *
+     * Without the reference a leaf says 1.2.3 was published but nothing about what it contained, so
+     * a delete-and-recreate under the same version leaves no trace. It attests what the upstream host
+     * told us at crawl time, not bytes we verified: `dist.shasum` is whatever the VCS driver reported
+     * ({@see \App\Package\Updater}).
+     */
+    private const PUBLISHED_METADATA_SECTIONS = [
+        'source' => ['type', 'url', 'reference'],
+        'dist' => ['type', 'url', 'reference', 'shasum'],
     ];
 
     /**
@@ -46,13 +73,76 @@ class TransparencyLogScrubber
      *
      * @return array<string, mixed>
      */
-    public function scrub(array $attributes): array
+    public function scrub(AuditLogEventType $type, array $attributes): array
     {
-        foreach (self::SCRUB_AT_TOP_LEVEL as $key) {
-            unset($attributes[$key]);
-        }
+        $attributes = \in_array($type, self::VERSION_METADATA_TYPES, true)
+            ? $this->reduceVersionMetadata($attributes)
+            : $this->removeMetadata($attributes);
 
         return $this->scrubAtAnyDepth($attributes);
+    }
+
+    /**
+     * Reduces the `metadata` blob to {@see self::PUBLISHED_METADATA_KEYS} and
+     * {@see self::PUBLISHED_METADATA_SECTIONS}, dropping the key entirely when all keys get removed.
+     *
+     * An allow-list instead of a deny-list, because the metadata blob is from the publisher's
+     * composer.json: we do not control its shape.
+     *
+     * Only non-empty strings are kept, so nothing nested can slip through a published section.
+     *
+     * @param array<string, mixed> $attributes
+     *
+     * @return array<string, mixed>
+     */
+    private function reduceVersionMetadata(array $attributes): array
+    {
+        $metadata = $attributes['metadata'] ?? null;
+        if (!\is_array($metadata)) {
+            return $this->removeMetadata($attributes);
+        }
+
+        $published = [];
+        foreach (self::PUBLISHED_METADATA_KEYS as $key) {
+            $value = $metadata[$key] ?? null;
+            if (\is_string($value) && $value !== '') {
+                $published[$key] = $value;
+            }
+        }
+
+        foreach (self::PUBLISHED_METADATA_SECTIONS as $section => $keys) {
+            $sectionValues = [];
+            foreach ($keys as $key) {
+                $value = \is_array($metadata[$section] ?? null) ? ($metadata[$section][$key] ?? null) : null;
+                if (\is_string($value) && $value !== '') {
+                    $sectionValues[$key] = $value;
+                }
+            }
+
+            if ($sectionValues !== []) {
+                $published[$section] = $sectionValues;
+            }
+        }
+
+        if ($published === []) {
+            return $this->removeMetadata($attributes);
+        }
+
+        $attributes['metadata'] = $published;
+
+        return $attributes;
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     *
+     * @return array<string, mixed>
+     */
+    private function removeMetadata(array $attributes): array
+    {
+        unset($attributes['metadata']);
+
+        return $attributes;
     }
 
     /**

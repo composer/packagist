@@ -201,7 +201,7 @@ class TransparencyLogProjector
             return 0;
         }
 
-        $scrubbedAttributes = $this->scrubber->scrub($record->attributes);
+        $scrubbedAttributes = $this->scrubber->scrub($record->type, $record->attributes);
 
         return $this->insertTargets($record, $type, $targets, $scrubbedAttributes, $leafIndex);
     }

@@ -100,7 +100,17 @@ class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
                 $attributes['reason'] ?? null,
                 $this->buildActor($attributes['actor'] ?? null),
             ),
-            TransparencyLogEventType::VersionCreated, TransparencyLogEventType::VersionDeleted => new Event\VersionDisplay(
+            TransparencyLogEventType::VersionCreated => new Event\VersionCreatedDisplay(
+                $entry->type,
+                $entry->datetime,
+                $attributes['name'],
+                $attributes['version'],
+                $attributes['metadata']['source']['reference'] ?? null,
+                $attributes['metadata']['dist']['reference'] ?? null,
+                $this->buildActor($attributes['actor'] ?? null),
+                distShasum: $attributes['metadata']['dist']['shasum'] ?? null,
+            ),
+            TransparencyLogEventType::VersionDeleted => new Event\VersionDisplay(
                 $entry->type,
                 $entry->datetime,
                 $attributes['name'],
