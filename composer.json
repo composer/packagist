@@ -156,7 +156,7 @@
             "@auto-scripts"
         ],
         "test": "vendor/bin/phpunit",
-        "phpstan": "vendor/bin/phpstan analyse"
+        "phpstan": "vendor/bin/phpstan analyse -vv"
     },
     "extra": {
         "symfony": {
