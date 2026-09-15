@@ -274,6 +274,28 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
     }
 
+    /**
+     * The run that drains a seeded backfill passes --suppress-out-of-order-logging. It silences the
+     * diagnostic only ({@see \App\Tests\Service\TransparencyLogProjectorTest}), everything is still
+     * projected.
+     */
+    public function testBackfillRunStillProjectsWithTheDiagnosticSuppressed(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $package = self::createPackage('acme/suppressed', 'https://github.com/acme/suppressed');
+        $em->persist($package);
+        $em->flush();
+
+        $tester = new CommandTester(self::getService(ProjectTransparencyLogCommand::class));
+        $tester->execute(['--min-event-age-to-project' => '0', '--suppress-out-of-order-logging' => true]);
+        $tester->assertCommandIsSuccessful();
+
+        self::assertSame(1, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'));
+        self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+    }
+
     private function runProjector(?string $minAge = null): CommandTester
     {
         $command = self::getService(ProjectTransparencyLogCommand::class);

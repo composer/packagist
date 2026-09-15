@@ -265,6 +265,57 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
     }
 
     /**
+     * The run that drains a seeded backfill appends history behind the tip on purpose, so it would
+     * warn once per seeded record. That run passes --suppress-out-of-order-logging, and the record
+     * is still projected: only the diagnostic goes away.
+     */
+    public function testBackfillRunCanSuppressTheOutOfOrderDiagnostic(): void
+    {
+        $em = $this->getEM();
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+
+        $projector = $this->createProjectorLoggingTo($logger);
+
+        $user = self::createUser('suppressed', 'suppressed@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $package = self::createPackage('svc/suppressed', 'https://github.com/svc/suppressed', null, [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        // Built now, committed after the run below: exactly the shape a seeded record has.
+        $lateRecord = AuditRecord::maintainerAdded($package, $user, $user);
+
+        // A ULID's timestamp has millisecond resolution, so without a gap the two records can share one.
+        usleep(2000);
+
+        $newer = self::createPackage('svc/suppressed-newer', 'https://github.com/svc/suppressed-newer');
+        $em->persist($newer);
+        $em->flush();
+        $projector->project(0);
+
+        $em->getRepository(AuditRecord::class)->insert($lateRecord);
+
+        self::assertSame(1, $projector->project(0, suppressOutOfOrderLogging: true), 'the record is still projected');
+
+        $warnings = array_values(array_filter(
+            $logger->records,
+            static fn (array $record): bool => $record['level'] === LogLevel::WARNING,
+        ));
+
+        self::assertSame([], $warnings);
+    }
+
+    /**
      * A record that projects nothing takes no leaf, so it was not appended anywhere and the
      * diagnostic has to stay silent: the index it would have named goes to the next record.
      */
