@@ -16,8 +16,10 @@ use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\PackageRepository;
+use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
+use App\Log\TransparencyLogEventType;
 use App\Log\TransparencyLogScrubber;
 use App\Service\TransparencyLogProjector;
 use App\Tests\IntegrationTestCase;
@@ -81,6 +83,82 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         self::assertSame(['svc/one', 'svc/two'], $conn->fetchFirstColumn(
             "SELECT packageName FROM package_transparency_log WHERE type = 'two_fa_deactivated' ORDER BY packageName",
         ));
+    }
+
+    /**
+     * A record should never be projected twice, so if one target of a fan-out already has an entry,
+     * the whole record fails instead of skipping that target. It is rolled back, stays in the queue
+     * and is logged as an error. The rest of the run carries on, and the leaf indices the record
+     * would have used go to the next one.
+     */
+    public function testFanOutOntoAnAlreadyProjectedTargetFailsTheWholeRecord(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+        $logRepository = self::getService(PackageTransparencyLogRepository::class);
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+
+        $user = self::createUser('svcdupe', 'svcdupe@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $p1 = self::createPackage('svc/dupe-one', 'https://github.com/svc/dupe-one', null, [$user]);
+        $p2 = self::createPackage('svc/dupe-two', 'https://github.com/svc/dupe-two', null, [$user]);
+        $p3 = self::createPackage('svc/dupe-three', 'https://github.com/svc/dupe-three', null, [$user]);
+        $em->persist($p1);
+        $em->persist($p2);
+        $em->persist($p3);
+        $em->flush();
+
+        $record = AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x');
+        $em->getRepository(AuditRecord::class)->insert($record);
+
+        // The middle target is already published, as a re-queued record would find it.
+        $logRepository->insertProjected(PackageTransparencyLog::project(
+            $record,
+            TransparencyLogEventType::TwoFactorAuthenticationDeactivated,
+            $logRepository->getMaxLeafIndex() + 1,
+            [],
+            $p2->getId(),
+            $p2->getVendor(),
+            $p2->getName(),
+        ));
+
+        $created = $this->createProjectorLoggingTo($logger)->project(0);
+
+        // The first target of the fan-out was inserted before the second one failed, and went back
+        // with it: only the entry seeded above is left.
+        self::assertSame(['svc/dupe-two'], $conn->fetchFirstColumn(
+            "SELECT packageName FROM package_transparency_log WHERE type = 'two_fa_deactivated' ORDER BY packageName",
+        ));
+
+        // Still pending, so the next run retries it rather than losing the event.
+        self::assertSame(1, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+        self::assertSame(1, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM package_transparency_log_queue WHERE auditLogId = ?',
+            [$record->id->toBinary()],
+        ));
+
+        $errors = array_values(array_filter(
+            $logger->records,
+            static fn (array $logged): bool => $logged['level'] === LogLevel::ERROR,
+        ));
+        self::assertCount(1, $errors);
+        self::assertSame((string) $record->id, $errors[0]['context']['auditLogId']);
+
+        // The three package_created records of this run still projected, and the abandoned record
+        // consumed nothing, so the sequence has no hole where its entries would have been.
+        self::assertSame(3, $created);
+        $leafIndices = array_map(intval(...), $conn->fetchFirstColumn('SELECT leafIndex FROM package_transparency_log ORDER BY leafIndex'));
+        self::assertSame(range(0, \count($leafIndices) - 1), $leafIndices);
     }
 
     /**
