@@ -64,17 +64,34 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * Appends a projected entry, or throws. A source_package_uniq violation is treated like any
-     * other failure: the queue row is deleted in the same transaction as the entries, so a record
-     * that was already projected should never be projected a second time.
+     * Appends all entries of one source record in a single flush, or throws. A source_package_uniq
+     * violation is a failure like any other: the queue row is deleted in the same transaction as the
+     * entries, so an already projected record should never be projected again.
+     *
+     * One flush, not one per entry, because every flush recomputes the change set of all entities
+     * the UnitOfWork holds. An account event of a maintainer of N packages would otherwise cost
+     * O(N^2) inside one open transaction. Entries are immutable and never read back, so they are
+     * detached once written.
+     *
+     * @param list<PackageTransparencyLog> $entries
      */
-    public function insertProjected(PackageTransparencyLog $entry): void
+    public function appendProjectedEntries(array $entries): void
     {
+        if ($entries === []) {
+            return;
+        }
+
         $em = $this->doctrine->getManager();
 
         try {
-            $em->persist($entry);
+            foreach ($entries as $entry) {
+                $em->persist($entry);
+            }
             $em->flush();
+
+            foreach ($entries as $entry) {
+                $em->detach($entry);
+            }
         } catch (\Throwable $e) {
             $this->doctrine->resetManager();
 

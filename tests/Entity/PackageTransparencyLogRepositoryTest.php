@@ -23,7 +23,7 @@ use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
 /**
- * insertProjected() recovers from nothing. Every failure has to surface, because the projector
+ * appendProjectedEntries() recovers from nothing. Every failure has to surface, because the projector
  * dequeues a record whose projection reported no problem, so an error swallowed here is an event
  * that never gets published on a log that cannot be retracted.
  */
@@ -36,11 +36,11 @@ class PackageTransparencyLogRepositoryTest extends IntegrationTestCase
         $leafIndex = $repo->getMaxLeafIndex() + 1;
         $source = AuditRecord::packageCreated($package, null);
 
-        $repo->insertProjected($this->entry($source, $package, $leafIndex));
+        $repo->appendProjectedEntries([$this->entry($source, $package, $leafIndex)]);
 
         try {
             // A fresh leaf index, so only the (source, package) pair can be what collides.
-            $repo->insertProjected($this->entry($source, $package, $leafIndex + 1));
+            $repo->appendProjectedEntries([$this->entry($source, $package, $leafIndex + 1)]);
             self::fail('Expected the already-projected pair to be rejected');
         } catch (UniqueConstraintViolationException $e) {
             self::assertStringContainsString('source_package_uniq', $e->getMessage());
@@ -56,14 +56,14 @@ class PackageTransparencyLogRepositoryTest extends IntegrationTestCase
         $leafIndex = $repo->getMaxLeafIndex() + 1;
 
         $first = AuditRecord::packageCreated($package, null);
-        $repo->insertProjected($this->entry($first, $package, $leafIndex));
+        $repo->appendProjectedEntries([$this->entry($first, $package, $leafIndex)]);
 
         // A different source event, so the dedupe does not apply, reusing an occupied leaf index.
         $second = AuditRecord::packageCreated($package, null);
         self::assertNotSame($first->id->toRfc4122(), $second->id->toRfc4122());
 
         $this->expectException(UniqueConstraintViolationException::class);
-        $repo->insertProjected($this->entry($second, $package, $leafIndex));
+        $repo->appendProjectedEntries([$this->entry($second, $package, $leafIndex)]);
     }
 
     public function testOversizedValueIsNotSilentlyTruncated(): void
@@ -76,7 +76,7 @@ class PackageTransparencyLogRepositoryTest extends IntegrationTestCase
         $entry = $this->entry($source, $package, $repo->getMaxLeafIndex() + 1, str_repeat('a', 256));
 
         try {
-            $repo->insertProjected($entry);
+            $repo->appendProjectedEntries([$entry]);
             self::fail('Expected the oversized vendor to be rejected');
         } catch (DriverException $e) {
             self::assertNotInstanceOf(UniqueConstraintViolationException::class, $e);

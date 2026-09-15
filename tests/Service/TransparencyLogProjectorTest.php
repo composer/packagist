@@ -122,7 +122,7 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         $em->getRepository(AuditRecord::class)->insert($record);
 
         // The middle target is already published, as a re-queued record would find it.
-        $logRepository->insertProjected(PackageTransparencyLog::project(
+        $logRepository->appendProjectedEntries([PackageTransparencyLog::project(
             $record,
             TransparencyLogEventType::TwoFactorAuthenticationDeactivated,
             $logRepository->getMaxLeafIndex() + 1,
@@ -130,12 +130,12 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
             $p2->getId(),
             $p2->getVendor(),
             $p2->getName(),
-        ));
+        )]);
 
         $created = $this->createProjectorLoggingTo($logger)->project(0);
 
-        // The first target of the fan-out was inserted before the second one failed, and went back
-        // with it: only the entry seeded above is left.
+        // The fan-out is written in one flush, which fails on the seeded target, so none of the
+        // record's own entries survive: only the entry seeded above is left.
         self::assertSame(['svc/dupe-two'], $conn->fetchFirstColumn(
             "SELECT packageName FROM package_transparency_log WHERE type = 'two_fa_deactivated' ORDER BY packageName",
         ));
