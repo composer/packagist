@@ -77,13 +77,14 @@ class TransparencyLogProjector
     /**
      * Projects every queued audit record older than the safety-lag window.
      *
-     * @param int                                                   $minEventAgeSeconds safety-lag window in seconds (records younger than this stay queued for a later run)
-     * @param SignalHandler|null                                    $signal             checked between batches for graceful shutdown
-     * @param (callable(int $projected, int $leafIndex): void)|null $onProgress         called after each non-empty batch
+     * @param int                                                   $minEventAgeSeconds         safety-lag window in seconds (records younger than this stay queued for a later run)
+     * @param SignalHandler|null                                    $signal                     checked between batches for graceful shutdown
+     * @param (callable(int $projected, int $leafIndex): void)|null $onProgress                 called after each non-empty batch
+     * @param bool                                                  $suppressOutOfOrderLogging  silences {@see self::logIfAppendedOutOfOrder()} for a run where appending out of order is expected and would warn once per record
      *
      * @return int the number of transparency-log rows created
      */
-    public function project(int $minEventAgeSeconds, ?SignalHandler $signal = null, ?callable $onProgress = null): int
+    public function project(int $minEventAgeSeconds, ?SignalHandler $signal = null, ?callable $onProgress = null, bool $suppressOutOfOrderLogging = false): int
     {
         $cutoff = (new \DateTimeImmutable())->modify(\sprintf('-%d seconds', $minEventAgeSeconds));
         $em = $this->getEM();
@@ -131,7 +132,7 @@ class TransparencyLogProjector
                     continue;
                 }
 
-                if ($inserted > 0) {
+                if ($inserted > 0 && !$suppressOutOfOrderLogging) {
                     $this->logIfAppendedOutOfOrder($record, $highestProjected, $minEventAgeSeconds, $leafIndex + 1);
                 }
 
