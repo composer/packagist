@@ -81,7 +81,16 @@ bin/console packagist:seed-transparency-log-queue --dry-run
 bin/console packagist:seed-transparency-log-queue
 ```
 
-Then drain it with `bin/console packagist:project-transparency-log` before enabling the cron.
+Then drain it before enabling the cron:
+
+```bash
+bin/console packagist:project-transparency-log --suppress-out-of-order-logging
+```
+
+Seeded records are older than whatever is already in the log, so each one would otherwise warn about
+being appended out of order. On a first backfill the log is empty and the option changes nothing, but
+any drain run is where that warning is expected: a re-seed after making another audit type
+projectable, or resuming an interrupted drain, logs one per record without it.
 
 The seed command only ever enqueues package, version and ownership events, which carry their own
 package and so backfill exactly as they happened. Account events (2FA, password, email, GitHub link)

@@ -52,6 +52,12 @@ class ProjectTransparencyLogCommand extends Command
                 'Only project audit records older than this many seconds. The delay lets records committed out of order arrive before their neighbours are projected. Setting it too low will not skip any records when projecting. The records committed later to audit_log are still projected, just at the end of the transparency log.',
                 (string) self::DEFAULT_MIN_AGE_SECONDS,
             )
+            ->addOption(
+                'suppress-out-of-order-logging',
+                null,
+                InputOption::VALUE_NONE,
+                'Do not warn about records appended out of order. For a run where that is expected and would otherwise log one warning per record. Never use it on the cron run, where such a warning is the only sign that the safety lag is too short.',
+            )
         ;
     }
 
@@ -82,6 +88,7 @@ class ProjectTransparencyLogCommand extends Command
                 static function (int $projected, int $leafIndex) use ($output): void {
                     $output->writeln(\sprintf('%d projected (up to leaf index %d)', $projected, $leafIndex));
                 },
+                (bool) $input->getOption('suppress-out-of-order-logging'),
             );
 
             $output->writeln('Done');
