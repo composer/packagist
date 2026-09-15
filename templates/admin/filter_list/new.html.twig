@@ -1,15 +1,20 @@
 {% extends "admin/layout.html.twig" %}
 
-{% block title %}Add filter list entry - {{ parent() }}{% endblock %}
+{% block title %}Add filter list entries - {{ parent() }}{% endblock %}
 
 {% block admin_content %}
     <div class="row">
         <div class="col-12 package">
             <div class="package-header">
-                <h2 class="title">Add filter list entry</h2>
+                <h2 class="title">Add filter list entries</h2>
                 <p>
-                    Manually add a filter list entry. Manual entries are not managed by an
-                    external provider and will not be removed by the next provider sync.
+                    Manually add one or more filter list entries. Manual entries are not managed
+                    by an external provider and will not be removed by the next provider sync.
+                </p>
+                <p>
+                    Enter one package per line as <code>vendor/name &lt;constraint&gt;</code>. The
+                    list, reason, URL and internal note below are applied to every line. If any
+                    line is rejected, nothing is created.
                 </p>
             </div>
         </div>
@@ -22,8 +27,7 @@
 
             {{ form_row(form.list) }}
             {{ form_row(form.source) }}
-            {{ form_row(form.packageName) }}
-            {{ form_row(form.version) }}
+            {{ form_row(form.packages) }}
             {{ form_row(form.reason) }}
             {{ form_row(form.link) }}
             {{ form_row(form.internalNote) }}

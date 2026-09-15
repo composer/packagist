@@ -22,7 +22,9 @@ use App\Entity\User;
 use App\FilterList\FilterListEntryUpdateListener;
 use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
+use App\Form\Model\FilterListEntryBulkRequest;
 use App\Form\Model\FilterListEntryRequest;
+use App\Form\Type\FilterListEntryBulkType;
 use App\Form\Type\FilterListEntryType;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
@@ -106,20 +108,27 @@ class FilterListController extends Controller
     #[Route(path: '/admin/filter-lists/new', name: 'admin_filter_list_new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
     {
-        $data = new FilterListEntryRequest();
+        $data = new FilterListEntryBulkRequest();
 
-        $form = $this->createForm(FilterListEntryType::class, $data, ['manual' => true, 'creating' => true]);
+        $form = $this->createForm(FilterListEntryBulkType::class, $data);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entry = FilterListEntry::createManual($data);
+            // Validation is all-or-nothing, so by here every line is known good.
+            $lines = $data->parseLines();
 
             $em = $this->getEM();
-            $em->persist($entry);
+            foreach ($lines as $line) {
+                $em->persist(FilterListEntry::createManual($data->toEntryRequest($line)));
+            }
             $em->flush();
 
             $this->filterListEntryUpdateListener->flushChangesToPackages();
-            $this->addFlash('success', 'Filter list entry created.');
+            $this->addFlash('success', sprintf(
+                '%d filter list %s created.',
+                \count($lines),
+                \count($lines) === 1 ? 'entry' : 'entries',
+            ));
 
             return $this->redirectToRoute('admin_filter_lists');
         }

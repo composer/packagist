@@ -20,6 +20,7 @@ use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
 use App\Form\Model\FilterListEntryRequest;
 use App\Tests\IntegrationTestCase;
+use Doctrine\DBAL\ArrayParameterType;
 use PHPUnit\Framework\Attributes\TestWith;
 
 class FilterListControllerTest extends IntegrationTestCase
@@ -311,12 +312,11 @@ class FilterListControllerTest extends IntegrationTestCase
         static::assertResponseIsSuccessful();
 
         $form = $crawler->selectButton('Create')->form();
-        $form['filter_list_entry[packageName]'] = 'vendor/manual-new';
-        $form['filter_list_entry[list]'] = FilterLists::MALWARE->value;
-        $form['filter_list_entry[version]'] = '1.2.3';
-        $form['filter_list_entry[reason]'] = 'Reported internally';
-        $form['filter_list_entry[link]'] = 'https://example.com/report';
-        $form['filter_list_entry[internalNote]'] = 'Flagged by the abuse team';
+        $form['filter_list_entry_bulk[packages]'] = 'vendor/manual-new 1.2.3';
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
+        $form['filter_list_entry_bulk[reason]'] = 'Reported internally';
+        $form['filter_list_entry_bulk[link]'] = 'https://example.com/report';
+        $form['filter_list_entry_bulk[internalNote]'] = 'Flagged by the abuse team';
         $this->client->submit($form);
 
         static::assertResponseRedirects('/admin/filter-lists/');
@@ -357,9 +357,8 @@ class FilterListControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/admin/filter-lists/new');
 
         $form = $crawler->selectButton('Create')->form();
-        $form['filter_list_entry[packageName]'] = 'vendor/dup';
-        $form['filter_list_entry[list]'] = FilterLists::MALWARE->value;
-        $form['filter_list_entry[version]'] = '1.0.0';
+        $form['filter_list_entry_bulk[packages]'] = 'vendor/dup 1.0.0';
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
         $crawler = $this->client->submit($form);
 
         static::assertResponseIsSuccessful();
@@ -382,9 +381,8 @@ class FilterListControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/admin/filter-lists/new');
 
         $form = $crawler->selectButton('Create')->form();
-        $form['filter_list_entry[packageName]'] = 'vendor/multi-source';
-        $form['filter_list_entry[list]'] = FilterLists::MALWARE->value;
-        $form['filter_list_entry[version]'] = '1.0.0';
+        $form['filter_list_entry_bulk[packages]'] = 'vendor/multi-source 1.0.0';
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
         $this->client->submit($form);
 
         static::assertResponseRedirects('/admin/filter-lists/');
@@ -397,6 +395,212 @@ class FilterListControllerTest extends IntegrationTestCase
         $sources = array_map(static fn (FilterListEntry $entry) => $entry->getSource(), $entries);
         static::assertContains(FilterSources::AIKIDO, $sources);
         static::assertContains(FilterSources::PACKAGIST, $sources);
+    }
+
+    public function testNewCreatesEveryLineAndAppliesTheSharedFieldsToEachOfThem(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $names = ['vendor/bulk-one', 'vendor/bulk-two', 'vendor/bulk-three'];
+        $packages = array_map(static fn (string $name) => self::createPackage($name, 'https://example.com/'.$name), $names);
+        $this->store($admin, ...$packages);
+
+        $em = self::getEM();
+        $em->getConnection()->executeStatement('UPDATE package SET dumpedAtV2 = NOW() WHERE name IN (:names)', ['names' => $names], ['names' => ArrayParameterType::STRING]);
+        $em->clear();
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+        static::assertResponseIsSuccessful();
+
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry_bulk[packages]'] = "vendor/bulk-one 1.0.0\nvendor/bulk-two 2.0.0\nvendor/bulk-three ^3.1";
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
+        $form['filter_list_entry_bulk[reason]'] = 'Same abuse report';
+        $form['filter_list_entry_bulk[link]'] = 'https://example.com/report';
+        $form['filter_list_entry_bulk[internalNote]'] = 'Flagged by the abuse team';
+        $this->client->submit($form);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+
+        $expectedVersions = ['vendor/bulk-one' => '1.0.0', 'vendor/bulk-two' => '2.0.0', 'vendor/bulk-three' => '^3.1'];
+        foreach ($expectedVersions as $name => $version) {
+            $created = $em->getRepository(FilterListEntry::class)->findOneBy(['packageName' => $name]);
+            static::assertNotNull($created, $name.' must have been created from its line.');
+            static::assertTrue($created->isManual());
+            static::assertSame(FilterSources::PACKAGIST, $created->getSource());
+            static::assertSame($version, $created->getVersion());
+            static::assertNull($created->getOverwriteVersion());
+            static::assertSame(FilterLists::MALWARE, $created->getList());
+            static::assertSame('Same abuse report', $created->getReason(), 'The shared reason must be applied to every line.');
+            static::assertSame('https://example.com/report', $created->getLink(), 'The shared link must be applied to every line.');
+            static::assertSame('Flagged by the abuse team', $created->getInternalNote(), 'The shared internal note must be applied to every line.');
+        }
+
+        $audits = $em->getRepository(AuditRecord::class)->findBy(['type' => AuditRecordType::FilterListEntryAdded]);
+        static::assertCount(3, $audits, 'Each created entry must get its own added audit record.');
+        $auditedNames = array_map(static fn (AuditRecord $audit) => $audit->attributes['entry']['package_name'], $audits);
+        static::assertEqualsCanonicalizing($names, $auditedNames);
+        foreach ($audits as $audit) {
+            static::assertSame('filter-admin', $audit->attributes['actor']['username'], 'The admin who pasted the batch must be recorded on every entry.');
+        }
+
+        $stillDumped = $em->getConnection()->fetchOne('SELECT count(*) FROM package WHERE name IN (:names) AND dumpedAtV2 IS NOT NULL', ['names' => $names], ['names' => ArrayParameterType::STRING]);
+        static::assertSame(0, (int) $stillDumped, 'Every package touched by the batch must be marked for re-dump.');
+    }
+
+    public function testNewKeepsVersionConstraintsContainingSpacesIntact(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $this->store($admin);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+
+        // Only the first run of whitespace separates name from constraint.
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry_bulk[packages]'] = 'vendor/spaced >=1.0 <2.0';
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
+        $this->client->submit($form);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+        $created = $em->getRepository(FilterListEntry::class)->findOneBy(['packageName' => 'vendor/spaced']);
+        static::assertNotNull($created);
+        static::assertSame('>=1.0 <2.0', $created->getVersion(), 'A multi-token constraint must be stored verbatim.');
+    }
+
+    public function testNewIgnoresBlankAndWhitespaceOnlyLines(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $this->store($admin);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry_bulk[packages]'] = "\nvendor/blank-one 1.0.0\n   \n\n  vendor/blank-two 2.0.0  \n\n";
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
+        $this->client->submit($form);
+
+        static::assertResponseRedirects('/admin/filter-lists/');
+
+        $em = self::getEM();
+        $em->clear();
+        $entries = $em->getRepository(FilterListEntry::class)->findAll();
+        static::assertCount(2, $entries, 'Blank and whitespace-only lines must not produce entries or errors.');
+    }
+
+    public function testNewRejectsTheWholeBatchWhenOneLineHasAnInvalidConstraint(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $this->store($admin);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+
+        $packages = "vendor/fine 1.0.0\nvendor/broken not-a-valid-constraint!@#";
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry_bulk[packages]'] = $packages;
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
+        $crawler = $this->client->submit($form);
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('Line 2 (vendor/broken)', $crawler->html(), 'The failing line must be identified by its number.');
+        static::assertStringContainsString('Invalid version constraint', $crawler->html());
+        static::assertSame($packages, $crawler->selectButton('Create')->form()['filter_list_entry_bulk[packages]']->getValue(), 'The submitted lines must be preserved so they can be fixed.');
+
+        $em = self::getEM();
+        static::assertCount(0, $em->getRepository(FilterListEntry::class)->findAll(), 'A single bad line must prevent the whole batch, including the valid lines.');
+    }
+
+    public function testNewRejectsTheWholeBatchWhenOneLineHasAnInvalidPackageName(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $this->store($admin);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry_bulk[packages]'] = "vendor/fine 1.0.0\nnovendorname 1.0.0";
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
+        $crawler = $this->client->submit($form);
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('Line 2 (novendorname)', $crawler->html());
+        static::assertStringContainsString('canonical', $crawler->html());
+
+        $em = self::getEM();
+        static::assertCount(0, $em->getRepository(FilterListEntry::class)->findAll());
+    }
+
+    public function testNewRejectsALineWithoutAVersionConstraint(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $this->store($admin);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+
+        // The blank second line still counts, so the error must point at line 3.
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry_bulk[packages]'] = "vendor/fine 1.0.0\n\nvendor/needs-version";
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
+        $crawler = $this->client->submit($form);
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('Line 3: a version constraint is required', $crawler->html(), 'Line numbers must match the textarea, blank lines included.');
+
+        $em = self::getEM();
+        static::assertCount(0, $em->getRepository(FilterListEntry::class)->findAll());
+    }
+
+    public function testNewRejectsTwoIdenticalLinesInTheSameBatch(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $this->store($admin);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+
+        // Nothing is in the database yet, so only the in-batch check can catch this.
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry_bulk[packages]'] = "vendor/twice 1.0.0\nvendor/other 1.0.0\nvendor/twice 1.0.0";
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
+        $crawler = $this->client->submit($form);
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('Line 3: duplicates line 1', $crawler->html());
+
+        $em = self::getEM();
+        static::assertCount(0, $em->getRepository(FilterListEntry::class)->findAll(), 'A duplicate within the batch must not reach the unique index.');
+    }
+
+    public function testNewRejectsTheWholeBatchWhenOneLineDuplicatesAnExistingEntry(): void
+    {
+        $admin = self::createUser('filter-admin', 'admin@example.com', roles: ['ROLE_FILTER_LIST_ADMIN']);
+        $existing = $this->createManualEntry(FilterLists::MALWARE, 'vendor/already-listed', '1.0.0', 'reason', null);
+        $this->store($admin, $existing);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/filter-lists/new');
+
+        $form = $crawler->selectButton('Create')->form();
+        $form['filter_list_entry_bulk[packages]'] = "vendor/brand-new 1.0.0\nvendor/already-listed 1.0.0";
+        $form['filter_list_entry_bulk[list]'] = FilterLists::MALWARE->value;
+        $crawler = $this->client->submit($form);
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('already exists', $crawler->html());
+
+        $em = self::getEM();
+        static::assertNull($em->getRepository(FilterListEntry::class)->findOneBy(['packageName' => 'vendor/brand-new']), 'The valid line must not be created when another line collides with an existing entry.');
+        static::assertCount(1, $em->getRepository(FilterListEntry::class)->findAll());
     }
 
     public function testEditManualEntryUpdatesAllPropertiesInPlace(): void
