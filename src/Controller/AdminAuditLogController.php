@@ -71,10 +71,6 @@ class AdminAuditLogController extends Controller
         $categoryOrder = ['ownership', 'package', 'version', 'user', 'filterlist', 'advisory', 'organization'];
         $groupedTypes = [];
         foreach (AuditLogEventType::cases() as $type) {
-            // Don't display 2FA events in the type filter initially
-            if ($type === AuditLogEventType::TwoFactorAuthenticationActivated || $type === AuditLogEventType::TwoFactorAuthenticationDeactivated) {
-                continue;
-            }
             $groupedTypes[$type->category()][] = $type;
         }
 
