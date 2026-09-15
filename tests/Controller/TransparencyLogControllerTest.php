@@ -134,7 +134,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         // The hidden type is dropped from the filter, so this falls back to the unfiltered list, which
         // itself excludes it. The rows are still projected, see TransparencyLogProjectorTest.
         $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
-        static::assertNotContains('Maintainer disabled two-factor authentication', $types);
+        static::assertNotContains('Two-factor authentication disabled', $types);
         static::assertContains('Package created', $types);
     }
 

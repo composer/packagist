@@ -237,13 +237,13 @@ log:
         version_deleted: Version deleted
         version_soft_deleted: Version soft-deleted
         version_recovered: Version recovered
-        two_fa_activated: Maintainer enabled two-factor authentication
-        two_fa_deactivated: Maintainer disabled two-factor authentication
-        password_reset: Maintainer password reset
-        password_changed: Maintainer password changed
-        email_changed: Maintainer email address changed
-        github_linked_with_user: Maintainer linked a GitHub account
-        github_disconnected_from_user: Maintainer disconnected their GitHub account
+        two_fa_activated: Two-factor authentication enabled
+        two_fa_deactivated: Two-factor authentication disabled
+        password_reset: Password reset
+        password_changed: Password changed
+        email_changed: Email address changed
+        github_linked_with_user: GitHub account linked
+        github_disconnected_from_user: GitHub account disconnected
         password_reset_requested: Password reset requested
         user_created: User created
         user_verified: User verified
