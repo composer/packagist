@@ -23,37 +23,42 @@ use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
 /**
- * insertProjected() ignores exactly one error, the (sourceAuditLogId, packageId) dedupe. Everything
- * else must surface, because the projector reads a 0 return as "already projected" and would
- * otherwise drop the event or commit a corrupt leaf.
+ * insertProjected() recovers from nothing. Every failure has to surface, because the projector
+ * dequeues a record whose projection reported no problem, so an error swallowed here is an event
+ * that never gets published on a log that cannot be retracted.
  */
 class PackageTransparencyLogRepositoryTest extends IntegrationTestCase
 {
-    public function testAlreadyProjectedSourceAndPackageReturnsZero(): void
+    public function testAlreadyProjectedSourceAndPackageIsRejected(): void
     {
         $package = $this->storePackage('ptl/dedupe');
         $repo = self::getService(PackageTransparencyLogRepository::class);
         $leafIndex = $repo->getMaxLeafIndex() + 1;
         $source = AuditRecord::packageCreated($package, null);
 
-        self::assertSame(1, $repo->insertProjected($this->entry($source, $package, $leafIndex)));
+        $repo->insertProjected($this->entry($source, $package, $leafIndex));
 
-        // A fresh leaf index, so only the (source, package) pair can be what collides.
-        self::assertSame(0, $repo->insertProjected($this->entry($source, $package, $leafIndex + 1)));
+        try {
+            // A fresh leaf index, so only the (source, package) pair can be what collides.
+            $repo->insertProjected($this->entry($source, $package, $leafIndex + 1));
+            self::fail('Expected the already-projected pair to be rejected');
+        } catch (UniqueConstraintViolationException $e) {
+            self::assertStringContainsString('source_package_uniq', $e->getMessage());
+        }
+
         self::assertSame(1, $this->countRowsFor($source));
     }
 
-    public function testLeafIndexCollisionIsNotSwallowed(): void
+    public function testLeafIndexCollisionIsRejected(): void
     {
         $package = $this->storePackage('ptl/leafcollision');
         $repo = self::getService(PackageTransparencyLogRepository::class);
         $leafIndex = $repo->getMaxLeafIndex() + 1;
 
         $first = AuditRecord::packageCreated($package, null);
-        self::assertSame(1, $repo->insertProjected($this->entry($first, $package, $leafIndex)));
+        $repo->insertProjected($this->entry($first, $package, $leafIndex));
 
         // A different source event, so the dedupe does not apply, reusing an occupied leaf index.
-        // INSERT IGNORE used to report this as "already projected" and silently drop the event.
         $second = AuditRecord::packageCreated($package, null);
         self::assertNotSame($first->id->toRfc4122(), $second->id->toRfc4122());
 
@@ -67,8 +72,7 @@ class PackageTransparencyLogRepositoryTest extends IntegrationTestCase
         $repo = self::getService(PackageTransparencyLogRepository::class);
         $source = AuditRecord::packageCreated($package, null);
 
-        // vendor is VARCHAR(255); INSERT IGNORE used to store this truncated *and report 1 affected
-        // row*, consuming a leaf index for a permanently corrupt entry.
+        // vendor is VARCHAR(255), and a truncated value would be a permanently immutable entry.
         $entry = $this->entry($source, $package, $repo->getMaxLeafIndex() + 1, str_repeat('a', 256));
 
         try {

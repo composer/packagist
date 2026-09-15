@@ -14,7 +14,6 @@ namespace App\Entity;
 
 use App\Log\TransparencyLogEventType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Ulid;
@@ -24,9 +23,9 @@ use Symfony\Component\Uid\Ulid;
  */
 class PackageTransparencyLogRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(private ManagerRegistry $doctrine)
     {
-        parent::__construct($registry, PackageTransparencyLog::class);
+        parent::__construct($doctrine, PackageTransparencyLog::class);
     }
 
     /**
@@ -65,37 +64,19 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * Idempotently appends a projected entry. Returns 1 when the row was appended, or 0 when this
-     * (sourceAuditLogId, packageId) pair was already projected, in which case the caller must not
-     * consume the candidate leaf index.
+     * Appends a projected entry, or throws. A source_package_uniq violation is treated like any
+     * other failure: the queue row is deleted in the same transaction as the entries, so a record
+     * that was already projected should never be projected a second time.
      */
-    public function insertProjected(PackageTransparencyLog $entry): int
+    public function insertProjected(PackageTransparencyLog $entry): void
     {
+        $em = $this->doctrine->getManager();
+
         try {
-            return (int) $this->getEntityManager()->getConnection()->executeStatement(
-                'INSERT INTO package_transparency_log
-                    (id, sourceAuditLogId, leafIndex, type, attributes, datetime, actorId, vendor, packageId, packageName, userId, organizationId, leafHash)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [
-                    $entry->id->toBinary(),
-                    $entry->sourceAuditLogId->toBinary(),
-                    $entry->leafIndex,
-                    $entry->type->value,
-                    json_encode($entry->attributes, \JSON_THROW_ON_ERROR),
-                    $entry->datetime->format('Y-m-d H:i:s'),
-                    $entry->actorId,
-                    $entry->vendor,
-                    $entry->packageId,
-                    $entry->packageName,
-                    $entry->userId,
-                    $entry->organizationId?->toBinary(),
-                    null,
-                ],
-            );
-        } catch (UniqueConstraintViolationException $e) {
-            if (str_contains($e->getMessage(), 'source_package_uniq')) {
-                return 0;
-            }
+            $em->persist($entry);
+            $em->flush();
+        } catch (\Throwable $e) {
+            $this->doctrine->resetManager();
 
             throw $e;
         }

@@ -27,9 +27,10 @@ use Symfony\Component\Uid\Ulid;
 
 /**
  * Projects package-relevant audit_log rows into the public package_transparency_log, assigning a
- * gapless append-only leaf index and scrubbing PII at write time. The projection is idempotent:
- * unique (sourceAuditLogId, packageId), whose violation is the one error
- * {@see PackageTransparencyLogRepository::insertProjected()} reports as an already-projected 0.
+ * gapless append-only leaf index and scrubbing PII at write time. Each source event produces at most
+ * one entry per package, enforced by the unique (sourceAuditLogId, packageId). A second attempt to
+ * project the same record fails and leaves it in the queue
+ * ({@see PackageTransparencyLogRepository::insertProjected()}).
  *
  * audit_log.id is a ULID minted when the {@see AuditRecord} is *constructed*, not when its
  * transaction commits, so a long-running transaction can commit a row whose id is lower than rows
@@ -245,17 +246,14 @@ class TransparencyLogProjector
     }
 
     /**
-     * Inserts one entry per target, assigning sequential leaf indices. Only a real insert consumes a
-     * leaf index, so a rolled-back record advances nothing and frees its candidate indices for the
-     * next one, which is what keeps the sequence gapless.
-     *
-     * The duplicate-key error insertProjected() swallows does not poison the enclosing transaction:
-     * InnoDB rolls back only the offending statement, so the remaining targets still commit.
+     * Inserts one entry per target, assigning sequential leaf indices. Either every target is
+     * inserted or none is, because any failure here is rolled back by the caller. The leaf indices
+     * the record would have used are then free for the next one, so the sequence stays gapless.
      *
      * @param list<array{id: int, vendor: string|null, name: string}> $targets
      * @param array<string, mixed>                                    $scrubbedAttributes
      *
-     * @return int rows actually inserted
+     * @return int rows inserted
      */
     private function insertTargets(AuditRecord $record, TransparencyLogEventType $type, array $targets, array $scrubbedAttributes, int $leafIndex): int
     {
@@ -271,9 +269,8 @@ class TransparencyLogProjector
                 $target['name'],
             );
 
-            if ($this->transparencyLogRepository->insertProjected($entry) > 0) {
-                $inserted++;
-            }
+            $this->transparencyLogRepository->insertProjected($entry);
+            $inserted++;
         }
 
         return $inserted;
