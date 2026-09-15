@@ -30,7 +30,7 @@ use Symfony\Component\Uid\Ulid;
  * gapless append-only leaf index and scrubbing PII at write time. Each source event produces at most
  * one entry per package, enforced by the unique (sourceAuditLogId, packageId). A second attempt to
  * project the same record fails and leaves it in the queue
- * ({@see PackageTransparencyLogRepository::insertProjected()}).
+ * ({@see PackageTransparencyLogRepository::appendProjectedEntries()}).
  *
  * audit_log.id is a ULID minted when the {@see AuditRecord} is *constructed*, not when its
  * transaction commits, so a long-running transaction can commit a row whose id is lower than rows
@@ -250,6 +250,10 @@ class TransparencyLogProjector
      * inserted or none is, because any failure here is rolled back by the caller. The leaf indices
      * the record would have used are then free for the next one, so the sequence stays gapless.
      *
+     * A record's whole fan-out is written in one flush: an account event of a maintainer of many
+     * packages would otherwise flush once per package inside the caller's open transaction
+     * ({@see PackageTransparencyLogRepository::appendProjectedEntries()}).
+     *
      * @param list<array{id: int, vendor: string|null, name: string}> $targets
      * @param array<string, mixed>                                    $scrubbedAttributes
      *
@@ -257,23 +261,22 @@ class TransparencyLogProjector
      */
     private function insertTargets(AuditRecord $record, TransparencyLogEventType $type, array $targets, array $scrubbedAttributes, int $leafIndex): int
     {
-        $inserted = 0;
-        foreach ($targets as $target) {
-            $entry = PackageTransparencyLog::project(
+        $entries = [];
+        foreach ($targets as $offset => $target) {
+            $entries[] = PackageTransparencyLog::project(
                 $record,
                 $type,
-                $leafIndex + $inserted + 1,
+                $leafIndex + $offset + 1,
                 $scrubbedAttributes,
                 $target['id'],
                 $target['vendor'],
                 $target['name'],
             );
-
-            $this->transparencyLogRepository->insertProjected($entry);
-            $inserted++;
         }
 
-        return $inserted;
+        $this->transparencyLogRepository->appendProjectedEntries($entries);
+
+        return \count($entries);
     }
 
     /**
