@@ -1,7 +1,9 @@
 {% import 'log/macros.html.twig' as log %}
 
 <strong>{{ log.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
-{% if display.reasonTranslationKey %}Reason: {{ display.reasonTranslationKey|trans }}{% if display.reasonText %} ({{ display.reasonText }}){% endif %}<br>{% endif %}
+{# Fall back to the free text when the stored reason is not a known VersionDeletionReason and has no label. #}
+{% if display.reasonTranslationKey %}Reason: {{ display.reasonTranslationKey|trans }}{% if display.reasonText %} ({{ display.reasonText }}){% endif %}<br>
+{% elseif display.reasonText %}Reason: {{ display.reasonText }}<br>{% endif %}
 {## transparency log never has an internal reason ##}
 {% if display.internalReasonText %}Internal reason: {{ display.internalReasonText }}<br>{% endif %}
 By: {{ display.actor.username }}
