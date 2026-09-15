@@ -17,7 +17,7 @@ use App\Log\Display\ActorDisplay;
 use App\Log\TransparencyLogEventType;
 
 /**
- * Version events whose only detail is the version string: created / deleted.
+ * Version events whose only detail is the version string.
  */
 readonly class VersionDisplay extends AbstractLogDisplay
 {
