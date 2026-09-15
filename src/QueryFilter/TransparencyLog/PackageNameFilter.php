@@ -12,12 +12,12 @@
 
 namespace App\QueryFilter\TransparencyLog;
 
-use App\Entity\Package;
 use Doctrine\ORM\QueryBuilder;
 
 /**
- * Restricts to entries of one package. packageId is a plain column rather than an association, so the
- * name is resolved through a sub-query; an unknown name simply yields no rows.
+ * Restricts to entries of one package, matched on the name in every entry rather than
+ * on the live package table: an entry must stay readable after its package is gone, and the entry
+ * announcing the deletion is the one that matters most. An unknown name simply yields no rows.
  */
 class PackageNameFilter extends AbstractTextFilter
 {
@@ -29,7 +29,7 @@ class PackageNameFilter extends AbstractTextFilter
     protected function applyFilter(QueryBuilder $qb, string $value): QueryBuilder
     {
         return $qb
-            ->andWhere(\sprintf('t.packageId IN (SELECT p.id FROM %s p WHERE p.name = :package)', Package::class))
+            ->andWhere('t.packageName = :package')
             ->setParameter('package', $value);
     }
 }
