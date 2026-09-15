@@ -1,6 +1,6 @@
-{% import 'log/macros.html.twig' as auditLog %}
+{% import 'log/macros.html.twig' as log %}
 
-<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+<strong>{{ log.packageLink(display.packageName) }}</strong><br>
 Repository: {{ display.repository }}<br>
 Reason:
 {% if display.reason == 'spam' -%}

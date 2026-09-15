@@ -1,5 +1,5 @@
-{% import 'log/macros.html.twig' as auditLog %}
+{% import 'log/macros.html.twig' as log %}
 
-<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+<strong>{{ log.packageLink(display.packageName) }}</strong><br>
 Maintainer: {{ display.maintainer.username }}<br>
 Added by: {{ display.actor.username }}

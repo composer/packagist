@@ -1,5 +1,5 @@
-{% import 'log/macros.html.twig' as auditLog %}
+{% import 'log/macros.html.twig' as log %}
 
-<strong>{{ auditLog.organizationLink(display.organization) }}</strong>
+<strong>{{ log.organizationLink(display.organization) }}</strong>
 <strong>{{ display.displayNameFrom }}</strong> → <strong>{{ display.displayNameTo }}</strong><br>
-Changed by: {{ auditLog.userLink(display.actor.username) }}
+Changed by: {{ log.userLink(display.actor.username) }}

@@ -1,4 +1,4 @@
-{% import 'log/macros.html.twig' as auditLog %}
+{% import 'log/macros.html.twig' as log %}
 
-Invitation to <strong>{{ display.email }}</strong> declined for <strong>{{ auditLog.organizationLink(display.organization) }}</strong><br>
-Declined by: {{ auditLog.userLink(display.actor.username) }}
+Invitation to <strong>{{ display.email }}</strong> declined for <strong>{{ log.organizationLink(display.organization) }}</strong><br>
+Declined by: {{ log.userLink(display.actor.username) }}

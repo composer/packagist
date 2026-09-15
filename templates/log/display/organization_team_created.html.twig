@@ -1,4 +1,4 @@
-{% import 'log/macros.html.twig' as auditLog %}
+{% import 'log/macros.html.twig' as log %}
 
-Team <strong>{{ display.teamName }}</strong> created in <strong>{{ auditLog.organizationLink(display.organization) }}</strong><br>
-Created by: {{ auditLog.userLink(display.actor.username) }}
+Team <strong>{{ display.teamName }}</strong> created in <strong>{{ log.organizationLink(display.organization) }}</strong><br>
+Created by: {{ log.userLink(display.actor.username) }}

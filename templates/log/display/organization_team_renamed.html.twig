@@ -1,5 +1,5 @@
-{% import 'log/macros.html.twig' as auditLog %}
+{% import 'log/macros.html.twig' as log %}
 
-Team renamed in <strong>{{ auditLog.organizationLink(display.organization) }}</strong><br>
+Team renamed in <strong>{{ log.organizationLink(display.organization) }}</strong><br>
 <strong>{{ display.teamNameFrom }}</strong> → <strong>{{ display.teamNameTo }}</strong><br>
-Renamed by: {{ auditLog.userLink(display.actor.username) }}
+Renamed by: {{ log.userLink(display.actor.username) }}

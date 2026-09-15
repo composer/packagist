@@ -1,6 +1,6 @@
-{% import 'log/macros.html.twig' as auditLog %}
+{% import 'log/macros.html.twig' as log %}
 
-<strong>{{ auditLog.packageLink(display.packageName) }}</strong><br>
+<strong>{{ log.packageLink(display.packageName) }}</strong><br>
 Repository: {{ display.repository }}<br>
 {%- if display.reason -%}
     Reason:
@@ -17,6 +17,6 @@ Repository: {{ display.repository }}<br>
     {% endif -%}<br>
 {%- endif -%}
 {%- if display.replacementPackage -%}
-    Replacement: {{ auditLog.packageLink(display.replacementPackage) }}<br>
+    Replacement: {{ log.packageLink(display.replacementPackage) }}<br>
 {%- endif -%}
 Abandoned by: {{ display.actor.username }}
