@@ -165,6 +165,34 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertStringNotContainsString('ticket #42', $details);
     }
 
+    /**
+     * Deleting a package removes its row from the package table, so the entries are matched on the name
+     * denormalised onto each of them. The entry announcing the deletion is the one a reader comes for,
+     * and it would be unreachable if the filter resolved the name through the live package table.
+     */
+    public function testEntriesOfADeletedPackageStayFilterableByName(): void
+    {
+        $admin = self::createUser('purger', 'purger@example.org', roles: ['ROLE_ADMIN']);
+        $this->store($admin);
+        $package = self::createPackage('acme/gone-log', 'https://github.com/acme/gone-log');
+        $this->store($package);
+
+        $this->getEM()->getRepository(AuditRecord::class)->insert(
+            AuditRecord::packageDeleted($package, $admin, 'spam', null),
+        );
+        $this->getEM()->getConnection()->executeStatement('DELETE FROM package WHERE id = :id', ['id' => $package->getId()]);
+
+        $this->runProjector();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'acme/gone-log']));
+
+        static::assertResponseIsSuccessful();
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        // Newest first: the whole history of the gone package is still readable, deletion included.
+        static::assertSame(['Package deleted', 'Package created'], $types);
+    }
+
     private function givenProjectedLog(): void
     {
         $user = self::createUser('projected', 'projected@example.com');

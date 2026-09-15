@@ -32,7 +32,7 @@ use Symfony\Component\Uid\Ulid;
 // Every public read filters on one of these columns and then sorts by leafIndex, so the sort column
 // is part of each index: without it MySQL filesorts every matching row of a package that may hold one
 // entry per version ever published.
-#[ORM\Index(name: 'package_leaf_idx', columns: ['packageId', 'leafIndex'])]
+#[ORM\Index(name: 'package_name_leaf_idx', columns: ['packageName', 'leafIndex'])]
 #[ORM\Index(name: 'vendor_leaf_idx', columns: ['vendor', 'leafIndex'])]
 #[ORM\Index(name: 'user_leaf_idx', columns: ['userId', 'leafIndex'])]
 #[ORM\Index(name: 'type_leaf_idx', columns: ['type', 'leafIndex'])]
