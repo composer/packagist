@@ -1,0 +1,34 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}Two-factor reset request cancelled - {{ parent() }}{% endblock %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+    <h2 class="title">Request cancelled</h2>
+
+    <section class="row">
+        <div class="col-lg-8">
+            <div class="alert alert-success">
+                The two-factor reset request {{ request.publicId }} has been cancelled. Two-factor
+                authentication on your account has not been changed.
+            </div>
+
+            <p>
+                Somebody who is not you knew your password well enough to reach the two-factor prompt,
+                so please treat it as compromised:
+            </p>
+
+            <ol>
+                <li>Log in and <a href="{{ path('change_password') }}">change your password</a> now.</li>
+                <li>If you reused that password anywhere else, change it there too.</li>
+                <li>Check your <a href="{{ path('view_transparency_log') }}">account activity</a> for anything you do not recognise.</li>
+            </ol>
+
+            <p>
+                We have signed your account out everywhere as a precaution. If anything looks wrong,
+                email <a href="mailto:contact@packagist.org">contact@packagist.org</a>.
+            </p>
+        </div>
+    </section>
+{% endblock %}

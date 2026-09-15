@@ -27,6 +27,11 @@ class IdGenerator
         return self::generate('PKFE-');
     }
 
+    public static function generateSupportRequest(): string
+    {
+        return self::generate('PKSR-');
+    }
+
     private static function generate(string $prefix): string
     {
         $letterPool = self::ALNUM_SAFE_CI;

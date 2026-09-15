@@ -59,7 +59,8 @@ class VendorWritableValidator extends ConstraintValidator
                         .'you will then be able to add new packages in that namespace. '
                         .'The packages already in that vendor namespace can be found at '
                         .'<a href="'.$this->urlGenerator->generate('view_vendor', ['vendor' => $vendor]).'">'.$vendor.'</a>.'
-                        .'If those packages belong to you but were submitted by someone else, you can <a href="mailto:contact@packagist.org">contact us</a> to resolve the issue.')
+                        .'If those packages belong to you but were submitted by someone else, you can '
+                        .'<a href="'.$this->urlGenerator->generate('support_vendor_claim', ['vendor' => $vendor]).'">request the "'.$vendor.'" namespace</a>.')
                     ->atPath('repository')
                     ->addViolation()
                 ;

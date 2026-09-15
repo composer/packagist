@@ -1,0 +1,80 @@
+{% extends "admin/layout.html.twig" %}
+
+{% block title %}Support - {{ parent() }}{% endblock %}
+
+{% block admin_content %}
+    <div class="row">
+        <div class="col-12 package">
+            <div class="package-header">
+                <h2 class="title">
+                    Support
+                    <small>({{ paginator.nbResults }})</small>
+                </h2>
+                <p>
+                    Requests raised from the contact page and from the two-factor login prompt. You
+                    only see the kinds of request your roles let you act on.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" class="d-flex flex-wrap align-items-center gap-2" action="{{ path('admin_support_requests') }}">
+        <input type="search" name="q" class="form-control w-auto" placeholder="username, vendor, package" value="{{ filters.q }}" />
+
+        <select name="status" class="form-select w-auto">
+            <option value="">Any status</option>
+            {% for status in statuses %}
+                <option value="{{ status.value }}" {{ filters.status == status.value ? 'selected' : '' }}>{{ status.label }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="type" class="form-select w-auto">
+            <option value="">All types</option>
+            {% for type in visibleTypes %}
+                <option value="{{ type.value }}" {{ filters.type == type.value ? 'selected' : '' }}>{{ type.label }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-secondary">Filter</button>
+    </form>
+
+    <hr>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Reference</th>
+                <th>Type</th>
+                <th>Requester</th>
+                <th>Summary</th>
+                <th>Notes</th>
+                <th>Opened</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in paginator %}
+                <tr>
+                    <td><a href="{{ path('admin_support_request', {publicId: request.publicId}) }}"><code>{{ request.publicId }}</code></a></td>
+                    <td>{{ request.type.label }}</td>
+                    <td><a href="{{ path('user_profile', {name: request.user.username}) }}">{{ request.user.username }}</a></td>
+                    <td>{{ request.summary }}</td>
+                    <td>{{ request.messages|length }}</td>
+                    <td title="{{ request.createdAt|date('c') }}">{{ request.createdAt|date('Y-m-d H:i') }}</td>
+                    <td>
+                        <span class="badge {{ request.status.badgeClass }}">{{ request.status.label }}</span>
+                        {% if request.approvableAt and request.status.value == 'open' and request.approvableAt > date() %}
+                            <span class="badge bg-info">Held</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="7" class="text-center text-muted">Nothing to do right now.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if paginator.haveToPaginate %}
+        {{ pagerfanta(paginator, 'twitter_bootstrap5', {'proximity': 2}) }}
+    {% endif %}
+{% endblock %}

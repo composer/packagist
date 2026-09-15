@@ -1,0 +1,77 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}Contact - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <h2 class="title">Contact us</h2>
+
+    <p>
+        You can always just email us at <a href="mailto:contact@packagist.org">contact@packagist.org</a>
+        and we will get back to you.
+    </p>
+    <p>
+        For the four things we get asked about most, the forms below collect everything we need up
+        front, which usually saves a round trip or two.
+    </p>
+
+    <section class="row">
+        <section class="col-lg-6">
+            <h3 id="lost-2fa">Lost access to two-factor authentication</h3>
+            <p>
+                If you still have your backup code, enter it in place of the authentication code when
+                you log in and two-factor authentication will be switched off for your account.
+            </p>
+            <p>
+                Without the backup code, <a href="{{ path('login') }}">start logging in</a> as usual.
+                Once you reach the two-factor code prompt you will find a link to request a reset from
+                there. We ask for it at that point because your password has already been checked by
+                then, which tells us the request really comes from your account.
+            </p>
+            <p class="text-muted">
+                Lost your password as well? Neither password reset nor this form can help, since both
+                need something we can verify. Email us and we will work it out.
+            </p>
+        </section>
+
+        <section class="col-lg-6">
+            <h3 id="package-transfer">Have a package transferred to you</h3>
+            <p>
+                For packages whose maintainer is unreachable, or that belong to a project you have
+                taken over. Tell us exactly which packages you mean and how you are connected to them.
+            </p>
+            {% if app.user %}
+                <a class="btn btn-primary" href="{{ path('support_package_transfer') }}">Request a transfer</a>
+            {% else %}
+                <a class="btn btn-secondary" href="{{ path('login') }}">Sign in to request this</a>
+            {% endif %}
+        </section>
+
+        <div class="clearfix"></div>
+
+        <section class="col-lg-6">
+            <h3 id="vendor-claim">Claim a vendor name</h3>
+            <p>
+                If a vendor namespace already holds packages but should belong to you, ask for it here.
+                We will need the vendor name and something that shows the connection.
+            </p>
+            {% if app.user %}
+                <a class="btn btn-primary" href="{{ path('support_vendor_claim') }}">Claim a vendor name</a>
+            {% else %}
+                <a class="btn btn-secondary" href="{{ path('login') }}">Sign in to request this</a>
+            {% endif %}
+        </section>
+
+        <section class="col-lg-6">
+            <h3 id="delete-account">Delete your account</h3>
+            <p>
+                If your account maintains no packages you can delete it yourself from your profile
+                page. Otherwise we need to agree what happens to those packages first.
+            </p>
+            {% if app.user %}
+                <a class="btn btn-primary" href="{{ path('support_delete_account') }}">Request deletion</a>
+            {% else %}
+                <a class="btn btn-secondary" href="{{ path('login') }}">Sign in to request this</a>
+            {% endif %}
+        </section>
+    </section>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}{{ heading }} - {{ parent() }}{% endblock %}
+
+{% block content %}
+    <h2 class="title">{{ heading }}</h2>
+
+    <section class="row">
+        <div class="col-lg-8">
+            <p>{{ intro }}</p>
+
+            <p class="text-muted">
+                Requesting as <strong>{{ app.user.username }}</strong>. We will reply to the email
+                address on that account.
+            </p>
+
+            {% if packages is defined and packages|length %}
+                <p>Packages currently maintained by your account:</p>
+                <ul>
+                    {% for package in packages %}
+                        <li><a href="{{ path('view_package', {name: package.name}) }}">{{ package.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {{ form_start(form) }}
+                {{ form_errors(form) }}
+                {% for field in form %}
+                    <div class="mb-3">
+                        {{ form_label(field) }}
+                        {{ form_errors(field) }}
+                        {{ form_widget(field) }}
+                        {{ form_help(field) }}
+                    </div>
+                {% endfor %}
+                <input class="btn btn-success" type="submit" value="{{ submitLabel }}" />
+                <a class="btn btn-secondary" href="{{ path('support_contact') }}">Cancel</a>
+            {{ form_end(form) }}
+        </div>
+    </section>
+{% endblock %}

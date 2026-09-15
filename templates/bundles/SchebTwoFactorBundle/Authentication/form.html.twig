@@ -37,7 +37,11 @@
                 {% endif %}
             </form>
 
-            <p>Lost access to your authenticator? Enter the backup code in the form above to disable 2FA.</p>
+            <p>
+                Lost access to your authenticator? Enter the backup code in the form above to disable 2FA.
+                No backup code either? <a href="{{ path('support_lost_2fa') }}">Request a reset</a> and we
+                will review it by hand.
+            </p>
 
             <hr>
 

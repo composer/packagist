@@ -1,0 +1,26 @@
+{# No autoescape flag on purpose: Twig never escapes .txt templates, so the flag other mail
+   templates carry is a no-op. Nothing here interpolates requester-supplied text. #}
+Somebody who knows your Packagist.org password has asked us to reset the two-factor
+authentication on your account.
+
+-------------------------------
+Reference: {{ publicId }}
+Time: {{ requestedAt|date('c') }}
+{% if ip %}From IP: {{ ip }}
+{% endif %}-------------------------------
+
+If this was you, there is nothing to do: one of our admins will review the request and
+get back to you by email.
+
+If this was NOT you, somebody else knows your password. Cancel the request here:
+
+{{ cancelUrl }}
+
+Then change your password immediately:
+
+{{ changePasswordUrl }}
+
+Questions? Just reply to this email, or write to {{ contactEmail }}.
+
+Best Regards
+The Packagist.org Team

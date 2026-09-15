@@ -21,13 +21,18 @@ class AdminController extends Controller
 {
     /**
      * Roles that grant access to the /admin/ section. Any one of them is sufficient, so the
-     * fine-grained admins (filter-list, disable-packages, disable-users, orgs, auditor) can reach the
-     * section too. ROLE_ADMIN is covered transitively but listed for clarity. Also used by
-     * App\Menu\MenuBuilder to decide whether to show the Admin menu entries.
+     * fine-grained admins (filter-list, disable-packages, disable-users, orgs, auditor, edit-packages,
+     * disable-2fa) can reach the section too. ROLE_ADMIN is covered transitively but listed for
+     * clarity. Also used by App\Menu\MenuBuilder to decide whether to show the Admin menu entries.
+     *
+     * ROLE_EDIT_PACKAGES and ROLE_DISABLE_2FA are here because the support queue routes each request
+     * type to the role that can action it; without them a delegated package or 2FA moderator could
+     * not reach their own queue. Neither exposes anything new on the dashboard: both already grant
+     * their capability outside /admin/, and the moderation feed is the public transparency log.
      *
      * @var list<string>
      */
-    public const ADMIN_ROLES = ['ROLE_ADMIN', 'ROLE_FILTER_LIST_ADMIN', 'ROLE_DISABLE_PACKAGES', 'ROLE_DISABLE_USERS', 'ROLE_ADMIN_ORGS', 'ROLE_AUDITOR'];
+    public const ADMIN_ROLES = ['ROLE_ADMIN', 'ROLE_FILTER_LIST_ADMIN', 'ROLE_DISABLE_PACKAGES', 'ROLE_DISABLE_USERS', 'ROLE_ADMIN_ORGS', 'ROLE_AUDITOR', 'ROLE_EDIT_PACKAGES', 'ROLE_DISABLE_2FA'];
 
     #[Route(path: '/admin/', name: 'admin_index', methods: ['GET'])]
     public function index(AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $displayFactory): Response

@@ -56,8 +56,11 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
 
     /**
      * Disable two-factor auth on the given user account and send confirmation email.
+     *
+     * $supportReset adds a "if you did not ask for this" warning to that email, for the one path
+     * where the account owner may not be the person who asked: an approved lost-2FA support request.
      */
-    public function disableTwoFactorAuth(User $user, User $actor, string $reason): void
+    public function disableTwoFactorAuth(User $user, User $actor, string $reason, bool $supportReset = false): void
     {
         $user->setTotpSecret(null);
         $user->invalidateAllBackupCodes();
@@ -71,6 +74,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
             subject: 'Two-factor authentication disabled on Packagist.org',
             username: $user->getUsername(),
             reason: $reason,
+            supportReset: $supportReset,
         );
     }
 
