@@ -19,7 +19,7 @@ CREATE TABLE package_transparency_log (
     userId INT DEFAULT NULL,
     organizationId BINARY(16) DEFAULT NULL,
     leafHash VARBINARY(32) DEFAULT NULL,
-    INDEX package_leaf_idx (packageId, leafIndex),
+    INDEX package_name_leaf_idx (packageName, leafIndex),
     INDEX vendor_leaf_idx (vendor, leafIndex),
     INDEX user_leaf_idx (userId, leafIndex),
     INDEX type_leaf_idx (type, leafIndex),
