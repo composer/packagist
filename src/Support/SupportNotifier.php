@@ -109,7 +109,7 @@ class SupportNotifier
     {
         $email = new TemplatedEmail()
             ->from(new Address($this->mailFromEmail, $this->mailFromName))
-            ->to((string) $request->user->getEmail())
+            ->to($request->user->getEmail())
             ->replyTo($this->mailFromEmail)
             ->subject('Two-factor reset requested on your Packagist.org account')
             ->textTemplate('email/support_two_factor_requested.txt.twig')
@@ -136,7 +136,7 @@ class SupportNotifier
     {
         $email = new TemplatedEmail()
             ->from(new Address($this->mailFromEmail, $this->mailFromName))
-            ->to((string) $request->user->getEmail())
+            ->to($request->user->getEmail())
             ->replyTo($this->mailFromEmail)
             ->subject('Re: your Packagist.org support request ('.$request->publicId.')')
             ->textTemplate('email/support_reply.txt.twig')

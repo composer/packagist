@@ -81,9 +81,18 @@ class SupportController extends Controller
         $paginator->setMaxPerPage(50);
         $paginator->setCurrentPage(max(1, $req->query->getInt('page', 1)));
 
+        $rows = array_values(iterator_to_array($paginator));
+        $now = new \DateTimeImmutable();
+
         return $this->render('admin/support/index.html.twig', [
             'paginator' => $paginator,
-            'noteCounts' => $this->supportRequests->countMessagesFor(array_values(iterator_to_array($paginator))),
+            'noteCounts' => $this->supportRequests->countMessagesFor($rows),
+            // Resolved here rather than in Twig, whose date() hands back a DateTime, so the queue
+            // and the detail page agree on what is still held.
+            'heldIds' => array_values(array_map(
+                static fn (SupportRequest $r): string => $r->publicId,
+                array_filter($rows, static fn (SupportRequest $r): bool => $r->isOpen() && !$r->isApprovable($now)),
+            )),
             'visibleTypes' => $visibleTypes,
             'statuses' => SupportRequestStatus::cases(),
             'filters' => [
@@ -100,7 +109,7 @@ class SupportController extends Controller
         $request = $this->findRequest($publicId);
 
         $context = [
-            'request' => $request,
+            'supportRequest' => $request,
             'csrfTokenId' => self::CSRF_TOKEN_ID,
             'suggestedReply' => $this->hasReply($request) ? null : $request->type->suggestedReply($request),
         ];
@@ -289,9 +298,18 @@ class SupportController extends Controller
         return $types;
     }
 
-    private function findRequest(string $publicId): SupportRequest
+    /**
+     * Denies anyone who can action no type at all, before we go looking for the request. Per-type
+     * access is then checked against the one we found.
+     */
+    private function assertHasQueueAccess(): void
     {
         $this->visibleTypes();
+    }
+
+    private function findRequest(string $publicId): SupportRequest
+    {
+        $this->assertHasQueueAccess();
 
         $request = $this->supportRequests->findOneByPublicId($publicId);
         if ($request === null) {

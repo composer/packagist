@@ -13,6 +13,7 @@
 namespace App\Form\Model;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /** What should happen to the packages that stop the account being deleted self-service. */
 enum PackageDisposition: string
@@ -49,7 +50,7 @@ class AccountDeletionSupportRequest
     public bool $acknowledged = false;
 
     #[Assert\Callback]
-    public function validateTransferTarget(\Symfony\Component\Validator\Context\ExecutionContextInterface $context): void
+    public function validateTransferTarget(ExecutionContextInterface $context): void
     {
         if ($this->packageDisposition === PackageDisposition::Transfer && ($this->transferTo === null || trim($this->transferTo) === '')) {
             $context->buildViolation('Tell us which account the packages should go to.')

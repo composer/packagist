@@ -36,6 +36,13 @@ enum SupportMessageVisibility: string
 #[ORM\Index(name: 'support_request_message_thread_idx', columns: ['requestId', 'createdAt'])]
 class SupportRequestMessage
 {
+    /**
+     * Opens the note written when an owner disputes a request we had already actioned. Matched to
+     * keep that escalation to one per request, so reworking the wording below cannot silently re-arm
+     * it.
+     */
+    public const DISPUTE_NOTE_PREFIX = 'DISPUTED:';
+
     #[ORM\Id]
     #[ORM\Column(type: 'ulid')]
     public readonly Ulid $id;

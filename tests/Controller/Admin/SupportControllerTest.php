@@ -19,7 +19,6 @@ use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\User;
 use App\Support\SupportRequestStatus;
-use App\Support\SupportRequestType;
 use App\Tests\IntegrationTestCase;
 
 class SupportControllerTest extends IntegrationTestCase
@@ -237,6 +236,54 @@ class SupportControllerTest extends IntegrationTestCase
 
         self::assertSame(400, $this->client->getResponse()->getStatusCode());
         self::assertSame(SupportRequestStatus::Open, $this->reload($request)->status);
+    }
+
+    /**
+     * The count comes from a grouped query rather than the message collection, so it is the kind of
+     * thing that can silently come back empty while every row still renders a plausible "0".
+     */
+    public function testQueueShowsTheRealNoteCountPerRow(): void
+    {
+        [$admin, $request] = $this->givenTransferRequest();
+
+        $this->store(
+            new SupportRequestMessage($request, SupportMessageVisibility::Internal, 'Checked the repo.', $admin),
+            new SupportRequestMessage($request, SupportMessageVisibility::Reply, 'Asked them to confirm.', $admin),
+        );
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('2', trim($crawler->filter('tbody tr')->first()->filter('td')->eq(4)->text()));
+    }
+
+    /**
+     * Both halves matter: an unescaped % matches every row, and escaping it with the wrong character
+     * matches none. Only a literal % passes both assertions.
+     */
+    public function testQueueSearchTreatsWildcardsAsLiteralText(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $odd = self::createUser('oddone', 'oddone@example.org');
+        $plain = self::createUser('plainone', 'plainone@example.org');
+        $this->store($admin, $odd, $plain);
+
+        $withWildcard = SupportRequest::packageTransfer($odd, 'acme/th%ing', 'Please move it.');
+        $withoutWildcard = SupportRequest::packageTransfer($plain, 'acme/thing', 'Please move it.');
+        $this->store($withWildcard, $withoutWildcard);
+
+        $this->client->loginUser($admin);
+
+        $html = $this->client->request('GET', '/admin/support/?q=%25')->html();
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString($withWildcard->publicId, $html, 'a literal % should still find the row containing one');
+        self::assertStringNotContainsString($withoutWildcard->publicId, $html, '% must not act as a wildcard');
+
+        // An ordinary term keeps working.
+        $html = $this->client->request('GET', '/admin/support/?q=plainone')->html();
+        self::assertStringContainsString($withoutWildcard->publicId, $html);
+        self::assertStringNotContainsString($withWildcard->publicId, $html);
     }
 
     /**

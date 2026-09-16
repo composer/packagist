@@ -9,12 +9,12 @@
 
     <section class="row">
         <div class="col-lg-8">
-            {% if alreadyActioned %}
+            {% if disputed %}
                 <div class="alert alert-danger">
                     <p>
                         A request to reset two-factor authentication on your account
-                        ({{ request.publicId }}) was filed on
-                        {{ request.createdAt|date('Y-m-d H:i') }} UTC.
+                        ({{ supportRequest.publicId }}) was filed on
+                        {{ supportRequest.createdAt|date('Y-m-d H:i') }} UTC.
                         <strong>It has already been actioned.</strong>
                     </p>
                     <p class="mb-0">
@@ -25,8 +25,8 @@
             {% else %}
                 <p>
                     Somebody used your password to ask us to reset the two-factor authentication on
-                    your account, on {{ request.createdAt|date('Y-m-d H:i') }} UTC
-                    (reference {{ request.publicId }}).
+                    your account, on {{ supportRequest.createdAt|date('Y-m-d H:i') }} UTC
+                    (reference {{ supportRequest.publicId }}).
                 </p>
                 <p>
                     If that was you, close this page and wait for our reply. If it was not, cancel it
@@ -35,10 +35,10 @@
                 </p>
             {% endif %}
 
-            <form method="post" action="{{ path('support_cancel_2fa_request', {publicId: request.publicId}) }}">
+            <form method="post" action="{{ path('support_cancel_2fa_request', {publicId: supportRequest.publicId}) }}">
                 <input type="hidden" name="token" value="{{ token }}" />
                 <button type="submit" class="btn btn-danger btn-lg">
-                    {{ alreadyActioned ? 'This was not me — report it' : 'This was not me — cancel the request' }}
+                    {{ disputed ? 'This was not me — report it' : 'This was not me — cancel the request' }}
                 </button>
             </form>
         </div>

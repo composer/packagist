@@ -226,6 +226,80 @@ class SupportControllerTest extends IntegrationTestCase
         $disputed = $this->reloadRequest();
         self::assertSame(SupportRequestStatus::Resolved, $disputed->status, 'the grant stands; disputing it does not rewrite history');
         self::assertCount(1, $disputed->messages);
+
+        // The link deliberately never expires, so a second click must not raise the alarm twice.
+        $this->client->enableProfiler();
+        $this->client->submit($crawler->selectButton('This was not me — report it')->form());
+        $this->assertResponseIsSuccessful();
+        $this->assertEmailCount(0);
+
+        $em->clear();
+        self::assertCount(1, $this->reloadRequest()->messages);
+    }
+
+    /**
+     * Losing the conditional UPDATE only means the row was no longer open, and an owner who double
+     * clicks their own cancellation loses it against themselves. That is not a takeover.
+     */
+    public function testCancellingTwiceDoesNotEscalateTheOwnersOwnSecondSubmit(): void
+    {
+        $user = $this->createTwoFactorUser();
+        $this->startTwoFactorLogin($user);
+
+        $crawler = $this->client->request('GET', '/2fa/lost');
+        $this->client->enableProfiler();
+        $this->client->submit($crawler->selectButton('Request a reset')->form());
+
+        $cancelUrl = $this->cancelUrlFromOwnerAlert();
+
+        $this->client->getCookieJar()->clear();
+        $crawler = $this->client->request('GET', $cancelUrl);
+        $form = $crawler->selectButton('This was not me — cancel the request')->form();
+
+        $this->client->submit($form);
+        $this->assertResponseIsSuccessful();
+
+        // The same form again, as a refresh or an impatient second click would send it.
+        $this->client->enableProfiler();
+        $text = $this->client->submit($form)->filter('.alert')->text();
+
+        self::assertStringContainsString('has been cancelled', $text);
+        self::assertStringNotContainsString('was switched off', $text);
+        $this->assertEmailCount(0);
+
+        self::getEM()->clear();
+        self::assertCount(1, $this->reloadRequest()->messages, 'no second note for the same cancellation');
+    }
+
+    /**
+     * An admin closing without action leaves the account untouched, so a late click on the link is
+     * an ordinary cancellation, not a reset to dispute.
+     */
+    public function testCancelLinkOnAnAdminClosedRequestDoesNotEscalate(): void
+    {
+        $user = $this->createTwoFactorUser();
+        $this->startTwoFactorLogin($user);
+
+        $crawler = $this->client->request('GET', '/2fa/lost');
+        $this->client->enableProfiler();
+        $this->client->submit($crawler->selectButton('Request a reset')->form());
+
+        $cancelUrl = $this->cancelUrlFromOwnerAlert();
+
+        $em = self::getEM();
+        $this->reloadRequest()->close(new \DateTimeImmutable());
+        $em->flush();
+
+        $this->client->getCookieJar()->clear();
+        $crawler = $this->client->request('GET', $cancelUrl);
+        $this->assertResponseIsSuccessful();
+
+        $this->client->enableProfiler();
+        $text = $this->client->submit($crawler->selectButton('This was not me — cancel the request')->form())->filter('.alert')->text();
+
+        self::assertStringContainsString('has been cancelled', $text);
+        self::assertStringNotContainsString('was switched off', $text);
+        $this->assertEmailCount(0);
     }
 
     public function testCancelLinkRejectsAWrongToken(): void

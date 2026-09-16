@@ -53,17 +53,17 @@
             </tr>
         </thead>
         <tbody>
-            {% for request in paginator %}
+            {% for supportRequest in paginator %}
                 <tr>
-                    <td><a href="{{ path('admin_support_request', {publicId: request.publicId}) }}"><code>{{ request.publicId }}</code></a></td>
-                    <td>{{ request.type.label }}</td>
-                    <td><a href="{{ path('user_profile', {name: request.user.username}) }}">{{ request.user.username }}</a></td>
-                    <td>{{ request.summary }}</td>
-                    <td>{{ noteCounts[request.publicId]|default(0) }}</td>
-                    <td title="{{ request.createdAt|date('c') }}">{{ request.createdAt|date('Y-m-d H:i') }}</td>
+                    <td><a href="{{ path('admin_support_request', {publicId: supportRequest.publicId}) }}"><code>{{ supportRequest.publicId }}</code></a></td>
+                    <td>{{ supportRequest.type.label }}</td>
+                    <td><a href="{{ path('user_profile', {name: supportRequest.user.username}) }}">{{ supportRequest.user.username }}</a></td>
+                    <td>{{ supportRequest.summary }}</td>
+                    <td>{{ noteCounts[supportRequest.publicId]|default(0) }}</td>
+                    <td title="{{ supportRequest.createdAt|date('c') }}">{{ supportRequest.createdAt|date('Y-m-d H:i') }}</td>
                     <td>
-                        <span class="badge {{ request.status.badgeClass }}">{{ request.status.label }}</span>
-                        {% if request.approvableAt and request.status.value == 'open' and request.approvableAt > date() %}
+                        <span class="badge {{ supportRequest.status.badgeClass }}">{{ supportRequest.status.label }}</span>
+                        {% if supportRequest.publicId in heldIds %}
                             <span class="badge bg-info">Held</span>
                         {% endif %}
                     </td>

@@ -14,6 +14,7 @@ namespace App\Support;
 
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
+use App\Entity\OrganizationMemberRepository;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Model\DownloadManager;
@@ -43,6 +44,7 @@ class SupportRiskAssessor
     public function __construct(
         private readonly DownloadManager $downloadManager,
         private readonly EntityManagerInterface $em,
+        private readonly OrganizationMemberRepository $orgMembers,
     ) {
     }
 
@@ -119,10 +121,7 @@ class SupportRiskAssessor
 
     private function organizationCount(User $user): int
     {
-        return (int) $this->em->getConnection()->fetchOne(
-            'SELECT COUNT(*) FROM organization_member WHERE userId = :userId',
-            ['userId' => $user->getId()],
-        );
+        return $this->orgMembers->countForUser($user->getId());
     }
 
     /**

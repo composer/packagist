@@ -34,6 +34,7 @@ use App\Support\SupportRequestType;
 use App\Support\SupportRiskAssessor;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorTokenInterface;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -149,9 +150,9 @@ class SupportController extends Controller
         // request and sign the owner out by prefetching the link, so GET only offers the button.
         if (!$req->isMethod('POST')) {
             return $this->render('support/cancel_confirm.html.twig', [
-                'request' => $request,
+                'supportRequest' => $request,
                 'token' => $token,
-                'alreadyActioned' => !$request->isOpen(),
+                'disputed' => $request->status === SupportRequestStatus::Resolved,
             ]);
         }
 
@@ -160,9 +161,8 @@ class SupportController extends Controller
 
         // Claimed with a conditional UPDATE rather than a read-then-write: if an admin grants the
         // reset in the same moment, losing that race would overwrite the grant and tell the owner
-        // they are safe while their 2FA is in fact off. Zero rows updated means somebody got there
-        // first, which is the disputed path. Not refreshed afterwards -- that cascades and would
-        // discard the session invalidation below.
+        // they are safe while their 2FA is in fact off. Not refreshed afterwards -- that cascades
+        // and would discard the session invalidation below.
         $claimed = $em->createQuery(
             'UPDATE App\Entity\SupportRequest r
              SET r.status = :closed, r.resolvedAt = :now, r.updatedAt = :now
@@ -174,30 +174,10 @@ class SupportController extends Controller
             ->setParameter('id', $request->id, 'ulid')
             ->execute();
 
-        $alreadyActioned = $claimed === 0;
-        if (!$alreadyActioned) {
+        $lostClaim = $claimed === 0;
+        if (!$lostClaim) {
             // Mirror what the UPDATE did, so the entity and the page agree.
             $request->close($now);
-        }
-
-        // The owner is telling us somebody else knows their password. True whether or not we already
-        // acted, so drop every session and remember-me cookie either way.
-        $request->user->invalidateAllSessions();
-
-        if ($alreadyActioned) {
-            // The reset already went through and the owner says it was not them. That is an incident
-            // to escalate, not a cancellation to report as a success.
-            $em->persist(new SupportRequestMessage(
-                $request,
-                SupportMessageVisibility::Internal,
-                'The account owner used the cancellation link AFTER this request was actioned, so they '
-                    .'say the reset was not requested by them. Sessions have been invalidated. Treat the '
-                    .'account as compromised.',
-                null,
-            ));
-            $em->flush();
-            $this->notifier->notifyAdminsOfDisputedRequest($request);
-        } else {
             // Recorded as a message rather than just a status, so the queue can tell an owner veto
             // apart from an admin closing the task.
             $em->persist(new SupportRequestMessage(
@@ -206,12 +186,38 @@ class SupportController extends Controller
                 'Cancelled by the account owner through the link in the alert email.',
                 null,
             ));
-            $em->flush();
+        }
+
+        // Losing the claim only means the row was no longer open, which the owner's own second
+        // submit does too, as does an admin closing without action. Only a resolved request means
+        // the reset actually went through, so only that is somebody disputing it.
+        $disputed = $lostClaim && $this->supportRequests->isResolved($request);
+
+        // The link never expires, so without this every repeat click would mail the admins again.
+        $escalate = $disputed && !$this->supportRequests->hasDisputeNote($request);
+        if ($escalate) {
+            $em->persist(new SupportRequestMessage(
+                $request,
+                SupportMessageVisibility::Internal,
+                SupportRequestMessage::DISPUTE_NOTE_PREFIX.' The account owner used the cancellation '
+                    .'link AFTER this request was actioned, so they say the reset was not requested by '
+                    .'them. Sessions have been invalidated. Treat the account as compromised.',
+                null,
+            ));
+        }
+
+        // The owner is telling us somebody else knows their password. True whether or not we already
+        // acted, so drop every session and remember-me cookie either way.
+        $request->user->invalidateAllSessions();
+        $em->flush();
+
+        if ($escalate) {
+            $this->notifier->notifyAdminsOfDisputedRequest($request);
         }
 
         return $this->render('support/cancelled.html.twig', [
-            'request' => $request,
-            'alreadyActioned' => $alreadyActioned,
+            'supportRequest' => $request,
+            'disputed' => $disputed,
         ]);
     }
 
@@ -251,7 +257,7 @@ class SupportController extends Controller
             if (!$packageRepo->isVendorTaken($data->vendorName, $user)) {
                 // False covers both "nobody holds it" and "you already maintain a package under it";
                 // either way there is nothing for us to hand over.
-                $form->get('vendorName')->addError(new \Symfony\Component\Form\FormError(
+                $form->get('vendorName')->addError(new FormError(
                     'Nothing is blocking you from publishing under this vendor name, so there is nothing to claim. '
                     .'Submit a package under it and it is yours.'
                 ));

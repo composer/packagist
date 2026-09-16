@@ -17,7 +17,6 @@ use App\Support\SupportRequestType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Uid\Ulid;
 
 /**
  * @extends ServiceEntityRepository<SupportRequest>
@@ -69,9 +68,11 @@ class SupportRequestRepository extends ServiceEntityRepository
         }
 
         if ($search !== '') {
-            // Escape the wildcards, or a search for "_" or "%" silently matches everything.
+            // Escaped with the character the clause declares, not a backslash: with ESCAPE '!' a
+            // backslash is an ordinary character, so addcslashes() would leave % and _ live. The
+            // escape character goes first in the replacement so it is not applied twice.
             $qb->andWhere("u.username LIKE :search ESCAPE '!' OR r.vendorName LIKE :search ESCAPE '!' OR r.packageNames LIKE :search ESCAPE '!'")
-                ->setParameter('search', '%'.addcslashes($search, '%_!').'%');
+                ->setParameter('search', '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%');
         }
 
         return $qb;
@@ -114,8 +115,10 @@ class SupportRequestRepository extends ServiceEntityRepository
         $rows = $this->createQueryBuilder('r')
             ->select('r.publicId AS publicId, COUNT(m.id) AS total')
             ->leftJoin('r.messages', 'm')
-            ->where('r.id IN (:ids)')
-            ->setParameter('ids', array_map(static fn (SupportRequest $r): Ulid => $r->id, $requests))
+            // Keyed on publicId, not id: an array of Ulid gets no parameter type, so ParameterTypeInferer
+            // binds each one as its base32 string against a BINARY(16) column and matches nothing.
+            ->where('r.publicId IN (:publicIds)')
+            ->setParameter('publicIds', array_map(static fn (SupportRequest $r): string => $r->publicId, $requests))
             ->groupBy('r.publicId')
             ->getQuery()
             ->getResult();
@@ -126,6 +129,40 @@ class SupportRequestRepository extends ServiceEntityRepository
         }
 
         return $counts;
+    }
+
+    /**
+     * Whether the row is resolved as the database has it, ignoring the managed entity, which the
+     * caller may have just lost a race against. A COUNT rather than a status select so the enum
+     * never has to survive scalar hydration, and refresh() is avoided because it cascades.
+     */
+    public function isResolved(SupportRequest $request): bool
+    {
+        return 1 === (int) $this->createQueryBuilder('r')
+            ->select('COUNT(r.id)')
+            ->where('r.publicId = :publicId')
+            ->andWhere('r.status = :resolved')
+            ->setParameter('publicId', $request->publicId)
+            ->setParameter('resolved', SupportRequestStatus::Resolved->value)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Whether this request was already escalated as disputed. The cancellation link stays live for
+     * good, so without this every repeat click would mail the admins again.
+     */
+    public function hasDisputeNote(SupportRequest $request): bool
+    {
+        return 0 < (int) $this->createQueryBuilder('r')
+            ->select('COUNT(m.id)')
+            ->join('r.messages', 'm')
+            ->where('r.publicId = :publicId')
+            ->andWhere('m.contents LIKE :marker')
+            ->setParameter('publicId', $request->publicId)
+            ->setParameter('marker', SupportRequestMessage::DISPUTE_NOTE_PREFIX.'%')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     /**

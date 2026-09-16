@@ -1,18 +1,18 @@
 {% extends "layout.html.twig" %}
 
-{% block title %}{{ alreadyActioned ? 'Report received' : 'Two-factor reset request cancelled' }} - {{ parent() }}{% endblock %}
+{% block title %}{{ disputed ? 'Report received' : 'Two-factor reset request cancelled' }} - {{ parent() }}{% endblock %}
 
 {% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block content %}
-    <h2 class="title">{{ alreadyActioned ? 'Report received' : 'Request cancelled' }}</h2>
+    <h2 class="title">{{ disputed ? 'Report received' : 'Request cancelled' }}</h2>
 
     <section class="row">
         <div class="col-lg-8">
-            {% if alreadyActioned %}
+            {% if disputed %}
                 <div class="alert alert-danger">
                     <p>
-                        Request {{ request.publicId }} had already been actioned.
+                        Request {{ supportRequest.publicId }} had already been actioned.
                         <strong>Two-factor authentication was switched off</strong> on your account
                         before you told us this was not you.
                     </p>
@@ -23,7 +23,7 @@
                 </div>
             {% else %}
                 <div class="alert alert-success">
-                    The two-factor reset request {{ request.publicId }} has been cancelled. Two-factor
+                    The two-factor reset request {{ supportRequest.publicId }} has been cancelled. Two-factor
                     authentication on your account has not been changed.
                 </div>
             {% endif %}
@@ -35,7 +35,7 @@
 
             <ol>
                 <li>Log in and <a href="{{ path('change_password') }}">change your password</a> now.</li>
-                {% if alreadyActioned %}
+                {% if disputed %}
                     <li>Set up two-factor authentication again straight away.</li>
                 {% endif %}
                 <li>If you reused that password anywhere else, change it there too.</li>
@@ -44,7 +44,7 @@
 
             <p>
                 We have signed your account out everywhere as a precaution.
-                {% if alreadyActioned %}
+                {% if disputed %}
                     Reply to the email you received, or write to
                     <a href="mailto:contact@packagist.org">contact@packagist.org</a>, so we can help you
                     recover the account.

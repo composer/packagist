@@ -36,9 +36,9 @@ readonly class SupportRiskPackage
 readonly class SupportRiskProfile
 {
     /**
-     * @param list<SupportRiskPackage> $packages          maintained packages, most downloaded first
+     * @param list<SupportRiskPackage> $packages             maintained packages, most downloaded first
      * @param list<AuditRecord>        $recentSecurityEvents
-     * @param list<string>             $knownIps          IPs the account recently acted from
+     * @param list<string>             $knownIps             IPs the account recently acted from
      */
     public function __construct(
         public array $packages,
