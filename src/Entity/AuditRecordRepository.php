@@ -159,10 +159,9 @@ class AuditRecordRepository extends ServiceEntityRepository
     /**
      * Performs a direct insert not requiring usage of the ORM so it can be used within ORM lifecycle listeners
      *
-     * The transparency-log queue row is this record's outbox entry: it has to commit together with
-     * the audit_log row, or the record exists and can never be projected. Callers inside an ORM
-     * flush are already in a transaction (DBAL turns this one into a savepoint), but some, like
-     * {@see \App\Security\TwoFactorAuthManager}, call this in autocommit, so own the transaction here.
+     * The queue row must be written in the same transaction as the audit_log row, or the record can
+     * never be projected. Some callers, like {@see \App\Security\TwoFactorAuthManager}, are not in a
+     * transaction, so start one here.
      */
     public function insert(AuditRecord $record): void
     {

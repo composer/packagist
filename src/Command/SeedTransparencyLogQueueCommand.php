@@ -24,20 +24,14 @@ use Symfony\Component\Uid\NilUlid;
 /**
  * Backfills the transparency-log projection queue from audit_log history.
  *
- * A queue row is written at the same time as the audit record itself, so records that predate
- * package_transparency_log_queue have none and are never projected on their own. This command is
- * the only thing that gives them one, and it is safe to re-run: it enqueues every package-native
- * audit_log record that has neither a package_transparency_log entry nor a queue row already.
+ * A queue row is written at the same time as the audit record, so records older than the queue table
+ * have none and are never projected on their own. This command backfilly the queue. Safe to re-run: it
+ * only enqueues records with neither a package_transparency_log entry nor a queue row.
  *
- * Only package-native types ({@see TransparencyLogEventType::packageNativeAuditLogEventTypes()}) are ever
- * seeded. Those carry the package they belong to, so they project exactly as they happened.
- * Account-security don't carry a package of their own; the projector fans each of them out to
- * every package the affected user maintains at projection time. Seeding an old one would therefore
- * publish it against today's maintainer set instead of the one it happened under, and a published
- * entry cannot be retracted.
+ * Only package-native types ({@see TransparencyLogEventType::packageNativeAuditLogEventTypes()}) are
+ * seeded.
  *
- * Seeded records are appended at the end of package_transparency_log (in some cases out of chronological order).
- * Run --dry-run first to see how many there are.
+ * Seeded records are appended at the end of the log, sometimes out of order.
  */
 class SeedTransparencyLogQueueCommand extends Command
 {
@@ -82,8 +76,7 @@ class SeedTransparencyLogQueueCommand extends Command
             $ids = $this->queueRepository->fetchSeedableIds($types, $after, self::BATCH_SIZE);
 
             if ($ids !== []) {
-                // Carry on from the last id, so a dry run walks the same records as a real one. A real run
-                // marks each record as queued and never picks it up again, but a dry run marks nothing.
+                // Page by id so a dry run, which writes nothing, walks the same records as a real run.
                 $after = $ids[\count($ids) - 1];
                 $seeded += $dryRun ? \count($ids) : $this->queueRepository->enqueueIds($ids);
                 $output->writeln(\sprintf('%d so far (up to %s)', $seeded, $after->getDateTime()->format('Y-m-d H:i:s')));

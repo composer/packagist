@@ -17,8 +17,8 @@ use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
 
 /**
- * A single-value text filter over the public transparency log. Matching is exact: unlike the audit log
- * filters there is no wildcard mode, since the page has no privileged audience.
+ * A text filter on one column of the transparency log. Matching is exact, there is no wildcard mode
+ * like in the audit log filters.
  */
 abstract class AbstractTextFilter implements QueryFilterInterface
 {

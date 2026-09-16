@@ -15,9 +15,8 @@ namespace App\QueryFilter\TransparencyLog;
 use Doctrine\ORM\QueryBuilder;
 
 /**
- * Restricts to entries of one package, matched on the name in every entry rather than
- * on the live package table: an entry must stay readable after its package is gone, and the entry
- * announcing the deletion is the one that matters most. An unknown name simply yields no rows.
+ * Filters down to one package. Matches the name stored on the entry, not the package table, so
+ * entries stay readable after the package is deleted.
  */
 class PackageNameFilter extends AbstractTextFilter
 {

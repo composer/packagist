@@ -209,8 +209,8 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * All packages the user is a direct maintainer of. Returns package id + vendor + name, ordered by id for deterministic fan-out.
-     * In the future this will need to also take into account organization membership.
+     * All packages the user directly maintains, ordered by id so the fan-out is always in the same
+     * order. Will need to take organization membership into account later.
      *
      * @return list<array{id: int, vendor: string, name: string}>
      */
