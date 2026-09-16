@@ -16,10 +16,6 @@ use App\QueryFilter\QueryFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
 
-/**
- * A datetime bound over the public transparency log. An unparseable value is ignored rather than
- * rejected, so a hand-edited URL degrades to an unfiltered list.
- */
 abstract class AbstractDateTimeFilter implements QueryFilterInterface
 {
     final private function __construct(

@@ -17,8 +17,8 @@ use App\Log\Display\ActorDisplay;
 use App\Log\LogEventType;
 
 /**
- * Shared by both logs: the transparency log keeps the same source/dist references out of the version
- * metadata blob that the audit log shows, the rest of the blob is not published
+ * Shared by both logs. The transparency log publishes the same source/dist references the audit log
+ * shows; the rest of the version metadata blob is not published
  * ({@see \App\Log\TransparencyLogScrubber}).
  */
 readonly class VersionCreatedDisplay extends AbstractLogDisplay

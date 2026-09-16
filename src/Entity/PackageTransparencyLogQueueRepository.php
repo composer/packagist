@@ -30,14 +30,11 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
     }
 
     /**
-     * Marks the record as pending projection. Called from {@see AuditRecordRepository::insert()} and
-     * from the postPersist listener, in the same transaction as the audit_log row, so a record can
-     * never be committed without a pending queue row.
+     * Marks a record as pending projection, in the same transaction as the audit_log row, so a
+     * record is never committed without a queue row. Idempotent via INSERT IGNORE.
      *
-     * Only projectable types are enqueued, so the queue holds exactly what is pending. A type that
-     * becomes projectable later therefore needs an explicit seed
-     * ({@see \App\Command\SeedTransparencyLogQueueCommand}); nothing happens retroactively here.
-     * Idempotent via INSERT IGNORE on the primary key.
+     * Only projectable types are enqueued. Making a type projectable later does not queue its old
+     * records, those need a seed ({@see \App\Command\SeedTransparencyLogQueueCommand}).
      */
     public function enqueue(AuditRecord $record): void
     {
@@ -53,7 +50,7 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
 
     /**
      * Removes a projected record from the queue. The caller must do this in the same transaction as
-     * the entries projected from it, so the record is either published and dequeued or neither.
+     * the entries projected from it.
      */
     public function dequeue(Ulid $auditLogId): void
     {
@@ -65,11 +62,9 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
 
     /**
      * The oldest pending audit ids after $after, in ULID order so leaf assignment is deterministic.
-     * A clustered range scan over a table that only ever holds what is genuinely pending.
      *
-     * $after is the projector's in-run pagination cursor and is never persisted: progress must come
-     * from paging, not from rows disappearing, or a record that legitimately stays pending (too
-     * fresh for the safety lag, or one whose projection threw) would head every later batch forever.
+     * $after is only a cursor within one run and is never stored. Without it a record that stays
+     * pending (too fresh for the safety lag, or one that threw) would come first in every batch.
      *
      * @return list<Ulid>
      */
@@ -90,9 +85,8 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
     }
 
     /**
-     * Audit ids of the given types after $after that have neither a package_transparency_log entry nor
-     * a queue row, for the backfill seed. Paged by $after so seeding the whole of audit_log history
-     * never holds a long transaction open.
+     * Audit ids of the given types after $after with neither a package_transparency_log entry nor a
+     * queue row, for the backfill seed. Paged so seeding does not keep one long transaction open.
      *
      * @param list<string> $types
      *
@@ -123,9 +117,8 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
     }
 
     /**
-     * Marks a batch of audit ids as pending, for seeding. Bypasses the type filter in
-     * {@see self::enqueue()} because the caller has already chosen the types deliberately: seeding
-     * account events from history would publish them against today's maintainer set.
+     * Marks a batch of audit ids as pending, for seeding. Skips the type filter in
+     * {@see self::enqueue()} because the caller already chose the types.
      *
      * @param non-empty-list<Ulid> $auditLogIds
      *

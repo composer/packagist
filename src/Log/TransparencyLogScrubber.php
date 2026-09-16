@@ -13,11 +13,11 @@
 namespace App\Log;
 
 /**
- * Strips private data out of an audit record's attributes before they are copied/fanned out into the public
+ * Strips private data out of an audit record's attributes before they are projected into the public
  * package transparency log.
  *
- * The transparency log is intended to be immutable and eventually published, so PII/admin-only data
- * is removed at write (projection) time rather than merely masked at display time
+ * The log is immutable and meant to be published, so PII and admin-only data is removed at
+ * projection time rather than masked at display time.
  */
 class TransparencyLogScrubber
 {
@@ -35,13 +35,10 @@ class TransparencyLogScrubber
 
     /**
      * Record types whose `metadata` attribute is a version metadata blob
-     * ({@see \App\Entity\Version::toArray()}), and which are therefore reduced to the published
-     * subset below instead of having the blob dropped.
+     * ({@see \App\Entity\Version::toArray()}) and is therefore reduced to the published subset below.
      *
-     * Any other type's `metadata` is dropped, so a new record type that grows one is held out of the
-     * public log until someone decides what of it is publishable. A new type carrying a version blob
-     * belongs in this list; a new type carrying a different blob needs its own reduction rather than
-     * an entry here.
+     * Any other type's `metadata` is dropped, so a new type carrying a different blob needs its own
+     * reduction rather than an entry here.
      */
     private const VERSION_METADATA_TYPES = [
         AuditLogEventType::VersionCreated,
@@ -84,7 +81,7 @@ class TransparencyLogScrubber
 
     /**
      * Reduces the `metadata` blob to {@see self::PUBLISHED_METADATA_KEYS} and
-     * {@see self::PUBLISHED_METADATA_SECTIONS}, dropping the key entirely when all keys get removed.
+     * {@see self::PUBLISHED_METADATA_SECTIONS}, dropping the key when nothing is left.
      *
      * An allow-list instead of a deny-list, because the metadata blob is from the publisher's
      * composer.json: we do not control its shape.

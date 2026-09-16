@@ -26,29 +26,17 @@ use Seld\Signal\SignalHandler;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * Projects package-relevant audit_log rows into the public package_transparency_log, assigning a
- * gapless append-only leaf index and scrubbing PII at write time. Each source event produces at most
- * one entry per package, enforced by the unique (sourceAuditLogId, packageId). A second attempt to
- * project the same record fails and leaves it in the queue
- * ({@see PackageTransparencyLogRepository::appendProjectedEntries()}).
+ * Projects package-relevant audit_log rows into the public package_transparency_log, scrubbing PII
+ * and assigning a gapless leaf index.
  *
- * audit_log.id is a ULID minted when the {@see AuditRecord} is *constructed*, not when its
- * transaction commits, so a long-running transaction can commit a row whose id is lower than rows
- * committed before it. {@see \App\Entity\PackageTransparencyLogQueue} holds one row per pending record,
- * written in the same transaction as the audit_log row and deleted in the same transaction as the
- * entries projected from it. A record committed late is therefore still queued, and is projected
- * then.
+ * {@see \App\Entity\PackageTransparencyLogQueue}: a queue row is written in the same
+ * transaction as the audit_log row and deleted in the same transaction as the entries projected from
+ * it. Old records need an explicit seed ({@see \App\Command\SeedTransparencyLogQueueCommand}).
  *
- * The safety lag only affects ordering. audit_log.datetime is minted in the same constructor as the
- * id, so a record whose transaction outlives the window is already past the cutoff the instant it
- * committed; holding events back reorders the near-simultaneous ones and nothing else. A record that
- * arrives once a newer one already has a leaf gets the next leafIndex rather than one in between,
- * and is logged by {@see self::logIfAppendedOutOfOrder()}. leafIndex is insertion order, not chronology.
- *
- * Scope is controlled by what is enqueued, so historical events are only ever projected when they
- * are explicitly seeded ({@see \App\Command\SeedTransparencyLogQueueCommand}). Account events must
- * never be seeded from history: fan-out resolves maintainers at projection time, so an old one would
- * be published against today's maintainer set.
+ * audit_log.id is a ULID created with the record, not when it commits, so a record can commit after
+ * newer ones were already projected. It is still queued then, and gets the next leaf index instead
+ * of one in between: leafIndex is the order rows were inserted, not the order the events happened.
+ * The safety lag only makes this less likely, {@see self::logIfAppendedOutOfOrder()} reports it.
  */
 class TransparencyLogProjector
 {
@@ -57,9 +45,8 @@ class TransparencyLogProjector
     private const BATCH_SIZE = 500;
 
     /**
-     * A single record that keeps throwing stays queued and is retried next run, so we log it and
-     * move on. This many in a row means the failure is systemic (the database is gone) rather than
-     * one poison record, and the run should abort loudly.
+     * A failing record stays queued and is retried next run, so we log it and move on. This many in
+     * a row means something bigger is broken, not one bad record, so stop.
      */
     private const MAX_CONSECUTIVE_FAILURES = 10;
 
@@ -80,7 +67,7 @@ class TransparencyLogProjector
      * @param int                                                   $minEventAgeSeconds         safety-lag window in seconds (records younger than this stay queued for a later run)
      * @param SignalHandler|null                                    $signal                     checked between batches for graceful shutdown
      * @param (callable(int $projected, int $leafIndex): void)|null $onProgress                 called after each non-empty batch
-     * @param bool                                                  $suppressOutOfOrderLogging  silences {@see self::logIfAppendedOutOfOrder()} for a run where appending out of order is expected and would warn once per record
+     * @param bool                                                  $suppressOutOfOrderLogging  turns off {@see self::logIfAppendedOutOfOrder()} for runs where appending out of order is expected, such as a backfill
      *
      * @return int the number of transparency-log rows created
      */
@@ -90,8 +77,7 @@ class TransparencyLogProjector
         $em = $this->getEM();
 
         $leafIndex = $this->transparencyLogRepository->getMaxLeafIndex();
-        // Diagnostic only, read once: we project in ascending ULID order, so no record can be late
-        // relative to another record of the same run.
+        // Only used for logging. Read once, since within a run we project in ascending ULID order.
         $highestProjected = $this->transparencyLogRepository->getHighestProjectedSourceId();
         $projected = 0;
         $failures = 0;
@@ -106,14 +92,14 @@ class TransparencyLogProjector
 
                 $record = $records[(string) $id] ?? null;
                 if ($record === null) {
-                    // Theoretical if someone would delete a record from audit log
+                    // Only possible if someone deleted the record from the audit log.
                     $this->logger->error('Transparency log queue references a missing audit record, dropping it', ['auditLogId' => (string) $id]);
                     $this->queueRepository->dequeue($id);
 
                     continue;
                 }
 
-                // Ordering heuristic only: too-fresh records stay queued, they are never dropped.
+                // Too fresh: stays queued for a later run, it is never dropped.
                 if ($record->datetime > $cutoff) {
                     continue;
                 }
@@ -122,8 +108,8 @@ class TransparencyLogProjector
                     $inserted = $this->projectAndDequeue($record, $leafIndex);
                     $failures = 0;
                 } catch (\Throwable $e) {
-                    // The queue row survives, so this is a retry next run rather than a loss, and one
-                    // bad record must not hold up every later one now that order is best-effort.
+                    // The queue row stays, so this is retried next run. The order is not guaranteed
+                    // anyway, so one bad record must not block the ones behind it.
                     $this->logger->error('Failed to project an audit record into the transparency log', ['auditLogId' => (string) $id, 'exception' => $e]);
                     if (++$failures >= self::MAX_CONSECUTIVE_FAILURES) {
                         throw $e;
@@ -156,12 +142,8 @@ class TransparencyLogProjector
     }
 
     /**
-     * Projects one source record and removes it from the queue, atomically: either every fan-out
-     * target is published and the record is dequeued, or nothing happened and it is still pending.
-     * A partial insert followed by a dequeue would drop the remaining packages for good.
-     *
-     * Inserts run before the dequeue so the queue row's lock, which every audit writer in the app
-     * contends for, is held as briefly as possible.
+     * Projects one record and dequeues it in one transaction: either every target package gets its
+     * entry and the record is dequeued, or nothing happens and it stays queued.
      */
     private function projectAndDequeue(AuditRecord $record, int $leafIndex): int
     {
@@ -184,11 +166,9 @@ class TransparencyLogProjector
     }
 
     /**
-     * Projects a single source record to its target package(s). Returns how many rows were
-     * created (which is how many leaf indices were consumed).
-     *
-     * Returning 0 is not a failure: an out-of-scope record and an account event whose user maintains
-     * nothing are both dequeued by the caller, because neither will ever become projectable.
+     * Projects one record to its target package(s) and returns how many rows it wrote, which is how
+     * many leaf indices it used. 0 is not a failure: the caller dequeues an out-of-scope record, or
+     * an account event of a user who maintains nothing, because neither can ever be projected.
      */
     private function projectRecord(AuditRecord $record, int $leafIndex): int
     {
@@ -209,9 +189,9 @@ class TransparencyLogProjector
     }
 
     /**
-     * The package(s) a source record projects onto: package-native events target their own package;
-     * account-security events fan out to every package the user maintains at projection time (none
-     * for a user who maintains nothing).
+     * The packages a record is written to. A package-native event uses its own package, an account
+     * event every package the user maintains right now.
+     *
      * @return list<array{id: int, vendor: string|null, name: string}>
      */
     private function resolveTargets(AuditRecord $record, TransparencyLogEventType $type): array
@@ -221,10 +201,9 @@ class TransparencyLogProjector
         }
 
         if ($record->packageId === null) {
-            // A package-native event without a package cannot be published per-package, and
-            // (sourceAuditLogId, NULL) does not collide in source_package_uniq because MySQL treats
-            // NULLs as distinct, so a retried projection would append a second, permanently
-            // immutable leaf for the same event. Refuse instead, and let the caller dequeue it.
+            // packageId must not be null: MySQL treats NULLs as distinct, so (sourceAuditLogId, NULL)
+            // would not clash in source_package_uniq and a retry could append a second leaf for the
+            // same event.
             $this->logger->error('Refusing to project a package-native audit record with no package', [
                 'auditLogId' => (string) $record->id,
                 'type' => $record->type->value,
@@ -247,13 +226,9 @@ class TransparencyLogProjector
     }
 
     /**
-     * Inserts one entry per target, assigning sequential leaf indices. Either every target is
-     * inserted or none is, because any failure here is rolled back by the caller. The leaf indices
-     * the record would have used are then free for the next one, so the sequence stays gapless.
-     *
-     * A record's whole fan-out is written in one flush: an account event of a maintainer of many
-     * packages would otherwise flush once per package inside the caller's open transaction
-     * ({@see PackageTransparencyLogRepository::appendProjectedEntries()}).
+     * Inserts one entry per target with consecutive leaf indices, all in one flush
+     * ({@see PackageTransparencyLogRepository::appendProjectedEntries()}). The caller rolls back on
+     * failure, so those indices are free again for the next record and no numbers are skipped.
      *
      * @param list<array{id: int, vendor: string|null, name: string}> $targets
      * @param array<string, mixed>                                    $scrubbedAttributes
@@ -281,10 +256,8 @@ class TransparencyLogProjector
     }
 
     /**
-     * Logs a warning when the record we just appended is older than the newest record already in the log.
-     *
-     * A ULID is set when the AuditRecord is created, so the gap between the two ULIDs says how late this
-     * record was. The safety lag would have had to be at least that long to keep the log in order.
+     * Warns when the record just appended is older than the newest one already in the log. The gap
+     * between the two ULIDs says how late it was, and how long the safety lag would have to be.
      */
     private function logIfAppendedOutOfOrder(AuditRecord $record, ?Ulid $highestProjected, int $minEventAgeSeconds, int $leafIndex): void
     {
