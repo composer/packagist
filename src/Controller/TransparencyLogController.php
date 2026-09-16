@@ -75,9 +75,6 @@ class TransparencyLogController extends Controller
     }
 
     /**
-     * Types offered in the filter, minus the temporarily hidden ones so the form can't ask for rows the
-     * read query excludes anyway. Auditors ($includeHiddenTypes) are offered every type.
-     *
      * @return list<TransparencyLogEventType>
      */
     private function selectableTypes(bool $includeHiddenTypes): array

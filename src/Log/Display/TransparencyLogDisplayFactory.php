@@ -16,11 +16,10 @@ use App\Entity\PackageTransparencyLog;
 use App\Log\TransparencyLogEventType;
 
 /**
- * Builds display objects for the public package transparency log from already-scrubbed entries.
+ * Builds display objects for the public transparency log from already-scrubbed entries.
  *
- * Deliberately separate from {@see \App\Log\Display\AuditLogDisplayFactory}: it reads the scrubbed
- * `package_transparency_log` attributes (no IP, no emails, no internal moderation notes) and needs no
- * Security service, because there is nothing privileged left to gate.
+ * Separate from {@see AuditLogDisplayFactory} because it reads scrubbed attributes (no IP, no
+ * emails, no internal notes), so it needs no Security service to hide anything.
  */
 class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
 {

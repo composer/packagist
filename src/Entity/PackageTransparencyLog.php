@@ -18,20 +18,19 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * A public, per-package, append-only transparency-log entry projected asynchronously from a package
- * relevant {@see AuditRecord} row (see ProjectTransparencyLogCommand).
+ * A public, per-package, append-only transparency-log entry projected from an {@see AuditRecord} row
+ * by {@see \App\Service\TransparencyLogProjector}.
  *
- * {@see self::$leafIndex} numbers the rows in the order the projector inserted them, which is not always
- * chronological: a source row committed after newer ones were already projected is appended at the
- * end, and therefore carries a $datetime older than the leaf before it. leafIndex must stay append-only and immutable
+ * {@see self::$leafIndex} numbers the rows in the order they were inserted, which is not the order
+ * the events happened: a source row committed late is appended at the end, with a $datetime older
+ * than the leaf before it.
  */
 #[ORM\Entity(repositoryClass: PackageTransparencyLogRepository::class)]
 #[ORM\Table(name: 'package_transparency_log')]
 #[ORM\UniqueConstraint(name: 'source_package_uniq', columns: ['sourceAuditLogId', 'packageId'])]
 #[ORM\UniqueConstraint(name: 'leaf_index_uniq', columns: ['leafIndex'])]
 // Every public read filters on one of these columns and then sorts by leafIndex, so the sort column
-// is part of each index: without it MySQL filesorts every matching row of a package that may hold one
-// entry per version ever published.
+// is part of each index, otherwise MySQL filesorts every matching row.
 #[ORM\Index(name: 'package_name_leaf_idx', columns: ['packageName', 'leafIndex'])]
 #[ORM\Index(name: 'vendor_leaf_idx', columns: ['vendor', 'leafIndex'])]
 #[ORM\Index(name: 'user_leaf_idx', columns: ['userId', 'leafIndex'])]
@@ -46,16 +45,13 @@ class PackageTransparencyLog
     private function __construct(
         /**
          * The `audit_log.id` this entry was projected from. Together with packageId it is the
-         * idempotency (dedupe) key: one source event fans out to at most one row per package. Its
-         * MAX() is also the projector's late-arrival high-water mark, which is used only for logging
-         * ({@see PackageTransparencyLogRepository::getHighestProjectedSourceId()}).
+         * dedupe key: one source event produces at most one row per package.
          */
         #[ORM\Column(type: 'ulid')]
         public readonly Ulid $sourceAuditLogId,
 
         /**
-         * Gapless append-only position in package_transparency_log, assigned in the order the
-         * projector inserts entries, which is source-ULID order except for late-committing rows.
+         * Position in the log. Rows are only ever appended and the numbers have no gaps.
          */
         #[ORM\Column(options: ['unsigned' => true])]
         public readonly int $leafIndex,
@@ -74,13 +70,6 @@ class PackageTransparencyLog
         #[ORM\Column]
         public readonly \DateTimeImmutable $datetime,
 
-        /**
-         * Every entry belongs to exactly one package: package-native events carry their own
-         * packageId and account events fan out to ids read from the database. NOT NULL is load
-         * bearing, because MySQL treats NULLs as distinct, so (sourceAuditLogId, NULL) would not
-         * collide in source_package_uniq and a retried projection could append a second,
-         * permanently immutable leaf for the same event.
-         */
         #[ORM\Column]
         public readonly int $packageId,
 
@@ -97,7 +86,7 @@ class PackageTransparencyLog
         public readonly ?Ulid $organizationId = null,
 
         /**
-         * Signable per-leaf hash. Reserved for the future hashing/publication layer; always null now.
+         * Per-leaf hash for the future hashing/publication layer. Always null for now.
          */
         #[ORM\Column(type: Types::BINARY, length: 32, nullable: true)]
         public readonly ?string $leafHash = null,
@@ -106,9 +95,8 @@ class PackageTransparencyLog
     }
 
     /**
-     * Builds a transparency-log entry from a source audit record, targeting a specific package.
-     *
-     * Attributes must already be scrubbed by {@see \App\Log\TransparencyLogScrubber}.
+     * Builds an entry from a source audit record for one package. Attributes must already be
+     * scrubbed by {@see \App\Log\TransparencyLogScrubber}.
      *
      * @param array<string, mixed> $scrubbedAttributes
      */

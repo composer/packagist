@@ -22,10 +22,8 @@ abstract readonly class AbstractLogDisplay implements LogDisplayInterface
         public \DateTimeImmutable $datetime,
         public ActorDisplay $actor,
         /**
-         * Only the internal audit log records an IP, and only auditors get to see it
-         * (templates/log/_table.html.twig renders the column on request). Rows projected into the
-         * public transparency log have no IP to begin with: `package_transparency_log` has no such
-         * column.
+         * Only the audit log records an IP, and only auditors see it. Rows projected into the
+         * transparency log have none (`package_transparency_log` has no such column).
          */
         public ?string $ip = null,
     ) {
@@ -47,8 +45,8 @@ abstract readonly class AbstractLogDisplay implements LogDisplayInterface
     }
 
     /**
-     * Translation key for a reason label, or null when the stored value is not a reason we know how to
-     * name, so the row shows nothing rather than a raw enum value.
+     * Translation key for a reason label, or null if we have no label for the stored value, so the
+     * row shows nothing instead of a raw enum value.
      *
      * @param class-string<\BackedEnum> $reasonEnum
      */

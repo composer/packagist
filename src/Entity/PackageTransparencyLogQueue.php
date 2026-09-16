@@ -16,17 +16,10 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * Transactional outbox for the package transparency log: one row per audit record still waiting to
- * be projected.
+ * Transactional outbox for the package transparency log. A row is written in the same transaction as its
+ * `audit_log` row and deleted in the same transaction as the entries projected from it.
  *
- * A row is written in the same transaction as its `audit_log` row and deleted in the same
- * transaction as the entries projected from it. `audit_log.id` is a ULID assigned when the
- * {@see AuditRecord} is *constructed*, not when its transaction commits, so a long-running
- * transaction can commit a row whose id is lower than rows committed before it. That row still has
- * its queue row when it is committed, so the projector picks it up then.
- *
- * Only projectable types are enqueued, so the table holds exactly what is pending. Rows are written,
- * read and deleted via raw DBAL in {@see PackageTransparencyLogQueueRepository}.
+ * Only projectable types are enqueued.
  *
  * @see \App\Service\TransparencyLogProjector
  */

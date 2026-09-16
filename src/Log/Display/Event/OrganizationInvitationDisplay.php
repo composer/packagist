@@ -18,10 +18,9 @@ use App\Log\Display\ActorDisplay;
 use App\Log\Display\OrganizationDisplay;
 
 /**
- * Shared display for the invitation lifecycle (sent/resent/revoked/declined/accepted/expired). Every
- * one of these renders the organization, the invited email (already obfuscated by the factory when the
- * viewer may not see it) and the actor, so a single display carries them all; the concrete type drives
- * the wording via its own template and translation key.
+ * One display for all invitation events (sent/resent/revoked/declined/accepted/expired). They all
+ * show the organization, the invited email and the actor, and the type picks the template and the
+ * wording.
  */
 readonly class OrganizationInvitationDisplay extends AbstractLogDisplay
 {

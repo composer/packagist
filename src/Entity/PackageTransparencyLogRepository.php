@@ -29,11 +29,8 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * The largest audit_log id ever projected, or null if package_transparency_log is empty.
-     *
-     * This is for logging purposes only: the queue decides what gets projected, so this must never be used to filter.
-     * {@see \App\Service\TransparencyLogProjector} compares each record against it to detect a late
-     * arrival, a source row committed after a newer event had already been projected.
+     * The largest audit_log id ever projected, or null when the log is empty. For logging only: the
+     * queue decides what gets projected, so this must never be used to filter.
      */
     public function getHighestProjectedSourceId(): ?Ulid
     {
@@ -64,14 +61,7 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * Appends all entries of one source record in a single flush, or throws. A source_package_uniq
-     * violation is a failure like any other: the queue row is deleted in the same transaction as the
-     * entries, so an already projected record should never be projected again.
-     *
-     * One flush, not one per entry, because every flush recomputes the change set of all entities
-     * the UnitOfWork holds. An account event of a maintainer of N packages would otherwise cost
-     * O(N^2) inside one open transaction. Entries are immutable and never read back, so they are
-     * detached once written.
+     * Appends all entries of one source record in a single flush, or throws.
      *
      * @param list<PackageTransparencyLog> $entries
      */
@@ -100,11 +90,11 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * All entries, most recently inserted first, for the public read view. Leaf index is insertion
-     * order rather than chronology, so an audit_log row committed late appears at the top of the page
-     * carrying a datetime older than the entries below it; the datetime filters still use event time.
-     * {@see TransparencyLogEventType::temporarilyHiddenTypes()} are projected but not shown, unless
-     * $includeHiddenTypes is set (auditors see everything).
+     * All entries, most recently inserted first. Leaf index is the order rows were inserted, not the
+     * order the events happened, so a late row shows up at the top with a datetime older than the
+     * rows below it. The datetime filters still use the time of the event.
+     * {@see TransparencyLogEventType::temporarilyHiddenTypes()} are projected but only shown when
+     * $includeHiddenTypes is set.
      */
     public function getQueryBuilderForPublicView(bool $includeHiddenTypes = false): QueryBuilder
     {

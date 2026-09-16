@@ -22,8 +22,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Thin CLI wrapper around {@see TransparencyLogProjector}: run frequently from cron to project
- * package-relevant audit_log rows into the public package transparency log.
+ * CLI wrapper around {@see TransparencyLogProjector}, meant to run often from cron.
  *
  * Only queued records are projected, so this never projects history on its own. Use
  * {@see SeedTransparencyLogQueueCommand} to backfill.
@@ -49,14 +48,14 @@ class ProjectTransparencyLogCommand extends Command
                 'min-event-age-to-project',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Only project audit records older than this many seconds. The delay lets records committed out of order arrive before their neighbours are projected. Setting it too low will not skip any records when projecting. The records committed later to audit_log are still projected, just at the end of the transparency log.',
+                'Only project audit records older than this many seconds. The delay lets records committed out of order arrive before their neighbours are projected. Setting it too low skips nothing, late records are just appended at the end of the log.',
                 (string) self::DEFAULT_MIN_AGE_SECONDS,
             )
             ->addOption(
                 'suppress-out-of-order-logging',
                 null,
                 InputOption::VALUE_NONE,
-                'Do not warn about records appended out of order. For a run where that is expected and would otherwise log one warning per record. Never use it on the cron run, where such a warning is the only sign that the safety lag is too short.',
+                'Do not warn about records appended out of order. Only for runs where that is expected, such as a backfill. Never on the cron run, where the warning is the only sign that the safety lag is too short.',
             )
         ;
     }

@@ -15,12 +15,11 @@ namespace App\Log;
 use App\Log\LogEventType;
 
 /**
- * Holds two kinds of projected event:
- *  - package-native events (ownership / package / version): projected 1:1 from an audit row that
- *    already carries the packageId.
- *  - account events ({@see self::fansOutToMaintainedPackages()}): user-security events that carry no package. The
- *    projector fans each of these out to every package the user maintains, producing one entry per
- *    package.
+ * The events published in the package transparency log. Two kinds:
+ *  - package-native (ownership / package / version): projected 1:1 from an audit row that already
+ *    has the packageId.
+ *  - account events ({@see self::fansOutToMaintainedPackages()}): user-security events with no
+ *    package, written to every package the user maintains, one entry each.
  */
 enum TransparencyLogEventType: string implements LogEventType
 {
@@ -55,14 +54,11 @@ enum TransparencyLogEventType: string implements LogEventType
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user';
 
     /**
-     * Maps an internal audit record type onto its public transparency-log type, or null when the
-     * event is out of scope for the package transparency log.
+     * Maps an audit record type onto its transparency-log type, or null when it is out of scope.
      *
-     * Deliberately exhaustive, with no default arm: this is the only gate into the log
-     * ({@see \App\Entity\PackageTransparencyLogQueueRepository::enqueue()}), so a default would let a
-     * new audit record type be left out of the public log by omission rather than by decision. Adding
-     * a case to {@see AuditLogEventType} therefore fails here until someone maps it or lists it below
-     * as out of scope.
+     * No default arm on purpose: this is the only way into the log
+     * ({@see \App\Entity\PackageTransparencyLogQueueRepository::enqueue()}), so a new case in
+     * {@see AuditLogEventType} fails here until someone maps it or lists it below as out of scope.
      */
     public static function fromAuditLogEventType(AuditLogEventType $type): ?self
     {
@@ -93,9 +89,8 @@ enum TransparencyLogEventType: string implements LogEventType
             // Out of scope, each for its own reason.
             //
             // User lifecycle says nothing about a package, and a reset *request* comes from an
-            // unauthenticated visitor, so publishing it would leak account existence (only the
-            // completed reset is projected). A rename is the one open case: it is the mitigation
-            // agreed for the log's frozen usernames, and projecting it is deferred, not rejected.
+            // unauthenticated visitor, so publishing it would show that the account exists (the
+            // completed reset is projected). Projecting renames is postponed, not rejected.
             AuditLogEventType::UserCreated, AuditLogEventType::UserVerified, AuditLogEventType::UserDeleted,
             AuditLogEventType::UserFrozen, AuditLogEventType::UserUnfrozen,
             AuditLogEventType::PasswordResetRequested, AuditLogEventType::UsernameChanged,
@@ -104,12 +99,11 @@ enum TransparencyLogEventType: string implements LogEventType
             AuditLogEventType::FilterListEntryAdded, AuditLogEventType::FilterListEntryDeleted,
             AuditLogEventType::FilterListEntryDisabled, AuditLogEventType::FilterListEntryEnabled,
             AuditLogEventType::FilterListEntryEdited,
-            // Advisories have their own public feed and API, which is the record for them.
+            // Advisories already have their own public feed and API.
             AuditLogEventType::SecurityAdvisoryCreated, AuditLogEventType::SecurityAdvisoryEdited,
             AuditLogEventType::SecurityAdvisoryWithdrawn,
-            // Organization internals are not package events, and an org may not want its membership
-            // public; invitations additionally carry the invited email. Org-owned packages are
-            // deliberately out of scope for the fan-out for the same reason.
+            // Organization internals are not package events, an org may not want its membership
+            // public, and invitations carry the invited email.
             AuditLogEventType::OrganizationCreated, AuditLogEventType::OrganizationNameChanged,
             AuditLogEventType::OrganizationSlugChanged, AuditLogEventType::OrganizationTeamCreated,
             AuditLogEventType::OrganizationTeamRenamed, AuditLogEventType::OrganizationTeamDeleted,
@@ -123,11 +117,9 @@ enum TransparencyLogEventType: string implements LogEventType
     }
 
     /**
-     * Account-security events carry no package of their own; the projector fans them out to every
-     * package the affected user is a direct maintainer of, see
-     * {@see \App\Entity\PackageRepository::getPackageRefsByMaintainer()}.
-     *
-     * Organization-owned packages are deliberately out of scope for now
+     * Account events have no package of their own, so the projector writes them to every package the
+     * user directly maintains ({@see \App\Entity\PackageRepository::getPackageRefsByMaintainer()}).
+     * Organization-owned packages are out of scope for now.
      */
     public function fansOutToMaintainedPackages(): bool
     {
@@ -140,7 +132,7 @@ enum TransparencyLogEventType: string implements LogEventType
     }
 
     /**
-     * The set of internal audit record types that are projected into the package transparency log.
+     * The audit record types that are projected into the package transparency log.
      *
      * @return list<AuditLogEventType>
      */
@@ -161,8 +153,8 @@ enum TransparencyLogEventType: string implements LogEventType
     }
 
     /**
-     * The subset of {@see self::projectedAuditLogEventTypes()} whose source row already carries the
-     * package it belongs to, so it projects 1:1 with no fan-out. These events can be safely backfilled from audit log
+     * The subset of {@see self::projectedAuditLogEventTypes()} whose audit row already has a package,
+     * so it projects 1:1 with no fan-out and can safely be backfilled from audit_log.
      *
      * @return list<AuditLogEventType>
      */
