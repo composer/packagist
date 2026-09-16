@@ -34,27 +34,32 @@ class VendorWritableValidatorTest extends IntegrationTestCase
         self::assertCount(1, $this->validate($package));
     }
 
-    public function testWaivingTheCheckLetsAModeratorClaimTheVendor(): void
+    public function testAssigningThePackageLetsAModeratorClaimTheVendor(): void
     {
         [$stranger, $package] = $this->setUpTakenVendor();
+        $package->addMaintainer($this->createModerator());
 
-        $package->addMaintainer($stranger);
-        $package->waiveVendorOwnershipCheck();
+        $package->setSubmittedOnBehalfOf($stranger);
 
         self::assertCount(0, $this->validate($package));
     }
 
-    public function testSubmittingOnBehalfOfAUserMakesThemTheOnlyMaintainer(): void
+    public function testAModeratorSubmittingForThemselvesStillGetsChecked(): void
     {
-        [$stranger, $package] = $this->setUpTakenVendor();
+        [, $package] = $this->setUpTakenVendor();
+
+        // waiving is tied to the assignment, not to holding ROLE_EDIT_PACKAGES
+        $package->addMaintainer($this->createModerator());
+
+        self::assertCount(1, $this->validate($package));
+    }
+
+    private function createModerator(): User
+    {
         $moderator = self::createUser('moderator', 'moderator@example.org', githubId: '4', roles: ['ROLE_EDIT_PACKAGES']);
         $this->store($moderator);
 
-        $package->addMaintainer($moderator);
-        $package->setSubmittedOnBehalfOf($stranger);
-
-        self::assertSame([$stranger], $package->getMaintainers()->toArray());
-        self::assertSame($stranger, $package->getSubmittedOnBehalfOf());
+        return $moderator;
     }
 
     /**

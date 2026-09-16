@@ -15,6 +15,7 @@ namespace App\Tests\Entity;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\Tag;
+use App\Entity\User;
 use App\Entity\Version;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -70,5 +71,28 @@ class PackageTest extends TestCase
             PackageFreezeReason::casesForRole(true),
         );
         self::assertSame([], PackageFreezeReason::casesForRole(false));
+    }
+
+    public function testSubmittingOnBehalfOfAUserMakesThemTheOnlyMaintainer(): void
+    {
+        $moderator = new User();
+        $assignee = new User();
+
+        $package = new Package();
+        $package->addMaintainer($moderator);
+        $package->setSubmittedOnBehalfOf($assignee);
+
+        self::assertSame([$assignee], $package->getMaintainers()->toArray());
+        self::assertSame($assignee, $package->getSubmittedOnBehalfOf());
+    }
+
+    public function testSubmittingOnBehalfOfAUserIsRejectedOnAPersistedPackage(): void
+    {
+        $package = new Package();
+        new \ReflectionProperty($package, 'id')->setValue($package, 42);
+
+        $this->expectException(\LogicException::class);
+
+        $package->setSubmittedOnBehalfOf(new User());
     }
 }

@@ -261,15 +261,9 @@ class Package
     private ?string $auditDeletionInternalReason = null;
 
     /**
-     * Transient (not persisted): set by PackageController when a package moderator submits, so they
-     * can claim a vendor namespace owned by a third party.
-     */
-    private bool $vendorOwnershipWaived = false;
-
-    /**
      * Transient (not persisted): the user a moderator assigned the package to at submission time.
-     * Carried into PackageListener::postPersist so the PackageCreated audit record names both the
-     * acting moderator and the resulting maintainer.
+     * Only ever set through the admin-gated form field, and it is what waives the vendor ownership
+     * check in VendorWritableValidator.
      */
     private ?User $submittedOnBehalfOf = null;
 
@@ -301,18 +295,14 @@ class Package
         return $this->auditDeletionInternalReason;
     }
 
-    public function waiveVendorOwnershipCheck(): void
-    {
-        $this->vendorOwnershipWaived = true;
-    }
-
-    public function isVendorOwnershipWaived(): bool
-    {
-        return $this->vendorOwnershipWaived;
-    }
-
     public function setSubmittedOnBehalfOf(?User $user): void
     {
+        // clearing the collection on a managed package would delete every maintainers_packages row
+        // without any audit trail, so this is submission-time only
+        if (isset($this->id)) {
+            throw new \LogicException('setSubmittedOnBehalfOf() can only be used on a package that is not persisted yet');
+        }
+
         $this->submittedOnBehalfOf = $user;
 
         // swap ownership here rather than in the controller so the fetch-info check step and the

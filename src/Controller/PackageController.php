@@ -304,15 +304,7 @@ class PackageController extends Controller
         $package = new Package();
         $package->addMaintainer($user);
 
-        $canSubmitForOthers = $this->isGranted(PackageActions::AdminSubmit->value, $package);
-        if ($canSubmitForOthers) {
-            $package->waiveVendorOwnershipCheck();
-        }
-
-        $form = $this->createForm(PackageType::class, $package, [
-            'action' => $this->generateUrl('submit'),
-            'allow_maintainer_selection' => $canSubmitForOthers,
-        ]);
+        $form = $this->createSubmitForm($package, $this->generateUrl('submit'));
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -337,7 +329,12 @@ class PackageController extends Controller
                 }
 
                 if ($maintainer->getId() !== $user->getId()) {
-                    $this->packageManager->notifyNewMaintainer($maintainer, $package);
+                    try {
+                        $this->packageManager->notifyNewMaintainer($maintainer, $package);
+                    } catch (\Throwable $e) {
+                        // the package exists at this point, a failed notification must not report it as unsaved
+                        $logger->error('Failed notifying '.$maintainer->getUsername().' of their new package', ['exception' => $e]);
+                    }
                     $this->addFlash('success', $package->getName().' has been added to the package list and assigned to '.$maintainer->getUsername().', the repository will now be crawled.');
                 } else {
                     $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
@@ -359,14 +356,7 @@ class PackageController extends Controller
         $package = new Package();
         $package->addMaintainer($user);
 
-        $canSubmitForOthers = $this->isGranted(PackageActions::AdminSubmit->value, $package);
-        if ($canSubmitForOthers) {
-            $package->waiveVendorOwnershipCheck();
-        }
-
-        $form = $this->createForm(PackageType::class, $package, [
-            'allow_maintainer_selection' => $canSubmitForOthers,
-        ]);
+        $form = $this->createSubmitForm($package);
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -1999,6 +1989,21 @@ class PackageController extends Controller
             'package' => $package,
             'jobs' => $jobs,
         ]);
+    }
+
+    /**
+     * Shared by the submit form and its fetch-info check step, which must agree on what is valid.
+     *
+     * @return FormInterface<Package>
+     */
+    private function createSubmitForm(Package $package, ?string $action = null): FormInterface
+    {
+        $options = ['allow_maintainer_selection' => $this->isGranted(PackageActions::AdminSubmit->value, $package)];
+        if ($action !== null) {
+            $options['action'] = $action;
+        }
+
+        return $this->createForm(PackageType::class, $package, $options);
     }
 
     /**

@@ -16,7 +16,6 @@ use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -38,7 +37,6 @@ class TypoSquattersValidator extends ConstraintValidator
         private RequestStack $requestStack,
         private string $mailFromEmail,
         private UrlGeneratorInterface $urlGenerator,
-        private Security $security,
     ) {
     }
 
@@ -76,11 +74,9 @@ class TypoSquattersValidator extends ConstraintValidator
             if (levenshtein($existingVendor, $value->getVendor()) <= 1) {
                 $existingPkg = $this->getEM()->getRepository(Package::class)->find($existingPackage['id']);
                 if ($existingPkg !== null) {
-                    // on a moderator submission the relevant person is the future owner, not the moderator
-                    $submitter = $value->getSubmittedOnBehalfOf() ?? $this->security->getUser();
                     foreach ($existingPkg->getMaintainers() as $maintainer) {
-                        // submitter is maintainer of existing conflicting pkg, so probably a false alarm
-                        if ($maintainer === $submitter) {
+                        // the new package's owner already maintains the conflicting one, so probably a false alarm
+                        if ($value->getMaintainers()->contains($maintainer)) {
                             return;
                         }
                     }

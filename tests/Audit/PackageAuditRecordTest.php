@@ -114,19 +114,48 @@ class PackageAuditRecordTest extends KernelTestCase
         self::assertSame(['newowner'], $terms);
     }
 
-    public function testOrdinarySubmissionRecordsNoMaintainer(): void
+    public function testSelfSubmissionRecordsNoMaintainer(): void
     {
         $container = static::getContainer();
         $em = $container->get(ManagerRegistry::class)->getManager();
 
-        $package = self::createPackage('acme/self-submitted', 'https://github.com/acme/self-submitted');
+        // also covers a moderator typing their own username into the assign field: same end state
+        $user = self::createUser('selfsubmitter', 'selfsubmitter@example.org', githubId: '2');
+        $em->persist($user);
+        $em->flush();
+
+        $container->get(TokenStorageInterface::class)->setToken(new UsernamePasswordToken($user, 'main', $user->getRoles()));
+
+        $package = self::createPackage('acme/self-submitted', 'https://github.com/acme/self-submitted', maintainers: [$user]);
         $em->persist($package);
         $em->flush();
 
         $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditRecordType::PackageCreated->value]);
         self::assertCount(1, $logs);
+        self::assertSame($user->getId(), $logs[0]['actorId']);
         self::assertNull($logs[0]['userId']);
         self::assertArrayNotHasKey('user', json_decode($logs[0]['attributes'], true));
+    }
+
+    public function testSubmissionWithoutAnActingUserRecordsTheMaintainer(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        // the API authenticates in the controller, so there is no security token to act as the actor
+        $user = self::createUser('apiuser', 'apiuser@example.org', githubId: '2');
+        $em->persist($user);
+        $em->flush();
+
+        $package = self::createPackage('acme/api-submitted', 'https://github.com/acme/api-submitted', maintainers: [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditRecordType::PackageCreated->value]);
+        self::assertCount(1, $logs);
+        self::assertNull($logs[0]['actorId']);
+        self::assertSame($user->getId(), $logs[0]['userId']);
+        self::assertSame('apiuser', json_decode($logs[0]['attributes'], true)['user']['username']);
     }
 
     public function testPackageDeletionReasonsGetRecorded(): void
