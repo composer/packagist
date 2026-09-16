@@ -157,23 +157,75 @@ class SupportControllerTest extends IntegrationTestCase
         $this->client->enableProfiler();
         $this->client->submit($crawler->selectButton('Request a reset')->form());
 
-        $ownerAlert = $this->getMailerMessages()[0];
-        self::assertSame(1, preg_match('{(/contact/cancel-2fa-request/\S+)}', $ownerAlert->getTextBody(), $match));
+        $cancelUrl = $this->cancelUrlFromOwnerAlert();
 
         $em = self::getEM();
-        $bustersBefore = $user->getSessionBuster();
+        $bustersBefore = $em->getRepository(User::class)->find($user->getId())?->getSessionBuster();
 
         // The owner clicks this from their inbox, not from the half-logged-in browser: scheb blocks
         // every other route while two-factor authentication is in progress.
         $this->client->getCookieJar()->clear();
-        $this->client->request('GET', $match[1]);
+        $crawler = $this->client->request('GET', $cancelUrl);
+        $this->assertResponseIsSuccessful();
+
+        // GET must only offer the button; acting on it would let a mail scanner veto the request.
+        $em->clear();
+        self::assertSame(SupportRequestStatus::Open, $this->reloadRequest()->status);
+
+        $this->client->submit($crawler->selectButton('This was not me — cancel the request')->form());
         $this->assertResponseIsSuccessful();
 
         $em->clear();
-        $request = $em->getRepository(SupportRequest::class)->findOneBy(['type' => SupportRequestType::LostTwoFactor->value]);
-        self::assertNotNull($request);
-        self::assertSame(SupportRequestStatus::Closed, $request->status);
+        $cancelled = $this->reloadRequest();
+        self::assertSame(SupportRequestStatus::Closed, $cancelled->status);
         self::assertNotSame($bustersBefore, $em->getRepository(User::class)->find($user->getId())?->getSessionBuster());
+
+        // An owner veto has to be tellable apart from an admin closing the task.
+        self::assertCount(1, $cancelled->messages);
+        self::assertNull($cancelled->messages->first()->author);
+    }
+
+    /**
+     * The worst case: the owner clicks "this wasn't me" after an admin already granted the reset.
+     * They must not be told they are safe.
+     */
+    public function testCancelLinkAfterTheResetEscalatesInsteadOfClaimingSuccess(): void
+    {
+        $user = $this->createTwoFactorUser();
+        $this->startTwoFactorLogin($user);
+
+        $crawler = $this->client->request('GET', '/2fa/lost');
+        $this->client->enableProfiler();
+        $this->client->submit($crawler->selectButton('Request a reset')->form());
+
+        $cancelUrl = $this->cancelUrlFromOwnerAlert();
+
+        // Stand in for an admin having granted it.
+        $em = self::getEM();
+        $granted = $this->reloadRequest();
+        $granted->resolve(new \DateTimeImmutable());
+        $em->flush();
+
+        $this->client->getCookieJar()->clear();
+        $crawler = $this->client->request('GET', $cancelUrl);
+        $this->assertResponseIsSuccessful();
+        self::assertStringContainsString('It has already been actioned.', $crawler->filter('.alert')->text());
+
+        $this->client->enableProfiler();
+        $text = $this->client->submit($crawler->selectButton('This was not me — report it')->form())->filter('.alert')->text();
+
+        self::assertStringContainsString('Two-factor authentication was switched off', $text);
+        self::assertStringNotContainsString('has not been changed', $text);
+
+        // Admins get told, at high priority.
+        $this->assertEmailCount(1);
+        $alert = $this->getMailerMessages()[0];
+        self::assertStringContainsString('DISPUTED', (string) $alert->getSubject());
+
+        $em->clear();
+        $disputed = $this->reloadRequest();
+        self::assertSame(SupportRequestStatus::Resolved, $disputed->status, 'the grant stands; disputing it does not rewrite history');
+        self::assertCount(1, $disputed->messages);
     }
 
     public function testCancelLinkRejectsAWrongToken(): void
@@ -277,7 +329,7 @@ class SupportControllerTest extends IntegrationTestCase
         $crawler = $this->client->submit($form);
 
         $this->assertResponseStatusCodeSame(422);
-        $this->assertFormError('You can already publish packages under this vendor name', 'vendor_claim_request', $crawler);
+        $this->assertFormError('Nothing is blocking you from publishing under this vendor name', 'vendor_claim_request', $crawler);
         self::assertNull($this->findRequest($user, SupportRequestType::VendorClaim));
     }
 
@@ -340,6 +392,22 @@ class SupportControllerTest extends IntegrationTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertStringContainsString('Two-Factor Authentication', (string) $this->client->getResponse()->getContent());
+    }
+
+    private function cancelUrlFromOwnerAlert(): string
+    {
+        $ownerAlert = $this->getMailerMessages()[0];
+        self::assertSame(1, preg_match('{(/contact/cancel-2fa-request/\S+)}', $ownerAlert->getTextBody(), $match));
+
+        return $match[1];
+    }
+
+    private function reloadRequest(): SupportRequest
+    {
+        $request = self::getEM()->getRepository(SupportRequest::class)->findOneBy(['type' => SupportRequestType::LostTwoFactor->value]);
+        self::assertNotNull($request);
+
+        return $request;
     }
 
     private function findRequest(User $user, SupportRequestType $type): ?SupportRequest

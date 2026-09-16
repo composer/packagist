@@ -47,8 +47,31 @@ enum SupportRequestType: string
     }
 
     /**
+     * Sent verbatim when a lost-2FA request is granted, so unlike {@see suggestedReply()} it carries
+     * no draft branches for an admin to delete: nobody edits this before it goes out.
+     */
+    public static function twoFactorGrantedReply(SupportRequest $request): string
+    {
+        $username = $request->user->getUsername();
+
+        return <<<TXT
+            Hi {$username},
+
+            Your request to reset two-factor authentication has been approved, and two-factor
+            authentication is now switched off on your account. You can sign in with your password
+            alone.
+
+            Please set it up again as soon as you have access, from your account settings. If you did
+            not make this request, reply to this email straight away.
+            TXT;
+    }
+
+    /**
      * Starting point for the admin's reply, not a canned response. Each type offers the two likely
      * branches so the admin deletes one and edits the rest.
+     *
+     * Only ever used to prefill the reply textarea. The one message the system sends on its own is
+     * {@see twoFactorGrantedReply()}.
      */
     public function suggestedReply(SupportRequest $request): string
     {
@@ -62,10 +85,11 @@ enum SupportRequestType: string
                 control it. Please push a file named packagist-verify.txt to the default branch of the
                 repository behind one of your packages, and reply here once it is there.
 
-                --- or, if no further verification is needed ---
+                --- or ---
 
-                Your request has been approved, see the separate email confirming that two-factor
-                authentication has been disabled.
+                We are not able to reset two-factor authentication on this account. Nothing has been
+                changed. If you still have your backup code, enter it in place of the authentication
+                code when logging in.
                 TXT,
             self::PackageTransfer => <<<TXT
                 Hi {$username},

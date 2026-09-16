@@ -49,13 +49,20 @@ class SupportRiskAssessor
     /**
      * Whether a lost-2FA reset on this account warrants a cooling-off period.
      *
+     * Organization membership counts on its own: an org owner can publish under the org's packages
+     * without maintaining anything personally, so package downloads alone would let the highest-value
+     * accounts through with no hold at all.
+     *
      * Fails closed: if downloads cannot be read, assume high value. The cost of being wrong is a
      * 24-hour wait, not a lockout, so the safe answer is the cautious one.
      */
     public function isHighValue(User $user): bool
     {
-        $packages = $user->getPackages();
-        if ($packages->count() === 0) {
+        if ($this->organizationCount($user) > 0) {
+            return true;
+        }
+
+        if ($user->getPackages()->count() === 0) {
             return false;
         }
 

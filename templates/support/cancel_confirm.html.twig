@@ -1,0 +1,46 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}Cancel a two-factor reset request - {{ parent() }}{% endblock %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+    <h2 class="title">Was this you?</h2>
+
+    <section class="row">
+        <div class="col-lg-8">
+            {% if alreadyActioned %}
+                <div class="alert alert-danger">
+                    <p>
+                        A request to reset two-factor authentication on your account
+                        ({{ request.publicId }}) was filed on
+                        {{ request.createdAt|date('Y-m-d H:i') }} UTC.
+                        <strong>It has already been actioned.</strong>
+                    </p>
+                    <p class="mb-0">
+                        If that was not you, somebody else has access to your account. Tell us below
+                        and we will sign the account out everywhere and look into it straight away.
+                    </p>
+                </div>
+            {% else %}
+                <p>
+                    Somebody used your password to ask us to reset the two-factor authentication on
+                    your account, on {{ request.createdAt|date('Y-m-d H:i') }} UTC
+                    (reference {{ request.publicId }}).
+                </p>
+                <p>
+                    If that was you, close this page and wait for our reply. If it was not, cancel it
+                    below &mdash; we will sign your account out everywhere so you can change your
+                    password.
+                </p>
+            {% endif %}
+
+            <form method="post" action="{{ path('support_cancel_2fa_request', {publicId: request.publicId}) }}">
+                <input type="hidden" name="token" value="{{ token }}" />
+                <button type="submit" class="btn btn-danger btn-lg">
+                    {{ alreadyActioned ? 'This was not me — report it' : 'This was not me — cancel the request' }}
+                </button>
+            </form>
+        </div>
+    </section>
+{% endblock %}

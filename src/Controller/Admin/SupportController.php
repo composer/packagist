@@ -15,10 +15,10 @@ namespace App\Controller\Admin;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Controller\Controller;
 use App\Entity\Package;
+use App\Entity\SupportMessageVisibility;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\SupportRequestRepository;
-use App\Entity\SupportMessageVisibility;
 use App\Entity\User;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
@@ -75,6 +75,7 @@ class SupportController extends Controller
 
         $qb = $this->supportRequests->createQueueQueryBuilder($visibleTypes, $status, $type, $search);
 
+        /** @var Pagerfanta<SupportRequest> $paginator */
         $paginator = new Pagerfanta(new QueryAdapter($qb, false, false));
         $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage(50);
@@ -82,6 +83,7 @@ class SupportController extends Controller
 
         return $this->render('admin/support/index.html.twig', [
             'paginator' => $paginator,
+            'noteCounts' => $this->supportRequests->countMessagesFor(array_values(iterator_to_array($paginator))),
             'visibleTypes' => $visibleTypes,
             'statuses' => SupportRequestStatus::cases(),
             'filters' => [
@@ -112,7 +114,6 @@ class SupportController extends Controller
             $context['risk'] = $profile;
             $context['riskAuditDisplays'] = $displayFactory->build($profile->recentSecurityEvents);
             $context['previousRequests'] = $this->supportRequests->findPreviousTwoFactorRequests($request);
-            $context['canGrantTwoFactorReset'] = $this->isGranted('ROLE_DISABLE_2FA');
             // Resolved here rather than in Twig, whose date() hands back a DateTime.
             $context['coolingOffElapsed'] = $request->isApprovable(new \DateTimeImmutable());
         }
@@ -177,7 +178,7 @@ class SupportController extends Controller
     }
 
     #[Route(path: '/admin/support/{publicId}/status', name: 'admin_support_request_status', methods: ['POST'])]
-    public function changeStatus(Request $req, string $publicId): RedirectResponse
+    public function changeStatus(Request $req, string $publicId, #[CurrentUser] User $actor): RedirectResponse
     {
         $this->assertCsrf($req);
         $request = $this->findRequest($publicId);
@@ -194,7 +195,15 @@ class SupportController extends Controller
             SupportRequestStatus::Closed => $request->close($now),
         };
 
-        $this->getEM()->flush();
+        $em = $this->getEM();
+        // Recorded on the thread so the status carries an actor, the way notes and replies do.
+        $em->persist(new SupportRequestMessage(
+            $request,
+            SupportMessageVisibility::Internal,
+            'Marked as '.$status->label().'.',
+            $actor,
+        ));
+        $em->flush();
         $this->addFlash('success', 'Request marked as '.$status->label().'.');
 
         return $this->redirectToRoute('admin_support_request', ['publicId' => $publicId]);
@@ -249,7 +258,7 @@ class SupportController extends Controller
         }
 
         // Built before the call because disableTwoFactorAuth() flushes, which persists these too.
-        $reply = new SupportRequestMessage($request, SupportMessageVisibility::Reply, $request->type->suggestedReply($request), $actor);
+        $reply = new SupportRequestMessage($request, SupportMessageVisibility::Reply, SupportRequestType::twoFactorGrantedReply($request), $actor);
         $request->resolve($now);
         $this->getEM()->persist($reply);
 
@@ -321,7 +330,13 @@ class SupportController extends Controller
         }
 
         /** @var list<Package> $found */
-        $found = $this->getEM()->getRepository(Package::class)->findBy(['name' => $names]);
+        $found = $this->getEM()->getRepository(Package::class)->createQueryBuilder('p')
+            ->addSelect('m')
+            ->leftJoin('p.maintainers', 'm')
+            ->where('p.name IN (:names)')
+            ->setParameter('names', $names)
+            ->getQuery()
+            ->getResult();
 
         $byName = [];
         foreach ($found as $package) {

@@ -17,6 +17,7 @@ use App\Support\SupportRequestType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Uid\Ulid;
 
 /**
  * @extends ServiceEntityRepository<SupportRequest>
@@ -68,8 +69,9 @@ class SupportRequestRepository extends ServiceEntityRepository
         }
 
         if ($search !== '') {
-            $qb->andWhere('u.username LIKE :search OR r.vendorName LIKE :search OR r.packageNames LIKE :search')
-                ->setParameter('search', '%'.$search.'%');
+            // Escape the wildcards, or a search for "_" or "%" silently matches everything.
+            $qb->andWhere("u.username LIKE :search ESCAPE '!' OR r.vendorName LIKE :search ESCAPE '!' OR r.packageNames LIKE :search ESCAPE '!'")
+                ->setParameter('search', '%'.addcslashes($search, '%_!').'%');
         }
 
         return $qb;
@@ -92,6 +94,38 @@ class SupportRequestRepository extends ServiceEntityRepository
             ->setParameter('visibleTypes', array_map(static fn (SupportRequestType $t): string => $t->value, $visibleTypes))
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /**
+     * Note counts for the rows on one queue page, so the list does not hydrate every message body of
+     * every request just to show a number.
+     *
+     * @param list<SupportRequest> $requests
+     *
+     * @return array<string, int> note count keyed by public id
+     */
+    public function countMessagesFor(array $requests): array
+    {
+        if ($requests === []) {
+            return [];
+        }
+
+        /** @var list<array{publicId: string, total: int}> $rows */
+        $rows = $this->createQueryBuilder('r')
+            ->select('r.publicId AS publicId, COUNT(m.id) AS total')
+            ->leftJoin('r.messages', 'm')
+            ->where('r.id IN (:ids)')
+            ->setParameter('ids', array_map(static fn (SupportRequest $r): Ulid => $r->id, $requests))
+            ->groupBy('r.publicId')
+            ->getQuery()
+            ->getResult();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[$row['publicId']] = (int) $row['total'];
+        }
+
+        return $counts;
     }
 
     /**

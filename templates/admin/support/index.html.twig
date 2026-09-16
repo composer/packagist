@@ -59,7 +59,7 @@
                     <td>{{ request.type.label }}</td>
                     <td><a href="{{ path('user_profile', {name: request.user.username}) }}">{{ request.user.username }}</a></td>
                     <td>{{ request.summary }}</td>
-                    <td>{{ request.messages|length }}</td>
+                    <td>{{ noteCounts[request.publicId]|default(0) }}</td>
                     <td title="{{ request.createdAt|date('c') }}">{{ request.createdAt|date('Y-m-d H:i') }}</td>
                     <td>
                         <span class="badge {{ request.status.badgeClass }}">{{ request.status.label }}</span>

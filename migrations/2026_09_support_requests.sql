@@ -70,3 +70,17 @@ CREATE TABLE support_request_message (
 ALTER TABLE support_request ADD CONSTRAINT FK_86A2876364B64DCC FOREIGN KEY (userId) REFERENCES fos_user (id) ON DELETE CASCADE;
 ALTER TABLE support_request_message ADD CONSTRAINT FK_BB5257F1A1637001 FOREIGN KEY (requestId) REFERENCES support_request (id) ON DELETE CASCADE;
 ALTER TABLE support_request_message ADD CONSTRAINT FK_BB5257F1A196F9FD FOREIGN KEY (authorId) REFERENCES fos_user (id) ON DELETE SET NULL;
+
+-- Backfill userId on historical two-factor deactivations. AuditRecord::twoFactorAuthenticationDeactivated()
+-- recorded only actorId until this change, so a userId-filtered query -- which is what the support
+-- queue's risk panel runs to show an admin the account's prior 2FA history -- missed every one of
+-- them. The affected user's id is already in the attributes blob, so this keys on that rather than
+-- matching usernames, which drift on rename.
+--
+-- Additive and internal: /transparency-log excludes both 2FA types unconditionally, and its user and
+-- actor filters resolve through audit_log_search, not this column.
+UPDATE audit_log
+SET userId = JSON_UNQUOTE(JSON_EXTRACT(attributes, '$.user.id'))
+WHERE type = 'two_fa_deactivated'
+  AND userId IS NULL
+  AND JSON_EXTRACT(attributes, '$.user.id') IS NOT NULL;

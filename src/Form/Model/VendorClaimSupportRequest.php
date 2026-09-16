@@ -18,9 +18,12 @@ class VendorClaimSupportRequest
 {
     #[Assert\NotBlank]
     #[Assert\Length(max: 191)]
+    // Mirrors the vendor half of Package::PACKAGE_NAME_REGEX, case included: VendorWritableValidator
+    // deep-links here with the real vendor, and a lowercase-only rule would reject names like
+    // "PHPMailer" on the prefilled form.
     #[Assert\Regex(
-        pattern: '{^[a-z0-9]++(?:[_.-]?[a-z0-9]++)*+$}',
-        message: 'That is not a valid vendor name. Vendor names are lowercase and contain only letters, digits, and single _ . or - separators.',
+        pattern: '{^[a-zA-Z0-9]++(?:[_.-]?[a-zA-Z0-9]++)*+$}',
+        message: 'That is not a valid vendor name. Vendor names contain only letters, digits, and single _ . or - separators.',
     )]
     public string $vendorName = '';
 

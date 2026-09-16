@@ -101,8 +101,13 @@ class SupportRequest
     #[ORM\Column(insertable: false, updatable: false, nullable: true, columnDefinition: "TINYINT(1) GENERATED ALWAYS AS (IF(status = 'open', 1, NULL)) STORED")]
     public ?bool $openMarker = null;
 
-    /** @var Collection<int, SupportRequestMessage> */
-    #[ORM\OneToMany(targetEntity: SupportRequestMessage::class, mappedBy: 'request', cascade: ['persist'])]
+    /**
+     * Read side only: messages are persisted explicitly by whoever creates them, so this collection
+     * does not reflect one until the next load.
+     *
+     * @var Collection<int, SupportRequestMessage>
+     */
+    #[ORM\OneToMany(targetEntity: SupportRequestMessage::class, mappedBy: 'request')]
     #[ORM\OrderBy(['createdAt' => 'ASC'])]
     public Collection $messages;
 

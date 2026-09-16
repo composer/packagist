@@ -158,8 +158,10 @@ class SupportControllerTest extends IntegrationTestCase
         [$admin, $request, $requester] = $this->givenTwoFactorRequest();
 
         $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+
         $this->client->enableProfiler();
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-2fa-reset', ['token' => $this->csrfTokenFor($request)]);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-2fa-reset', ['token' => $token]);
 
         $this->assertResponseRedirects('/admin/support/'.$request->publicId);
 
@@ -302,6 +304,12 @@ class SupportControllerTest extends IntegrationTestCase
         $em = self::getEM();
         $em->clear();
 
-        return $em->getRepository(SupportRequestMessage::class)->findOneBy([]);
+        $reloaded = $em->getRepository(SupportRequest::class)->findOneByPublicId($request->publicId);
+        self::assertNotNull($reloaded);
+
+        return $em->getRepository(SupportRequestMessage::class)->findOneBy(
+            ['request' => $reloaded],
+            ['createdAt' => 'ASC'],
+        );
     }
 }

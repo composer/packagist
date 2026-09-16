@@ -13,7 +13,9 @@
 namespace App\Controller;
 
 use App\Entity\PackageRepository;
+use App\Entity\SupportMessageVisibility;
 use App\Entity\SupportRequest;
+use App\Entity\SupportRequestMessage;
 use App\Entity\SupportRequestRepository;
 use App\Entity\User;
 use App\Form\Model\AccountDeletionSupportRequest;
@@ -27,6 +29,7 @@ use App\Form\Type\PackageTransferSupportType;
 use App\Form\Type\VendorClaimSupportType;
 use App\Support\SupportNotifier;
 use App\Support\SupportRequestRateLimiter;
+use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
 use App\Support\SupportRiskAssessor;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -110,11 +113,9 @@ class SupportController extends Controller
             try {
                 $em->flush();
             } catch (UniqueConstraintViolationException) {
-                // Lost the race against a double submit; the other one is the request that counts.
-                $em->clear();
-                $existing = $this->supportRequests->findOpen($user, SupportRequestType::LostTwoFactor);
-
-                return $this->renderLostTwoFactor(null, $existing);
+                // Lost the race against a double submit. The violation itself proves an open request
+                // exists, and the failed flush has closed the EM, so report it without reading back.
+                return $this->renderLostTwoFactor(null, null, duplicate: true);
             }
 
             $this->rateLimiter->recordSubmission($user, SupportRequestType::LostTwoFactor, $req->getClientIp());
@@ -129,25 +130,89 @@ class SupportController extends Controller
 
     /**
      * The "this wasn't me" link from the alert mail. Public because the recipient cannot log in
-     * (that is the whole problem); the single-use token in the link is the authentication.
+     * (that is the whole problem); the token in the link is the authentication. It deliberately
+     * keeps working after the request is actioned, so an owner who reads the email late can still
+     * raise the alarm rather than getting a dead link.
      */
-    #[Route(path: '/contact/cancel-2fa-request/{publicId}', name: 'support_cancel_2fa_request', methods: ['GET'])]
+    #[Route(path: '/contact/cancel-2fa-request/{publicId}', name: 'support_cancel_2fa_request', methods: ['GET', 'POST'])]
     public function cancelTwoFactorRequest(Request $req, string $publicId): Response
     {
+        // The token travels in the query on the GET and in the body on the POST, so read both.
+        $token = $req->isMethod('POST') ? $req->request->getString('token') : $req->query->getString('token');
+
         $request = $this->supportRequests->findOneByPublicId($publicId);
-        if ($request === null || $request->type !== SupportRequestType::LostTwoFactor || !$request->matchesCancelToken($req->query->getString('token'))) {
+        if ($request === null || $request->type !== SupportRequestType::LostTwoFactor || !$request->matchesCancelToken($token)) {
             throw new NotFoundHttpException('Unknown or expired cancellation link');
         }
 
-        if ($request->isOpen()) {
-            $request->close(new \DateTimeImmutable());
-            // Somebody who is not the owner knows the password, so drop every session and
-            // remember-me cookie on the account while they go and change it.
-            $request->user->invalidateAllSessions();
-            $this->getEM()->flush();
+        // Acting on GET would let a mail scanner (SafeLinks, Proofpoint and friends) veto a genuine
+        // request and sign the owner out by prefetching the link, so GET only offers the button.
+        if (!$req->isMethod('POST')) {
+            return $this->render('support/cancel_confirm.html.twig', [
+                'request' => $request,
+                'token' => $token,
+                'alreadyActioned' => !$request->isOpen(),
+            ]);
         }
 
-        return $this->render('support/cancelled.html.twig', ['request' => $request]);
+        $em = $this->getEM();
+        $now = new \DateTimeImmutable();
+
+        // Claimed with a conditional UPDATE rather than a read-then-write: if an admin grants the
+        // reset in the same moment, losing that race would overwrite the grant and tell the owner
+        // they are safe while their 2FA is in fact off. Zero rows updated means somebody got there
+        // first, which is the disputed path. Not refreshed afterwards -- that cascades and would
+        // discard the session invalidation below.
+        $claimed = $em->createQuery(
+            'UPDATE App\Entity\SupportRequest r
+             SET r.status = :closed, r.resolvedAt = :now, r.updatedAt = :now
+             WHERE r.id = :id AND r.status = :open'
+        )
+            ->setParameter('closed', SupportRequestStatus::Closed->value)
+            ->setParameter('open', SupportRequestStatus::Open->value)
+            ->setParameter('now', $now)
+            ->setParameter('id', $request->id, 'ulid')
+            ->execute();
+
+        $alreadyActioned = $claimed === 0;
+        if (!$alreadyActioned) {
+            // Mirror what the UPDATE did, so the entity and the page agree.
+            $request->close($now);
+        }
+
+        // The owner is telling us somebody else knows their password. True whether or not we already
+        // acted, so drop every session and remember-me cookie either way.
+        $request->user->invalidateAllSessions();
+
+        if ($alreadyActioned) {
+            // The reset already went through and the owner says it was not them. That is an incident
+            // to escalate, not a cancellation to report as a success.
+            $em->persist(new SupportRequestMessage(
+                $request,
+                SupportMessageVisibility::Internal,
+                'The account owner used the cancellation link AFTER this request was actioned, so they '
+                    .'say the reset was not requested by them. Sessions have been invalidated. Treat the '
+                    .'account as compromised.',
+                null,
+            ));
+            $em->flush();
+            $this->notifier->notifyAdminsOfDisputedRequest($request);
+        } else {
+            // Recorded as a message rather than just a status, so the queue can tell an owner veto
+            // apart from an admin closing the task.
+            $em->persist(new SupportRequestMessage(
+                $request,
+                SupportMessageVisibility::Internal,
+                'Cancelled by the account owner through the link in the alert email.',
+                null,
+            ));
+            $em->flush();
+        }
+
+        return $this->render('support/cancelled.html.twig', [
+            'request' => $request,
+            'alreadyActioned' => $alreadyActioned,
+        ]);
     }
 
     #[IsGranted('ROLE_USER')]
@@ -184,8 +249,11 @@ class SupportController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             // Saves the most common pointless ticket: people who could already publish here.
             if (!$packageRepo->isVendorTaken($data->vendorName, $user)) {
+                // False covers both "nobody holds it" and "you already maintain a package under it";
+                // either way there is nothing for us to hand over.
                 $form->get('vendorName')->addError(new \Symfony\Component\Form\FormError(
-                    'You can already publish packages under this vendor name, so there is nothing to claim.'
+                    'Nothing is blocking you from publishing under this vendor name, so there is nothing to claim. '
+                    .'Submit a package under it and it is yours.'
                 ));
             } else {
                 $create = fn (): SupportRequest => SupportRequest::vendorClaim($user, $data->vendorName, $data->description);
@@ -274,7 +342,7 @@ class SupportController extends Controller
         try {
             $em->flush();
         } catch (UniqueConstraintViolationException) {
-            $em->clear();
+            // As above: the violation is the answer, and the EM is closed, so do not read back.
             $this->addFlash('info', 'You already have an open request of this kind. We will get back to you by email.');
 
             return $this->redirectToRoute('support_contact');
@@ -291,11 +359,13 @@ class SupportController extends Controller
     /**
      * @param FormInterface<LostTwoFactorSupportRequest>|null $form
      */
-    private function renderLostTwoFactor(?FormInterface $form, ?SupportRequest $existing): Response
+    private function renderLostTwoFactor(?FormInterface $form, ?SupportRequest $existing, bool $duplicate = false): Response
     {
         return $this->render('support/lost_two_factor.html.twig', [
             'form' => $form?->createView(),
             'existingRequest' => $existing,
+            // Set when we know a request exists but cannot name it, after a lost insert race.
+            'duplicate' => $duplicate || $existing !== null,
         ], new Response(
             status: $form !== null && $form->isSubmitted() && !$form->isValid() ? Response::HTTP_UNPROCESSABLE_ENTITY : Response::HTTP_OK,
         ));

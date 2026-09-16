@@ -43,9 +43,4 @@ class SupportQueueAccess
     {
         return $this->security->isGranted($type->requiredRole());
     }
-
-    public function hasAnyAccess(): bool
-    {
-        return $this->visibleTypes() !== [];
-    }
 }

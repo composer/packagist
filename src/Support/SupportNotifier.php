@@ -70,6 +70,35 @@ class SupportNotifier
     }
 
     /**
+     * Escalates an owner saying "this was not me" about a request we had already actioned: the reset
+     * has happened and the account should be treated as compromised.
+     */
+    public function notifyAdminsOfDisputedRequest(SupportRequest $request): void
+    {
+        $url = $this->urlGenerator->generate('admin_support_request', ['publicId' => $request->publicId], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        $body = <<<TXT
+            The owner of {$request->user->getUsername()} used the cancellation link AFTER support
+            request {$request->publicId} was actioned, so the two-factor reset was not theirs.
+
+            Their sessions have been invalidated. Treat the account as compromised.
+
+            {$url}
+            TXT;
+
+        $message = new Email()
+            ->subject('[Support] DISPUTED two-factor reset on '.$request->user->getUsername().' ('.$request->publicId.')')
+            ->from(new Address($this->mailFromEmail, $this->mailFromName))
+            ->to($this->mailFromEmail)
+            ->priority(Email::PRIORITY_HIGH)
+            ->text($body)
+        ;
+        $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
+
+        $this->send($message);
+    }
+
+    /**
      * Warns the account owner that someone who knows their password asked us to reset two-factor
      * authentication, and gives them a link to veto it without waiting for an admin.
      *

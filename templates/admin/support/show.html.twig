@@ -15,7 +15,8 @@
                     From <a href="{{ path('user_profile', {name: request.user.username}) }}">{{ request.user.username }}</a>
                     on {{ request.createdAt|date('Y-m-d H:i') }} UTC.
                     {% if request.type.value == 'lost_2fa' %}
-                        <a href="{{ path('user_2fa_configure', {name: request.user.username}) }}">Two-factor settings</a>.
+                        <a href="{{ path('user_2fa_configure', {name: request.user.username}) }}">Inspect their two-factor settings</a>
+                        &mdash; look only; resetting from there skips the hold, the reply and closing this task.
                     {% endif %}
                 </p>
             </div>
@@ -102,7 +103,7 @@
                         {% if message.internal %}
                             <span class="badge bg-secondary">Internal &mdash; not visible to the user</span>
                         {% else %}
-                            <span class="badge bg-info">Sent to {{ request.user.email }}</span>
+                            <span class="badge bg-info">Sent to {{ is_granted('ROLE_AUDITOR') ? request.user.email : 'the address on the account' }}</span>
                         {% endif %}
                     </p>
                     <p class="mb-0">{{ message.contents|nl2br }}</p>
@@ -125,7 +126,7 @@
                 <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
                 <div class="mb-3">
                     <textarea class="form-control" name="contents" rows="10">{{ suggestedReply }}</textarea>
-                    <div class="form-text">Sent as plain text to {{ request.user.email }}. Replies come back to contact@packagist.org.</div>
+                    <div class="form-text">Sent as plain text to {{ is_granted('ROLE_AUDITOR') ? request.user.email : 'the address on their account' }}. Replies come back to contact@packagist.org.</div>
                 </div>
                 <button type="submit" class="btn btn-primary">Send reply</button>
             </form>
@@ -206,9 +207,7 @@
                 {% endif %}
 
                 <h3>Grant the reset</h3>
-                {% if not canGrantTwoFactorReset %}
-                    <p class="text-muted">You need the 2FA role to action this.</p>
-                {% elseif request.status.value != 'open' %}
+                {% if request.status.value != 'open' %}
                     <p class="text-muted">Already dealt with.</p>
                 {% elseif not coolingOffElapsed %}
                     <div class="alert alert-warning">
