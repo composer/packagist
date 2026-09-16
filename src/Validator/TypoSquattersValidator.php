@@ -100,7 +100,12 @@ class TypoSquattersValidator extends ConstraintValidator
                         ->subject($value->getName().' is suspiciously close to '.$existingPackage['name'])
                         ->from(new Address($this->mailFromEmail))
                         ->to($this->mailFromEmail)
-                        ->text('Check out '.$this->urlGenerator->generate('view_package', ['name' => $value->getName()], UrlGeneratorInterface::ABSOLUTE_URL).' is not hijacking '.$this->urlGenerator->generate('view_package', ['name' => $existingPackage['name']], UrlGeneratorInterface::ABSOLUTE_URL))
+                        ->text('Check out whether this new package is not hijacking the existing one.
+
+New: '.$this->urlGenerator->generate('view_package', ['name' => $value->getName()], UrlGeneratorInterface::ABSOLUTE_URL).'
+
+Existing: '.$this->urlGenerator->generate('view_package', ['name' => $existingPackage['name']], UrlGeneratorInterface::ABSOLUTE_URL).'
+Downloads: '.$this->downloadManager->getTotalDownloads($existingPackage['id']))
                     ;
                     $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
                     $this->mailer->send($message);
