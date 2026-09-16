@@ -303,9 +303,8 @@ class PackageController extends Controller
     {
         $package = new Package();
         $package->addMaintainer($user);
-        $form = $this->createForm(PackageType::class, $package, [
-            'action' => $this->generateUrl('submit'),
-        ]);
+
+        $form = $this->createSubmitForm($package, $this->generateUrl('submit'));
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -317,15 +316,29 @@ class PackageController extends Controller
                 $em->flush();
 
                 $this->providerManager->insertPackage($package);
-                if ($user->getGithubToken()) {
+
+                // a moderator may have assigned the package to someone else, and it is their token
+                // that can install the hook and that later syncs reuse
+                $maintainer = $package->getSubmittedOnBehalfOf() ?? $user;
+                if ($maintainer->getGithubToken()) {
                     try {
-                        $githubUserMigrationWorker->setupWebHook($user->getGithubToken(), $package);
+                        $githubUserMigrationWorker->setupWebHook($maintainer->getGithubToken(), $package);
                     } catch (\Throwable $e) {
                         // ignore errors at this point
                     }
                 }
 
-                $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
+                if ($maintainer->getId() !== $user->getId()) {
+                    try {
+                        $this->packageManager->notifyNewMaintainer($maintainer, $package);
+                    } catch (\Throwable $e) {
+                        // the package exists at this point, a failed notification must not report it as unsaved
+                        $logger->error('Failed notifying '.$maintainer->getUsername().' of their new package', ['exception' => $e]);
+                    }
+                    $this->addFlash('success', $package->getName().' has been added to the package list and assigned to '.$maintainer->getUsername().', the repository will now be crawled.');
+                } else {
+                    $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
+                }
 
                 return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
             } catch (\Exception $e) {
@@ -342,7 +355,8 @@ class PackageController extends Controller
     {
         $package = new Package();
         $package->addMaintainer($user);
-        $form = $this->createForm(PackageType::class, $package);
+
+        $form = $this->createSubmitForm($package);
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -1975,6 +1989,21 @@ class PackageController extends Controller
             'package' => $package,
             'jobs' => $jobs,
         ]);
+    }
+
+    /**
+     * Shared by the submit form and its fetch-info check step, which must agree on what is valid.
+     *
+     * @return FormInterface<Package>
+     */
+    private function createSubmitForm(Package $package, ?string $action = null): FormInterface
+    {
+        $options = ['allow_maintainer_selection' => $this->isGranted(PackageActions::AdminSubmit->value, $package)];
+        if ($action !== null) {
+            $options['action'] = $action;
+        }
+
+        return $this->createForm(PackageType::class, $package, $options);
     }
 
     /**

@@ -47,8 +47,9 @@ class MaintainerType extends AbstractType
 
                 if (!\count($users) || !\array_key_exists($username, $users)) {
                     $failure = new TransformationFailedException(\sprintf('User "%s" does not exist.', $username));
+                    // fetchInfoAction hands form errors to submitPackage.js, which renders them as HTML
                     $failure->setInvalidMessage('The given "{{ value }}" value is not a valid username.', [
-                        '{{ value }}' => $username,
+                        '{{ value }}' => htmlentities($username, \ENT_COMPAT, 'utf-8'),
                     ]);
 
                     throw $failure;

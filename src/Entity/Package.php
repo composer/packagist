@@ -260,6 +260,13 @@ class Package
      */
     private ?string $auditDeletionInternalReason = null;
 
+    /**
+     * Transient (not persisted): the user a moderator assigned the package to at submission time.
+     * Only ever set through the admin-gated form field, and it is what waives the vendor ownership
+     * check in VendorWritableValidator.
+     */
+    private ?User $submittedOnBehalfOf = null;
+
     public function __construct()
     {
         $this->versions = new ArrayCollection();
@@ -286,6 +293,29 @@ class Package
     public function getAuditDeletionInternalReason(): ?string
     {
         return $this->auditDeletionInternalReason;
+    }
+
+    public function setSubmittedOnBehalfOf(?User $user): void
+    {
+        // clearing the collection on a managed package would delete every maintainers_packages row
+        // without any audit trail, so this is submission-time only
+        if (isset($this->id)) {
+            throw new \LogicException('setSubmittedOnBehalfOf() can only be used on a package that is not persisted yet');
+        }
+
+        $this->submittedOnBehalfOf = $user;
+
+        // swap ownership here rather than in the controller so the fetch-info check step and the
+        // real submit validate the same maintainer
+        if ($user !== null) {
+            $this->maintainers->clear();
+            $this->addMaintainer($user);
+        }
+    }
+
+    public function getSubmittedOnBehalfOf(): ?User
+    {
+        return $this->submittedOnBehalfOf;
     }
 
     /**

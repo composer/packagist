@@ -44,6 +44,12 @@ class VendorWritableValidator extends ConstraintValidator
             throw new UnexpectedValueException($value, Package::class);
         }
 
+        // a moderator assigning the package vouches for the namespace; the PackageCreated audit
+        // record names them. Their own submissions stay subject to the check.
+        if ($value->getSubmittedOnBehalfOf() !== null) {
+            return;
+        }
+
         try {
             $vendor = $value->getVendor();
             if ($vendor && $this->packageRepository->isVendorTaken($vendor, $value->getMaintainers()->first() ?: null)) {

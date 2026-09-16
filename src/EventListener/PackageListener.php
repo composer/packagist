@@ -48,7 +48,27 @@ class PackageListener
      */
     public function postPersist(Package $package, LifecycleEventArgs $event): void
     {
-        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::packageCreated($package, $this->getUser()));
+        $actor = $this->getUser();
+        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::packageCreated($package, $actor, $this->getResultingMaintainer($package, $actor)));
+    }
+
+    /**
+     * The owner the package ends up with, when that is someone other than whoever created it: a
+     * moderator submitting on behalf of a user, or any non-web path where there is no acting user.
+     */
+    private function getResultingMaintainer(Package $package, ?User $actor): ?User
+    {
+        $maintainers = $package->getMaintainers();
+        if ($maintainers->count() !== 1) {
+            return null;
+        }
+
+        $maintainer = $maintainers->first();
+        if ($maintainer === false || $maintainer->getId() === $actor?->getId()) {
+            return null;
+        }
+
+        return $maintainer;
     }
 
     #[AsEventListener]
