@@ -75,6 +75,8 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('https://github.com/vendor/package', $display->repository);
         self::assertSame(123, $display->actor->id);
         self::assertSame('testuser', $display->actor->username);
+        // records predating moderator submissions carry no 'user' attribute
+        self::assertNull($display->maintainer);
         self::assertSame(AuditRecordType::PackageCreated, $display->getType());
         self::assertSame('audit_log/display/package_created.html.twig', $display->getTemplateName());
         self::assertSame('audit_log.type.package_created', $display->getTypeTranslationKey());
@@ -96,6 +98,26 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(PackageCreatedDisplay::class, $display);
         self::assertNull($display->actor->id);
         self::assertSame('automation', $display->actor->username);
+    }
+
+    public function testBuildPackageCreatedWithMaintainer(): void
+    {
+        $auditRecord = $this->createAuditRecord(
+            AuditRecordType::PackageCreated,
+            [
+                'name' => 'vendor/package',
+                'repository' => 'https://github.com/vendor/package',
+                'user' => ['id' => 456, 'username' => 'newowner'],
+                'actor' => ['id' => 123, 'username' => 'moderator'],
+            ]
+        );
+
+        $display = $this->factory->buildSingle($auditRecord);
+
+        self::assertInstanceOf(PackageCreatedDisplay::class, $display);
+        self::assertSame(456, $display->maintainer->id);
+        self::assertSame('newowner', $display->maintainer->username);
+        self::assertSame('moderator', $display->actor->username);
     }
 
     public function testBuildPackageDeleted(): void

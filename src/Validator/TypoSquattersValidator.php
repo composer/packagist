@@ -76,9 +76,11 @@ class TypoSquattersValidator extends ConstraintValidator
             if (levenshtein($existingVendor, $value->getVendor()) <= 1) {
                 $existingPkg = $this->getEM()->getRepository(Package::class)->find($existingPackage['id']);
                 if ($existingPkg !== null) {
+                    // on a moderator submission the relevant person is the future owner, not the moderator
+                    $submitter = $value->getSubmittedOnBehalfOf() ?? $this->security->getUser();
                     foreach ($existingPkg->getMaintainers() as $maintainer) {
-                        // current user is maintainer of existing conflicting pkg, so probably a false alarm
-                        if ($maintainer === $this->security->getUser()) {
+                        // submitter is maintainer of existing conflicting pkg, so probably a false alarm
+                        if ($maintainer === $submitter) {
                             return;
                         }
                     }

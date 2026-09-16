@@ -303,8 +303,15 @@ class PackageController extends Controller
     {
         $package = new Package();
         $package->addMaintainer($user);
+
+        $canSubmitForOthers = $this->isGranted(PackageActions::AdminSubmit->value, $package);
+        if ($canSubmitForOthers) {
+            $package->waiveVendorOwnershipCheck();
+        }
+
         $form = $this->createForm(PackageType::class, $package, [
             'action' => $this->generateUrl('submit'),
+            'allow_maintainer_selection' => $canSubmitForOthers,
         ]);
 
         $form->handleRequest($req);
@@ -317,15 +324,24 @@ class PackageController extends Controller
                 $em->flush();
 
                 $this->providerManager->insertPackage($package);
-                if ($user->getGithubToken()) {
+
+                // a moderator may have assigned the package to someone else, and it is their token
+                // that can install the hook and that later syncs reuse
+                $maintainer = $package->getSubmittedOnBehalfOf() ?? $user;
+                if ($maintainer->getGithubToken()) {
                     try {
-                        $githubUserMigrationWorker->setupWebHook($user->getGithubToken(), $package);
+                        $githubUserMigrationWorker->setupWebHook($maintainer->getGithubToken(), $package);
                     } catch (\Throwable $e) {
                         // ignore errors at this point
                     }
                 }
 
-                $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
+                if ($maintainer->getId() !== $user->getId()) {
+                    $this->packageManager->notifyNewMaintainer($maintainer, $package);
+                    $this->addFlash('success', $package->getName().' has been added to the package list and assigned to '.$maintainer->getUsername().', the repository will now be crawled.');
+                } else {
+                    $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
+                }
 
                 return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
             } catch (\Exception $e) {
@@ -342,7 +358,15 @@ class PackageController extends Controller
     {
         $package = new Package();
         $package->addMaintainer($user);
-        $form = $this->createForm(PackageType::class, $package);
+
+        $canSubmitForOthers = $this->isGranted(PackageActions::AdminSubmit->value, $package);
+        if ($canSubmitForOthers) {
+            $package->waiveVendorOwnershipCheck();
+        }
+
+        $form = $this->createForm(PackageType::class, $package, [
+            'allow_maintainer_selection' => $canSubmitForOthers,
+        ]);
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {

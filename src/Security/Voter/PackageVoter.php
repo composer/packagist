@@ -55,6 +55,7 @@ class PackageVoter extends Voter
             PackageActions::ViewHiddenVersion, PackageActions::DeleteVersion, PackageActions::RecoverVersion => $this->canDeleteVersion($package, $user),
             PackageActions::AdminDeleteVersion,
             PackageActions::HideVersion => $this->canAdministerVersion(),
+            PackageActions::AdminSubmit => $this->canSubmitForOtherUsers(),
             PackageActions::Edit => $this->canEdit($package, $user),
             PackageActions::AddMaintainer, PackageActions::TransferPackage => $this->canAddMaintainers($package, $user),
             PackageActions::RemoveMaintainer => $this->canRemoveMaintainers($package, $user),
@@ -70,6 +71,16 @@ class PackageVoter extends Voter
     private function canAdministerVersion(): bool
     {
         return $this->security->isGranted('ROLE_DELETE_PACKAGES');
+    }
+
+    /**
+     * Submitting a package for someone else, which also waives the vendor ownership check, is a
+     * moderation action. Deliberately has no maintainer branch: the subject is a not-yet-persisted
+     * Package, so any maintainer-based check would be trivially satisfiable.
+     */
+    private function canSubmitForOtherUsers(): bool
+    {
+        return $this->security->isGranted('ROLE_EDIT_PACKAGES');
     }
 
     private function canDelete(Package $package, User $user): bool

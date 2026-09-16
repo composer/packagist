@@ -48,7 +48,8 @@ class PackageListener
      */
     public function postPersist(Package $package, LifecycleEventArgs $event): void
     {
-        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::packageCreated($package, $this->getUser()));
+        // a moderator submitting for another user is recorded with both names, see Package::$submittedOnBehalfOf
+        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::packageCreated($package, $this->getUser(), $package->getSubmittedOnBehalfOf()));
     }
 
     #[AsEventListener]
