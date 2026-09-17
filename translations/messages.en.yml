@@ -41,6 +41,8 @@ link_type:
     conflict: Conflicts
     replace: Replaces
     provide: Provides
+    features: Features
+    requireFeatures: Requires Features
 
 listing:
     title: Packages
