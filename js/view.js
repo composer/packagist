@@ -124,35 +124,82 @@ const init = function ($) {
         modalInstance.show();
     }
 
+    // the toast doubles as the running flag - a second variable for the same fact only gives the
+    // two something to disagree about when the toast is dismissed or swept from under us
+    var updateToast = null;
+
+    // the Update action lives in the Manage menu, so its own spinner is invisible as soon as the
+    // menu closes - and never visible at all for the data-force-crawl auto-trigger below. Show the
+    // state on the menu's toggle and in a toast instead.
+    function setUpdateRunning(running) {
+        $('.package-actions .dropdown-toggle').toggleClass('loading', running);
+        // the trigger is an <a>, so it takes aria-disabled; the menu entry is a real submit input
+        $('.package .force-update .force-update-trigger')
+            .toggleClass('loading disabled', running)
+            .attr('aria-disabled', running ? 'true' : null);
+        $('.package .force-update input[type=submit]').prop('disabled', running);
+
+        if (running) {
+            // sticky: an unrelated ajax failure clearing its messages must not take the only
+            // explanation for the spinner with it
+            updateToast = notifier.log('Update in progress…', {spinner: true, sticky: true});
+        } else if (updateToast) {
+            notifier.remove(updateToast);
+            updateToast = null;
+        }
+    }
+
     function forceUpdatePackage(e, updateAll) {
-        var submit = $('input[type=submit], .force-update-trigger', '.package .force-update'), data;
+        var data;
         var showOutput = e && e.shiftKey;
         if (e) {
             e.preventDefault();
         }
-        if (submit.is('.loading')) {
+        if (updateToast) {
             return;
         }
-        data = $('.package .force-update').serializeArray();
+        // data-force-crawl is granted by 'edit' but this form by 'update', and neither role implies
+        // the other - without the form there is no action/method to submit to
+        var form = $('.package .force-update');
+        if (!form.length) {
+            return;
+        }
+        data = form.serializeArray();
         if (updateAll) {
             data.push({name: 'updateAll', value: '1'});
         }
         data.push({name: 'manualUpdate', value: '1'});
 
+        setUpdateRunning(true);
+
         $.ajax({
-            url: $('.package .force-update').attr('action'),
+            url: form.attr('action'),
             dataType: 'json',
             cache: false,
             data: data,
-            type: $('.package .force-update').attr('method'),
+            type: form.attr('method'),
             success: function (data) {
                 if (data.job) {
+                    var pollFailures = 0;
                     var checkJobStatus = function () {
+                        // own error handler rather than the global $.ajaxSetup one: a poll blip is
+                        // not worth a toast while we are still retrying
                         $.ajax({
                             url: '/jobs/' + data.job,
                             cache: false,
+                            error: function () {
+                                pollFailures++;
+                                if (pollFailures > 3) {
+                                    setUpdateRunning(false);
+                                    notifier.log('Lost contact with the server while the update was running — reload to see the result.', {timeout: 5000});
+                                    return;
+                                }
+                                setTimeout(checkJobStatus, 1000 * Math.pow(2, pollFailures));
+                            },
                             success: function (data) {
+                                pollFailures = 0;
                                 if (data.status == 'completed' || data.status == 'errored' || data.status == 'failed' || data.status == 'package_deleted') {
+                                    setUpdateRunning(false);
                                     notifier.remove();
 
                                     var message = data.message;
@@ -173,8 +220,6 @@ const init = function ($) {
                                         }, 700);
                                     }
 
-                                    submit.removeClass('loading');
-
                                     return;
                                 }
 
@@ -184,11 +229,16 @@ const init = function ($) {
                     };
 
                     setTimeout(checkJobStatus, 1000);
+                } else {
+                    setUpdateRunning(false);
                 }
             },
-            context: $('.package .force-update')[0]
+            context: form[0]
+        }).fail(function () {
+            // .fail() rather than an error option: the latter would replace the global
+            // $.ajaxSetup handler that surfaces the server's message
+            setUpdateRunning(false);
         });
-        submit.addClass('loading');
     }
     $('.package .force-update').on('submit', forceUpdatePackage);
     $('.package .force-update').on('click', forceUpdatePackage);

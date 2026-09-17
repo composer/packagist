@@ -12,7 +12,6 @@
         minify: !process.argv.includes('--dev'),
         metafile: process.argv.includes('--analyze'),
         loader: {
-            '.gif':'file',
             '.eot':'file',
             '.ttf':'file',
             '.svg':'file',
