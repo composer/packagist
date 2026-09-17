@@ -108,6 +108,35 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $crawler->filter('form.delete'));
     }
 
+    public function testNeverCrawledPackageOnlyAutoUpdatesForVisitorsWhoCanUpdateIt(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        // ROLE_EDIT_PACKAGES and ROLE_UPDATE_PACKAGES are siblings in the role hierarchy, so an
+        // edit-only moderator sees the Manage menu without the force-update form in it
+        $editor = self::createUser('editor', 'editor@example.org', githubId: '23456', roles: ['ROLE_EDIT_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        self::assertNull($package->getCrawledAt());
+        $this->store($owner, $editor, $package);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('.package[data-force-crawl]'));
+
+        // js/view.js submits .force-update on seeing data-force-crawl, so the two have to be granted
+        // together - on its own the attribute makes the page fire a request with no action URL
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('.package[data-force-crawl]'));
+        self::assertCount(1, $crawler->filter('.package form.force-update'));
+
+        $this->client->loginUser($editor);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('.package form.force-update'));
+        self::assertCount(0, $crawler->filter('.package[data-force-crawl]'));
+    }
+
     public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void
     {
         $fresh = self::createPackage('test/fresh', 'https://example.com/test/fresh');

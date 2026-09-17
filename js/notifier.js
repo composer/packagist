@@ -46,10 +46,6 @@ function log(msg, options = {}, details = undefined) {
         const header = document.createElement('div');
         header.className = 'toast-header';
 
-        if (options.spinner) {
-            header.appendChild(spinner());
-        }
-
         const strong = document.createElement('strong');
         strong.className = 'me-auto';
         strong.textContent = msg;
@@ -88,21 +84,18 @@ function log(msg, options = {}, details = undefined) {
         el.appendChild(flex);
     }
 
-    // animation:false is not just cosmetic - show() queues a transition callback that dereferences
-    // the element, so a toast disposed within the ~150ms transition (a fast-failing request
-    // clearing its own progress toast) would throw from that callback after dispose() nulled it
-    const instance = new Toast(el, {
-        animation: options.animation !== false,
-        ...(autohide ? { delay: options.timeout } : { autohide: false }),
-    });
-    const entry = { el, instance };
+    const instance = new Toast(el, autohide ? { delay: options.timeout } : { autohide: false });
+    const entry = { el, instance, sticky: options.sticky === true };
 
+    // bootstrap fires hidden as the last statement of its own transition callback, so this is the
+    // only point where disposing cannot pull the element out from under a callback still to run
     el.addEventListener('hidden.bs.toast', () => {
         const i = active.indexOf(entry);
         if (i !== -1) {
             active.splice(i, 1);
         }
         el.remove();
+        instance.dispose();
     });
 
     if (autohide) {
@@ -116,18 +109,27 @@ function log(msg, options = {}, details = undefined) {
     return entry;
 }
 
-// without an entry this clears every toast, which is what the ajax error handler and the
-// job-completion path both want
+// without an entry this clears the message toasts, which is what the ajax error handler and the
+// job-completion path both want. Sticky ones track a running job rather than carrying a message,
+// so they survive until whoever started the job removes them by entry.
 function remove(entry = undefined) {
     let removing;
     if (entry) {
         const i = active.indexOf(entry);
         removing = i === -1 ? [] : active.splice(i, 1);
     } else {
-        removing = active.splice(0);
+        removing = active.filter((candidate) => !candidate.sticky);
+        removing.forEach((candidate) => active.splice(active.indexOf(candidate), 1));
     }
 
     removing.forEach(({ el, instance }) => {
+        // dispose() nulls the instance's element, but show() leaves a transition callback that
+        // dereferences it for another ~150ms - so hide out of a visible toast and let the hidden
+        // listener above dispose it once every callback has run
+        if (el.classList.contains('show')) {
+            instance.hide();
+            return;
+        }
         instance.dispose();
         el.remove();
     });
