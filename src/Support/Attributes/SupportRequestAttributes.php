@@ -12,6 +12,8 @@
 
 namespace App\Support\Attributes;
 
+use App\Support\SupportRequestType;
+
 /**
  * The type-specific payload of a support request, stored in the support_request.attributes JSON
  * column and mapped back to the right class by {@see \App\Support\SupportRequestType::hydrateAttributes()}.
@@ -20,6 +22,9 @@ namespace App\Support\Attributes;
  */
 interface SupportRequestAttributes
 {
+    /** The request type this payload belongs to, so creating a request needs no separate discriminator. */
+    public function type(): SupportRequestType;
+
     /** @return array<string, mixed> JSON-serialisable form, the inverse of each class's fromArray() */
     public function toArray(): array;
 

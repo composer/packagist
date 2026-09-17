@@ -73,17 +73,14 @@ enum SupportRequestType: string
      */
     public static function twoFactorGrantedReply(SupportRequest $request): string
     {
-        $username = $request->user->getUsername();
-
         return <<<TXT
-            Hi {$username},
-
             Your request to reset two-factor authentication has been approved, and two-factor
             authentication is now switched off on your account. You can sign in with your password
             alone.
 
-            Please set it up again as soon as you have access, from your account settings. If you did
-            not make this request, reply to this email straight away.
+            Please set it up again as soon as you have access, from your account settings.
+
+            If you did not make this request, reply to this email as soon as possible.
             TXT;
     }
 
@@ -96,7 +93,6 @@ enum SupportRequestType: string
      */
     public function suggestedReply(SupportRequest $request): string
     {
-        $username = $request->user->getUsername();
         $attributes = $request->attributes;
         // Pulled out ahead of the match so each arm stays a plain heredoc.
         $packageNames = $attributes instanceof PackageTransferAttributes ? implode("\n", $attributes->packageNames) : '';
@@ -104,11 +100,9 @@ enum SupportRequestType: string
 
         return match ($this) {
             self::LostTwoFactor => <<<TXT
-                Hi {$username},
-
                 Before we can reset two-factor authentication on your account, we need to confirm you
-                control it. Please push a file named packagist-verify.txt to the default branch of the
-                repository behind one of your packages, and reply here once it is there.
+                control it. Please create a secret gist on https://gist.github.com and link us to it
+                to prove ownership of your GitHub account.
 
                 --- or ---
 
@@ -117,8 +111,6 @@ enum SupportRequestType: string
                 code when logging in.
                 TXT,
             self::PackageTransfer => <<<TXT
-                Hi {$username},
-
                 Thanks for getting in touch. We have transferred the following package(s) to your
                 account:
 
@@ -133,8 +125,6 @@ enum SupportRequestType: string
                 reach them.
                 TXT,
             self::VendorClaim => <<<TXT
-                Hi {$username},
-
                 Thanks for getting in touch about the "{$vendorName}" vendor namespace. We have
                 given your account access to it, so you can now publish packages under that name.
 
@@ -145,8 +135,6 @@ enum SupportRequestType: string
                 something that shows it, such as commit access to the repositories they point at.
                 TXT,
             self::AccountDeletion => <<<TXT
-                Hi {$username},
-
                 Thanks for getting in touch. Before we delete your account we want to confirm what
                 should happen to the packages you still maintain, since deletion cannot be undone.
 

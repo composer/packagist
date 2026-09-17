@@ -13,6 +13,7 @@
 namespace App\Support\Attributes;
 
 use App\Support\PackageDisposition;
+use App\Support\SupportRequestType;
 
 final readonly class AccountDeletionAttributes implements SupportRequestAttributes
 {
@@ -22,6 +23,11 @@ final readonly class AccountDeletionAttributes implements SupportRequestAttribut
         /** Username to hand the packages to. Only meaningful with PackageDisposition::Transfer. */
         public ?string $transferTo,
     ) {
+    }
+
+    public function type(): SupportRequestType
+    {
+        return SupportRequestType::AccountDeletion;
     }
 
     /** @param array<string, mixed> $data */

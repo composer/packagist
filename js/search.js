@@ -26,8 +26,10 @@ document.addEventListener('keydown', function (e) {
     if (!searchInput) {
         return;
     }
-    // If we already have input focus ignore.
-    if (document.activeElement.tagName === 'INPUT') {
+    // Ignore while the user is typing into a field. Not just INPUT: package names contain a slash
+    // (acme/console), and the support forms take them in a textarea.
+    var active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)) {
         return;
     }
     searchInput.focus();

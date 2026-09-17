@@ -21,8 +21,12 @@ use App\Entity\SupportRequestRepository;
 use App\Entity\User;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Model\PackageManager;
 use App\Security\TwoFactorAuthManager;
+use App\Security\Voter\PackageActions;
 use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\SupportNotifier;
 use App\Support\SupportQueueAccess;
 use App\Support\SupportRequestStatus;
@@ -49,6 +53,13 @@ class SupportController extends Controller
 {
     private const string CSRF_TOKEN_ID = 'admin_support';
 
+    /**
+     * Enough of a vendor namespace to judge a claim against. A vendor with more packages than this is
+     * already answer enough -- it is plainly in use -- and the maintainer list below is computed over
+     * all of them regardless of this cap.
+     */
+    private const int VENDOR_PACKAGE_LIMIT = 50;
+
     public function __construct(
         private readonly SupportRequestRepository $supportRequests,
         private readonly SupportQueueAccess $access,
@@ -66,12 +77,14 @@ class SupportController extends Controller
         $statusFilter = $req->query->has('status') ? $req->query->getString('status') : SupportRequestStatus::Open->value;
         $status = $statusFilter === '' ? null : (SupportRequestStatus::tryFrom($statusFilter) ?? throw new BadRequestHttpException('Unknown status'));
 
-        $type = $this->enumFromQuery($req, 'type', SupportRequestType::class);
+        // Deliberately not `q`/`type`: js/search.js reads those two off the query string on every
+        // page and would either redirect this one to /search/ or overlay the package search on it.
+        $type = $this->enumFromQuery($req, 'requestType', SupportRequestType::class);
         if ($type !== null && !$this->access->canSee($type)) {
             throw $this->createAccessDeniedException();
         }
 
-        $search = trim($req->query->getString('q'));
+        $search = trim($req->query->getString('search'));
 
         $qb = $this->supportRequests->createQueueQueryBuilder($visibleTypes, $status, $type, $search);
 
@@ -91,14 +104,18 @@ class SupportController extends Controller
             // and the detail page agree on what is still held.
             'heldIds' => array_values(array_map(
                 static fn (SupportRequest $r): string => $r->publicId,
-                array_filter($rows, static fn (SupportRequest $r): bool => $r->isOpen() && !$r->isApprovable($now)),
+                array_filter($rows, static function (SupportRequest $r) use ($now): bool {
+                    $attributes = $r->attributes;
+
+                    return $r->isOpen() && $attributes instanceof LostTwoFactorAttributes && !$attributes->isApprovable($now);
+                }),
             )),
             'visibleTypes' => $visibleTypes,
             'statuses' => SupportRequestStatus::cases(),
             'filters' => [
                 'status' => $statusFilter,
-                'type' => $type?->value,
-                'q' => $search,
+                'requestType' => $type?->value,
+                'search' => $search,
             ],
         ]);
     }
@@ -116,6 +133,7 @@ class SupportController extends Controller
 
         if ($request->type === SupportRequestType::PackageTransfer) {
             $context['resolvedPackages'] = $this->resolvePackages($request, $favMgr, $dlMgr);
+            $context['vendors'] = $this->resolveRequestVendors($request, $favMgr, $dlMgr);
         }
 
         if ($request->type === SupportRequestType::LostTwoFactor) {
@@ -124,7 +142,11 @@ class SupportController extends Controller
             $context['riskAuditDisplays'] = $displayFactory->build($profile->recentSecurityEvents);
             $context['previousRequests'] = $this->supportRequests->findPreviousTwoFactorRequests($request);
             // Resolved here rather than in Twig, whose date() hands back a DateTime.
-            $context['coolingOffElapsed'] = $request->isApprovable(new \DateTimeImmutable());
+            $context['coolingOffElapsed'] = $request->attributesOf(LostTwoFactorAttributes::class)->isApprovable(new \DateTimeImmutable());
+        }
+
+        if ($request->type === SupportRequestType::VendorClaim) {
+            $context['vendor'] = $this->resolveVendor($request->attributesOf(VendorClaimAttributes::class)->vendorName, $favMgr, $dlMgr);
         }
 
         if ($request->type === SupportRequestType::AccountDeletion) {
@@ -214,6 +236,66 @@ class SupportController extends Controller
     }
 
     /**
+     * Hands one of the requested packages to the requester, making them its sole maintainer, which is
+     * what a transfer request asks for. The package page's own form stays the route for anything more
+     * nuanced, such as keeping an existing maintainer on.
+     */
+    #[Route(path: '/admin/support/{publicId}/transfer-package', name: 'admin_support_request_transfer_package', methods: ['POST'])]
+    public function transferPackage(Request $req, string $publicId, #[CurrentUser] User $actor, PackageManager $packageManager): RedirectResponse
+    {
+        $this->assertCsrf($req);
+
+        $request = $this->findRequest($publicId);
+        $redirect = $this->redirectToRoute('admin_support_request', ['publicId' => $publicId]);
+
+        if ($request->type !== SupportRequestType::PackageTransfer) {
+            throw new BadRequestHttpException('Not a package transfer request');
+        }
+
+        if (!$request->isOpen()) {
+            $this->addFlash('warning', 'This request has already been dealt with.');
+
+            return $redirect;
+        }
+
+        // Restricted to the names the requester actually listed. The role behind this queue can
+        // transfer any package from the package page anyway, so this is not the security boundary --
+        // it keeps a support action inside the request it is filed against, and off the audit trail
+        // of packages nobody asked about.
+        $name = $req->request->getString('package');
+        if (!in_array($name, $request->attributesOf(PackageTransferAttributes::class)->packageNames, true)) {
+            throw new BadRequestHttpException('Package is not part of this request');
+        }
+
+        $package = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $name]);
+        if ($package === null) {
+            $this->addFlash('error', $name.' no longer exists.');
+
+            return $redirect;
+        }
+
+        // The same gate the package page's transfer form uses, asked of this admin and this package.
+        $this->denyAccessUnlessGranted(PackageActions::TransferPackage->value, $package);
+
+        if (!$packageManager->transferPackage($package, [$request->user], true)) {
+            $this->addFlash('warning', $request->user->getUsername().' already maintains '.$name.' alone.');
+
+            return $redirect;
+        }
+
+        $em = $this->getEM();
+        // On the thread rather than only in audit_log, so the next admin to open the task can see
+        // which of the requested packages have already been handed over.
+        $em->persist(SupportRequestMessage::internalNote($request, 'Transferred '.$name.' to '.$request->user->getUsername().'.', $actor));
+        $request->touch(new \DateTimeImmutable());
+        $em->flush();
+
+        $this->addFlash('success', $name.' transferred to '.$request->user->getUsername().'.');
+
+        return $redirect;
+    }
+
+    /**
      * Disables two-factor authentication, tells the requester it was granted, and closes the task in
      * one POST.
      */
@@ -239,8 +321,9 @@ class SupportController extends Controller
         }
 
         $now = new \DateTimeImmutable();
-        if (!$request->isApprovable($now)) {
-            $this->addFlash('warning', 'This request is held until '.$request->attributesOf(LostTwoFactorAttributes::class)->approvableAt?->format('Y-m-d H:i').' UTC so the account owner has time to object.');
+        $attributes = $request->attributesOf(LostTwoFactorAttributes::class);
+        if (!$attributes->isApprovable($now)) {
+            $this->addFlash('warning', 'This request is held until '.$attributes->approvableAt?->format('Y-m-d H:i').' UTC so the account owner has time to object.');
 
             return $redirect;
         }
@@ -333,11 +416,11 @@ class SupportController extends Controller
      * Resolves the names the requester typed against real packages, so the admin can judge the claim
      * against the authoritative maintainer list rather than against a string somebody typed.
      *
-     * @return list<array{name: string, package: Package|null, downloads: int}>
+     * @return list<array{name: string, package: Package|null, downloads: int, transferred: bool}>
      */
     private function resolvePackages(SupportRequest $request, FavoriteManager $favMgr, DownloadManager $dlMgr): array
     {
-        $names = $request->packageNameList();
+        $names = $request->attributesOf(PackageTransferAttributes::class)->packageNames;
         if ($names === []) {
             return [];
         }
@@ -365,10 +448,97 @@ class SupportController extends Controller
                 'name' => $name,
                 'package' => $package,
                 'downloads' => $package !== null ? ($metadata['downloads'][$package->getId()] ?? 0) : 0,
+                'transferred' => $package !== null && $package->isMaintainer($request->user),
             ];
         }
 
         return $resolved;
+    }
+
+    /**
+     * Every namespace the requested packages sit in, so a transfer can be judged against the rest of
+     * the vendor rather than against the listed names alone. Keyed by vendor, deduplicated, and
+     * derived from the names as typed: a package that does not exist yet still tells us which
+     * namespace the requester is reaching into.
+     *
+     * @return array<string, array{packages: list<array{package: Package, downloads: int}>, total: int, maintainers: list<User>}>
+     */
+    private function resolveRequestVendors(SupportRequest $request, FavoriteManager $favMgr, DownloadManager $dlMgr): array
+    {
+        $vendors = [];
+        foreach ($request->attributesOf(PackageTransferAttributes::class)->packageNames as $name) {
+            $slash = strpos($name, '/');
+            if ($slash === false || $slash === 0) {
+                continue;
+            }
+
+            $vendor = substr($name, 0, $slash);
+            $vendors[$vendor] ??= $this->resolveVendor($vendor, $favMgr, $dlMgr);
+        }
+
+        ksort($vendors);
+
+        return $vendors;
+    }
+
+    /**
+     * What the claimed vendor namespace holds today, so the admin can tell an unused name from one
+     * somebody else is actively publishing under without leaving the page.
+     *
+     * @return array{packages: list<array{package: Package, downloads: int}>, total: int, maintainers: list<User>}
+     */
+    private function resolveVendor(string $vendor, FavoriteManager $favMgr, DownloadManager $dlMgr): array
+    {
+        $repo = $this->getEM()->getRepository(Package::class);
+
+        $total = (int) $repo->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->where('p.vendor = :vendor')
+            ->setParameter('vendor', $vendor)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Names first, then the entities: a fetch-join to maintainers under setMaxResults would apply
+        // the LIMIT to joined rows rather than to packages, handing back partial collections.
+        /** @var list<array{name: string}> $nameRows */
+        $nameRows = $repo->createQueryBuilder('p')
+            ->select('p.name')
+            ->where('p.vendor = :vendor')
+            ->setParameter('vendor', $vendor)
+            ->orderBy('p.name', 'ASC')
+            ->setMaxResults(self::VENDOR_PACKAGE_LIMIT)
+            ->getQuery()
+            ->getResult();
+        $names = array_column($nameRows, 'name');
+
+        $packages = [];
+        if ($names !== []) {
+            /** @var list<Package> $packages */
+            $packages = $repo->createQueryBuilder('p')
+                ->addSelect('m')
+                ->leftJoin('p.maintainers', 'm')
+                ->where('p.name IN (:names)')
+                ->setParameter('names', $names)
+                ->orderBy('p.name', 'ASC')
+                ->getQuery()
+                ->getResult();
+        }
+
+        $metadata = $this->getPackagesMetadata($favMgr, $dlMgr, $packages);
+
+        $rows = [];
+        foreach ($packages as $package) {
+            $rows[] = ['package' => $package, 'downloads' => $metadata['downloads'][$package->getId()] ?? 0];
+        }
+
+        // Over the whole vendor, not just the page above: "who holds this namespace" is the question
+        // the claim turns on, and a truncated answer to it would be worse than none.
+        /** @var list<User> $maintainers */
+        $maintainers = $this->getEM()->createQuery(
+            'SELECT DISTINCT m FROM App\Entity\User m JOIN m.packages p WHERE p.vendor = :vendor ORDER BY m.usernameCanonical ASC'
+        )->setParameter('vendor', $vendor)->getResult();
+
+        return ['packages' => $rows, 'total' => $total, 'maintainers' => $maintainers];
     }
 
     /**

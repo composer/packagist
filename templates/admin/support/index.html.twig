@@ -19,7 +19,7 @@
     </div>
 
     <form method="get" class="d-flex flex-wrap align-items-center gap-2" action="{{ path('admin_support_requests') }}">
-        <input type="search" name="q" class="form-control w-auto" placeholder="username, vendor, package" value="{{ filters.q }}" />
+        <input type="search" name="search" class="form-control w-auto" placeholder="username, vendor, package" value="{{ filters.search }}" />
 
         <select name="status" class="form-select w-auto">
             <option value="">Any status</option>
@@ -28,10 +28,10 @@
             {% endfor %}
         </select>
 
-        <select name="type" class="form-select w-auto">
+        <select name="requestType" class="form-select w-auto">
             <option value="">All types</option>
             {% for type in visibleTypes %}
-                <option value="{{ type.value }}" {{ filters.type == type.value ? 'selected' : '' }}>{{ type.label }}</option>
+                <option value="{{ type.value }}" {{ filters.requestType == type.value ? 'selected' : '' }}>{{ type.label }}</option>
             {% endfor %}
         </select>
 

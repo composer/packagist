@@ -19,6 +19,10 @@ use App\Entity\SupportRequestRepository;
 use App\Entity\User;
 use App\Form\Model\AccountDeletionSupportRequest;
 use App\Form\Model\LostTwoFactorSupportRequest;
+use App\Support\Attributes\AccountDeletionAttributes;
+use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\PackageDisposition;
 use App\Form\Model\PackageTransferSupportRequest;
 use App\Form\Model\VendorClaimSupportRequest;
@@ -99,11 +103,10 @@ class SupportController extends Controller
             }
 
             $cancelToken = bin2hex(random_bytes(32));
-            $request = SupportRequest::lostTwoFactor(
+            $request = SupportRequest::create(
                 $user,
                 $data->description,
-                $cancelToken,
-                $riskAssessor->coolingOffUntil($user, new \DateTimeImmutable()),
+                LostTwoFactorAttributes::fromCancelToken($cancelToken, $riskAssessor->coolingOffUntil($user, new \DateTimeImmutable())),
                 $req->getClientIp(),
             );
 
@@ -141,7 +144,10 @@ class SupportController extends Controller
         $token = $req->isMethod('POST') ? $req->request->getString('token') : $req->query->getString('token');
 
         $request = $this->supportRequests->findOneByPublicId($publicId);
-        if ($request === null || $request->type !== SupportRequestType::LostTwoFactor || !$request->matchesCancelToken($token)) {
+        // instanceof rather than a type comparison: it both rejects other request types and narrows
+        // the payload, so a wrong link is a 404 instead of an exception out of the token check.
+        $attributes = $request?->attributes;
+        if ($request === null || !$attributes instanceof LostTwoFactorAttributes || !$attributes->matchesCancelToken($token)) {
             throw new NotFoundHttpException('Unknown or expired cancellation link');
         }
 
@@ -226,7 +232,7 @@ class SupportController extends Controller
         $form = $this->createForm(PackageTransferSupportType::class, $data)->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = fn (): SupportRequest => SupportRequest::packageTransfer($user, $data->packageNameList(), $data->description);
+            $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageTransferAttributes($data->packageNameList()));
 
             if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageTransfer, $create)) {
                 return $response;
@@ -259,7 +265,7 @@ class SupportController extends Controller
                     .'Submit a package under it and it is yours.'
                 ));
             } else {
-                $create = fn (): SupportRequest => SupportRequest::vendorClaim($user, $data->vendorName, $data->description);
+                $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new VendorClaimAttributes($data->vendorName));
 
                 if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::VendorClaim, $create)) {
                     return $response;
@@ -289,11 +295,10 @@ class SupportController extends Controller
         $form = $this->createForm(AccountDeletionSupportType::class, $data)->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = fn (): SupportRequest => SupportRequest::accountDeletion(
+            $create = fn (): SupportRequest => SupportRequest::create(
                 $user,
-                $data->packageDisposition ?? PackageDisposition::Undecided,
-                $data->transferTo,
                 $data->description,
+                new AccountDeletionAttributes($data->packageDisposition ?? PackageDisposition::Undecided, $data->transferTo),
             );
 
             if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::AccountDeletion, $create)) {

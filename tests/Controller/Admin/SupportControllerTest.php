@@ -14,9 +14,13 @@ namespace App\Tests\Controller\Admin;
 
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
+use App\Entity\Package;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\User;
+use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\SupportRequestStatus;
 use App\Tests\IntegrationTestCase;
 
@@ -40,8 +44,8 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = self::createUser('requester', 'requester@example.org');
         $this->store($admin, $requester);
 
-        $transfer = SupportRequest::packageTransfer($requester, ['acme/thing'], 'Please move it.');
-        $lost2fa = SupportRequest::lostTwoFactor($requester, null, 'token', null, null);
+        $transfer = SupportRequest::create($requester, 'Please move it.', new PackageTransferAttributes(['acme/thing']));
+        $lost2fa = SupportRequest::create($requester, null, LostTwoFactorAttributes::fromCancelToken('token', null));
         $this->store($transfer, $lost2fa);
 
         $this->client->loginUser($admin);
@@ -58,7 +62,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = self::createUser('requester', 'requester@example.org');
         $this->store($admin, $requester);
 
-        $lost2fa = SupportRequest::lostTwoFactor($requester, null, 'token', null, null);
+        $lost2fa = SupportRequest::create($requester, null, LostTwoFactorAttributes::fromCancelToken('token', null));
         $this->store($lost2fa);
 
         $this->client->loginUser($admin);
@@ -140,7 +144,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = $this->twoFactorUser();
         $this->store($admin, $requester);
 
-        $request = SupportRequest::lostTwoFactor($requester, null, 'token', null, null);
+        $request = SupportRequest::create($requester, null, LostTwoFactorAttributes::fromCancelToken('token', null));
         $this->store($request);
 
         $this->client->loginUser($admin);
@@ -217,7 +221,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = self::createUser('requester', 'requester@example.org');
         $this->store($admin, $requester);
 
-        $request = SupportRequest::packageTransfer($requester, ['acme/thing'], 'Please move it.');
+        $request = SupportRequest::create($requester, 'Please move it.', new PackageTransferAttributes(['acme/thing']));
         $this->store($request);
 
         $this->client->loginUser($admin);
@@ -268,21 +272,235 @@ class SupportControllerTest extends IntegrationTestCase
         $plain = self::createUser('plainone', 'plainone@example.org');
         $this->store($admin, $odd, $plain);
 
-        $withWildcard = SupportRequest::packageTransfer($odd, ['acme/th%ing'], 'Please move it.');
-        $withoutWildcard = SupportRequest::packageTransfer($plain, ['acme/thing'], 'Please move it.');
+        $withWildcard = SupportRequest::create($odd, 'Please move it.', new PackageTransferAttributes(['acme/th%ing']));
+        $withoutWildcard = SupportRequest::create($plain, 'Please move it.', new PackageTransferAttributes(['acme/thing']));
         $this->store($withWildcard, $withoutWildcard);
 
         $this->client->loginUser($admin);
 
-        $html = $this->client->request('GET', '/admin/support/?q=%25')->html();
+        $html = $this->client->request('GET', '/admin/support/?search=%25')->html();
         self::assertResponseIsSuccessful();
         self::assertStringContainsString($withWildcard->publicId, $html, 'a literal % should still find the row containing one');
         self::assertStringNotContainsString($withoutWildcard->publicId, $html, '% must not act as a wildcard');
 
         // An ordinary term keeps working.
-        $html = $this->client->request('GET', '/admin/support/?q=plainone')->html();
+        $html = $this->client->request('GET', '/admin/support/?search=plainone')->html();
         self::assertStringContainsString($withoutWildcard->publicId, $html);
         self::assertStringNotContainsString($withWildcard->publicId, $html);
+    }
+
+    /**
+     * js/search.js runs on every page and reads `q`, `query`, `type` and `tags` straight off the
+     * query string: it redirects to /search/ when it sees a filter without a query, and otherwise
+     * un-hides the package search over whatever page you are on. Neither shows up in a server-side
+     * assertion, so this guards the filter form's names instead.
+     */
+    public function testQueueFilterNamesDoNotCollideWithTheGlobalSearch(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $this->store($admin);
+        $this->client->loginUser($admin);
+
+        $crawler = $this->client->request('GET', '/admin/support/');
+        self::assertResponseIsSuccessful();
+
+        // Scoped to the queue's own form: the layout's package search box legitimately owns `query`,
+        // which is the whole reason these two namespaces must not overlap.
+        $filters = $crawler->filter('form[action="/admin/support/"]');
+        self::assertCount(1, $filters);
+
+        foreach (['q', 'query', 'type', 'tags'] as $reserved) {
+            self::assertCount(0, $filters->filter('[name="'.$reserved.'"]'), $reserved.' is read by js/search.js and must not name a support queue filter');
+        }
+        self::assertCount(1, $filters->filter('[name="search"]'));
+        self::assertCount(1, $filters->filter('[name="requestType"]'));
+    }
+
+    public function testTransferButtonHandsThePackageToTheRequester(): void
+    {
+        [$admin, $request, $requester] = $this->givenTransferRequest();
+        $previous = self::createUser('goneaway', 'goneaway@example.org');
+        $this->store($previous);
+        $one = self::createPackage('acme/one', 'https://example.org/acme/one', maintainers: [$previous]);
+        $two = self::createPackage('acme/two', 'https://example.org/acme/two', maintainers: [$previous]);
+        $this->store($one, $two);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        $this->client->enableProfiler();
+        $this->client->submit($crawler->selectButton('Transfer to requester')->form());
+        $this->assertResponseRedirects('/admin/support/'.$request->publicId);
+
+        // transferPackage() is called with notifyNewMaintainers, so the requester hears about it even
+        // if the admin never gets round to writing a reply.
+        $this->assertEmailCount(1);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->findOneBy(['name' => 'acme/one']);
+        self::assertNotNull($reloaded);
+        // A transfer hands the package over rather than adding a co-maintainer, so the unreachable
+        // maintainer the request was filed about must be gone.
+        self::assertSame(['requester'], array_map(static fn (User $u): string => $u->getUsername(), $reloaded->getMaintainers()->toArray()));
+
+        $message = $this->firstMessage($request);
+        self::assertNotNull($message);
+        self::assertTrue($message->internal);
+        self::assertSame('Transferred acme/one to requester.', $message->contents);
+
+        // The row now reports the handover instead of offering it again, while acme/two -- requested,
+        // real, and still on the old maintainer -- keeps its button. Without that second row this
+        // would also pass if the table simply lost every button.
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+        $rows = $crawler->filter('table tbody tr');
+        self::assertCount(1, $rows->eq(0)->filter('.badge:contains("Transferred")'));
+        self::assertCount(0, $rows->eq(0)->filter('button'));
+        self::assertCount(0, $rows->eq(1)->filter('.badge:contains("Transferred")'));
+        self::assertCount(1, $rows->eq(1)->filter('button'));
+    }
+
+    /**
+     * The queue's role can transfer any package from the package page, so this is not a privilege
+     * boundary -- it stops a support action touching a package the request never mentioned.
+     */
+    public function testTransferRejectsAPackageTheRequestDoesNotList(): void
+    {
+        [$admin, $request] = $this->givenTransferRequest();
+        $unrelated = self::createUser('bystander', 'bystander@example.org');
+        $this->store($unrelated);
+        $package = self::createPackage('acme/unrelated', 'https://example.org/acme/unrelated', maintainers: [$unrelated]);
+        $this->store($package);
+
+        $this->client->loginUser($admin);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/transfer-package', [
+            'token' => $this->csrfTokenFor($request),
+            'package' => 'acme/unrelated',
+        ]);
+        $this->assertResponseStatusCodeSame(400);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->findOneBy(['name' => 'acme/unrelated']);
+        self::assertNotNull($reloaded);
+        self::assertSame(['bystander'], array_map(static fn (User $u): string => $u->getUsername(), $reloaded->getMaintainers()->toArray()));
+    }
+
+    public function testTransferIsNotOfferedOnceTheRequestIsDealtWith(): void
+    {
+        [$admin, $request] = $this->givenTransferRequest();
+        $package = self::createPackage('acme/one', 'https://example.org/acme/one', maintainers: [$admin]);
+        $request->resolve(new \DateTimeImmutable());
+        $this->store($package, $request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+        self::assertCount(0, $crawler->filter('button:contains("Transfer to requester")'));
+
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/transfer-package', [
+            'token' => $this->csrfTokenFor($request),
+            'package' => 'acme/one',
+        ]);
+        $this->assertResponseRedirects('/admin/support/'.$request->publicId);
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->findOneBy(['name' => 'acme/one']);
+        self::assertNotNull($reloaded);
+        self::assertSame(['pkgadmin'], array_map(static fn (User $u): string => $u->getUsername(), $reloaded->getMaintainers()->toArray()));
+    }
+
+    public function testPackageTransferShowsEveryVendorTheRequestReachesInto(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $incumbent = self::createUser('incumbent', 'incumbent@example.org');
+        $this->store($admin, $requester, $incumbent);
+
+        $asked = self::createPackage('acme/console', 'https://example.org/acme/console', maintainers: [$incumbent]);
+        // Not asked for, but the same namespace, which is the context the panel exists to give.
+        $sibling = self::createPackage('acme/sibling', 'https://example.org/acme/sibling', maintainers: [$incumbent]);
+        $otherVendor = self::createPackage('widgets/thing', 'https://example.org/widgets/thing', maintainers: [$incumbent]);
+        $elsewhere = self::createPackage('unrelated/thing', 'https://example.org/unrelated/thing', maintainers: [$incumbent]);
+
+        $request = SupportRequest::create($requester, 'Both please.', new PackageTransferAttributes(['acme/console', 'widgets/thing']));
+        $this->store($asked, $sibling, $otherVendor, $elsewhere, $request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+        self::assertResponseIsSuccessful();
+
+        // One panel per distinct vendor in the request, and none for a vendor it never mentions.
+        self::assertCount(2, $crawler->filter('[id^="vendor-packages-"]'));
+
+        $acme = $crawler->filter('#vendor-packages-1');
+        self::assertStringContainsString('acme/sibling', $acme->html());
+        self::assertStringNotContainsString('unrelated/thing', $acme->html());
+        // Exactly one badge: acme/console is in the request, acme/sibling is only context.
+        $badged = $acme->filter('tbody tr')->reduce(static fn ($row): bool => $row->filter('.badge:contains("requested")')->count() > 0);
+        self::assertCount(1, $badged);
+        self::assertStringContainsString('acme/console', $badged->text());
+
+        self::assertStringContainsString('widgets/thing', $crawler->filter('#vendor-packages-2')->html());
+    }
+
+    public function testPackageTransferAsksAboutEachVendorOnlyOnce(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+
+        $one = self::createPackage('acme/one', 'https://example.org/acme/one', maintainers: [$requester]);
+        $two = self::createPackage('acme/two', 'https://example.org/acme/two', maintainers: [$requester]);
+        $request = SupportRequest::create($requester, 'Both.', new PackageTransferAttributes(['acme/one', 'acme/two']));
+        $this->store($one, $two, $request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+        self::assertResponseIsSuccessful();
+
+        self::assertCount(1, $crawler->filter('[id^="vendor-packages-"]'));
+    }
+
+    public function testVendorClaimShowsWhoAlreadyPublishesUnderTheVendor(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $claimant = self::createUser('claimant', 'claimant@example.org');
+        $incumbent = self::createUser('incumbent', 'incumbent@example.org');
+        $this->store($admin, $claimant, $incumbent);
+
+        $mine = self::createPackage('acme/console', 'https://example.org/acme/console', maintainers: [$incumbent]);
+        // Same maintainer, different namespace: it must not leak into the acme context.
+        $other = self::createPackage('other/thing', 'https://example.org/other/thing', maintainers: [$incumbent]);
+        $request = SupportRequest::create($claimant, 'The acme name is mine.', new VendorClaimAttributes('acme'));
+        $this->store($mine, $other, $request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+        self::assertResponseIsSuccessful();
+
+        $panel = $crawler->filter('#vendor-packages');
+        self::assertCount(1, $panel);
+        self::assertStringContainsString('acme/console', $panel->html());
+        self::assertStringContainsString('incumbent', $panel->html());
+        self::assertStringNotContainsString('other/thing', $panel->html());
+    }
+
+    public function testVendorClaimSaysSoWhenTheNamespaceIsUnused(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $claimant = self::createUser('claimant', 'claimant@example.org');
+        $this->store($admin, $claimant);
+
+        $request = SupportRequest::create($claimant, 'Nobody uses it.', new VendorClaimAttributes('freename'));
+        $this->store($request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+        self::assertResponseIsSuccessful();
+
+        self::assertStringContainsString('nothing is published under it', $crawler->filter('body')->html());
+        self::assertCount(0, $crawler->filter('#vendor-packages'));
     }
 
     /**
@@ -294,7 +512,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = self::createUser('requester', 'requester@example.org');
         $this->store($admin, $requester);
 
-        $request = SupportRequest::packageTransfer($requester, ['acme/one', 'acme/two'], 'Please move them.');
+        $request = SupportRequest::create($requester, 'Please move them.', new PackageTransferAttributes(['acme/one', 'acme/two']));
         $this->store($request);
 
         return [$admin, $request, $requester];
@@ -309,7 +527,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = $this->twoFactorUser();
         $this->store($admin, $requester);
 
-        $request = SupportRequest::lostTwoFactor($requester, 'I dropped my phone in a lake.', 'token', $approvableAt, null);
+        $request = SupportRequest::create($requester, 'I dropped my phone in a lake.', LostTwoFactorAttributes::fromCancelToken('token', $approvableAt));
         $this->store($request);
 
         return [$admin, $request, $requester];

@@ -114,7 +114,7 @@ class MenuBuilder
         if ($visibleSupportTypes !== []) {
             $openCount = $this->supportRequests->countOpen($visibleSupportTypes);
             $menu->addChild('Support', [
-                'label' => '<span class="icon-megaphone"></span>Support'.($openCount > 0 ? ' <span class="badge bg-warning text-dark">'.$openCount.'</span>' : ''),
+                'label' => '<span class="icon-megaphone"></span>Support'.($openCount > 0 ? ' <span class="badge bg-warning">'.$openCount.'</span>' : ''),
                 'route' => 'admin_support_requests',
                 'extras' => [
                     'safe_label' => true,

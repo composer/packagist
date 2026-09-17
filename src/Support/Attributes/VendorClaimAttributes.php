@@ -12,11 +12,18 @@
 
 namespace App\Support\Attributes;
 
+use App\Support\SupportRequestType;
+
 final readonly class VendorClaimAttributes implements SupportRequestAttributes
 {
     public function __construct(
         public string $vendorName,
     ) {
+    }
+
+    public function type(): SupportRequestType
+    {
+        return SupportRequestType::VendorClaim;
     }
 
     /** @param array<string, mixed> $data */

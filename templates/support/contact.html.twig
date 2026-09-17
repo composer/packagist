@@ -46,11 +46,7 @@
                 For packages whose maintainer is unreachable, or that belong to a project you have
                 taken over.
             </p>
-            {% if app.user %}
-                <a class="btn btn-primary" href="{{ path('support_package_transfer') }}">Request a transfer</a>
-            {% else %}
-                <a class="btn btn-secondary" href="{{ path('login') }}">Sign in to request this</a>
-            {% endif %}
+            <a class="btn btn-primary" href="{{ path('support_package_transfer') }}">Request a transfer</a>
         </section>
 
         <div class="clearfix"></div>
@@ -60,11 +56,7 @@
             <p>
                 If a vendor namespace already holds packages but you think it should belong to you, ask for it here.
             </p>
-            {% if app.user %}
-                <a class="btn btn-primary" href="{{ path('support_vendor_claim') }}">Claim a vendor name</a>
-            {% else %}
-                <a class="btn btn-secondary" href="{{ path('login') }}">Sign in to request this</a>
-            {% endif %}
+            <a class="btn btn-primary" href="{{ path('support_vendor_claim') }}">Claim a vendor name</a>
         </section>
 
         <section class="col-lg-6">
@@ -73,11 +65,7 @@
                 If your account maintains no packages you can delete it yourself from your profile
                 page. Otherwise you can request deletion here.
             </p>
-            {% if app.user %}
-                <a class="btn btn-primary" href="{{ path('support_delete_account') }}">Request deletion</a>
-            {% else %}
-                <a class="btn btn-secondary" href="{{ path('login') }}">Sign in to request this</a>
-            {% endif %}
+            <a class="btn btn-primary" href="{{ path('support_delete_account') }}">Request deletion</a>
         </section>
     </section>
 {% endblock %}

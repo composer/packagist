@@ -12,12 +12,19 @@
 
 namespace App\Support\Attributes;
 
+use App\Support\SupportRequestType;
+
 final readonly class PackageTransferAttributes implements SupportRequestAttributes
 {
     /** @param list<string> $packageNames as the requester typed them, already trimmed and de-blanked */
     public function __construct(
         public array $packageNames,
     ) {
+    }
+
+    public function type(): SupportRequestType
+    {
+        return SupportRequestType::PackageTransfer;
     }
 
     /** @param array<string, mixed> $data */

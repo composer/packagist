@@ -1,0 +1,51 @@
+{#
+ # What a vendor namespace holds today. Shared by the vendor-claim and package-transfer sections, so
+ # both answer "who is already publishing here" the same way.
+ #
+ # vendor:     the resolved namespace (packages, total, maintainers)
+ # vendorName: the namespace itself
+ # panelId:    unique on the page; dots are legal in an id but would break the data-bs-target selector
+ # requested:  names this request is about, badged in the table so they stand out from the rest
+ #}
+<p>
+    <a href="{{ path('view_vendor', {vendor: vendorName}) }}"><strong>{{ vendorName }}</strong></a> holds {{ vendor.total }} package{{ vendor.total == 1 ? '' : 's' }}, maintained by
+    {% for maintainer in vendor.maintainers %}
+        <a href="{{ path('user_profile', {name: maintainer.username}) }}">{{ maintainer.username }}</a>{% if not loop.last %}, {% endif %}
+    {% else %}
+        nobody
+    {% endfor %}.
+    <button class="btn btn-secondary btn-xs collapsed ms-2" type="button" data-bs-toggle="collapse"
+            data-bs-target="#{{ panelId }}" aria-expanded="false" aria-controls="{{ panelId }}">
+        Show packages
+    </button>
+</p>
+<div class="collapse" id="{{ panelId }}">
+    <table class="table">
+        <thead><tr><th>Package</th><th>Downloads</th><th>Maintainers</th></tr></thead>
+        <tbody>
+            {% for row in vendor.packages %}
+                <tr>
+                    <td>
+                        <a href="{{ path('view_package', {name: row.package.name}) }}">{{ row.package.name }}</a>
+                        {% if row.package.name in requested %}<span class="badge bg-info">requested</span>{% endif %}
+                        {% if row.package.abandoned %}<span class="badge bg-warning">abandoned</span>{% endif %}
+                    </td>
+                    <td>{{ row.downloads|number_format }}</td>
+                    <td>
+                        {% for maintainer in row.package.maintainers %}
+                            <a href="{{ path('user_profile', {name: maintainer.username}) }}">{{ maintainer.username }}</a>{% if not loop.last %}, {% endif %}
+                        {% else %}
+                            <span class="text-muted">none</span>
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if vendor.total > vendor.packages|length %}
+        <p class="text-muted">
+            Showing the first {{ vendor.packages|length }} of {{ vendor.total }} by name.
+            The maintainer list above covers all of them.
+        </p>
+    {% endif %}
+</div>

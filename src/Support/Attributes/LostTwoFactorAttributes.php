@@ -12,6 +12,8 @@
 
 namespace App\Support\Attributes;
 
+use App\Support\SupportRequestType;
+
 final readonly class LostTwoFactorAttributes implements SupportRequestAttributes
 {
     public function __construct(
@@ -28,6 +30,17 @@ final readonly class LostTwoFactorAttributes implements SupportRequestAttributes
          */
         public ?\DateTimeImmutable $approvableAt,
     ) {
+    }
+
+    public function type(): SupportRequestType
+    {
+        return SupportRequestType::LostTwoFactor;
+    }
+
+    /** Hashes the raw token; only the hash is ever stored. */
+    public static function fromCancelToken(string $cancelToken, ?\DateTimeImmutable $approvableAt): self
+    {
+        return new self(self::hashCancelToken($cancelToken), $approvableAt);
     }
 
     /** @param array<string, mixed> $data */
@@ -53,5 +66,21 @@ final readonly class LostTwoFactorAttributes implements SupportRequestAttributes
     public function summary(): ?string
     {
         return null;
+    }
+
+    /** Whether the cooling-off period, if any, has elapsed. Re-checked server-side on every grant. */
+    public function isApprovable(\DateTimeImmutable $now): bool
+    {
+        return $this->approvableAt === null || $this->approvableAt <= $now;
+    }
+
+    public function matchesCancelToken(string $token): bool
+    {
+        return hash_equals($this->cancelTokenHash, self::hashCancelToken($token));
+    }
+
+    public static function hashCancelToken(string $token): string
+    {
+        return hash('sha256', $token);
     }
 }

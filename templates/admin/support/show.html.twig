@@ -16,7 +16,7 @@
                     on {{ supportRequest.createdAt|date('Y-m-d H:i') }} UTC.
                     {% if supportRequest.type.value == 'lost_2fa' %}
                         <a href="{{ path('user_2fa_configure', {name: supportRequest.user.username}) }}">Inspect their two-factor settings</a>
-                        &mdash; look only; resetting from there skips the hold, the reply and closing this task.
+                        - look only; resetting from there skips the hold, the reply and closing this task.
                     {% endif %}
                 </p>
             </div>
@@ -55,22 +55,52 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    {% if row.package %}
-                                        <a class="btn btn-primary btn-xs" href="{{ path('view_package', {name: row.package.name}) }}#maintainers">Transfer to {{ supportRequest.user.username }}</a>
+                                    {% if row.transferred %}
+                                        <span class="badge bg-success">Transferred</span>
+                                    {% elseif row.package and supportRequest.status.value == 'open' %}
+                                        <form method="post" action="{{ path('admin_support_request_transfer_package', {publicId: supportRequest.publicId}) }}"
+                                              onsubmit="return confirm('Make {{ supportRequest.user.username|e('js') }} the sole maintainer of {{ row.package.name|e('js') }}? The current maintainers are removed.')">
+                                            <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+                                            <input type="hidden" name="package" value="{{ row.package.name }}" />
+                                            <button type="submit" class="btn btn-primary btn-xs">Transfer to {{ supportRequest.user.username }}</button>
+                                        </form>
                                     {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+
+                {% if vendors|length > 0 %}
+                    <h3>Vendors these sit in</h3>
+                {% endif %}
+                {% for vendorName, vendorData in vendors %}
+                    {% if vendorData.total > 0 %}
+                        {% include 'admin/support/_vendor_panel.html.twig' with {
+                            vendor: vendorData,
+                            vendorName: vendorName,
+                            panelId: 'vendor-packages-' ~ loop.index,
+                            requested: supportRequest.attributes.packageNames,
+                        } only %}
+                    {% endif %}
+                {% endfor %}
             {% endif %}
 
             {% if supportRequest.type.value == 'vendor_claim' %}
                 <h3>Vendor requested</h3>
-                <p>
-                    <a href="{{ path('view_vendor', {vendor: supportRequest.attributes.vendorName}) }}">{{ supportRequest.attributes.vendorName }}</a>
-                    &mdash; check who maintains the packages already under it before handing it over.
-                </p>
+                {% if vendor.total == 0 %}
+                    <p>
+                        <a href="{{ path('view_vendor', {vendor: supportRequest.attributes.vendorName}) }}">{{ supportRequest.attributes.vendorName }}</a>
+                        - <strong>nothing is published under it</strong>, so there is nobody to take it from.
+                    </p>
+                {% else %}
+                    {% include 'admin/support/_vendor_panel.html.twig' with {
+                        vendor: vendor,
+                        vendorName: supportRequest.attributes.vendorName,
+                        panelId: 'vendor-packages',
+                        requested: [],
+                    } only %}
+                {% endif %}
             {% endif %}
 
             {% if supportRequest.type.value == 'account_deletion' %}
@@ -78,7 +108,7 @@
                 <p>
                     {{ supportRequest.attributes.packageDisposition.label }}
                     {%- if supportRequest.attributes.transferTo %}
-                        &mdash; to <a href="{{ path('user_profile', {name: supportRequest.attributes.transferTo}) }}">{{ supportRequest.attributes.transferTo }}</a>
+                        - to <a href="{{ path('user_profile', {name: supportRequest.attributes.transferTo}) }}">{{ supportRequest.attributes.transferTo }}</a>
                     {%- endif %}
                 </p>
 
@@ -109,7 +139,7 @@
                         <strong>{{ message.author ? message.author.username : 'deleted user' }}</strong>
                         <small class="text-muted">{{ message.createdAt|date('Y-m-d H:i') }}</small>
                         {% if message.internal %}
-                            <span class="badge bg-secondary">Internal &mdash; not visible to the user</span>
+                            <span class="badge bg-secondary">Internal - not visible to the user</span>
                         {% else %}
                             <span class="badge bg-info">Sent to {{ is_granted('ROLE_AUDITOR') ? supportRequest.user.email : 'the address on the account' }}</span>
                         {% endif %}
@@ -149,7 +179,7 @@
                         <strong>Check this one carefully.</strong>
                         <ul class="mb-0">
                             {% if risk.hasRecentCredentialChange %}
-                                <li>Password or email changed in the last 7 days &mdash; an attacker may already hold this account.</li>
+                                <li>Password or email changed in the last 7 days - an attacker may already hold this account.</li>
                             {% endif %}
                             {% for package in risk.solePopularPackages %}
                                 <li>Sole maintainer of <strong>{{ package.name }}</strong> ({{ package.downloads|number_format }} downloads).</li>
@@ -200,7 +230,7 @@
                     <h4>Earlier reset requests</h4>
                     <ul>
                         {% for previous in previousRequests %}
-                            <li>{{ previous.createdAt|date('Y-m-d') }} &mdash; {{ previous.status.label }}</li>
+                            <li>{{ previous.createdAt|date('Y-m-d') }} - {{ previous.status.label }}</li>
                         {% endfor %}
                     </ul>
                 {% endif %}

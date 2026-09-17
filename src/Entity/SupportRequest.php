@@ -13,12 +13,7 @@
 namespace App\Entity;
 
 use App\Service\IdGenerator;
-use App\Support\Attributes\AccountDeletionAttributes;
-use App\Support\Attributes\LostTwoFactorAttributes;
-use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\SupportRequestAttributes;
-use App\Support\Attributes\VendorClaimAttributes;
-use App\Support\PackageDisposition;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -113,50 +108,28 @@ class SupportRequest
     public Collection $messages;
 
     private function __construct(
-        SupportRequestType $type,
         User $user,
         ?string $description,
         SupportRequestAttributes $attributes,
+        ?string $ip,
     ) {
         $this->id = new Ulid();
         $this->publicId = IdGenerator::generateSupportRequest();
-        $this->type = $type;
+        // Taken from the payload rather than passed alongside it, so the two can never disagree.
+        $this->type = $attributes->type();
         $this->status = SupportRequestStatus::Open;
         $this->user = $user;
         $this->description = $description;
         $this->attributeData = $attributes->toArray();
         $this->hydrated = $attributes;
+        $this->ip = $ip;
         $this->messages = new ArrayCollection();
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public static function lostTwoFactor(User $user, ?string $description, string $cancelToken, ?\DateTimeImmutable $approvableAt, ?string $ip): self
+    public static function create(User $user, ?string $description, SupportRequestAttributes $attributes, ?string $ip = null): self
     {
-        $request = new self(
-            SupportRequestType::LostTwoFactor,
-            $user,
-            $description,
-            new LostTwoFactorAttributes(self::hashCancelToken($cancelToken), $approvableAt),
-        );
-        $request->ip = $ip;
-
-        return $request;
-    }
-
-    /** @param list<string> $packageNames */
-    public static function packageTransfer(User $user, array $packageNames, string $description): self
-    {
-        return new self(SupportRequestType::PackageTransfer, $user, $description, new PackageTransferAttributes($packageNames));
-    }
-
-    public static function vendorClaim(User $user, string $vendorName, string $description): self
-    {
-        return new self(SupportRequestType::VendorClaim, $user, $description, new VendorClaimAttributes($vendorName));
-    }
-
-    public static function accountDeletion(User $user, PackageDisposition $disposition, ?string $transferTo, ?string $description): self
-    {
-        return new self(SupportRequestType::AccountDeletion, $user, $description, new AccountDeletionAttributes($disposition, $transferTo));
+        return new self($user, $description, $attributes, $ip);
     }
 
     /**
@@ -179,42 +152,9 @@ class SupportRequest
         return $attributes;
     }
 
-    public static function hashCancelToken(string $token): string
-    {
-        return hash('sha256', $token);
-    }
-
     public function isOpen(): bool
     {
         return $this->status === SupportRequestStatus::Open;
-    }
-
-    /**
-     * Whether the cooling-off period, if any, has elapsed. Re-checked server-side on every grant.
-     *
-     * Only lost-2FA requests are ever held, and the queue asks this of every row it lists, so any
-     * other type answers yes rather than throwing.
-     */
-    public function isApprovable(\DateTimeImmutable $now): bool
-    {
-        $attributes = $this->attributes;
-        if (!$attributes instanceof LostTwoFactorAttributes) {
-            return true;
-        }
-
-        return $attributes->approvableAt === null || $attributes->approvableAt <= $now;
-    }
-
-    /**
-     * Returns false rather than throwing on a request of another type: the only caller checks the
-     * type first, but this guards a public route and must not turn a wrong link into a 500.
-     */
-    public function matchesCancelToken(string $token): bool
-    {
-        $attributes = $this->attributes;
-
-        return $attributes instanceof LostTwoFactorAttributes
-            && hash_equals($attributes->cancelTokenHash, self::hashCancelToken($token));
     }
 
     public function resolve(\DateTimeImmutable $now): void
@@ -247,11 +187,5 @@ class SupportRequest
     public function summary(): string
     {
         return mb_strimwidth(trim($this->attributes->summary() ?? (string) $this->description), 0, 80, '…');
-    }
-
-    /** @return list<string> the package names the requester listed, for a transfer request */
-    public function packageNameList(): array
-    {
-        return $this->attributesOf(PackageTransferAttributes::class)->packageNames;
     }
 }

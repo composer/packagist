@@ -16,6 +16,7 @@ use App\Entity\SupportRequest;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
 use App\Support\Attributes\AccountDeletionAttributes;
+use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\PackageDisposition;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
@@ -353,7 +354,7 @@ class SupportControllerTest extends IntegrationTestCase
 
         $request = $this->findRequest($user, SupportRequestType::PackageTransfer);
         self::assertNotNull($request);
-        self::assertSame(['acme/console', 'acme/http-client'], $request->packageNameList());
+        self::assertSame(['acme/console', 'acme/http-client'], $request->attributesOf(PackageTransferAttributes::class)->packageNames);
         self::assertSame($user->getId(), $request->user->getId());
 
         // Admins are told there is something to look at, without any of the requester's prose.
