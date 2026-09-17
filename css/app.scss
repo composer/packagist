@@ -2528,6 +2528,12 @@ body {
     .nav-tabs > li > a > span {
         margin-right: 6px;
     }
+
+    // The open-request count reads on both the white row and the orange active one, so it stays
+    // white rather than taking the dark text the shared .badge.bg-warning rule gives it elsewhere.
+    .badge.bg-warning {
+        color: #fff;
+    }
 }
 
 // Team labels wrap onto multiple lines when a member/invitation belongs to many teams; Bootstrap's

@@ -6,7 +6,7 @@
     <p>Once a stable (non-dev) version of a package is published on Packagist, its <code>source</code> and <code>dist</code>
         reference are locked. The Packagist crawler will not update them, even if the upstream tag is moved or rewritten in the
         git repository. Dev branches (versions matching <code>dev-*</code> or <code>*-dev</code>) continue to track their branches
-        as they always have &mdash; this rule applies only to stable releases.</p>
+        as they always have - this rule applies only to stable releases.</p>
 
     <h3 id="why">Why?</h3>
     <p>A stable release is a contract: every downstream user who installed <code>vendor/pkg:1.2.3</code> expects to receive the
@@ -22,7 +22,7 @@
         <li>The version page displays a badge noting that the upstream re-tag was blocked and that Packagist's stored
             snapshot may no longer match what is currently in git.</li>
     </ul>
-    <p>The audit/email/badge fires at most once per attempted reference &mdash; subsequent crawls that observe the same
+    <p>The audit/email/badge fires at most once per attempted reference - subsequent crawls that observe the same
         diverged reference do not re-send.</p>
 
     <h3 id="how-to-publish-changes">How to publish the change you want to make</h3>
@@ -32,6 +32,6 @@
     <h3 id="takedowns">Takedowns and recovery</h3>
     <p>Maintainers can soft-delete a version they own from the package page. Such versions are hidden from Composer
         metadata but still listed on the page (grayed out), and can be recovered by the maintainer at any time. Administrator
-        takedowns (for malware, abuse, or legal reasons) cannot be recovered by maintainers &mdash; if you believe a
-        takedown was applied in error, please contact Packagist support.</p>
+        takedowns (for malware, abuse, or legal reasons) cannot be recovered by maintainers - if you believe a
+        takedown was applied in error, please <a href="{{ path('support_contact') }}">contact Packagist support</a>.</p>
 {% endblock %}

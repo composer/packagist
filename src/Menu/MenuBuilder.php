@@ -13,7 +13,9 @@
 namespace App\Menu;
 
 use App\Controller\AdminController;
+use App\Entity\SupportRequestRepository;
 use App\Entity\User;
+use App\Support\SupportQueueAccess;
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -26,7 +28,7 @@ class MenuBuilder
 {
     private string $username;
 
-    public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator, private LogoutUrlGenerator $logoutUrlGenerator, private Security $security, private RequestStack $requestStack)
+    public function __construct(private FactoryInterface $factory, TokenStorageInterface $tokenStorage, private TranslatorInterface $translator, private LogoutUrlGenerator $logoutUrlGenerator, private Security $security, private RequestStack $requestStack, private SupportQueueAccess $supportQueueAccess, private SupportRequestRepository $supportRequests)
     {
         if ($tokenStorage->getToken() && $tokenStorage->getToken()->getUser() instanceof User) {
             $this->username = $tokenStorage->getToken()->getUser()->getUsername();
@@ -104,6 +106,22 @@ class MenuBuilder
                     'routes' => [
                         ['route' => 'admin_organization_list'],
                         ['route' => 'admin_organization_create'],
+                    ],
+                ],
+            ]);
+        }
+        $visibleSupportTypes = $this->supportQueueAccess->visibleTypes();
+        if ($visibleSupportTypes !== []) {
+            $openCount = $this->supportRequests->countOpen($visibleSupportTypes);
+            $menu->addChild('Support', [
+                'label' => '<span class="icon-megaphone"></span>Support'.($openCount > 0 ? ' <span class="badge bg-warning">'.$openCount.'</span>' : ''),
+                'route' => 'admin_support_requests',
+                'extras' => [
+                    'safe_label' => true,
+                    'translation_domain' => false,
+                    'routes' => [
+                        ['route' => 'admin_support_requests'],
+                        ['route' => 'admin_support_request'],
                     ],
                 ],
             ]);

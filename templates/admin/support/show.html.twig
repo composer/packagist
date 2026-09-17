@@ -1,0 +1,281 @@
+{% extends "admin/layout.html.twig" %}
+
+{% block title %}{{ supportRequest.publicId }} - Support - {{ parent() }}{% endblock %}
+
+{% block admin_content %}
+    <div class="row">
+        <div class="col-12 package">
+            <div class="package-header">
+                <h2 class="title">
+                    {{ supportRequest.type.label }}
+                    <small><code>{{ supportRequest.publicId }}</code></small>
+                    <span class="badge {{ supportRequest.status.badgeClass }}">{{ supportRequest.status.label }}</span>
+                </h2>
+                <p>
+                    From <a href="{{ path('user_profile', {name: supportRequest.user.username}) }}">{{ supportRequest.user.username }}</a>
+                    on {{ supportRequest.createdAt|date('Y-m-d H:i') }} UTC.
+                    {% if supportRequest.type.value == 'lost_2fa' %}
+                        <a href="{{ path('user_2fa_configure', {name: supportRequest.user.username}) }}">Inspect their two-factor settings</a>
+                        - look only; resetting from there skips the hold, the reply and closing this task.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <section class="row">
+        <div class="col-lg-7">
+            <h3>What they said</h3>
+            {% if supportRequest.description %}
+                <p class="border rounded p-3 bg-body-tertiary">{{ supportRequest.description|nl2br }}</p>
+            {% else %}
+                <p class="text-muted">Nothing beyond the request itself.</p>
+            {% endif %}
+
+            {% if supportRequest.type.value == 'package_transfer' %}
+                <h3>Packages requested</h3>
+                <table class="table">
+                    <thead><tr><th>Package</th><th>Downloads</th><th>Current maintainers</th><th></th></tr></thead>
+                    <tbody>
+                        {% for row in resolvedPackages %}
+                            <tr>
+                                <td>
+                                    {% if row.package %}
+                                        <a href="{{ path('view_package', {name: row.package.name}) }}">{{ row.package.name }}</a>
+                                    {% else %}
+                                        {{ row.name }} <span class="badge bg-secondary">not found</span>
+                                    {% endif %}
+                                </td>
+                                <td>{% if row.package %}{{ row.downloads|number_format }}{% endif %}</td>
+                                <td>
+                                    {% if row.package %}
+                                        {% for maintainer in row.package.maintainers %}
+                                            <a href="{{ path('user_profile', {name: maintainer.username}) }}">{{ maintainer.username }}</a>{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if row.transferred %}
+                                        <span class="badge bg-success">Transferred</span>
+                                    {% elseif row.package and supportRequest.status.value == 'open' %}
+                                        <form method="post" action="{{ path('admin_support_request_transfer_package', {publicId: supportRequest.publicId}) }}"
+                                              onsubmit="return confirm('Make {{ supportRequest.user.username|e('js') }} the sole maintainer of {{ row.package.name|e('js') }}? The current maintainers are removed.')">
+                                            <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+                                            <input type="hidden" name="package" value="{{ row.package.name }}" />
+                                            <button type="submit" class="btn btn-primary btn-xs">Transfer to {{ supportRequest.user.username }}</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                {% if vendors|length > 0 %}
+                    <h3>Vendors these sit in</h3>
+                {% endif %}
+                {% for vendorName, vendorData in vendors %}
+                    {% if vendorData.total > 0 %}
+                        {% include 'admin/support/_vendor_panel.html.twig' with {
+                            vendor: vendorData,
+                            vendorName: vendorName,
+                            panelId: 'vendor-packages-' ~ loop.index,
+                            requested: supportRequest.attributes.packageNames,
+                        } only %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            {% if supportRequest.type.value == 'vendor_claim' %}
+                <h3>Vendor requested</h3>
+                {% if vendor.total == 0 %}
+                    <p>
+                        <a href="{{ path('view_vendor', {vendor: supportRequest.attributes.vendorName}) }}">{{ supportRequest.attributes.vendorName }}</a>
+                        - <strong>nothing is published under it</strong>, so there is nobody to take it from.
+                    </p>
+                {% else %}
+                    {% include 'admin/support/_vendor_panel.html.twig' with {
+                        vendor: vendor,
+                        vendorName: supportRequest.attributes.vendorName,
+                        panelId: 'vendor-packages',
+                        requested: [],
+                    } only %}
+                {% endif %}
+            {% endif %}
+
+            {% if supportRequest.type.value == 'account_deletion' %}
+                <h3>What they want done with their packages</h3>
+                <p>
+                    {{ supportRequest.attributes.packageDisposition.label }}
+                    {%- if supportRequest.attributes.transferTo %}
+                        - to <a href="{{ path('user_profile', {name: supportRequest.attributes.transferTo}) }}">{{ supportRequest.attributes.transferTo }}</a>
+                    {%- endif %}
+                </p>
+
+                <h3>Packages on this account</h3>
+                <table class="table">
+                    <thead><tr><th>Package</th><th>Downloads</th><th>Maintainers</th></tr></thead>
+                    <tbody>
+                        {% for row in requesterPackages %}
+                            <tr>
+                                <td><a href="{{ path('view_package', {name: row.package.name}) }}">{{ row.package.name }}</a></td>
+                                <td>{{ row.downloads|number_format }}</td>
+                                <td>{{ row.maintainers }}{% if row.maintainers == 1 %} <span class="badge bg-warning text-dark">sole</span>{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p>
+                    Deleting the account is done from
+                    <a href="{{ path('user_profile', {name: supportRequest.user.username}) }}">their profile</a>, once the
+                    packages have been dealt with. That also removes this request.
+                </p>
+            {% endif %}
+
+            <h3>Thread</h3>
+            {% for message in supportRequest.messages %}
+                <div class="border rounded p-3 mb-2 {{ message.internal ? 'bg-body-tertiary' : '' }}">
+                    <p class="mb-1">
+                        <strong>{{ message.author ? message.author.username : 'deleted user' }}</strong>
+                        <small class="text-muted">{{ message.createdAt|date('Y-m-d H:i') }}</small>
+                        {% if message.internal %}
+                            <span class="badge bg-secondary">Internal - not visible to the user</span>
+                        {% else %}
+                            <span class="badge bg-info">Sent to {{ is_granted('ROLE_AUDITOR') ? supportRequest.user.email : 'the address on the account' }}</span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-0">{{ message.contents|nl2br }}</p>
+                </div>
+            {% else %}
+                <p class="text-muted">No notes or replies yet.</p>
+            {% endfor %}
+
+            <h3>Add an internal note</h3>
+            <form method="post" action="{{ path('admin_support_request_note', {publicId: supportRequest.publicId}) }}">
+                <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+                <div class="mb-3">
+                    <textarea class="form-control" name="contents" rows="3" placeholder="Only visible to admins"></textarea>
+                </div>
+                <button type="submit" class="btn btn-secondary">Add note</button>
+            </form>
+
+            <h3>Reply to {{ supportRequest.user.username }}</h3>
+            <form method="post" action="{{ path('admin_support_request_reply', {publicId: supportRequest.publicId}) }}">
+                <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+                <div class="mb-3">
+                    <textarea class="form-control" name="contents" rows="10">{{ suggestedReply }}</textarea>
+                    <div class="form-text">Sent as plain text to {{ is_granted('ROLE_AUDITOR') ? supportRequest.user.email : 'the address on their account' }}. Replies come back to contact@packagist.org.</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Send reply</button>
+            </form>
+        </div>
+
+        <div class="col-lg-5">
+            {% if supportRequest.type.value == 'lost_2fa' %}
+                <h3>Risk</h3>
+
+                {% if risk.isHighRisk %}
+                    <div class="alert alert-danger">
+                        <strong>Check this one carefully.</strong>
+                        <ul class="mb-0">
+                            {% if risk.hasRecentCredentialChange %}
+                                <li>Password or email changed in the last 7 days - an attacker may already hold this account.</li>
+                            {% endif %}
+                            {% for package in risk.solePopularPackages %}
+                                <li>Sole maintainer of <strong>{{ package.name }}</strong> ({{ package.downloads|number_format }} downloads).</li>
+                            {% endfor %}
+                            {% if risk.organizationCount %}
+                                <li>Member of {{ risk.organizationCount }} organization(s).</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success">
+                        Nothing high-value on this account: {{ risk.totalDownloads|number_format }} downloads across
+                        {{ risk.packages|length }} package(s), no organizations.
+                    </div>
+                {% endif %}
+
+                <ul class="list-unstyled">
+                    <li>Account created {{ supportRequest.user.createdAt|date('Y-m-d') }}</li>
+                    {% if supportRequest.user.lastLogin %}<li>Last login {{ supportRequest.user.lastLogin|date('Y-m-d') }}</li>{% endif %}
+                    {% if risk.twoFactorEnabledAt %}
+                        <li>2FA enabled {{ risk.twoFactorEnabledAt|date('Y-m-d') }}</li>
+                    {% endif %}
+                    {% set ipKnown = risk.requestIpIsKnown(supportRequest.ip) %}
+                    {% if ipKnown is not null %}
+                        <li>Request IP matches recent account activity: <strong>{{ ipKnown ? 'yes' : 'no' }}</strong></li>
+                    {% endif %}
+                    {% if is_granted('ROLE_AUDITOR') and supportRequest.ip %}
+                        <li>Requested from <code>{{ supportRequest.ip }}</code></li>
+                    {% endif %}
+                </ul>
+
+                {% if risk.packages %}
+                    <table class="table table-sm">
+                        <thead><tr><th>Package</th><th>Downloads</th><th></th></tr></thead>
+                        <tbody>
+                            {% for package in risk.packages %}
+                                <tr>
+                                    <td><a href="{{ path('view_package', {name: package.name}) }}">{{ package.name }}</a></td>
+                                    <td>{{ package.downloads|number_format }}</td>
+                                    <td>{% if package.soleMaintainer %}<span class="badge bg-warning text-dark">sole</span>{% endif %}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+
+                {% if previousRequests %}
+                    <h4>Earlier reset requests</h4>
+                    <ul>
+                        {% for previous in previousRequests %}
+                            <li>{{ previous.createdAt|date('Y-m-d') }} - {{ previous.status.label }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                <h4>Recent account activity</h4>
+                {% include 'audit_log/_transparency_log_table.html.twig' with {
+                    displays: riskAuditDisplays,
+                    linkSurroundingLogs: false,
+                    emptyMessage: 'No recent security events.'
+                } only %}
+
+                <h3>Grant the reset</h3>
+                {% if supportRequest.status.value != 'open' %}
+                    <p class="text-muted">Already dealt with.</p>
+                {% elseif not coolingOffElapsed %}
+                    <div class="alert alert-warning">
+                        Held until <strong>{{ supportRequest.attributes.approvableAt|date('Y-m-d H:i') }} UTC</strong> so the account
+                        owner has time to object. This account is high value, and the owner was emailed when the
+                        request was filed.
+                    </div>
+                {% else %}
+                    <form method="post" action="{{ path('admin_support_request_grant_2fa_reset', {publicId: supportRequest.publicId}) }}"
+                          onsubmit="return confirm('Disable two-factor authentication on {{ supportRequest.user.username }} and tell them it was granted?')">
+                        <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+                        <button type="submit" class="btn btn-danger">Disable 2FA and resolve</button>
+                    </form>
+                    <p class="form-text">
+                        Disables 2FA, signs the account out everywhere, emails them the standard granted
+                        response, and closes this task.
+                    </p>
+                {% endif %}
+            {% endif %}
+
+            <h3>Status</h3>
+            <form method="post" action="{{ path('admin_support_request_status', {publicId: supportRequest.publicId}) }}">
+                <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+                <div class="btn-group">
+                    {% if supportRequest.status.value == 'open' %}
+                        <button type="submit" name="status" value="resolved" class="btn btn-success">Resolve</button>
+                        <button type="submit" name="status" value="closed" class="btn btn-secondary">Close without action</button>
+                    {% else %}
+                        <button type="submit" name="status" value="open" class="btn btn-warning">Reopen</button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}
