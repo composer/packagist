@@ -32,6 +32,16 @@ class OrganizationMemberRepository extends ServiceEntityRepository
         return $this->findOneBy(['orgId' => $orgId, 'userId' => $userId]);
     }
 
+    public function countForUser(int $userId): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.orgId)')
+            ->where('m.userId = :userId')
+            ->setParameter('userId', $userId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /**
      * Load the {@see User} behind an org membership by their username (canonicalised here) in a single
      * joined query. Returns null when the user does not exist or is not a member of the org, so callers

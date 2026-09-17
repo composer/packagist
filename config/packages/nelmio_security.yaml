@@ -2,6 +2,8 @@ nelmio_security:
     clickjacking:
         paths:
             '^/.*': DENY
+        # Only documents can be framed, and the JSON APIs serve millions of responses per day
+        content_types: ['text/html']
     forced_ssl:
         enabled: '%force_ssl%'
         hosts: '%forced_ssl_hosts%'
@@ -10,7 +12,8 @@ nelmio_security:
         enabled: true
         report_logger_service: logger
         hosts: []
-        content_types: []
+        # CSP only governs document loading, so sending it on API responses is pure overhead
+        content_types: ['text/html']
         enforce:
             browser_adaptive:
                 enabled: false

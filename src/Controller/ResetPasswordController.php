@@ -120,11 +120,12 @@ class ResetPasswordController extends Controller
 
             try {
                 $userChecker->checkPreAuth($user);
-            } catch (AuthenticationException $e) {
+            } catch (AuthenticationException) {
                 // skip authenticating if any pre-auth check does not pass
+                return $this->redirectToRoute('home');
             }
 
-            // A user resetting the password with 2FA enabled, should automatically be marked as 2FA complete
+            // A user resetting the password with 2FA enabled, should automatically be marked as 2FA complete as the 2FA code was checked by form validation
             $badges = $user->isTotpAuthenticationEnabled() ? [new ResolvedTwoFactorCodeCredentials()] : [];
             if ($response = $userAuthenticator->authenticateUser($user, $authenticator, $request, $badges)) {
                 return $response;

@@ -148,14 +148,22 @@ class AuditRecord
         return array_values($terms);
     }
 
-    public static function packageCreated(Package $package, ?User $actor): self
+    public static function packageCreated(Package $package, ?User $actor, ?User $maintainer = null): self
     {
+        $attributes = ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor)];
+        // only set when a moderator created the package for someone else, so the record shape stays
+        // unchanged for ordinary submissions
+        if ($maintainer !== null) {
+            $attributes['user'] = self::getUserData($maintainer);
+        }
+
         return new self(
             AuditRecordType::PackageCreated,
-            ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor)],
+            $attributes,
             $actor?->getId(),
             $package->getVendor(),
-            $package->getId()
+            $package->getId(),
+            $maintainer?->getId()
         );
     }
 
@@ -555,6 +563,7 @@ class AuditRecord
                 'reason' => $reason,
             ],
             actorId: $actor->getId(),
+            userId: $user->getId(),
         );
     }
 

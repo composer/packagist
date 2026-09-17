@@ -86,7 +86,7 @@ class JobRepository extends ServiceEntityRepository
         $conn = $this->getEntityManager()->getConnection();
 
         $id = $conn->fetchOne(
-            'SELECT id FROM job WHERE packageId = :package AND status IN (:statuses) AND type = :type ORDER BY createdAt DESC',
+            'SELECT id FROM job WHERE packageId = :package AND status IN (:statuses) AND type = :type ORDER BY createdAt DESC LIMIT 1',
             [
                 'package' => $packageId,
                 'statuses' => [Job::STATUS_COMPLETED, Job::STATUS_ERRORED, Job::STATUS_FAILED],

@@ -13,11 +13,30 @@
 @import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 @import '../node_modules/bootstrap-icons/font/bootstrap-icons.css';
 
+// .spinner-border as a pseudo-element, for the loading states we paint onto elements whose
+// markup we don't control. currentColor means one definition works on light and dark fills.
+// Reuses bootstrap's own keyframes, imported above.
+@mixin loading-spinner($size: 14px) {
+    content: "";
+    display: inline-block;
+    width: $size;
+    height: $size;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: .75s linear infinite spinner-border;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation-duration: 1.5s;
+    }
+}
+
 :root {
     --font-family-name: 'Open Sans';
     --font-sans: var(--font-family-name), sans-serif;
 
     --color-brand-orange: #f28d1a;
+    --color-brand-orange-dark: #d97c10;
     --color-brand-dark: #2d2d32;
     --color-light-grey: #f3f4f5;
 
@@ -41,6 +60,8 @@
     // base - at 16px the transparency log's timestamps no longer fit their column.
     --bs-body-font-size: 14px;
     --bs-body-line-height: 1.428571429;
+
+    --bs-border-radius: 2px;
 
     --heading-margin-top-lg: 20px;
     --heading-margin-top-sm: 10px;
@@ -469,17 +490,8 @@ strong {
     padding: 15px 20px 12px;
 }
 
-.nav-user .signin-box .input-group-text {
-    background: #fff;
-    border-top-left-radius: 3px;
-    border-bottom-left-radius: 3px;
-}
-
-.nav-user .signin-box .form-control {
-    border-left: 0;
-    box-shadow: none;
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
+.nav-user .signin-box .input-group {
+    margin-bottom: 6px;
 }
 
 .nav-user .signin-box div {
@@ -517,6 +529,7 @@ strong {
 
 .nav-user .btn-github {
     font-weight: 600;
+    line-height: 21px;
     padding: 9px 12px;
     width: 56%;
 }
@@ -603,6 +616,184 @@ strong {
 
 .wrapper-search a:hover {
     text-decoration: none;
+}
+
+// Homepage hero search variant
+.wrapper-search-hero .container {
+    padding: 48px 20px 40px;
+    text-align: center;
+    max-width: 720px;
+}
+
+.hero-search-intro {
+    margin-bottom: 24px;
+
+    .hero-search-claim {
+        margin: 0 auto;
+        max-width: 560px;
+        font-size: 16px;
+    }
+}
+
+.hero-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+.hero-brand-logo {
+    height: 64px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.hero-brand-text {
+    text-align: center;
+}
+
+.hero-brand-title {
+    margin: 0;
+    font-size: 52px;
+    font-weight: 600;
+    line-height: 1.1;
+    color: #fff;
+}
+
+.hero-brand-subtitle {
+    font-size: 20px;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+@media (max-width: 575px) {
+    .hero-brand-row {
+        gap: 14px;
+    }
+
+    .hero-brand-logo {
+        height: 44px;
+    }
+
+    .hero-brand-title {
+        font-size: 32px;
+    }
+
+    .hero-brand-subtitle {
+        font-size: 15px;
+    }
+}
+
+.wrapper-search-hero .js-search-field-wrapper {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.wrapper-search-hero #search-form input[type="search"] {
+    height: 52px;
+    font-size: 18px;
+    padding: 10px 18px 10px 22px;
+    text-align: left;
+    border-radius: 4px;
+}
+
+.hero-search-footer {
+    margin-top: 24px;
+}
+
+// Collapsed while a search is active (rendered server-side, then kept in sync by js/search.js),
+// so results aren't pushed below the fold
+.wrapper-search-hero.search-active .hero-search-intro,
+.wrapper-search-hero.search-active .hero-search-footer {
+    display: none;
+}
+
+.wrapper-search-hero.search-active .container {
+    padding: 10px 20px 15px; // same as the plain .wrapper-search bar, but keeps the hero width
+    max-width: 1320px;
+}
+
+.hero-search-stats {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 28px;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px;
+    font-size: 13px;
+
+    strong {
+        display: block;
+        font-size: 22px;
+        line-height: 1.3;
+    }
+}
+
+.hero-search-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.hero-btn {
+    display: inline-block;
+    padding: 9px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover, &:focus {
+        text-decoration: none;
+    }
+
+    &:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+    }
+}
+
+.hero-search-actions .hero-btn-primary {
+    background: #fff;
+    color: var(--color-brand-orange);
+    border: 1px solid #fff;
+
+    &:hover, &:focus {
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--color-brand-orange-dark);
+    }
+}
+
+.hero-search-actions .hero-btn-secondary {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+
+    &:hover, &:focus {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+    }
+}
+
+@media (max-width: 767px) {
+    .hero-search-stats {
+        gap: 20px;
+    }
+}
+
+@media (max-width: 575px) {
+    .hero-search-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hero-btn {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 #search-container {
@@ -820,7 +1011,6 @@ button {
     padding: 7px 11px 6px 9px;
     font-size: 14px;
     box-shadow: none;
-    border-radius: 2px;
     font-family: var(--font-sans);
 
     transition: none;
@@ -842,7 +1032,7 @@ button {
     padding: 6px 9px 5px;
     box-shadow: none;
     border-width: 2px;
-    border-radius: 0 2px 2px 0;
+    border-radius: 0 var(--bs-border-radius) var(--bs-border-radius) 0;
 }
 
 .form-control[readonly] {
@@ -851,7 +1041,7 @@ button {
 
 .form-control[readonly]:focus {
     padding: 7px 11px 6px 9px;
-    border-radius: 2px;
+    border-radius: var(--bs-border-radius);
     box-shadow: none;
 }
 
@@ -882,15 +1072,16 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .input-group .form-control:focus {
-    border-color: rgba(82, 168, 236, 0.8);
+    border-color: #52a8ec;
     box-shadow: none;
     z-index: 1;
 }
 
 .input-group:focus-within .input-group-text {
     border-width: 2px;
-    border-color: rgba(82, 168, 236, 0.8);
-    color: rgb(82, 168, 236);
+    padding: 5px 12px 5px 11px;
+    border-color: #52a8ec;
+    color: #52a8ec;
 }
 
 .input-group .form-control:invalid:focus {
@@ -899,6 +1090,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 
 .input-group:has(.form-control:invalid:focus) .input-group-text {
     border-width: 2px;
+    padding: 5px 12px 5px 11px;
     border-color: #fa3a15;
     color: #fa3a15;
 }
@@ -1065,10 +1257,12 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     }
 }
 
-.btn.loading, .btn.loading:hover, .btn.loading:active {
-    background-image: url("../web/img/loader.gif");
-    background-position: 95% 50%;
-    background-repeat: no-repeat;
+// :not(.dropdown-toggle) because bootstrap's caret is also an :after - a toggle shows its
+// loading state on the icon instead, see .package-actions below
+.btn.loading:not(.dropdown-toggle):after {
+    @include loading-spinner;
+    vertical-align: -2px;
+    margin-left: 10px;
 }
 
 .btn-secondary {
@@ -1201,28 +1395,25 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     margin-bottom: -1px !important;
     position: relative;
 }
+#view-package-page .package-header {
+    border-bottom: 1px solid var(--color-brand-orange);
+    margin-bottom: 15px;
+}
+#view-package-page h2.title {
+    border-bottom: 0;
+    margin-bottom: 0 !important;
+}
 .package .force-update-trigger {
     cursor: pointer;
 }
+// bootstrap gives .dropdown-item:disabled this for free, but the trigger is a plain <a>
+.package .force-update-trigger.disabled {
+    cursor: default;
+    opacity: .65;
+}
 .package .force-update-trigger.loading:after {
-    content: "";
-    background-position: 7px center;
-    background-image: url("../web/img/loader-white.gif");
-    background-repeat: no-repeat;
-    padding-left: 30px;
-}
-.package .action input.loading, .package .action input.loading:hover, .package .action input.loading:active {
-  background-position: 10px center;
-  background-image: url("../web/img/loader.gif");
-  background-repeat: no-repeat;
-  padding-left: 35px;
-}
-// the row mixes inline-block <form>s with a bare <button>, whose inline baselines don't match, so
-// lay it out with flex - which also keeps the wrapping that .btn-group's nowrap took away
-.package .package-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+    @include loading-spinner(10px);
+    margin-left: 7px;
 }
 .package .action {
   margin-right: 5px;
@@ -1254,19 +1445,72 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .package .details p, .package .facts p {
     margin: 0;
 }
-.package .details .maintainers {
-  padding-bottom: 6px;
+// the tiny font-size collapses the whitespace between the inline <a>s so the avatars pack tightly
+.package .package-maintainers {
+  text-align: right;
+}
+.package .package-maintainers .maintainers {
+  // the negative top margin lets bigger avatars grow into the title's line box
+  // rather than making the header row taller
+  margin: -8px 0 15px;
   font-size: 0.0001px;
 }
-.package .details .maintainers img {
-  margin-bottom: 4px;
-  margin-right: 4px;
+.package .package-maintainers .maintainers img {
+  margin-left: 4px;
+  border-radius: 2px;
 }
-.package .details .maintainer-actions {
-    a {
-        font-size: 34px;
-        cursor: pointer;
-    }
+.package .package-maintainers .more-maintainers {
+  margin-left: 6px;
+  font-size: 14px;
+  color: var(--color-muted);
+  vertical-align: top;
+}
+@media (max-width: 767px) {
+  .package .package-maintainers {
+    text-align: left;
+  }
+  .package .package-maintainers .maintainers img {
+    margin-left: 0;
+    margin-right: 4px;
+  }
+}
+
+// maintainer/admin-only controls: two menus in the column beside the description, with the
+// forms they toggle in their own block below the row
+.package-admin-bar {
+  .package-admin-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 5px;
+    margin-bottom: 15px;
+  }
+
+  // caps the width once the column goes full-width below lg
+  .package-admin-form {
+    max-width: 420px;
+    margin-bottom: 15px;
+  }
+
+  // .package i forces the dark brand colour, which vanishes on the dark fill, and 12px
+  // glyphs get lost there anyway; line-height keeps them out of the button's line box
+  .package-admin-buttons .btn i {
+    color: inherit;
+    font-size: 15px;
+    line-height: 0;
+    vertical-align: -2px;
+    margin-right: 2px;
+  }
+
+  // an update replaces the toggle's glyph rather than adding to it, so the button keeps its
+  // width and the spinner stays visible with the menu closed
+  .package-actions .btn.loading i.bi:before {
+    @include loading-spinner(13px);
+    // the <i> zeroes its line-height to keep a *glyph* out of the line box; a bordered box needs
+    // its own back, and the same -2px the glyph used to sit on the button's baseline
+    line-height: normal;
+    vertical-align: -2px;
+  }
 }
 .package .details .canonical,
 .package .details .purl,
@@ -1277,12 +1521,15 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   white-space: nowrap;
 }
 
-.package .facts span {
+// label column for "Installs: 123" / "Language: C" rows. .purl is excluded because its span
+// is the whole value, not a label - a fixed width would move where its ellipsis lands.
+.package .facts span,
+.package .details p:not(.purl) > span {
     display: inline-block;
     width: 100px;
 }
 
-.package .facts .package-downloads-chart {
+.package .package-downloads-chart {
     height: 110px;
     width: 100%;
     margin-bottom: 10px;
@@ -1376,17 +1623,10 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 
   margin: 10px 0 0;
   padding: 0;
-
-  &:first-child {
-      margin-top: 0;
-  }
 }
 .package .package-aside.versions-wrapper {
   margin-left: 15px;
   margin-right: 15px;
-}
-.package-aside .details {
-  padding-left: 0;
 }
 .package .package-aside i {
   color: var(--color-secondary);
@@ -1478,7 +1718,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   color: #b87800;
 }
 
-.package .versions .version.version-soft-deleted .version-number a {
+.package .versions .version.version-soft-deleted a.version-number {
   color: var(--color-muted);
   text-decoration: line-through;
   text-decoration-color: rgba(153, 153, 153, 0.5);
@@ -1510,16 +1750,31 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
         margin-left: auto;
     }
 
-    .package-aside .details {
-      padding-left: 15px;
-    }
     .package .package-aside {
       background: #fff;
       border-radius: 2px;
       border-top: 0;
-      padding: 0 0 10px 0;
-      margin-left: -15px;
-      margin-right: -15px;
+      margin: 0;
+      padding: 10px 15px;
+    }
+    // equal-height cards across the band, whatever each one contains
+    #view-package-page .package-facts .package-aside {
+      height: 100%;
+    }
+    // long unbreakable strings (purl, repo URL) would otherwise set a min-content
+    // floor and push one card past its share of the row
+    #view-package-page .package-facts > [class*="col-"] {
+      min-width: 0;
+    }
+    // the cards are opaque here, so bands that touch read as one surface - most visibly the
+    // downloads chart running straight into the Statistics card below it
+    #view-package-page > .package > .row + .row {
+      margin-top: 15px;
+    }
+    // the versions band brings its own top margin, which would stack on that gutter
+    #view-package-page .versions-section .version-details,
+    #view-package-page .versions-section .package-aside.versions-wrapper {
+      margin-top: 0;
     }
     .package .package-aside.versions-wrapper {
       margin-left: 0;
@@ -1534,9 +1789,6 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     }
 }
 @media (max-width: 767px) {
-  .package-aside .facts {
-    padding-left: 0;
-  }
   .wrapper-footer {
     font-size: 12px;
   }
@@ -1551,12 +1803,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   color: var(--color-brand-dark);
 }
 .version-details.loading .title .version-number:after {
-  display: inline-block;
-  content: "";
-  width: 16px;
-  height: 16px;
-  background-image: url("../web/img/loader-white.gif");
-  background-repeat: no-repeat;
+  @include loading-spinner(13px);
   position: relative;
   top: 2px;
   left: 10px;
@@ -1894,12 +2141,7 @@ svg {
     height: auto !important;
 }
 
-@media (max-width: 1199px) {
-    .publishing-packages {
-        margin-top: 40px;
-    }
-}
-#how-to-submit-packages, #how-to-update-packages {
+#getting-started, #how-to-submit-packages, #how-to-update-packages {
     margin-top: 40px;
 }
 
@@ -1916,60 +2158,33 @@ html,
 body {
   min-height: 100%;
 }
-.notifications {
-    position: fixed;
-    transition: all 0.6s ease-in-out;
-    z-index: 100000;
-    letter-spacing: -1px;
-    top: 20px;
-    left: 30%;
-    opacity: 0;
-    width: 40%;
-    max-height: 500px;
-    color: var(--color-text-dark);
-    padding: 10px;
-    text-align: center;
-    background-color: #fafafa;
-    border-radius: 2px;
-    text-shadow: 0 1px 1px rgba(255,255,255,0.8);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    transform: translateY(-100px);
-    overflow: auto;
+.notifications-container .toast {
+    --bs-toast-max-width: min(92vw, 920px);
+    --bs-toast-bg: var(--bs-body-bg);
+    --bs-toast-header-bg: var(--bs-body-bg);
 }
-.notifications.visible {
-    opacity: 100%;
-    transform: translateY(0);
+// The container is fixed to the viewport, so a long log has to scroll inside the toast rather than grow
+// past the bottom of the screen where nothing can reach it. Column flex leaves the header (and its
+// close button) at its natural height and gives the rest to the body.
+.notifications-container .toast:has(> .toast-header) {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 2rem); // container's p-3
 }
-.notification .title {
-    font-size: 18px;
+// details is worker-produced HTML injected via innerHTML: only <span style> survives cleanupOutput()'s
+// sanitizer, and `contain` neutralises a crafted style trying to overlay the page via position:fixed.
+// Same reasoning as .update-history-log.
+.notifications-container .toast-body {
+    overflow-y: auto;
+    contain: layout paint style;
 }
-.notification .close {
-    float: right;
-    margin-left: 10px;
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1;
-    color: inherit;
-    opacity: 0.4;
-    cursor: pointer;
-}
-.notification .close:hover {
-    opacity: 0.9;
-}
-.notification .content {
-    margin-top: 10px;
-}
-.notifications pre {
+.notifications-container .toast-body pre {
+    margin: 10px -12px -12px;
+    padding: 12px;
     background: var(--color-brand-dark);
     color: #fff;
-    text-shadow: none;
-    text-align: left;
-}
-@media (max-width: 992px) {
-    .notifications {
-        left: 10%;
-        width: 80%;
-    }
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 [class^="icon-"]:before,
@@ -2500,6 +2715,12 @@ body {
 .admin-nav {
     .nav-tabs > li > a > span {
         margin-right: 6px;
+    }
+
+    // The open-request count reads on both the white row and the orange active one, so it stays
+    // white rather than taking the dark text the shared .badge.bg-warning rule gives it elsewhere.
+    .badge.bg-warning {
+        color: #fff;
     }
 }
 

@@ -13,6 +13,7 @@
 namespace App\Tests\Controller;
 
 use App\Audit\AbandonmentReason;
+use App\Audit\AuditLogSearchType;
 use App\Audit\AuditRecordType;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -22,6 +23,8 @@ use App\Tests\Fixtures\Fixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class PackageAuditRecordTest extends KernelTestCase
@@ -76,6 +79,83 @@ class PackageAuditRecordTest extends KernelTestCase
         self::assertArrayHasKey('reason', $attributes);
         self::assertNull($attributes['reason']);
         self::assertNull($attributes['internalReason']);
+    }
+
+    public function testModeratorSubmissionRecordsBothActorAndMaintainer(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        $moderator = self::createUser('moderator', 'moderator@example.org', githubId: '2', roles: ['ROLE_EDIT_PACKAGES']);
+        $maintainer = self::createUser('newowner', 'newowner@example.org', githubId: '3');
+        $em->persist($moderator);
+        $em->persist($maintainer);
+        $em->flush();
+
+        // the listener reads the acting user off the token, which loginUser() cannot provide for a
+        // bare persist()
+        $container->get(TokenStorageInterface::class)->setToken(new UsernamePasswordToken($moderator, 'main', $moderator->getRoles()));
+
+        $package = self::createPackage('acme/handed-over', 'https://github.com/acme/handed-over');
+        $package->setSubmittedOnBehalfOf($maintainer);
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditRecordType::PackageCreated->value]);
+        self::assertCount(1, $logs);
+        self::assertSame($moderator->getId(), $logs[0]['actorId']);
+        self::assertSame($maintainer->getId(), $logs[0]['userId']);
+
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertSame('moderator', $attributes['actor']['username']);
+        self::assertSame('newowner', $attributes['user']['username']);
+
+        $terms = $container->get(Connection::class)->fetchFirstColumn('SELECT name FROM audit_log_search WHERE auditLogId = ? AND type = ?', [$logs[0]['id'], AuditLogSearchType::User->value]);
+        self::assertSame(['newowner'], $terms);
+    }
+
+    public function testSelfSubmissionRecordsNoMaintainer(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        // also covers a moderator typing their own username into the assign field: same end state
+        $user = self::createUser('selfsubmitter', 'selfsubmitter@example.org', githubId: '2');
+        $em->persist($user);
+        $em->flush();
+
+        $container->get(TokenStorageInterface::class)->setToken(new UsernamePasswordToken($user, 'main', $user->getRoles()));
+
+        $package = self::createPackage('acme/self-submitted', 'https://github.com/acme/self-submitted', maintainers: [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditRecordType::PackageCreated->value]);
+        self::assertCount(1, $logs);
+        self::assertSame($user->getId(), $logs[0]['actorId']);
+        self::assertNull($logs[0]['userId']);
+        self::assertArrayNotHasKey('user', json_decode($logs[0]['attributes'], true));
+    }
+
+    public function testSubmissionWithoutAnActingUserRecordsTheMaintainer(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        // the API authenticates in the controller, so there is no security token to act as the actor
+        $user = self::createUser('apiuser', 'apiuser@example.org', githubId: '2');
+        $em->persist($user);
+        $em->flush();
+
+        $package = self::createPackage('acme/api-submitted', 'https://github.com/acme/api-submitted', maintainers: [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ?', [AuditRecordType::PackageCreated->value]);
+        self::assertCount(1, $logs);
+        self::assertNull($logs[0]['actorId']);
+        self::assertSame($user->getId(), $logs[0]['userId']);
+        self::assertSame('apiuser', json_decode($logs[0]['attributes'], true)['user']['username']);
     }
 
     public function testPackageDeletionReasonsGetRecorded(): void

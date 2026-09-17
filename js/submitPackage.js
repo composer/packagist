@@ -4,7 +4,11 @@ const init = function ($) {
     var showSimilarMax = 5;
     var onSubmit = function(e) {
         var success;
-        $('ul.package-errors, ul.similar-packages, div.confirmation', this).remove();
+        e.preventDefault();
+        if ($('#submit').is('.loading')) {
+            return;
+        }
+        $('ul.package-errors, div.similar-packages-notice, div.confirmation', this).remove();
         success = function (data) {
             var html = '';
             $('#submit').removeClass('loading');
@@ -25,28 +29,29 @@ const init = function ($) {
                     if (limit != data.similar.length) {
                         $similar.append($('<li>').text('And ' + (data.similar.length - limit) + ' more'));
                     }
-                    $('#submit-package-form input[type="submit"]').before($('<div>').append(
+                    $('#submit').before($('<div class="similar-packages-notice">').append(
                         '<p><strong>Notice:</strong> One or more similarly named packages have already been submitted to Packagist. If this is a fork read the notice above regarding VCS Repositories.'
                     ).append(
                         '<p>Similarly named packages:'
                     ).append($similar));
                 }
-                $('#submit-package-form input[type="submit"]').before(
+                $('#submit').before(
                     '<div class="confirmation">The package name found for your repository is: <strong>'+data.name+'</strong>, press Submit to confirm.</div>'
                 );
-                $('#submit').val('Submit');
+                $('#submit').text('Submit');
                 $('#submit-package-form').unbind('submit');
             }
         };
-        $.post($(this).data('check-url'), $(this).serializeArray(), success);
+        $.post($(this).data('check-url'), $(this).serializeArray(), success).fail(function () {
+            $('#submit').removeClass('loading');
+        });
         $('#submit').addClass('loading');
-        e.preventDefault();
     };
 
     $('#package_repository').change(function() {
         $('#submit-package-form').unbind('submit');
         $('#submit-package-form').submit(onSubmit);
-        $('#submit').val('Check');
+        $('#submit').text('Check');
     });
 
     $('#package_repository').triggerHandler('change');

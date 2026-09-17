@@ -14,7 +14,6 @@ namespace App\Entity;
 
 use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\ORM\Query;
@@ -29,6 +28,14 @@ use Predis\Client;
  */
 class PackageRepository extends ServiceEntityRepository
 {
+    /**
+     * Bounds of the "lots of views, no installs" spam heuristic implemented in
+     * PackageController::viewPackageAction(), shared so packagist:clean-view-counters can tell which
+     * view counters are still live by exactly the same rules.
+     */
+    public const SUSPECT_VIEWS_MIN_CREATED_AT = '2019-05-01';
+    public const SUSPECT_VIEWS_MAX_DOWNLOADS = 10;
+
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
@@ -367,49 +374,6 @@ class PackageRepository extends ServiceEntityRepository
         foreach ($res as $row) {
             yield ['id' => (int) $row['id'], 'lastUpdated' => null === $row['lastUpdated'] ? new \DateTimeImmutable($row['createdAt']->format('r')) : new \DateTimeImmutable($row['lastUpdated']->format('r'))];
         }
-    }
-
-    public function getPartialPackageByNameWithVersions(string $name): Package
-    {
-        // first fetch the package alone to avoid joins with heavy data (description, readme) that would be duplicated for each joined row
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('p')
-            ->from('App\Entity\Package', 'p')
-            ->where('p.name = :name')
-            ->setParameter('name', $name);
-        $pkg = $qb->getQuery()->getSingleResult();
-
-        // then fetch partial version data here to avoid fetching tons of data,
-        // this helps for packages like https://packagist.org/packages/ccxt/ccxt
-        // with huge amounts of versions
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('v.id, v.version, v.normalizedVersion, v.development, v.releasedAt, v.extra, v.isDefaultBranch')
-            ->from('App\Entity\Version', 'v')
-            ->orderBy('v.development', 'DESC')
-            ->addOrderBy('v.releasedAt', 'DESC')
-            ->where('v.package = :package')
-            ->setParameter('package', $pkg);
-
-        $versions = [];
-        $reflId = new \ReflectionProperty(Version::class, 'id');
-        foreach ($qb->getQuery()->getArrayResult() as $row) {
-            $versions[] = $v = new Version();
-            $reflId->setValue($v, $row['id']);
-            $v->setName($pkg->getName());
-            $v->setPackage($pkg);
-            $v->setVersion($row['version']);
-            $v->setNormalizedVersion($row['normalizedVersion']);
-            $v->setDevelopment($row['development']);
-            $v->setReleasedAt($row['releasedAt']);
-            $v->setExtra($row['extra']);
-            $v->setIsDefaultBranch($row['isDefaultBranch']);
-        }
-        $versions = new ArrayCollection($versions);
-
-        $prop = new \ReflectionProperty($pkg, 'versions');
-        $prop->setValue($pkg, $versions);
-
-        return $pkg;
     }
 
     public function getPackageByName(string $name): Package
@@ -780,7 +744,7 @@ class PackageRepository extends ServiceEntityRepository
         $result = $stmt->fetchAllAssociative();
         $stmt->free();
 
-        return (int) $result[0]['count'];
+        return (int) ($result[0]['count'] ?? 0);
     }
 
     /**

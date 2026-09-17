@@ -96,6 +96,7 @@ class AdminControllerTest extends IntegrationTestCase
         static::assertStringContainsString('Filter lists', $crawler->html());
         static::assertStringContainsString('Suspect packages', $crawler->html());
         static::assertStringContainsString('Organizations', $crawler->html());
+        static::assertStringContainsString('Support', $crawler->html());
         static::assertStringContainsString('Transparency log', $crawler->html());
     }
 
@@ -112,5 +113,19 @@ class AdminControllerTest extends IntegrationTestCase
         static::assertResponseIsSuccessful();
         static::assertStringContainsString('Suspect packages', $crawler->html());
         static::assertStringNotContainsString('Filter lists', $crawler->html());
+        // No support request type is actionable with only ROLE_DISABLE_PACKAGES.
+        static::assertStringNotContainsString('admin/support', $crawler->html());
+    }
+
+    public function testSupportMenuEntryAppearsForPackageAdminsOnly(): void
+    {
+        $pkgAdmin = self::createUser('pkgadmin', 'pkgadmin@example.com', roles: ['ROLE_EDIT_PACKAGES']);
+        $this->store($pkgAdmin);
+
+        $this->client->loginUser($pkgAdmin);
+        $crawler = $this->client->request('GET', '/admin/');
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('admin/support', $crawler->html());
     }
 }

@@ -7,14 +7,12 @@
             {% set deletionTitle = softDeleted ? version|version_deletion_title : null %}
 
             <li class="details-toggler version{% if loop.last %} last{% endif %}{% if expanded %} open{% endif %}{% if softDeleted %} version-soft-deleted{% endif %}" data-version-id="{{ version.version }}" data-load-more="{{ path('view_version', {versionId: version.id, _format: 'json', cacheBust: version.isSoftDeleted() ? '1' : null}) }}">
-                <div class="version-number">
-                    <a rel="nofollow noindex" href="#{{ version.version }}" {% if softDeleted %}data-bs-toggle="tooltip" data-bs-placement="top" title="{{ deletionTitle }}" data-bs-container="body"{% endif %}>
-                        {{- version.version -}}
-                        {% if version.hasVersionAlias() %}
-                            / {{ version.versionAlias }}
-                        {% endif -%}
-                    </a>
-                </div>
+                <a class="version-number" rel="nofollow noindex" href="#{{ version.version }}" {% if softDeleted %}data-bs-toggle="tooltip" data-bs-placement="top" title="{{ deletionTitle }}" data-bs-container="body"{% endif %}>
+                    {{- version.version -}}
+                    {% if version.hasVersionAlias() %}
+                        / {{ version.versionAlias }}
+                    {% endif -%}
+                </a>
 
                 {% if hasVersionSecurityAdvisories[version.id]|default(false) %}
                     <a rel="nofollow noindex" class="action-alert advisory-alert" href="{{ path('view_package_advisories', {name: package.name, version: version.id}) }}">

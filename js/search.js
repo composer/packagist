@@ -26,8 +26,10 @@ document.addEventListener('keydown', function (e) {
     if (!searchInput) {
         return;
     }
-    // If we already have input focus ignore.
-    if (document.activeElement.tagName === 'INPUT') {
+    // Ignore while the user is typing into a field. Not just INPUT: package names contain a slash
+    // (acme/console), and the support forms take them in a textarea.
+    var active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)) {
         return;
     }
     searchInput.focus();
@@ -65,6 +67,16 @@ var customSearchClient = {
     },
 };
 
+// Collapses the hero (see css/app.scss .wrapper-search-hero.search-active) when a search becomes
+// active. The initial state is rendered server-side by search_section.html.twig, so this only has
+// to follow later state changes.
+function toggleHero(hasSearch) {
+    var hero = document.querySelector('.wrapper-search-hero');
+    if (hero) {
+        hero.classList.toggle('search-active', hasSearch);
+    }
+}
+
 // Show search container on initial load if URL has search params
 var urlParams = new URLSearchParams(window.location.search);
 var hasQuery = (urlParams.get('query') || '').trim() !== '' || (urlParams.get('q') || '').trim() !== '';
@@ -87,6 +99,8 @@ var opts = {
         var hasFilters = (indexState.menu && indexState.menu.type)
             || (indexState.refinementList && indexState.refinementList.tags && indexState.refinementList.tags.length > 0);
         var hasSearch = hasQuery || (isSearchPage && hasFilters);
+
+        toggleHero(hasSearch);
 
         if (!hasSearch) {
             searchResults.classList.add('d-none');

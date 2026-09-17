@@ -20,8 +20,9 @@ use App\Search\Algolia;
 use App\Search\Query;
 use App\Service\BlogRssFetcher;
 use App\Util\Killswitch;
+use Doctrine\DBAL\Exception as DBALException;
 use Predis\Client as RedisClient;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Psr\Cache\CacheItemInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -37,14 +38,19 @@ use Symfony\Contracts\Cache\CacheInterface;
 class WebController extends Controller
 {
     #[Route('/', name: 'home')]
-    public function index(Request $req, BlogRssFetcher $blogRssFetcher): RedirectResponse|Response
+    public function index(Request $req, BlogRssFetcher $blogRssFetcher, RedisClient $redis): RedirectResponse|Response
     {
         if ($resp = $this->checkForQueryMatch($req)) {
             return $resp;
         }
 
+        $totals = $this->getTotals($redis);
+
         return $this->render('web/index.html.twig', [
             'newsItems' => $blogRssFetcher->getNewsItems(),
+            'packages' => $totals['packages'],
+            'versions' => $totals['versions'],
+            'downloads' => $totals['downloads'],
         ]);
     }
 
@@ -97,7 +103,7 @@ class WebController extends Controller
 
         try {
             $result = $algolia->search($query);
-        } catch (AlgoliaException) {
+        } catch (AlgoliaException|\InvalidArgumentException) {
             return new JsonResponse([
                 'status' => 'error',
                 'message' => 'Could not connect to the search server',
@@ -181,7 +187,7 @@ class WebController extends Controller
                 'labels' => array_keys($dlChartMonthly),
                 'values' => $redis->mget(array_values($dlChartMonthly)),
             ];
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
             $downloads = 'N/A';
             $dlChart = $dlChartMonthly = null;
         }
@@ -253,17 +259,38 @@ class WebController extends Controller
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
-        $downloads = (int) ($redis->get('downloads') ?: 0);
-        $packages = $this->getEM()->getRepository(Package::class)->getTotal();
-        $versions = $this->getEM()->getRepository(Version::class)->getTotal();
-
-        $totals = [
-            'downloads' => $downloads,
-            'packages' => $packages,
-            'versions' => $versions,
-        ];
+        $totals = $this->getTotals($redis);
+        if (\in_array(null, $totals, true)) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
 
         return new JsonResponse(['totals' => $totals], 200);
+    }
+
+    /**
+     * Degrades to null for any total that cannot be read, so the homepage stays renderable while
+     * Redis or the DB is down.
+     *
+     * @return array{downloads: int|null, packages: int|null, versions: int|null}
+     */
+    private function getTotals(RedisClient $redis): array
+    {
+        $downloads = null;
+        if (Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
+            try {
+                $downloads = (int) ($redis->get('downloads') ?: 0);
+            } catch (PredisException) {
+            }
+        }
+
+        $packages = $versions = null;
+        try {
+            $packages = $this->getEM()->getRepository(Package::class)->getTotal();
+            $versions = $this->getEM()->getRepository(Version::class)->getTotal();
+        } catch (DBALException) {
+        }
+
+        return ['downloads' => $downloads, 'packages' => $packages, 'versions' => $versions];
     }
 
     private function checkForQueryMatch(Request $req): ?RedirectResponse

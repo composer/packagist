@@ -17,6 +17,7 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
 use App\Entity\Suggester;
+use App\Entity\Vendor;
 use App\Tests\IntegrationTestCase;
 use Predis\Client;
 

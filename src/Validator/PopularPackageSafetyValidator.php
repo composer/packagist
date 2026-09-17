@@ -17,7 +17,7 @@ use App\Entity\User;
 use App\Model\DownloadManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -61,7 +61,7 @@ class PopularPackageSafetyValidator extends ConstraintValidator
 
         try {
             $downloads = $this->downloadManager->getTotalDownloads($value);
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
             $downloads = \PHP_INT_MAX;
         }
 

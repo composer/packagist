@@ -15,6 +15,7 @@ namespace App\Command;
 use App\Entity\PhpStat;
 use App\Service\Locker;
 use App\Util\DoctrineTrait;
+use App\Util\RedisScanner;
 use Composer\Pcre\Preg;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
@@ -69,8 +70,7 @@ class MigratePhpStatsCommand extends Command
             $now = new \DateTimeImmutable();
             $yesterday = new \DateTimeImmutable('yesterday');
             $todaySuffix = ':'.$now->format('Ymd');
-            $keysToUpdate = $this->redis->keys('php:*:*:*');
-            $keysToUpdate = array_merge($keysToUpdate, $this->redis->keys('phpplatform:*:*:*'));
+            $keysToUpdate = RedisScanner::keys($this->redis, 'phpplatform:*:*:*');
 
             // skip today datapoints as we will store that to the DB tomorrow
             $keysToUpdate = array_filter($keysToUpdate, static function ($key) use ($todaySuffix) {
@@ -79,8 +79,8 @@ class MigratePhpStatsCommand extends Command
 
             // sort by package id then version
             usort($keysToUpdate, static function (string $a, string $b) {
-                $amin = Preg::replace('{^php(?:platform)?:(\d+).*}', '$1', $a);
-                $bmin = Preg::replace('{^php(?:platform)?:(\d+).*}', '$1', $b);
+                $amin = Preg::replace('{^phpplatform:(\d+).*}', '$1', $a);
+                $bmin = Preg::replace('{^phpplatform:(\d+).*}', '$1', $b);
 
                 if ($amin !== $bmin) {
                     return strcmp($amin, $bmin);

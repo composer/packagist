@@ -37,10 +37,9 @@ class FilterListEntryType extends AbstractType
         $builder
             ->add('packageName', TextType::class, [
                 'label' => 'Package name',
-                // The package name identifies the entry's slot, so it can only be
-                // set when creating; editing it is never allowed.
-                'disabled' => !$options['creating'],
-                'help' => $options['creating'] ? null : 'The package name cannot be changed after creation.',
+                // The package name identifies the entry's slot, so editing it is never allowed.
+                'disabled' => true,
+                'help' => 'The package name cannot be changed after creation.',
             ])
             ->add('list', EnumType::class, [
                 'class' => FilterLists::class,
@@ -82,10 +81,8 @@ class FilterListEntryType extends AbstractType
         $resolver->setDefaults([
             'data_class' => FilterListEntryRequest::class,
             'manual' => false,
-            'creating' => false,
         ]);
         $resolver->setAllowedTypes('manual', 'bool');
-        $resolver->setAllowedTypes('creating', 'bool');
     }
 
     public function getBlockPrefix(): string

@@ -31,6 +31,17 @@ class PackageType extends AbstractType
                 'placeholder' => 'e.g.: https://github.com/composer/composer',
             ],
         ]);
+
+        if ($options['allow_maintainer_selection']) {
+            $builder->add('maintainer', MaintainerType::class, [
+                'property_path' => 'submittedOnBehalfOf',
+                'required' => false,
+                'label' => 'Assign to user',
+                'help' => 'Admin only. The user who should own this package instead of you.',
+                // MaintainerType resolves usernames only, despite its default placeholder
+                'attr' => ['placeholder' => 'Username'],
+            ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
@@ -38,7 +49,10 @@ class PackageType extends AbstractType
         $resolver->setDefaults([
             'data_class' => Package::class,
             'validation_groups' => ['Default', 'Create'],
+            // only built for users granted PackageActions::AdminSubmit, see PackageController
+            'allow_maintainer_selection' => false,
         ]);
+        $resolver->setAllowedTypes('allow_maintainer_selection', 'bool');
     }
 
     public function getBlockPrefix(): string

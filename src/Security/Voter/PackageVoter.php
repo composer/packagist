@@ -15,7 +15,7 @@ namespace App\Security\Voter;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Model\DownloadManager;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
@@ -55,6 +55,7 @@ class PackageVoter extends Voter
             PackageActions::ViewHiddenVersion, PackageActions::DeleteVersion, PackageActions::RecoverVersion => $this->canDeleteVersion($package, $user),
             PackageActions::AdminDeleteVersion,
             PackageActions::HideVersion => $this->canAdministerVersion(),
+            PackageActions::AdminSubmit => $this->canSubmitForOtherUsers(),
             PackageActions::Edit => $this->canEdit($package, $user),
             PackageActions::AddMaintainer, PackageActions::TransferPackage => $this->canAddMaintainers($package, $user),
             PackageActions::RemoveMaintainer => $this->canRemoveMaintainers($package, $user),
@@ -72,6 +73,16 @@ class PackageVoter extends Voter
         return $this->security->isGranted('ROLE_DELETE_PACKAGES');
     }
 
+    /**
+     * Submitting a package for someone else, which also waives the vendor ownership check, is a
+     * moderation action. Deliberately has no maintainer branch: the subject is a not-yet-persisted
+     * Package, so any maintainer-based check would be trivially satisfiable.
+     */
+    private function canSubmitForOtherUsers(): bool
+    {
+        return $this->security->isGranted('ROLE_EDIT_PACKAGES');
+    }
+
     private function canDelete(Package $package, User $user): bool
     {
         if ($this->security->isGranted('ROLE_DELETE_PACKAGES')) {
@@ -85,7 +96,7 @@ class PackageVoter extends Voter
 
         try {
             $downloads = $this->downloadManager->getDownloads($package);
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
             return false;
         }
 

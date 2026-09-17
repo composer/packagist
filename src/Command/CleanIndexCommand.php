@@ -12,7 +12,7 @@
 
 namespace App\Command;
 
-use Algolia\AlgoliaSearch\SearchClient;
+use App\Search\PackageIndex;
 use App\Service\Locker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -21,20 +21,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class CleanIndexCommand extends Command
 {
-    private SearchClient $algolia;
-    private Locker $locker;
-    private EntityManagerInterface $doctrine;
-    private string $algoliaIndexName;
-    private string $cacheDir;
-
-    public function __construct(SearchClient $algolia, Locker $locker, EntityManagerInterface $doctrine, string $algoliaIndexName, string $cacheDir)
-    {
-        $this->algolia = $algolia;
-        $this->locker = $locker;
-        $this->doctrine = $doctrine;
-        $this->algoliaIndexName = $algoliaIndexName;
-        $this->cacheDir = $cacheDir;
-
+    public function __construct(
+        private PackageIndex $packageIndex,
+        private Locker $locker,
+        private EntityManagerInterface $doctrine,
+        private string $cacheDir,
+    ) {
         parent::__construct();
     }
 
@@ -69,33 +61,36 @@ class CleanIndexCommand extends Command
             return 0;
         }
 
-        $index = $this->algolia->initIndex($this->algoliaIndexName);
+        // Browsing uses a cursor, so deleting records while iterating cannot make it skip any
+        $records = $this->packageIndex->browse(['filters' => 'type:"virtual-package" AND trendiness=100']);
 
-        $page = 0;
-        $perPage = 100;
-        do {
-            $results = $index->search('', ['facets' => '*,type,tags', 'facetFilters' => ['type:virtual-package'], 'numericFilters' => ['trendiness=100'], 'hitsPerPage' => $perPage, 'page' => $page]);
-            foreach ($results['hits'] as $result) {
-                if (!str_starts_with($result['objectID'], 'virtual:')) {
-                    $duplicate = $index->search('', ['facets' => '*,objectID,type,tags', 'facetFilters' => ['objectID:virtual:'.$result['objectID']]]);
-                    if (\count($duplicate['hits']) === 1) {
-                        if ($verbose) {
-                            $output->writeln('Deleting '.$result['objectID'].' which is a duplicate of '.$duplicate['hits'][0]['objectID']);
-                        }
-                        $index->deleteObject($result['objectID']);
-                        continue;
-                    }
-                }
+        foreach ($records as $record) {
+            // Deleting is driven by this loop, so it does not rely on the filters above having been
+            // applied: anything that is not a stale virtual package is left alone regardless.
+            if (($record['type'] ?? null) !== 'virtual-package') {
+                continue;
+            }
 
-                if (!$this->hasProviders($result['name'])) {
+            $objectId = $record['objectID'];
+
+            if (!str_starts_with($objectId, 'virtual:')) {
+                $duplicate = $this->packageIndex->search(['query' => '', 'facetFilters' => ['objectID:virtual:'.$objectId]]);
+                if (\count($duplicate['hits']) === 1) {
                     if ($verbose) {
-                        $output->writeln('Deleting '.$result['objectID'].' which has no provider anymore');
+                        $output->writeln('Deleting '.$objectId.' which is a duplicate of '.$duplicate['hits'][0]['objectID']);
                     }
-                    $index->deleteObject($result['objectID']);
+                    $this->packageIndex->deleteRecord($objectId);
+                    continue;
                 }
             }
-            $page++;
-        } while (\count($results['hits']) >= $perPage);
+
+            if (!$this->hasProviders($record['name'])) {
+                if ($verbose) {
+                    $output->writeln('Deleting '.$objectId.' which has no provider anymore');
+                }
+                $this->packageIndex->deleteRecord($objectId);
+            }
+        }
 
         $this->locker->unlockCommand(__CLASS__);
 

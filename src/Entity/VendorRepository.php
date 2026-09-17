@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Model\DownloadManager;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -22,7 +23,7 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class VendorRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, private readonly DownloadManager $downloadManager)
     {
         parent::__construct($registry, Vendor::class);
     }
@@ -50,5 +51,13 @@ class VendorRepository extends ServiceEntityRepository
             'UPDATE package SET suspect = NULL WHERE vendor = :vendor',
             ['vendor' => $vendor]
         );
+
+        // A verified vendor's packages can never be flagged again, so their view counters have
+        // lost their only reader - drop them instead of leaving them in Redis forever.
+        $packageIds = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            'SELECT id FROM package WHERE vendor = :vendor',
+            ['vendor' => $vendor]
+        );
+        $this->downloadManager->deleteViews(...array_map('intval', $packageIds));
     }
 }

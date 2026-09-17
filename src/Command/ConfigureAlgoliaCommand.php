@@ -12,7 +12,7 @@
 
 namespace App\Command;
 
-use Algolia\AlgoliaSearch\SearchClient;
+use App\Search\PackageIndex;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -23,8 +23,7 @@ use Symfony\Component\Yaml\Yaml;
 class ConfigureAlgoliaCommand extends Command
 {
     public function __construct(
-        private SearchClient $algolia,
-        private string $algoliaIndexName,
+        private PackageIndex $packageIndex,
         private string $configDir,
     ) {
         parent::__construct();
@@ -40,9 +39,7 @@ class ConfigureAlgoliaCommand extends Command
 
         $settings = Yaml::parse($yaml);
 
-        $index = $this->algolia->initIndex($this->algoliaIndexName);
-
-        $index->setSettings($settings);
+        $this->packageIndex->updateSettings($settings);
 
         return 0;
     }

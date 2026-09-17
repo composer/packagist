@@ -16,7 +16,6 @@ use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -38,7 +37,6 @@ class TypoSquattersValidator extends ConstraintValidator
         private RequestStack $requestStack,
         private string $mailFromEmail,
         private UrlGeneratorInterface $urlGenerator,
-        private Security $security,
     ) {
     }
 
@@ -77,8 +75,8 @@ class TypoSquattersValidator extends ConstraintValidator
                 $existingPkg = $this->getEM()->getRepository(Package::class)->find($existingPackage['id']);
                 if ($existingPkg !== null) {
                     foreach ($existingPkg->getMaintainers() as $maintainer) {
-                        // current user is maintainer of existing conflicting pkg, so probably a false alarm
-                        if ($maintainer === $this->security->getUser()) {
+                        // the new package's owner already maintains the conflicting one, so probably a false alarm
+                        if ($value->getMaintainers()->contains($maintainer)) {
                             return;
                         }
                     }
@@ -100,7 +98,12 @@ class TypoSquattersValidator extends ConstraintValidator
                         ->subject($value->getName().' is suspiciously close to '.$existingPackage['name'])
                         ->from(new Address($this->mailFromEmail))
                         ->to($this->mailFromEmail)
-                        ->text('Check out '.$this->urlGenerator->generate('view_package', ['name' => $value->getName()], UrlGeneratorInterface::ABSOLUTE_URL).' is not hijacking '.$this->urlGenerator->generate('view_package', ['name' => $existingPackage['name']], UrlGeneratorInterface::ABSOLUTE_URL))
+                        ->text('Check out whether this new package is not hijacking the existing one.
+
+New: '.$this->urlGenerator->generate('view_package', ['name' => $value->getName()], UrlGeneratorInterface::ABSOLUTE_URL).'
+
+Existing: '.$this->urlGenerator->generate('view_package', ['name' => $existingPackage['name']], UrlGeneratorInterface::ABSOLUTE_URL).'
+Downloads: '.$this->downloadManager->getTotalDownloads($existingPackage['id']))
                     ;
                     $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
                     $this->mailer->send($message);

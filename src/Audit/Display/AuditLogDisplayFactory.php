@@ -75,6 +75,8 @@ class AuditLogDisplayFactory
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['repository'],
+                // absent on ordinary submissions and on every record predating moderator submissions
+                isset($record->attributes['user']) ? $this->buildActor($record->attributes['user']) : null,
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),

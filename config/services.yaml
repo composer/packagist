@@ -126,9 +126,15 @@ services:
         tags:
             - { name: knp_menu.menu, alias: organization_menu }
 
-    Algolia\AlgoliaSearch\SearchClient:
+    # lazy: the client throws if no credentials are configured, and PackageManager (so every package
+    # page) depends on it transitively. Building it only when something actually searches keeps the
+    # rest of the site working for devs with no Algolia setup.
+    Algolia\AlgoliaSearch\Api\SearchClient:
+        lazy: true
         arguments: ['%env(ALGOLIA_APP_ID)%', '%env(ALGOLIA_ADMIN_KEY)%']
-        factory: ['Algolia\AlgoliaSearch\SearchClient', create]
+        factory: ['Algolia\AlgoliaSearch\Api\SearchClient', create]
+
+    App\Search\PackageIndex: '@App\Search\AlgoliaPackageIndex'
 
     App\Service\QueueWorker:
         $jobWorkers:

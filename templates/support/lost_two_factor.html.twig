@@ -1,0 +1,59 @@
+{% extends "layout.html.twig" %}
+
+{% block title %}Request a two-factor reset - {{ parent() }}{% endblock %}
+
+{% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+    <h2 class="title">Request a two-factor reset</h2>
+
+    <section class="row">
+        <div class="col-lg-8">
+            {% if duplicate %}
+                <div class="alert alert-success">
+                    <p>
+                        We already have your request{% if existingRequest %}, filed on
+                        {{ existingRequest.createdAt|date('Y-m-d H:i') }} UTC under reference
+                        <strong>{{ existingRequest.publicId }}</strong>{% endif %}.
+                    </p>
+                    <p class="mb-0">
+                        One of our admins will review it and reply to the email address on your
+                        account. There is no need to submit it again.
+                    </p>
+                </div>
+
+                <p>
+                    We have also emailed that address to let the account owner know the request was
+                    made. If you still have your backup code, you do not need to wait for us: enter it
+                    in place of the authentication code on the login form.
+                </p>
+
+                <p><a href="{{ logout_path() }}">Back to the site</a></p>
+            {% else %}
+                <p>
+                    Your password has been accepted, so we know this request comes from your account.
+                    An admin still has to review it by hand before two-factor authentication can be
+                    switched off, and we will reply to the email address on the account.
+                </p>
+
+                <p>
+                    Still have your backup code? You do not need this form - enter the backup
+                    code in place of the authentication code and two-factor authentication will be
+                    disabled straight away.
+                </p>
+
+                <div class="alert alert-warning">
+                    We will email the address on this account as soon as the request is filed. If you
+                    are not the account owner, they will find out.
+                </div>
+
+                {{ form_start(form) }}
+                    {{ form_errors(form) }}
+                    {{ form_widget(form) }}
+                    <input class="btn btn-success" type="submit" value="Request a reset" />
+                    <a class="btn btn-secondary" href="{{ path('2fa_login') }}">Back to the code prompt</a>
+                {{ form_end(form) }}
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

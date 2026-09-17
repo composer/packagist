@@ -63,16 +63,23 @@ acme/email</code></pre>
         }
     ],
     "require": {
-        "php": ">=8.0.0"
+        "php": ">=8.2"
     },
     "autoload": {
-        "psr-0": {
-            "Monolog": "src"
+        "psr-4": {
+            "Monolog\\": "src/Monolog"
         }
     }
 }</code></pre>
             <p>Most of this information is obvious, keywords are tags, require are list of dependencies that your package has. This can of course be packages, not only a php version. You can use ext-foo to require php extensions (e.g. ext-curl). Note that most extensions don't expose version information, so unless you know for sure it does, it's safer to use <code>"ext-curl": "*"</code> to allow any version of it. Finally the type field is in this case indicating that this is a library. If you do plugins for frameworks etc, and if they integrate composer, they may have a custom package type for their plugins that you can use to install the package with their own installer. In the absence of custom type, you can omit it or use "library".</p>
             <p>Once you have this file committed in your repository root, you can <a href="{{ path('submit') }}">submit the package</a> to Packagist by entering the public repository URL.</p>
+        </section>
+
+        <section class="col-lg-6">
+            <h3 id="validate-and-publish">Validate and publish</h3>
+            <p>Run <code>composer validate</code> to check that your composer.json file has no syntax errors, then commit it to your git or other VCS repository.</p>
+            <p><a href="{{ path('login') }}">Log in</a> or <a href="{{ path('register') }}">register</a> on this site, then hit the <a href="{{ path('submit') }}">submit</a> button in the menu. Once you entered your public repository URL, your package will be automatically crawled periodically - just make sure you keep the composer.json file up to date.</p>
+            <p>Use <a href="https://packagist.com">Private Packagist</a> if you want to share private code as a Composer package with colleagues or customers without publishing it for everyone on Packagist.org.</p>
         </section>
 
         <section class="col-lg-6">

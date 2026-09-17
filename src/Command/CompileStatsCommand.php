@@ -86,8 +86,15 @@ class CompileStatsCommand extends Command
             $this->redis->zadd('downloads:absolute:new', [$id => $total]);
         }
 
-        $this->redis->rename('downloads:trending:new', 'downloads:trending');
-        $this->redis->rename('downloads:absolute:new', 'downloads:absolute');
+        // RENAME onto an existing key frees the old value inline on Redis' main thread, and these
+        // are ~400k-member zsets. UNLINK hands that to the background thread instead; both run in
+        // one MULTI so readers never observe the key missing.
+        foreach (['downloads:trending', 'downloads:absolute'] as $key) {
+            $this->redis->transaction(static function ($tx) use ($key): void {
+                $tx->unlink([$key]);
+                $tx->rename($key.':new', $key);
+            });
+        }
 
         $this->locker->unlockCommand(__CLASS__);
         $this->statsd->increment('nightly_job.end', 1, 1, ['job' => 'compile-stats']);

@@ -31,6 +31,8 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
+use App\Entity\VersionListItem;
+use App\Entity\VersionSummary;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
 use App\FilterList\FilterLists;
@@ -45,6 +47,7 @@ use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
+use App\Package\PackageListCache;
 use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\GitHubUserMigrationWorker;
@@ -61,12 +64,13 @@ use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Predis\Client as RedisClient;
-use Predis\Connection\ConnectionException;
+use Predis\PredisException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\AcceptHeader;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -99,6 +103,7 @@ class PackageController extends Controller
 
     public function __construct(
         private ProviderManager $providerManager,
+        private PackageListCache $listCache,
         private PackageManager $packageManager,
         private Scheduler $scheduler,
         private FavoriteManager $favoriteManager,
@@ -124,7 +129,7 @@ class PackageController extends Controller
         ?string $type = null,
         #[MapQueryParameter]
         ?string $vendor = null,
-    ): StreamedJsonResponse {
+    ): Response {
         $queryParams = $req->query->all();
         $fields = (array) ($queryParams['fields'] ?? []); // support single or multiple fields
         $fields = array_intersect($fields, ['repository', 'type', 'abandoned']);
@@ -136,6 +141,15 @@ class PackageController extends Controller
             ], static fn ($val) => $val !== null);
 
             return $this->streamedListResponse(['packages' => self::streamPackages($repo->iteratePackagesWithFields($filters, $fields))]);
+        }
+
+        // the unfiltered listing is the one the CDN fans out to every edge, so it is served from a
+        // prebuilt blob; everything below stays on the live path
+        if ($type === null && $vendor === null && !$req->query->has('filter')) {
+            $response = $this->cachedListResponse($req);
+            if ($response !== null) {
+                return $response;
+            }
         }
 
         if ($type !== null || $vendor !== null) {
@@ -150,6 +164,40 @@ class PackageController extends Controller
         }
 
         return $this->streamedListResponse(['packageNames' => self::streamNames($names, $packageFilter)]);
+    }
+
+    /**
+     * Serves the prebuilt list.json body, gzipped when the client takes it. Returns null when the
+     * blob is missing or unreadable so the caller falls back to building the listing live.
+     */
+    private function cachedListResponse(Request $req): ?Response
+    {
+        $blob = $this->listCache->read();
+        if ($blob === null) {
+            return null;
+        }
+
+        $gzip = AcceptHeader::fromString($req->headers->get('Accept-Encoding'))->get('gzip');
+        $acceptsGzip = $gzip !== null && $gzip->getQuality() > 0;
+
+        if (!$acceptsGzip) {
+            $blob = gzdecode($blob);
+            if ($blob === false) {
+                return null;
+            }
+        }
+
+        $response = new Response($blob, Response::HTTP_OK, ['Content-Type' => 'application/json']);
+        if ($acceptsGzip) {
+            $response->headers->set('Content-Encoding', 'gzip');
+        }
+        $response->headers->set('Content-Length', (string) \strlen($blob));
+        // without this the CDN could hand a gzipped body to a client that did not ask for one
+        $response->setVary('Accept-Encoding');
+        $response->setSharedMaxAge(300);
+        $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
+
+        return $response;
     }
 
     /**
@@ -255,9 +303,8 @@ class PackageController extends Controller
     {
         $package = new Package();
         $package->addMaintainer($user);
-        $form = $this->createForm(PackageType::class, $package, [
-            'action' => $this->generateUrl('submit'),
-        ]);
+
+        $form = $this->createSubmitForm($package, $this->generateUrl('submit'));
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -269,15 +316,29 @@ class PackageController extends Controller
                 $em->flush();
 
                 $this->providerManager->insertPackage($package);
-                if ($user->getGithubToken()) {
+
+                // a moderator may have assigned the package to someone else, and it is their token
+                // that can install the hook and that later syncs reuse
+                $maintainer = $package->getSubmittedOnBehalfOf() ?? $user;
+                if ($maintainer->getGithubToken()) {
                     try {
-                        $githubUserMigrationWorker->setupWebHook($user->getGithubToken(), $package);
+                        $githubUserMigrationWorker->setupWebHook($maintainer->getGithubToken(), $package);
                     } catch (\Throwable $e) {
                         // ignore errors at this point
                     }
                 }
 
-                $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
+                if ($maintainer->getId() !== $user->getId()) {
+                    try {
+                        $this->packageManager->notifyNewMaintainer($maintainer, $package);
+                    } catch (\Throwable $e) {
+                        // the package exists at this point, a failed notification must not report it as unsaved
+                        $logger->error('Failed notifying '.$maintainer->getUsername().' of their new package', ['exception' => $e]);
+                    }
+                    $this->addFlash('success', $package->getName().' has been added to the package list and assigned to '.$maintainer->getUsername().', the repository will now be crawled.');
+                } else {
+                    $this->addFlash('success', $package->getName().' has been added to the package list, the repository will now be crawled.');
+                }
 
                 return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
             } catch (\Exception $e) {
@@ -294,7 +355,8 @@ class PackageController extends Controller
     {
         $package = new Package();
         $package->addMaintainer($user);
-        $form = $this->createForm(PackageType::class, $package);
+
+        $form = $this->createSubmitForm($package);
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -418,7 +480,7 @@ class PackageController extends Controller
 
                 return $trendiness[$a->getId()] > $trendiness[$b->getId()] ? -1 : 1;
             });
-        } catch (ConnectionException $e) {
+        } catch (PredisException $e) {
         }
 
         if ($req->getRequestFormat() === 'json') {
@@ -515,11 +577,7 @@ class PackageController extends Controller
             return $this->{$match['method'].'Action'}($req, $match['pkg']);
         }
 
-        if ('json' === $req->getRequestFormat()) {
-            $package = $this->getPackageByName($req, $name);
-        } else {
-            $package = $this->getPartialPackageWithVersions($req, $name);
-        }
+        $package = $this->getPackageByName($req, $name);
         if ($package instanceof Response) {
             return $package;
         }
@@ -581,7 +639,7 @@ class PackageController extends Controller
                 }
                 $data['downloads'] = $this->downloadManager->getDownloads($package);
                 $data['favers'] = $this->favoriteManager->getFaverCount($package);
-            } catch (\RuntimeException|ConnectionException $e) {
+            } catch (\RuntimeException|PredisException $e) {
                 $data['downloads'] = null;
                 $data['favers'] = null;
             }
@@ -601,37 +659,33 @@ class PackageController extends Controller
 
         $version = null;
         $expandedVersion = null;
-        /** @var Version[] $versions */
-        $versions = $package->getVersions()->toArray();
+        $versionRepo = $this->getEM()->getRepository(Version::class);
+        $versions = $versionRepo->getVersionListForPackage($package);
 
         if (!$this->isGranted(PackageActions::ViewHiddenVersion->value, $package)) {
-            $versions = array_values(array_filter($versions, static fn (Version $v): bool => $v->getDeletionReason() !== VersionDeletionReason::Hidden));
+            $versions = array_values(array_filter($versions, static fn (VersionListItem $v): bool => $v->getDeletionReason() !== VersionDeletionReason::Hidden));
         }
 
         usort($versions, Package::class.'::sortVersions');
 
         if (\count($versions)) {
-            $versionRepo = $this->getEM()->getRepository(Version::class);
-
-            // load the default branch version as it is used to display the latest available source.* and homepage info
-            $version = reset($versions);
+            // the default branch version is used to display the latest available source.* and homepage info
+            $defaultBranch = reset($versions);
             foreach ($versions as $v) {
                 if ($v->isDefaultBranch()) {
-                    $version = $v;
+                    $defaultBranch = $v;
                     break;
                 }
             }
-            $version = $versionRepo->find($version->getId());
-            Assert::notNull($version);
 
-            $expandedVersion = $version;
+            $expanded = $defaultBranch;
             $softDeletedFallback = null;
             foreach ($versions as $candidate) {
                 if ($candidate->isDevelopment()) {
                     continue;
                 }
                 if ($candidate->getDeletionReason() === null) {
-                    $expandedVersion = $candidate;
+                    $expanded = $candidate;
                     $softDeletedFallback = null;
                     break;
                 }
@@ -639,18 +693,26 @@ class PackageController extends Controller
                     $softDeletedFallback = $candidate;
                 }
             }
-            if ($softDeletedFallback !== null && $expandedVersion === $version) {
-                $expandedVersion = $softDeletedFallback;
+            if ($softDeletedFallback !== null && $expanded === $defaultBranch) {
+                $expanded = $softDeletedFallback;
             }
 
-            // load the expanded version fully to be able to display all info including tags
-            if ($expandedVersion->getId() !== $version->getId()) {
-                $expandedVersion = $versionRepo->find($expandedVersion->getId());
-                Assert::notNull($expandedVersion);
-            } else {
-                // ensure we get the reloaded $version with full data if it was overwritten above by $candidate
-                $expandedVersion = $version;
+            // only the two versions that actually get rendered are loaded in full, the list
+            // itself runs off VersionListItem to keep the JSON columns out of the page
+            $fullVersionIds = [$defaultBranch->getId()];
+            if ($expanded->getId() !== $defaultBranch->getId()) {
+                $fullVersionIds[] = $expanded->getId();
             }
+            $fullVersions = $versionRepo->findBy(['id' => $fullVersionIds]);
+            $versionMap = [];
+            foreach ($fullVersions as $v) {
+                $versionMap[$v->getId()] = $v;
+            }
+            unset($fullVersions, $v, $fullVersionIds);
+            $version = $versionMap[$defaultBranch->getId()];
+            Assert::notNull($version);
+            $expandedVersion = $versionMap[$expanded->getId()] ?? $version;
+            Assert::notNull($expandedVersion);
         }
 
         $data = [
@@ -664,24 +726,35 @@ class PackageController extends Controller
             if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
                 throw new \RuntimeException();
             }
-            $data['downloads'] = $this->downloadManager->getDownloads($package, null, true);
+            $data['downloads'] = $this->downloadManager->getDownloads($package);
 
+            // The view counter exists only to spot packages that get traffic but no installs, so
+            // it is only worth a Redis write while that can still be concluded. Downloads and
+            // createdAt never move back below these thresholds, and suspect is never unset here,
+            // so a package that fails this check can never need the counter again.
             if (
                 !$package->isSuspect()
-                && $data['downloads']['total'] <= 10 && ($data['downloads']['views'] ?? 0) >= 100
-                && $package->getCreatedAt()->getTimestamp() >= strtotime('2019-05-01')
+                && $data['downloads']['total'] <= PackageRepository::SUSPECT_VIEWS_MAX_DOWNLOADS
+                && $package->getCreatedAt()->getTimestamp() >= strtotime(PackageRepository::SUSPECT_VIEWS_MIN_CREATED_AT)
+                && $this->downloadManager->incrementViews($package) >= 100
             ) {
                 $vendorRepo = $this->getEM()->getRepository(Vendor::class);
                 if (!$vendorRepo->isVerified($package->getVendor())) {
                     $package->setSuspect('Too many views');
                     $repo->markPackageSuspect($package);
                 }
+
+                // The counter has served its purpose either way, so drop it: a package we just
+                // marked suspect stops counting above, and for a verified vendor nothing can ever
+                // come of it. Restarting from zero also spaces the isVerified() lookup back out to
+                // once per 100 views instead of once per view from here on.
+                $this->downloadManager->deleteViews($package->getId());
             }
 
             if ($user) {
                 $data['is_favorite'] = $this->favoriteManager->isMarked($user, $package);
             }
-        } catch (\RuntimeException|ConnectionException) {
+        } catch (\RuntimeException|PredisException) {
         }
 
         $data['dependents'] = Killswitch::isEnabled(Killswitch::PAGE_DETAILS_ENABLED) && Killswitch::isEnabled(Killswitch::LINKS_ENABLED) ? $repo->getDependentCount($package->getName()) : 0;
@@ -722,10 +795,17 @@ class PackageController extends Controller
                 }
             }
 
-            $data['addMaintainerForm'] = $this->createAddMaintainerForm($package)->createView();
-            $data['removeMaintainerForm'] = $this->createRemoveMaintainerForm($package)->createView();
-            $data['transferPackageForm'] = $this->createTransferPackageForm($package)->createView();
-            $data['deleteForm'] = $this->createDeletePackageForm($package)->createView();
+            // The template renders each of these behind the matching voter grant, and building them
+            // is not free - createView() on the remove-maintainer form materialises an EntityType
+            // choice list with a DB query - so visitors who cannot see a form must not pay for it.
+            $data['addMaintainerForm'] = $this->isGranted(PackageActions::AddMaintainer->value, $package)
+                ? $this->createAddMaintainerForm($package)->createView() : null;
+            $data['removeMaintainerForm'] = $this->isGranted(PackageActions::RemoveMaintainer->value, $package)
+                ? $this->createRemoveMaintainerForm($package)->createView() : null;
+            $data['transferPackageForm'] = $this->isGranted(PackageActions::TransferPackage->value, $package)
+                ? $this->createTransferPackageForm($package)->createView() : null;
+            $data['deleteForm'] = $this->isGranted(PackageActions::Delete->value, $package)
+                ? $this->createDeletePackageForm($package)->createView() : null;
         } else {
             $data['hasVersionSecurityAdvisories'] = [];
             $data['hasVersionsFlaggedAsMalware'] = [];
@@ -786,12 +866,12 @@ class PackageController extends Controller
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
-        $package = $this->getPartialPackageWithVersions($req, $name);
+        $package = $this->getPackageByName($req, $name);
         if ($package instanceof Response) {
             return $package;
         }
 
-        $versions = $package->getVersions();
+        $versions = $this->getEM()->getRepository(Version::class)->getVersionListForPackage($package);
         $data = [
             'name' => $package->getName(),
         ];
@@ -799,15 +879,15 @@ class PackageController extends Controller
         try {
             $data['downloads']['total'] = $this->downloadManager->getDownloads($package);
             $data['favers'] = $this->favoriteManager->getFaverCount($package);
-        } catch (ConnectionException) {
+        } catch (PredisException) {
             $data['downloads']['total'] = null;
             $data['favers'] = null;
         }
 
         foreach ($versions as $version) {
             try {
-                $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version);
-            } catch (ConnectionException) {
+                $data['downloads']['versions'][$version->getVersion()] = $this->downloadManager->getDownloads($package, $version->getId());
+            } catch (PredisException) {
                 $data['downloads']['versions'][$version->getVersion()] = null;
             }
         }
@@ -1047,7 +1127,7 @@ class PackageController extends Controller
     #[Route(path: '/packages/{name}', name: 'delete_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['DELETE'])]
     public function deletePackageAction(Request $req, string $name): Response
     {
-        $package = $this->getPartialPackageWithVersions($req, $name);
+        $package = $this->getPackageByName($req, $name);
         if ($package instanceof Response) {
             return $package;
         }
@@ -1148,14 +1228,7 @@ class PackageController extends Controller
             }
         }
 
-        return $this->render('package/view_package.html.twig', [
-            'package' => $package,
-            'versions' => null,
-            'expandedVersion' => null,
-            'version' => null,
-            'removeMaintainerForm' => $removeMaintainerForm,
-            'show_remove_maintainer_form' => true,
-        ]);
+        return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
     }
 
     #[Route(path: '/packages/{name:package}/transfer/', name: 'transfer_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['GET', 'POST'])]
@@ -1294,13 +1367,12 @@ class PackageController extends Controller
             return $resp;
         }
 
-        $package = $this->getPartialPackageWithVersions($req, $name);
+        $package = $this->getPackageByName($req, $name);
         if ($package instanceof Response) {
             return $package;
         }
 
-        /** @var Version[] $versions */
-        $versions = $package->getVersions()->toArray();
+        $versions = $this->getEM()->getRepository(Version::class)->getVersionListForPackage($package);
         usort($versions, Package::class.'::sortVersions');
         $date = $this->guessStatsStartDate($package);
         $data = [
@@ -1311,10 +1383,7 @@ class PackageController extends Controller
         ];
 
         if ($req->getRequestFormat() === 'json') {
-            $data['versions'] = array_map(static function ($version) {
-                /* @var Version $version */
-                return $version->getVersion();
-            }, $data['versions']);
+            $data['versions'] = array_map(static fn (VersionListItem $version): string => $version->getVersion(), $data['versions']);
 
             return new JsonResponse($data);
         }
@@ -1923,6 +1992,21 @@ class PackageController extends Controller
     }
 
     /**
+     * Shared by the submit form and its fetch-info check step, which must agree on what is valid.
+     *
+     * @return FormInterface<Package>
+     */
+    private function createSubmitForm(Package $package, ?string $action = null): FormInterface
+    {
+        $options = ['allow_maintainer_selection' => $this->isGranted(PackageActions::AdminSubmit->value, $package)];
+        if ($action !== null) {
+            $options['action'] = $action;
+        }
+
+        return $this->createForm(PackageType::class, $package, $options);
+    }
+
+    /**
      * @return FormInterface<MaintainerRequest>
      */
     private function createAddMaintainerForm(Package $package): FormInterface
@@ -1960,25 +2044,6 @@ class PackageController extends Controller
     private function createDeletePackageForm(Package $package): FormInterface
     {
         return $this->createFormBuilder([])->getForm();
-    }
-
-    private function getPartialPackageWithVersions(Request $req, string $name): Package|Response
-    {
-        $repo = $this->getEM()->getRepository(Package::class);
-
-        try {
-            return $repo->getPackageByName($name);
-        } catch (NoResultException) {
-            if ('json' === $req->getRequestFormat()) {
-                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
-            }
-
-            if ($repo->findProviders($name)) {
-                return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
-            }
-
-            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
-        }
     }
 
     private function getPackageByName(Request $req, string $name): Package|Response
@@ -2035,7 +2100,7 @@ class PackageController extends Controller
     }
 
     /**
-     * @param Version[] $versions
+     * @param VersionSummary[] $versions
      *
      * @return array<string, int>
      */

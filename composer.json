@@ -25,7 +25,7 @@
         "ext-apcu": "*",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "algolia/algoliasearch-client-php": "^3.4",
+        "algolia/algoliasearch-client-php": "^4.47",
         "babdev/pagerfanta-bundle": "^4.2",
         "beelab/recaptcha2-bundle": "^2.3",
         "cebe/markdown": "^1.1",
@@ -156,7 +156,7 @@
             "@auto-scripts"
         ],
         "test": "vendor/bin/phpunit",
-        "phpstan": "vendor/bin/phpstan analyse"
+        "phpstan": "vendor/bin/phpstan analyse -vv"
     },
     "extra": {
         "symfony": {

@@ -20,6 +20,8 @@ readonly class PackageCreatedDisplay extends AbstractAuditLogDisplay
         \DateTimeImmutable $datetime,
         public string $packageName,
         public string $repository,
+        // null unless the package ended up with someone other than the actor
+        public ?ActorDisplay $maintainer,
         ActorDisplay $actor,
         ?string $ip,
     ) {

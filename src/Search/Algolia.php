@@ -13,16 +13,15 @@
 namespace App\Search;
 
 use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
-use Algolia\AlgoliaSearch\SearchClient;
 
 /**
  * @phpstan-import-type SearchResult from ResultTransformer
+ * @phpstan-import-type AlgoliaSearchResponse from ResultTransformer
  */
 final class Algolia
 {
     public function __construct(
-        private SearchClient $algolia,
-        private string $algoliaIndexName,
+        private PackageIndex $index,
         private ResultTransformer $transformer,
     ) {
     }
@@ -30,15 +29,14 @@ final class Algolia
     /**
      * @phpstan-return SearchResult
      *
-     * @throws AlgoliaException
+     * @throws AlgoliaException          on a transport or API error
+     * @throws \InvalidArgumentException on a malformed response body
      */
     public function search(Query $query): array
     {
-        $index = $this->algolia->initIndex($this->algoliaIndexName);
+        /** @var AlgoliaSearchResponse $results */
+        $results = $this->index->search($query->getSearchParams());
 
-        return $this->transformer->transform(
-            $query,
-            $index->search($query->query, $query->getOptions())
-        );
+        return $this->transformer->transform($query, $results);
     }
 }

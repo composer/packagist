@@ -24,6 +24,7 @@ enum PackageActions: string
     case ViewHiddenVersion = 'view_hidden_version';
     case RecoverVersion = 'recover_version';
     case AdminDeleteVersion = 'admin_delete_version';
+    case AdminSubmit = 'admin_submit';
     case HideVersion = 'hide_version';
     case Update = 'update';
 }
