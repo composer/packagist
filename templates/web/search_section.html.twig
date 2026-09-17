@@ -1,10 +1,27 @@
-<section class="wrapper wrapper-search">
+<section class="wrapper wrapper-search{% if showSearchDesc == 'hero' %} wrapper-search-hero{% if heroCollapsed|default(false) %} search-active{% endif %}{% endif %}">
     <div class="container {% if showSearchDesc == 'show' %}with-description{% endif %}">
+        {%- if showSearchDesc == 'hero' %}
+            <div class="hero-search-intro">
+                <div class="hero-brand-row">
+                    <img src="{{ asset('img/logo-packagist.webp') }}" class="hero-brand-logo" alt="Packagist logo" width="400" height="455">
+                    <div class="hero-brand-text">
+                        {#- the navbar brand takes the h1 back over while the hero is collapsed #}
+                        {%- if heroCollapsed|default(false) %}
+                            <div class="hero-brand-title">{{ 'brandname'|trans }}</div>
+                        {%- else %}
+                            <h1 class="hero-brand-title">{{ 'brandname'|trans }}</h1>
+                        {%- endif %}
+                        <div class="hero-brand-subtitle">{{ 'navclaim'|trans }}</div>
+                    </div>
+                    <img src="{{ asset('img/logo-composer.png') }}" class="hero-brand-logo" alt="Composer logo" width="290" height="356">
+                </div>
+                <p class="hero-search-claim">{{ 'search.claim_html'|trans|raw }}</p>
+            </div>
+        {%- endif %}
+
         <form name="search_query" method="get" action="{{ path('search_web') }}" id="search-form" autocomplete="off">
             <div class="sortable row">
                 <div class="col-12 js-search-field-wrapper col-lg-9">
-                    {% set query = app.request.query %}
-                    {% set searchQuery = query.has('q') ? query.get('q') : query.get('query') %}
                     <input type="search" id="search_query_query" name="query" required="required" autocomplete="off" placeholder="Search {% if app.current_route == 'browse_extensions' %}extension {% endif %}packages..." tabindex="1" class=" form-control" value="{{ searchQuery }}" />
                 </div>
             </div>
@@ -16,6 +33,20 @@
                     <img src="{{ asset('img/logo-small.png') }}" class="logo" alt="Packagist logo">
                     <p>{{ 'search.claim_html'|trans|raw }}</p>
                     <img src="{{ asset('img/logo-composer.png') }}" alt="Composer logo" class="logo-composer d-none d-lg-inline-block">
+                </div>
+            </div>
+        {%- elseif showSearchDesc == 'hero' %}
+            <div class="hero-search-footer">
+                {%- if packages is defined and versions is defined and downloads is defined %}
+                    <ul class="hero-search-stats">
+                        <li><strong>{{ packages is null ? 'N/A' : packages|number_format(0, '.', " ") }}</strong> {{ 'hero.stats.packages'|trans }}</li>
+                        <li><strong>{{ versions is null ? 'N/A' : versions|number_format(0, '.', " ") }}</strong> {{ 'hero.stats.versions'|trans }}</li>
+                        <li><strong>{{ downloads is null ? 'N/A' : downloads|number_format(0, '.', " ") }}</strong> {{ 'hero.stats.installs'|trans }}</li>
+                    </ul>
+                {%- endif %}
+                <div class="hero-search-actions">
+                    <a href="https://getcomposer.org/download/" class="hero-btn hero-btn-primary">{{ 'hero.install_composer'|trans }}</a>
+                    <a href="{{ path('about') }}" class="hero-btn hero-btn-secondary">{{ 'hero.discover_packagist'|trans }}</a>
                 </div>
             </div>
         {%- endif %}
