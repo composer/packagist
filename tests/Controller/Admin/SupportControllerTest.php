@@ -14,7 +14,6 @@ namespace App\Tests\Controller\Admin;
 
 use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
-use App\Entity\SupportMessageVisibility;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\User;
@@ -41,8 +40,8 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = self::createUser('requester', 'requester@example.org');
         $this->store($admin, $requester);
 
-        $transfer = SupportRequest::packageTransfer($requester, 'acme/thing', 'Please move it.');
-        $lost2fa = SupportRequest::lostTwoFactor($requester, null, 'token', null);
+        $transfer = SupportRequest::packageTransfer($requester, ['acme/thing'], 'Please move it.');
+        $lost2fa = SupportRequest::lostTwoFactor($requester, null, 'token', null, null);
         $this->store($transfer, $lost2fa);
 
         $this->client->loginUser($admin);
@@ -59,7 +58,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = self::createUser('requester', 'requester@example.org');
         $this->store($admin, $requester);
 
-        $lost2fa = SupportRequest::lostTwoFactor($requester, null, 'token', null);
+        $lost2fa = SupportRequest::lostTwoFactor($requester, null, 'token', null, null);
         $this->store($lost2fa);
 
         $this->client->loginUser($admin);
@@ -86,7 +85,7 @@ class SupportControllerTest extends IntegrationTestCase
 
         $message = $this->firstMessage($request);
         self::assertNotNull($message);
-        self::assertSame(SupportMessageVisibility::Internal, $message->visibility);
+        self::assertTrue($message->internal);
         self::assertSame('Checked the repo, looks legit.', $message->contents);
     }
 
@@ -111,7 +110,7 @@ class SupportControllerTest extends IntegrationTestCase
 
         $message = $this->firstMessage($request);
         self::assertNotNull($message);
-        self::assertSame(SupportMessageVisibility::Reply, $message->visibility);
+        self::assertFalse($message->internal);
     }
 
     public function testResolveThenReopen(): void
@@ -141,7 +140,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = $this->twoFactorUser();
         $this->store($admin, $requester);
 
-        $request = SupportRequest::lostTwoFactor($requester, null, 'token', null);
+        $request = SupportRequest::lostTwoFactor($requester, null, 'token', null, null);
         $this->store($request);
 
         $this->client->loginUser($admin);
@@ -218,7 +217,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = self::createUser('requester', 'requester@example.org');
         $this->store($admin, $requester);
 
-        $request = SupportRequest::packageTransfer($requester, 'acme/thing', 'Please move it.');
+        $request = SupportRequest::packageTransfer($requester, ['acme/thing'], 'Please move it.');
         $this->store($request);
 
         $this->client->loginUser($admin);
@@ -247,8 +246,8 @@ class SupportControllerTest extends IntegrationTestCase
         [$admin, $request] = $this->givenTransferRequest();
 
         $this->store(
-            new SupportRequestMessage($request, SupportMessageVisibility::Internal, 'Checked the repo.', $admin),
-            new SupportRequestMessage($request, SupportMessageVisibility::Reply, 'Asked them to confirm.', $admin),
+            SupportRequestMessage::internalNote($request, 'Checked the repo.', $admin),
+            SupportRequestMessage::reply($request, 'Asked them to confirm.', $admin),
         );
 
         $this->client->loginUser($admin);
@@ -269,8 +268,8 @@ class SupportControllerTest extends IntegrationTestCase
         $plain = self::createUser('plainone', 'plainone@example.org');
         $this->store($admin, $odd, $plain);
 
-        $withWildcard = SupportRequest::packageTransfer($odd, 'acme/th%ing', 'Please move it.');
-        $withoutWildcard = SupportRequest::packageTransfer($plain, 'acme/thing', 'Please move it.');
+        $withWildcard = SupportRequest::packageTransfer($odd, ['acme/th%ing'], 'Please move it.');
+        $withoutWildcard = SupportRequest::packageTransfer($plain, ['acme/thing'], 'Please move it.');
         $this->store($withWildcard, $withoutWildcard);
 
         $this->client->loginUser($admin);
@@ -295,7 +294,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = self::createUser('requester', 'requester@example.org');
         $this->store($admin, $requester);
 
-        $request = SupportRequest::packageTransfer($requester, "acme/one\nacme/two", 'Please move them.');
+        $request = SupportRequest::packageTransfer($requester, ['acme/one', 'acme/two'], 'Please move them.');
         $this->store($request);
 
         return [$admin, $request, $requester];
@@ -310,7 +309,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = $this->twoFactorUser();
         $this->store($admin, $requester);
 
-        $request = SupportRequest::lostTwoFactor($requester, 'I dropped my phone in a lake.', 'token', $approvableAt);
+        $request = SupportRequest::lostTwoFactor($requester, 'I dropped my phone in a lake.', 'token', $approvableAt, null);
         $this->store($request);
 
         return [$admin, $request, $requester];

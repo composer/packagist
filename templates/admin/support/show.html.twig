@@ -68,12 +68,20 @@
             {% if supportRequest.type.value == 'vendor_claim' %}
                 <h3>Vendor requested</h3>
                 <p>
-                    <a href="{{ path('view_vendor', {vendor: supportRequest.vendorName}) }}">{{ supportRequest.vendorName }}</a>
+                    <a href="{{ path('view_vendor', {vendor: supportRequest.attributes.vendorName}) }}">{{ supportRequest.attributes.vendorName }}</a>
                     &mdash; check who maintains the packages already under it before handing it over.
                 </p>
             {% endif %}
 
             {% if supportRequest.type.value == 'account_deletion' %}
+                <h3>What they want done with their packages</h3>
+                <p>
+                    {{ supportRequest.attributes.packageDisposition.label }}
+                    {%- if supportRequest.attributes.transferTo %}
+                        &mdash; to <a href="{{ path('user_profile', {name: supportRequest.attributes.transferTo}) }}">{{ supportRequest.attributes.transferTo }}</a>
+                    {%- endif %}
+                </p>
+
                 <h3>Packages on this account</h3>
                 <table class="table">
                     <thead><tr><th>Package</th><th>Downloads</th><th>Maintainers</th></tr></thead>
@@ -209,7 +217,7 @@
                     <p class="text-muted">Already dealt with.</p>
                 {% elseif not coolingOffElapsed %}
                     <div class="alert alert-warning">
-                        Held until <strong>{{ supportRequest.approvableAt|date('Y-m-d H:i') }} UTC</strong> so the account
+                        Held until <strong>{{ supportRequest.attributes.approvableAt|date('Y-m-d H:i') }} UTC</strong> so the account
                         owner has time to object. This account is high value, and the owner was emailed when the
                         request was filed.
                     </div>

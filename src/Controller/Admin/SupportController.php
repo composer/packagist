@@ -15,7 +15,6 @@ namespace App\Controller\Admin;
 use App\Audit\Display\AuditLogDisplayFactory;
 use App\Controller\Controller;
 use App\Entity\Package;
-use App\Entity\SupportMessageVisibility;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\SupportRequestRepository;
@@ -23,6 +22,7 @@ use App\Entity\User;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Security\TwoFactorAuthManager;
+use App\Support\Attributes\LostTwoFactorAttributes;
 use App\Support\SupportNotifier;
 use App\Support\SupportQueueAccess;
 use App\Support\SupportRequestStatus;
@@ -147,7 +147,7 @@ class SupportController extends Controller
             return $this->redirectToRoute('admin_support_request', ['publicId' => $publicId]);
         }
 
-        $note = new SupportRequestMessage($request, SupportMessageVisibility::Internal, $contents, $actor);
+        $note = SupportRequestMessage::internalNote($request, $contents, $actor);
         $request->touch(new \DateTimeImmutable());
 
         $em = $this->getEM();
@@ -172,7 +172,7 @@ class SupportController extends Controller
             return $this->redirectToRoute('admin_support_request', ['publicId' => $publicId]);
         }
 
-        $reply = new SupportRequestMessage($request, SupportMessageVisibility::Reply, $contents, $actor);
+        $reply = SupportRequestMessage::reply($request, $contents, $actor);
         $request->touch(new \DateTimeImmutable());
 
         $em = $this->getEM();
@@ -206,12 +206,7 @@ class SupportController extends Controller
 
         $em = $this->getEM();
         // Recorded on the thread so the status carries an actor, the way notes and replies do.
-        $em->persist(new SupportRequestMessage(
-            $request,
-            SupportMessageVisibility::Internal,
-            'Marked as '.$status->label().'.',
-            $actor,
-        ));
+        $em->persist(SupportRequestMessage::internalNote($request, 'Marked as '.$status->label().'.', $actor));
         $em->flush();
         $this->addFlash('success', 'Request marked as '.$status->label().'.');
 
@@ -245,7 +240,7 @@ class SupportController extends Controller
 
         $now = new \DateTimeImmutable();
         if (!$request->isApprovable($now)) {
-            $this->addFlash('warning', 'This request is held until '.$request->approvableAt?->format('Y-m-d H:i').' UTC so the account owner has time to object.');
+            $this->addFlash('warning', 'This request is held until '.$request->attributesOf(LostTwoFactorAttributes::class)->approvableAt?->format('Y-m-d H:i').' UTC so the account owner has time to object.');
 
             return $redirect;
         }
@@ -267,7 +262,7 @@ class SupportController extends Controller
         }
 
         // Built before the call because disableTwoFactorAuth() flushes, which persists these too.
-        $reply = new SupportRequestMessage($request, SupportMessageVisibility::Reply, SupportRequestType::twoFactorGrantedReply($request), $actor);
+        $reply = SupportRequestMessage::reply($request, SupportRequestType::twoFactorGrantedReply($request), $actor);
         $request->resolve($now);
         $this->getEM()->persist($reply);
 
@@ -326,7 +321,7 @@ class SupportController extends Controller
     private function hasReply(SupportRequest $request): bool
     {
         foreach ($request->messages as $message) {
-            if (!$message->isInternal()) {
+            if (!$message->internal) {
                 return true;
             }
         }

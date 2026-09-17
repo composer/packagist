@@ -13,10 +13,17 @@
 namespace App\Entity;
 
 use App\Service\IdGenerator;
+use App\Support\Attributes\AccountDeletionAttributes;
+use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\SupportRequestAttributes;
+use App\Support\Attributes\VendorClaimAttributes;
+use App\Support\PackageDisposition;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
@@ -24,9 +31,10 @@ use Symfony\Component\Uid\Ulid;
  * A support task raised from one of the /contact workflows, plus the lost-2FA request raised from
  * the two-factor login prompt.
  *
- * One table with a type discriminator: the four types share their whole lifecycle, and the
- * type-specific payload is three nullable columns. Request bodies, admin notes and replies stay
- * here and never reach audit_log, which every logged-in user can read via /transparency-log.
+ * One table with a type discriminator: the four types share their whole lifecycle, and whatever
+ * only one of them needs goes in the attributes JSON blob rather than into a nullable column of its
+ * own. Request bodies, admin notes and replies stay here and never reach audit_log, which every
+ * logged-in user can read via /transparency-log.
  */
 #[ORM\Entity(repositoryClass: SupportRequestRepository::class)]
 #[ORM\Table(name: 'support_request')]
@@ -56,28 +64,21 @@ class SupportRequest
     #[ORM\Column(type: 'text', nullable: true)]
     public readonly ?string $description;
 
-    /** Vendor claims only. */
-    #[ORM\Column(length: 191, nullable: true)]
-    public readonly ?string $vendorName;
-
-    /** Package transfers only, one package name per line as the requester typed them. */
-    #[ORM\Column(type: 'text', nullable: true)]
-    public readonly ?string $packageNames;
-
     /**
-     * SHA-256 of the single-use token in the "this wasn't me" link of the lost-2FA alert mail. Only
-     * the hash is stored; the raw token exists solely in that emailed link.
+     * Raw type-specific payload. Read through {@see $attributes}; this stays private so nothing
+     * outside the entity has to know the shape per type.
+     *
+     * @var array<string, mixed>
      */
-    #[ORM\Column(length: 64, nullable: true)]
-    public readonly ?string $cancelTokenHash;
+    #[ORM\Column(name: 'attributes', type: Types::JSON)]
+    private array $attributeData;
 
-    /**
-     * Earliest time a lost-2FA request may be granted. Set for high-value accounts so the owner
-     * alert has time to land and be acted on; null means immediately actionable. Stored rather than
-     * recomputed so a later download spike cannot restart the clock.
-     */
-    #[ORM\Column(nullable: true)]
-    public readonly ?\DateTimeImmutable $approvableAt;
+    private ?SupportRequestAttributes $hydrated = null;
+
+    /** The payload for this request's type. */
+    public SupportRequestAttributes $attributes {
+        get => $this->hydrated ??= $this->type->hydrateAttributes($this->attributeData);
+    }
 
     /** Requester IP, kept for lost-2FA requests only, where it is a fraud signal. */
     #[ORM\Column(nullable: true, type: 'ipaddress')]
@@ -115,10 +116,7 @@ class SupportRequest
         SupportRequestType $type,
         User $user,
         ?string $description,
-        ?string $vendorName = null,
-        ?string $packageNames = null,
-        ?string $cancelTokenHash = null,
-        ?\DateTimeImmutable $approvableAt = null,
+        SupportRequestAttributes $attributes,
     ) {
         $this->id = new Ulid();
         $this->publicId = IdGenerator::generateSupportRequest();
@@ -126,38 +124,59 @@ class SupportRequest
         $this->status = SupportRequestStatus::Open;
         $this->user = $user;
         $this->description = $description;
-        $this->vendorName = $vendorName;
-        $this->packageNames = $packageNames;
-        $this->cancelTokenHash = $cancelTokenHash;
-        $this->approvableAt = $approvableAt;
+        $this->attributeData = $attributes->toArray();
+        $this->hydrated = $attributes;
         $this->messages = new ArrayCollection();
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
     }
 
-    public static function lostTwoFactor(User $user, ?string $description, string $cancelToken, ?\DateTimeImmutable $approvableAt): self
+    public static function lostTwoFactor(User $user, ?string $description, string $cancelToken, ?\DateTimeImmutable $approvableAt, ?string $ip): self
     {
-        return new self(
+        $request = new self(
             SupportRequestType::LostTwoFactor,
             $user,
             $description,
-            cancelTokenHash: self::hashCancelToken($cancelToken),
-            approvableAt: $approvableAt,
+            new LostTwoFactorAttributes(self::hashCancelToken($cancelToken), $approvableAt),
         );
+        $request->ip = $ip;
+
+        return $request;
     }
 
-    public static function packageTransfer(User $user, string $packageNames, string $description): self
+    /** @param list<string> $packageNames */
+    public static function packageTransfer(User $user, array $packageNames, string $description): self
     {
-        return new self(SupportRequestType::PackageTransfer, $user, $description, packageNames: $packageNames);
+        return new self(SupportRequestType::PackageTransfer, $user, $description, new PackageTransferAttributes($packageNames));
     }
 
     public static function vendorClaim(User $user, string $vendorName, string $description): self
     {
-        return new self(SupportRequestType::VendorClaim, $user, $description, vendorName: $vendorName);
+        return new self(SupportRequestType::VendorClaim, $user, $description, new VendorClaimAttributes($vendorName));
     }
 
-    public static function accountDeletion(User $user, string $description): self
+    public static function accountDeletion(User $user, PackageDisposition $disposition, ?string $transferTo, ?string $description): self
     {
-        return new self(SupportRequestType::AccountDeletion, $user, $description);
+        return new self(SupportRequestType::AccountDeletion, $user, $description, new AccountDeletionAttributes($disposition, $transferTo));
+    }
+
+    /**
+     * The attributes narrowed to the class this request's type uses, for callers that have already
+     * established the type.
+     *
+     * @template T of SupportRequestAttributes
+     *
+     * @param class-string<T> $class
+     *
+     * @return T
+     */
+    public function attributesOf(string $class): SupportRequestAttributes
+    {
+        $attributes = $this->attributes;
+        if (!$attributes instanceof $class) {
+            throw new \LogicException('Request '.$this->publicId.' is a '.$this->type->value.', which carries '.$attributes::class.', not '.$class);
+        }
+
+        return $attributes;
     }
 
     public static function hashCancelToken(string $token): string
@@ -170,15 +189,32 @@ class SupportRequest
         return $this->status === SupportRequestStatus::Open;
     }
 
-    /** Whether the cooling-off period, if any, has elapsed. Re-checked server-side on every grant. */
+    /**
+     * Whether the cooling-off period, if any, has elapsed. Re-checked server-side on every grant.
+     *
+     * Only lost-2FA requests are ever held, and the queue asks this of every row it lists, so any
+     * other type answers yes rather than throwing.
+     */
     public function isApprovable(\DateTimeImmutable $now): bool
     {
-        return $this->approvableAt === null || $this->approvableAt <= $now;
+        $attributes = $this->attributes;
+        if (!$attributes instanceof LostTwoFactorAttributes) {
+            return true;
+        }
+
+        return $attributes->approvableAt === null || $attributes->approvableAt <= $now;
     }
 
+    /**
+     * Returns false rather than throwing on a request of another type: the only caller checks the
+     * type first, but this guards a public route and must not turn a wrong link into a 500.
+     */
     public function matchesCancelToken(string $token): bool
     {
-        return $this->cancelTokenHash !== null && hash_equals($this->cancelTokenHash, self::hashCancelToken($token));
+        $attributes = $this->attributes;
+
+        return $attributes instanceof LostTwoFactorAttributes
+            && hash_equals($attributes->cancelTokenHash, self::hashCancelToken($token));
     }
 
     public function resolve(\DateTimeImmutable $now): void
@@ -210,22 +246,12 @@ class SupportRequest
     /** One-line description for the admin queue table. */
     public function summary(): string
     {
-        $summary = match ($this->type) {
-            SupportRequestType::VendorClaim => (string) $this->vendorName,
-            SupportRequestType::PackageTransfer => str_replace("\n", ', ', trim((string) $this->packageNames)),
-            default => (string) $this->description,
-        };
-
-        return mb_strimwidth(trim($summary), 0, 80, '…');
+        return mb_strimwidth(trim($this->attributes->summary() ?? (string) $this->description), 0, 80, '…');
     }
 
     /** @return list<string> the package names the requester listed, for a transfer request */
     public function packageNameList(): array
     {
-        if ($this->packageNames === null) {
-            return [];
-        }
-
-        return array_values(array_filter(array_map(trim(...), explode("\n", $this->packageNames)), static fn (string $line): bool => $line !== ''));
+        return $this->attributesOf(PackageTransferAttributes::class)->packageNames;
     }
 }

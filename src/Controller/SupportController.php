@@ -13,14 +13,13 @@
 namespace App\Controller;
 
 use App\Entity\PackageRepository;
-use App\Entity\SupportMessageVisibility;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\SupportRequestRepository;
 use App\Entity\User;
 use App\Form\Model\AccountDeletionSupportRequest;
 use App\Form\Model\LostTwoFactorSupportRequest;
-use App\Form\Model\PackageDisposition;
+use App\Support\PackageDisposition;
 use App\Form\Model\PackageTransferSupportRequest;
 use App\Form\Model\VendorClaimSupportRequest;
 use App\Form\Type\AccountDeletionSupportType;
@@ -105,8 +104,8 @@ class SupportController extends Controller
                 $data->description,
                 $cancelToken,
                 $riskAssessor->coolingOffUntil($user, new \DateTimeImmutable()),
+                $req->getClientIp(),
             );
-            $request->ip = $req->getClientIp();
 
             $em = $this->getEM();
             $em->persist($request);
@@ -180,9 +179,8 @@ class SupportController extends Controller
             $request->close($now);
             // Recorded as a message rather than just a status, so the queue can tell an owner veto
             // apart from an admin closing the task.
-            $em->persist(new SupportRequestMessage(
+            $em->persist(SupportRequestMessage::internalNote(
                 $request,
-                SupportMessageVisibility::Internal,
                 'Cancelled by the account owner through the link in the alert email.',
                 null,
             ));
@@ -196,9 +194,8 @@ class SupportController extends Controller
         // The link never expires, so without this every repeat click would mail the admins again.
         $escalate = $disputed && !$this->supportRequests->hasDisputeNote($request);
         if ($escalate) {
-            $em->persist(new SupportRequestMessage(
+            $em->persist(SupportRequestMessage::internalNote(
                 $request,
-                SupportMessageVisibility::Internal,
                 SupportRequestMessage::DISPUTE_NOTE_PREFIX.' The account owner used the cancellation '
                     .'link AFTER this request was actioned, so they say the reset was not requested by '
                     .'them. Sessions have been invalidated. Treat the account as compromised.',
@@ -229,7 +226,7 @@ class SupportController extends Controller
         $form = $this->createForm(PackageTransferSupportType::class, $data)->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = fn (): SupportRequest => SupportRequest::packageTransfer($user, implode("\n", $data->packageNameList()), $data->description);
+            $create = fn (): SupportRequest => SupportRequest::packageTransfer($user, $data->packageNameList(), $data->description);
 
             if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageTransfer, $create)) {
                 return $response;
@@ -292,18 +289,12 @@ class SupportController extends Controller
         $form = $this->createForm(AccountDeletionSupportType::class, $data)->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = function () use ($user, $data): SupportRequest {
-                $disposition = $data->packageDisposition ?? PackageDisposition::Undecided;
-                $description = 'Packages: '.$disposition->label();
-                if ($disposition === PackageDisposition::Transfer) {
-                    $description .= ' ('.$data->transferTo.')';
-                }
-                if ($data->description !== null && trim($data->description) !== '') {
-                    $description .= "\n\n".$data->description;
-                }
-
-                return SupportRequest::accountDeletion($user, $description);
-            };
+            $create = fn (): SupportRequest => SupportRequest::accountDeletion(
+                $user,
+                $data->packageDisposition ?? PackageDisposition::Undecided,
+                $data->transferTo,
+                $data->description,
+            );
 
             if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::AccountDeletion, $create)) {
                 return $response;

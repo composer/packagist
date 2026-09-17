@@ -71,7 +71,12 @@ class SupportRequestRepository extends ServiceEntityRepository
             // Escaped with the character the clause declares, not a backslash: with ESCAPE '!' a
             // backslash is an ordinary character, so addcslashes() would leave % and _ live. The
             // escape character goes first in the replacement so it is not applied twice.
-            $qb->andWhere("u.username LIKE :search ESCAPE '!' OR r.vendorName LIKE :search ESCAPE '!' OR r.packageNames LIKE :search ESCAPE '!'")
+            // attributeData, not attributes: DQL addresses the mapped field, and the `attributes`
+            // column is exposed on the entity as the hydrated value object. JSON_EXTRACT hands back
+            // the value still JSON-quoted, which a substring LIKE does not mind.
+            $qb->andWhere("u.username LIKE :search ESCAPE '!'
+                    OR JSON_EXTRACT(r.attributeData, '$.vendorName') LIKE :search ESCAPE '!'
+                    OR JSON_EXTRACT(r.attributeData, '$.packageNames') LIKE :search ESCAPE '!'")
                 ->setParameter('search', '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%');
         }
 

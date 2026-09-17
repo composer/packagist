@@ -12,27 +12,9 @@
 
 namespace App\Form\Model;
 
+use App\Support\PackageDisposition;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
-
-/** What should happen to the packages that stop the account being deleted self-service. */
-enum PackageDisposition: string
-{
-    case Transfer = 'transfer';
-    case Abandon = 'abandon';
-    case Delete = 'delete';
-    case Undecided = 'undecided';
-
-    public function label(): string
-    {
-        return match ($this) {
-            self::Transfer => 'Transfer them to another account',
-            self::Abandon => 'Mark them abandoned and leave them up',
-            self::Delete => 'Delete them along with my account',
-            self::Undecided => 'I am not sure, please advise',
-        };
-    }
-}
 
 class AccountDeletionSupportRequest
 {

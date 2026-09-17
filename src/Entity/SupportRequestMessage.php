@@ -15,15 +15,6 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
-enum SupportMessageVisibility: string
-{
-    /** Private admin note. Never emailed, never shown to the requester. */
-    case Internal = 'internal';
-
-    /** Emailed to the requester, and kept as the record of what was said. */
-    case Reply = 'reply';
-}
-
 /**
  * An internal note or a reply sent to the requester, both kept on the same thread.
  *
@@ -50,13 +41,14 @@ class SupportRequestMessage
     #[ORM\Column]
     public readonly \DateTimeImmutable $createdAt;
 
-    public function __construct(
+    private function __construct(
         #[ORM\ManyToOne(targetEntity: SupportRequest::class, inversedBy: 'messages')]
         #[ORM\JoinColumn(name: 'requestId', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
         public readonly SupportRequest $request,
 
-        #[ORM\Column(length: 16)]
-        public readonly SupportMessageVisibility $visibility,
+        /** Internal notes stay in the admin panel; everything else is emailed to the requester. */
+        #[ORM\Column]
+        public readonly bool $internal,
 
         #[ORM\Column(type: 'text')]
         public readonly string $contents,
@@ -70,8 +62,15 @@ class SupportRequestMessage
         $this->createdAt = new \DateTimeImmutable();
     }
 
-    public function isInternal(): bool
+    /** A private admin note: never emailed, never shown to the requester. */
+    public static function internalNote(SupportRequest $request, string $contents, ?User $author): self
     {
-        return $this->visibility === SupportMessageVisibility::Internal;
+        return new self($request, true, $contents, $author);
+    }
+
+    /** Emailed to the requester by the caller, and kept here as the record of what was said. */
+    public static function reply(SupportRequest $request, string $contents, ?User $author): self
+    {
+        return new self($request, false, $contents, $author);
     }
 }

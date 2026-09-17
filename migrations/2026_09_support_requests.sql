@@ -3,9 +3,11 @@
 -- prompt.
 --
 -- One table with a type discriminator rather than one table per type: the four types share their
--- entire lifecycle (open -> resolved/closed, internal notes, replies, admin alert mail), and the
--- type-specific payload is three nullable columns. Typed columns rather than a JSON payload so the
--- queue can filter on vendorName and so PHPStan needs no array shapes.
+-- entire lifecycle (open -> resolved/closed, internal notes, replies, admin alert mail), and what
+-- only one type needs lives in the `attributes` JSON blob rather than in a nullable column per type,
+-- so adding a workflow is a new value object rather than a migration. Same shape as audit_log.
+-- The queue's search reaches into it with JSON_EXTRACT, which is already registered as a DQL
+-- function; nothing filters on it often enough to want a generated column.
 --
 -- openMarker is a generated column holding 1 while the request is open and NULL otherwise. Combined
 -- with support_request_open_uniq it makes "at most one open request per user and type" a database
@@ -27,17 +29,16 @@ CREATE TABLE support_request (
     publicId VARCHAR(20) NOT NULL,
     type VARCHAR(32) NOT NULL,
     status VARCHAR(16) NOT NULL,
+    -- free text the requester typed, common to every type
     description LONGTEXT DEFAULT NULL,
-    -- vendor_claim only
-    vendorName VARCHAR(191) DEFAULT NULL,
-    -- package_transfer only, one package name per line as the requester typed them
-    packageNames LONGTEXT DEFAULT NULL,
-    -- SHA-256 of the single-use token in the "this wasn't me" link of the lost-2FA alert mail. Only
-    -- the hash is stored; the raw token exists solely in that emailed link.
-    cancelTokenHash VARCHAR(64) DEFAULT NULL,
-    -- earliest time a lost-2FA request may be granted (cooling-off for high-value accounts)
-    approvableAt DATETIME DEFAULT NULL,
-    -- lost-2FA requests only, where it is a fraud signal
+    -- type-specific payload, shaped by App\Support\Attributes\*:
+    --   lost_2fa          {cancelTokenHash, approvableAt}
+    --   package_transfer  {packageNames}
+    --   vendor_claim      {vendorName}
+    --   account_deletion  {packageDisposition, transferTo}
+    attributes JSON NOT NULL,
+    -- lost-2FA requests only, where it is a fraud signal. A column, not an attribute, because it is
+    -- request metadata rather than payload and VARBINARY(16) keeps the ipaddress Doctrine type.
     ip VARBINARY(16) DEFAULT NULL,
     createdAt DATETIME NOT NULL,
     updatedAt DATETIME NOT NULL,
@@ -52,12 +53,12 @@ CREATE TABLE support_request (
     PRIMARY KEY (id)
 ) DEFAULT CHARACTER SET utf8mb4;
 
--- Internal admin notes and replies sent to the requester, on one thread, told apart by `visibility`.
+-- Internal admin notes and replies sent to the requester, on one thread, told apart by `internal`.
 -- Internal notes must never be surfaced to the requester or copied into audit_log.
 CREATE TABLE support_request_message (
     id BINARY(16) NOT NULL,
     createdAt DATETIME NOT NULL,
-    visibility VARCHAR(16) NOT NULL,
+    internal TINYINT NOT NULL,
     contents LONGTEXT NOT NULL,
     requestId BINARY(16) NOT NULL,
     authorId INT DEFAULT NULL,

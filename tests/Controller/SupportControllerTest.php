@@ -15,6 +15,8 @@ namespace App\Tests\Controller;
 use App\Entity\SupportRequest;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
+use App\Support\Attributes\AccountDeletionAttributes;
+use App\Support\PackageDisposition;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
 use App\Tests\IntegrationTestCase;
@@ -444,7 +446,37 @@ class SupportControllerTest extends IntegrationTestCase
 
         $request = $this->findRequest($user, SupportRequestType::AccountDeletion);
         self::assertNotNull($request);
-        self::assertStringContainsString('abandoned', (string) $request->description);
+        $attributes = $request->attributesOf(AccountDeletionAttributes::class);
+        self::assertSame(PackageDisposition::Abandon, $attributes->packageDisposition);
+        self::assertNull($attributes->transferTo);
+    }
+
+    public function testAccountDeletionRecordsWhoThePackagesShouldGoTo(): void
+    {
+        $user = self::createUser('leaver2', 'leaver2@example.org');
+        $package = self::createPackage('leaver2/thing', 'https://example.org/leaver2/thing', maintainers: [$user]);
+        $this->store($user, $package);
+        $this->client->loginUser($user);
+
+        $crawler = $this->client->request('GET', '/contact/delete-account');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'account_deletion_request[packageDisposition]' => 'transfer',
+            'account_deletion_request[transferTo]' => 'successor',
+            'account_deletion_request[acknowledged]' => '1',
+        ]);
+
+        $this->client->submit($form);
+        $this->assertResponseRedirects('/contact');
+
+        // Read back through a fresh entity manager so this covers the JSON round-trip, not just the
+        // value object the factory happened to keep in memory.
+        $this->getEM()->clear();
+        $request = $this->findRequest($user, SupportRequestType::AccountDeletion);
+        self::assertNotNull($request);
+        $attributes = $request->attributesOf(AccountDeletionAttributes::class);
+        self::assertSame(PackageDisposition::Transfer, $attributes->packageDisposition);
+        self::assertSame('successor', $attributes->transferTo);
     }
 
     private function createTwoFactorUser(string $username = 'twofa'): User

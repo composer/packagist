@@ -13,6 +13,11 @@
 namespace App\Support;
 
 use App\Entity\SupportRequest;
+use App\Support\Attributes\AccountDeletionAttributes;
+use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\SupportRequestAttributes;
+use App\Support\Attributes\VendorClaimAttributes;
 
 enum SupportRequestType: string
 {
@@ -47,6 +52,22 @@ enum SupportRequestType: string
     }
 
     /**
+     * Maps the stored attributes blob onto the value object for this type. The one place that knows
+     * which payload shape belongs to which request type.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function hydrateAttributes(array $data): SupportRequestAttributes
+    {
+        return match ($this) {
+            self::LostTwoFactor => LostTwoFactorAttributes::fromArray($data),
+            self::PackageTransfer => PackageTransferAttributes::fromArray($data),
+            self::VendorClaim => VendorClaimAttributes::fromArray($data),
+            self::AccountDeletion => AccountDeletionAttributes::fromArray($data),
+        };
+    }
+
+    /**
      * Sent verbatim when a lost-2FA request is granted, so unlike {@see suggestedReply()} it carries
      * no draft branches for an admin to delete: nobody edits this before it goes out.
      */
@@ -76,6 +97,10 @@ enum SupportRequestType: string
     public function suggestedReply(SupportRequest $request): string
     {
         $username = $request->user->getUsername();
+        $attributes = $request->attributes;
+        // Pulled out ahead of the match so each arm stays a plain heredoc.
+        $packageNames = $attributes instanceof PackageTransferAttributes ? implode("\n", $attributes->packageNames) : '';
+        $vendorName = $attributes instanceof VendorClaimAttributes ? $attributes->vendorName : '';
 
         return match ($this) {
             self::LostTwoFactor => <<<TXT
@@ -97,7 +122,7 @@ enum SupportRequestType: string
                 Thanks for getting in touch. We have transferred the following package(s) to your
                 account:
 
-                {$request->packageNames}
+                {$packageNames}
 
                 They should now show up under "My packages". If anything is missing, just reply here.
 
@@ -110,12 +135,12 @@ enum SupportRequestType: string
             self::VendorClaim => <<<TXT
                 Hi {$username},
 
-                Thanks for getting in touch about the "{$request->vendorName}" vendor namespace. We have
+                Thanks for getting in touch about the "{$vendorName}" vendor namespace. We have
                 given your account access to it, so you can now publish packages under that name.
 
                 --- or ---
 
-                We are not able to hand over "{$request->vendorName}": the packages under it are in
+                We are not able to hand over "{$vendorName}": the packages under it are in
                 active use by another account. If you believe those packages are yours, reply with
                 something that shows it, such as commit access to the repositories they point at.
                 TXT,
