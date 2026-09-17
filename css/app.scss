@@ -1393,7 +1393,9 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 
 .package h2.title {
     margin-bottom: -1px !important;
-    position: relative;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
 }
 #view-package-page .package-header {
     border-bottom: 1px solid var(--color-brand-orange);
@@ -1889,18 +1891,11 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   font-size: 20px;
   cursor: pointer;
   color: #BDC3C7;
-  position: absolute;
-  left: -25px;
-  top: 0;
+  margin-left: 8px;
+  order: 2;
 }
 .package .mark-favorite.is-starred {
   color: var(--color-brand-orange);
-}
-@media (max-width: 767px) {
-    .package .mark-favorite {
-      left: auto;
-      right: 0;
-    }
 }
 
 #powered-by {
