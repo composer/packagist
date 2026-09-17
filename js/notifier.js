@@ -17,6 +17,13 @@ function getContainer() {
     return container;
 }
 
+function spinner() {
+    const el = document.createElement('span');
+    el.className = 'spinner-border spinner-border-sm me-2';
+    el.setAttribute('aria-hidden', 'true');
+    return el;
+}
+
 function closeButton() {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -38,6 +45,10 @@ function log(msg, options = {}, details = undefined) {
     if (details) {
         const header = document.createElement('div');
         header.className = 'toast-header';
+
+        if (options.spinner) {
+            header.appendChild(spinner());
+        }
 
         const strong = document.createElement('strong');
         strong.className = 'me-auto';
@@ -62,7 +73,10 @@ function log(msg, options = {}, details = undefined) {
 
         const body = document.createElement('div');
         body.className = 'toast-body';
-        body.textContent = msg;
+        if (options.spinner) {
+            body.appendChild(spinner());
+        }
+        body.appendChild(document.createTextNode(msg));
         flex.appendChild(body);
 
         if (!autohide) {
@@ -74,7 +88,13 @@ function log(msg, options = {}, details = undefined) {
         el.appendChild(flex);
     }
 
-    const instance = new Toast(el, autohide ? { delay: options.timeout } : { autohide: false });
+    // animation:false is not just cosmetic - show() queues a transition callback that dereferences
+    // the element, so a toast disposed within the ~150ms transition (a fast-failing request
+    // clearing its own progress toast) would throw from that callback after dispose() nulled it
+    const instance = new Toast(el, {
+        animation: options.animation !== false,
+        ...(autohide ? { delay: options.timeout } : { autohide: false }),
+    });
     const entry = { el, instance };
 
     el.addEventListener('hidden.bs.toast', () => {
@@ -92,10 +112,22 @@ function log(msg, options = {}, details = undefined) {
     active.push(entry);
     getContainer().appendChild(el);
     instance.show();
+
+    return entry;
 }
 
-function remove() {
-    active.splice(0).forEach(({ el, instance }) => {
+// without an entry this clears every toast, which is what the ajax error handler and the
+// job-completion path both want
+function remove(entry = undefined) {
+    let removing;
+    if (entry) {
+        const i = active.indexOf(entry);
+        removing = i === -1 ? [] : active.splice(i, 1);
+    } else {
+        removing = active.splice(0);
+    }
+
+    removing.forEach(({ el, instance }) => {
         instance.dispose();
         el.remove();
     });

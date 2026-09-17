@@ -13,6 +13,24 @@
 @import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 @import '../node_modules/bootstrap-icons/font/bootstrap-icons.css';
 
+// .spinner-border as a pseudo-element, for the loading states we paint onto elements whose
+// markup we don't control. currentColor means one definition works on light and dark fills.
+// Reuses bootstrap's own keyframes, imported above.
+@mixin loading-spinner($size: 14px) {
+    content: "";
+    display: inline-block;
+    width: $size;
+    height: $size;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: .75s linear infinite spinner-border;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation-duration: 1.5s;
+    }
+}
+
 :root {
     --font-family-name: 'Open Sans';
     --font-sans: var(--font-family-name), sans-serif;
@@ -1060,10 +1078,12 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     }
 }
 
-.btn.loading, .btn.loading:hover, .btn.loading:active {
-    background-image: url("../web/img/loader.gif");
-    background-position: 95% 50%;
-    background-repeat: no-repeat;
+// :not(.dropdown-toggle) because bootstrap's caret is also an :after - a toggle shows its
+// loading state on the icon instead, see .package-actions below
+.btn.loading:not(.dropdown-toggle):after {
+    @include loading-spinner;
+    vertical-align: -2px;
+    margin-left: 10px;
 }
 
 .btn-secondary {
@@ -1208,17 +1228,8 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     cursor: pointer;
 }
 .package .force-update-trigger.loading:after {
-    content: "";
-    background-position: 7px center;
-    background-image: url("../web/img/loader-white.gif");
-    background-repeat: no-repeat;
-    padding-left: 30px;
-}
-.package .action input.loading, .package .action input.loading:hover, .package .action input.loading:active {
-  background-position: 10px center;
-  background-image: url("../web/img/loader.gif");
-  background-repeat: no-repeat;
-  padding-left: 35px;
+    @include loading-spinner(10px);
+    margin-left: 7px;
 }
 .package .action {
   margin-right: 5px;
@@ -1291,9 +1302,8 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     margin-bottom: 15px;
   }
 
-  // the action forms keep their class for the submit spinner, but .package .action's
-  // inline-block margins would space the menu items apart
-  .dropdown-menu .action {
+  // each menu entry is its own form; the UA's form margins would space them apart
+  .dropdown-menu form {
     display: block;
     margin: 0;
   }
@@ -1312,6 +1322,13 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     line-height: 0;
     vertical-align: -2px;
     margin-right: 2px;
+  }
+
+  // an update replaces the toggle's glyph rather than adding to it, so the button keeps its
+  // width and the spinner stays visible with the menu closed
+  .package-actions .btn.loading i.bi:before {
+    @include loading-spinner(13px);
+    vertical-align: 0;
   }
 }
 .package .details .canonical,
@@ -1605,12 +1622,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   color: var(--color-brand-dark);
 }
 .version-details.loading .title .version-number:after {
-  display: inline-block;
-  content: "";
-  width: 16px;
-  height: 16px;
-  background-image: url("../web/img/loader-white.gif");
-  background-repeat: no-repeat;
+  @include loading-spinner(13px);
   position: relative;
   top: 2px;
   left: 10px;

@@ -25,16 +25,16 @@ const init = function ($) {
                     if (limit != data.similar.length) {
                         $similar.append($('<li>').text('And ' + (data.similar.length - limit) + ' more'));
                     }
-                    $('#submit-package-form input[type="submit"]').before($('<div>').append(
+                    $('#submit').before($('<div>').append(
                         '<p><strong>Notice:</strong> One or more similarly named packages have already been submitted to Packagist. If this is a fork read the notice above regarding VCS Repositories.'
                     ).append(
                         '<p>Similarly named packages:'
                     ).append($similar));
                 }
-                $('#submit-package-form input[type="submit"]').before(
+                $('#submit').before(
                     '<div class="confirmation">The package name found for your repository is: <strong>'+data.name+'</strong>, press Submit to confirm.</div>'
                 );
-                $('#submit').val('Submit');
+                $('#submit').text('Submit');
                 $('#submit-package-form').unbind('submit');
             }
         };
@@ -46,7 +46,7 @@ const init = function ($) {
     $('#package_repository').change(function() {
         $('#submit-package-form').unbind('submit');
         $('#submit-package-form').submit(onSubmit);
-        $('#submit').val('Check');
+        $('#submit').text('Check');
     });
 
     $('#package_repository').triggerHandler('change');

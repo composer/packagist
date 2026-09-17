@@ -90,7 +90,7 @@
                         </div>
                     {% endif %}
                     {% if package.updateFailureNotified and is_granted('update', package) %}
-                        <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Update" above to see details.</div>
+                        <div class="alert alert-danger">This package is in a broken state and will not update anymore. Some branches contain invalid data and until you fix them the entire package is frozen. Click "Update" in the Manage menu to see details.</div>
                     {% endif %}
 
                     {% if expandedVersion and not expandedVersion.license %}
@@ -117,28 +117,28 @@
                                 <ul class="dropdown-menu">
                                     {% if is_granted('abandon', package) %}
                                         {% if package.abandoned %}
-                                            <li><form class="action un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}" method="POST">
+                                            <li><form class="un-abandon" action="{{ path('unabandon_package', {name: package.name}) }}" method="POST">
                                                 <input class="dropdown-item" type="submit" value="Un-abandon" />
                                             </form></li>
                                         {% else %}
-                                            <li><form class="action abandon" action="{{ path('abandon_package', {name: package.name}) }}">
+                                            <li><form class="abandon" action="{{ path('abandon_package', {name: package.name}) }}">
                                                 <input class="dropdown-item" type="submit" value="Abandon" />
                                             </form></li>
                                         {% endif %}
                                     {% endif %}
                                     {% if is_granted('update', package) %}
-                                        <li><form class="force-update action" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
+                                        <li><form class="force-update" action="{{ path('update_package', {name: package.name}) }}" method="PUT">
                                             <input type="hidden" name="update" value="1" />
                                             <input class="dropdown-item" type="submit" value="Update" />
                                         </form></li>
                                     {% endif %}
                                     {% if is_granted('edit', package) %}
-                                        <li><form class="action" action="{{ path("edit_package", {name: package.name}) }}">
+                                        <li><form action="{{ path("edit_package", {name: package.name}) }}">
                                             <input class="dropdown-item" type="submit" value="Edit" />
                                         </form></li>
                                     {% endif %}
                                     {% if is_granted('ROLE_DISABLE_PACKAGES') and package.isSuspect() %}
-                                        <li><form class="action" action="{{ path("mark_nospam") }}" method="POST">
+                                        <li><form action="{{ path("mark_nospam") }}" method="POST">
                                             <input type="hidden" name="vendor[]" value="{{ package.vendor }}" />
                                             <input type="hidden" name="token" value="{{ markSafeCsrfToken }}" />
                                             <input class="dropdown-item" type="submit" value="Mark Not Spam" />
@@ -146,7 +146,7 @@
                                     {% endif %}
                                     {% if is_granted('delete', package) and deleteForm is defined %}
                                         <li><hr class="dropdown-divider"></li>
-                                        <li><form class="delete action" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE"{% if is_granted('ROLE_DELETE_PACKAGES') %} data-admin="1"{% endif %}>
+                                        <li><form class="delete" action="{{ path('delete_package', {name: package.name}) }}" method="DELETE"{% if is_granted('ROLE_DELETE_PACKAGES') %} data-admin="1"{% endif %}>
                                             {{ form_widget(deleteForm._token) }}
                                             <input class="dropdown-item text-danger" type="submit" value="Delete" />
                                         </form></li>
@@ -155,7 +155,7 @@
                                         <li><button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#freeze-package-modal">Freeze</button></li>
                                     {% endif %}
                                     {% if unfreezeCsrfToken is defined and package.isFrozen() %}
-                                        <li><form class="action" action="{{ path("unfreeze_package", {name: package.name}) }}" method="POST">
+                                        <li><form action="{{ path("unfreeze_package", {name: package.name}) }}" method="POST">
                                             <input type="hidden" name="token" value="{{ unfreezeCsrfToken }}" />
                                             <input class="dropdown-item text-danger" type="submit" value="Unfreeze" />
                                         </form></li>

@@ -11,7 +11,7 @@
     {{ form_start(form, { attr: { class: 'col-lg-6' } }) }}
         {{ form_widget(form) }}
 
-        <input class="btn w-100 btn-primary btn-lg" id="submit" type="submit" value="{{ 'edit.submit'|trans }}" />
+        <button class="btn w-100 btn-primary btn-lg" id="submit" type="submit">{{ 'edit.submit'|trans }}</button>
     {{ form_end(form) }}
 </section>
 {% endblock %}

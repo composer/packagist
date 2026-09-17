@@ -124,13 +124,34 @@ const init = function ($) {
         modalInstance.show();
     }
 
+    var updateRunning = false,
+        updateToast = null;
+
+    // the Update action lives in the Manage menu, so its own spinner is invisible as soon as the
+    // menu closes - and never visible at all for the data-force-crawl auto-trigger below. Show the
+    // state on the menu's toggle and in a toast instead.
+    function setUpdateRunning(running) {
+        updateRunning = running;
+
+        $('.package-actions .dropdown-toggle, .package .force-update .force-update-trigger')
+            .toggleClass('loading', running)
+            .attr('aria-busy', running ? 'true' : null);
+
+        if (running) {
+            updateToast = notifier.log('Update in progress…', {spinner: true, animation: false});
+        } else if (updateToast) {
+            notifier.remove(updateToast);
+            updateToast = null;
+        }
+    }
+
     function forceUpdatePackage(e, updateAll) {
-        var submit = $('input[type=submit], .force-update-trigger', '.package .force-update'), data;
+        var data;
         var showOutput = e && e.shiftKey;
         if (e) {
             e.preventDefault();
         }
-        if (submit.is('.loading')) {
+        if (updateRunning) {
             return;
         }
         data = $('.package .force-update').serializeArray();
@@ -138,6 +159,8 @@ const init = function ($) {
             data.push({name: 'updateAll', value: '1'});
         }
         data.push({name: 'manualUpdate', value: '1'});
+
+        setUpdateRunning(true);
 
         $.ajax({
             url: $('.package .force-update').attr('action'),
@@ -148,11 +171,14 @@ const init = function ($) {
             success: function (data) {
                 if (data.job) {
                     var checkJobStatus = function () {
+                        // .fail() rather than an error option: the latter would replace the global
+                        // $.ajaxSetup handler that surfaces the server's message
                         $.ajax({
                             url: '/jobs/' + data.job,
                             cache: false,
                             success: function (data) {
                                 if (data.status == 'completed' || data.status == 'errored' || data.status == 'failed' || data.status == 'package_deleted') {
+                                    setUpdateRunning(false);
                                     notifier.remove();
 
                                     var message = data.message;
@@ -173,22 +199,25 @@ const init = function ($) {
                                         }, 700);
                                     }
 
-                                    submit.removeClass('loading');
-
                                     return;
                                 }
 
                                 setTimeout(checkJobStatus, 1000);
                             }
+                        }).fail(function () {
+                            setUpdateRunning(false);
                         });
                     };
 
                     setTimeout(checkJobStatus, 1000);
+                } else {
+                    setUpdateRunning(false);
                 }
             },
             context: $('.package .force-update')[0]
+        }).fail(function () {
+            setUpdateRunning(false);
         });
-        submit.addClass('loading');
     }
     $('.package .force-update').on('submit', forceUpdatePackage);
     $('.package .force-update').on('click', forceUpdatePackage);

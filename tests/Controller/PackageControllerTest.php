@@ -95,7 +95,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(0, $crawler->filter('[name="add_maintainer_form"]'));
         self::assertCount(0, $crawler->filter('[name="remove_maintainer_form"]'));
         self::assertCount(0, $crawler->filter('[name="transfer_package_form"]'));
-        self::assertCount(0, $crawler->filter('form.delete.action'));
+        self::assertCount(0, $crawler->filter('form.delete'));
 
         // ...and still builds them for someone who can, so the skip is keyed on the grant only.
         $this->client->loginUser($owner);
@@ -105,7 +105,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $crawler->filter('[name="add_maintainer_form"]'));
         self::assertCount(1, $crawler->filter('[name="remove_maintainer_form"]'));
         self::assertCount(1, $crawler->filter('[name="transfer_package_form"]'));
-        self::assertCount(1, $crawler->filter('form.delete.action'));
+        self::assertCount(1, $crawler->filter('form.delete'));
     }
 
     public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void
