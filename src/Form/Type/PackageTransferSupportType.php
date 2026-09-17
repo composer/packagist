@@ -28,7 +28,7 @@ class PackageTransferSupportType extends AbstractType
         $builder
             ->add('packageNames', TextareaType::class, [
                 'label' => 'Which packages should be transferred?',
-                'help' => 'One package per line, as vendor/name. This is the part people forget, so please be exact.',
+                'help' => 'One package per line, as vendor/name.',
                 'attr' => ['rows' => 5, 'placeholder' => "acme/console\nacme/http-client"],
             ])
             ->add('description', TextareaType::class, [

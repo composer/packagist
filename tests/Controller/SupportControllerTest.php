@@ -34,6 +34,12 @@ class SupportControllerTest extends IntegrationTestCase
         $this->assertCount(1, $crawler->filter('#package-transfer'));
         $this->assertCount(1, $crawler->filter('#vendor-claim'));
         $this->assertCount(1, $crawler->filter('#delete-account'));
+
+        $this->assertCount(1, $crawler->filter('a[href="https://phpc.social/@packagist"]'));
+        $this->assertCount(1, $crawler->filter('a[href="https://bsky.app/profile/packagist.com"]'));
+        $this->assertCount(1, $crawler->filter('a[href="https://x.com/packagist"]'));
+        // scoped to the footer list on purpose: the page itself now has an x.com link of its own
+        $this->assertCount(0, $crawler->filter('ul.social a[href*="x.com"]'));
     }
 
     /**
