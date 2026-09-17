@@ -1,11 +1,16 @@
-<section class="wrapper wrapper-search{% if showSearchDesc == 'hero' %} wrapper-search-hero{% endif %}">
+<section class="wrapper wrapper-search{% if showSearchDesc == 'hero' %} wrapper-search-hero{% if heroCollapsed|default(false) %} search-active{% endif %}{% endif %}">
     <div class="container {% if showSearchDesc == 'show' %}with-description{% endif %}">
         {%- if showSearchDesc == 'hero' %}
             <div class="hero-search-intro">
                 <div class="hero-brand-row">
                     <img src="{{ asset('img/logo-packagist.webp') }}" class="hero-brand-logo" alt="Packagist logo" width="400" height="455">
                     <div class="hero-brand-text">
-                        <h1 class="hero-brand-title">{{ 'brandname'|trans }}</h1>
+                        {#- the navbar brand takes the h1 back over while the hero is collapsed #}
+                        {%- if heroCollapsed|default(false) %}
+                            <div class="hero-brand-title">{{ 'brandname'|trans }}</div>
+                        {%- else %}
+                            <h1 class="hero-brand-title">{{ 'brandname'|trans }}</h1>
+                        {%- endif %}
                         <div class="hero-brand-subtitle">{{ 'navclaim'|trans }}</div>
                     </div>
                     <img src="{{ asset('img/logo-composer.png') }}" class="hero-brand-logo" alt="Composer logo" width="290" height="356">
@@ -17,8 +22,6 @@
         <form name="search_query" method="get" action="{{ path('search_web') }}" id="search-form" autocomplete="off">
             <div class="sortable row">
                 <div class="col-12 js-search-field-wrapper col-lg-9">
-                    {% set query = app.request.query %}
-                    {% set searchQuery = query.has('q') ? query.get('q') : query.get('query') %}
                     <input type="search" id="search_query_query" name="query" required="required" autocomplete="off" placeholder="Search {% if app.current_route == 'browse_extensions' %}extension {% endif %}packages..." tabindex="1" class=" form-control" value="{{ searchQuery }}" />
                 </div>
             </div>
@@ -36,13 +39,13 @@
             <div class="hero-search-footer">
                 {%- if packages is defined and versions is defined and downloads is defined %}
                     <ul class="hero-search-stats">
-                        <li><strong>{% if packages == 'N/A' %}{{ packages }}{% else %}{{ packages|number_format(0, '.', "&#8201;")|raw }}{% endif %}</strong> {{ 'hero.stats.packages'|trans }}</li>
-                        <li><strong>{% if versions == 'N/A' %}{{ versions }}{% else %}{{ versions|number_format(0, '.', "&#8201;")|raw }}{% endif %}</strong> {{ 'hero.stats.versions'|trans }}</li>
-                        <li><strong>{% if downloads == 'N/A' %}{{ downloads }}{% else %}{{ downloads|number_format(0, '.', "&#8201;")|raw }}{% endif %}</strong> {{ 'hero.stats.installs'|trans }}</li>
+                        <li><strong>{{ packages is null ? 'N/A' : packages|number_format(0, '.', " ") }}</strong> {{ 'hero.stats.packages'|trans }}</li>
+                        <li><strong>{{ versions is null ? 'N/A' : versions|number_format(0, '.', " ") }}</strong> {{ 'hero.stats.versions'|trans }}</li>
+                        <li><strong>{{ downloads is null ? 'N/A' : downloads|number_format(0, '.', " ") }}</strong> {{ 'hero.stats.installs'|trans }}</li>
                     </ul>
                 {%- endif %}
                 <div class="hero-search-actions">
-                    <a href="https://getcomposer.org/download/" class="hero-btn hero-btn-primary" rel="noopener noreferrer">{{ 'hero.install_composer'|trans }}</a>
+                    <a href="https://getcomposer.org/download/" class="hero-btn hero-btn-primary">{{ 'hero.install_composer'|trans }}</a>
                     <a href="{{ path('about') }}" class="hero-btn hero-btn-secondary">{{ 'hero.discover_packagist'|trans }}</a>
                 </div>
             </div>

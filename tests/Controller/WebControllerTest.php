@@ -16,6 +16,10 @@ use App\Entity\Package;
 use App\Search\Query;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Search\AlgoliaMock;
+use Predis\Client as RedisClient;
+use Predis\ClientException;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 
 class WebControllerTest extends IntegrationTestCase
 {
@@ -24,6 +28,64 @@ class WebControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/');
         static::assertResponseIsSuccessful();
         $this->assertStringContainsString('Packagist is the main', $crawler->filter('.hero-search-claim')->text());
+
+        // while the hero is visible it owns the page heading, so the navbar brand must not be one
+        static::assertCount(1, $crawler->filter('h1'));
+        static::assertSame('Packagist', $crawler->filter('h1.hero-brand-title')->text());
+        static::assertCount(3, $crawler->filter('.hero-search-stats li'));
+
+        // the content block must render whether or not the blog feed returned anything
+        static::assertSame('Installing PHP Dependencies', $crawler->filter('#getting-started')->text());
+        static::assertSame('Publishing Packages', $crawler->filter('#how-to-submit-packages')->text());
+    }
+
+    public function testHomepageRendersContentWithoutNews(): void
+    {
+        self::getContainer()->set('http_client', new MockHttpClient(new MockResponse('nope', ['http_code' => 500])));
+        self::getContainer()->get('cache.app')->delete('blog_news_items');
+
+        $crawler = $this->client->request('GET', '/');
+        static::assertResponseIsSuccessful();
+        static::assertCount(0, $crawler->filter('.content h2:contains("Latest News")'));
+        static::assertSame('Installing PHP Dependencies', $crawler->filter('#getting-started')->text());
+        static::assertSame('Publishing Packages', $crawler->filter('#how-to-submit-packages')->text());
+    }
+
+    public function testHomepageDegradesWhenRedisIsDown(): void
+    {
+        self::getContainer()->set('snc_redis.default', $this->createBrokenRedis());
+
+        $crawler = $this->client->request('GET', '/');
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('N/A', $crawler->filter('.hero-search-stats')->text());
+    }
+
+    public function testStatsTotalsJson(): void
+    {
+        $this->client->request('GET', '/statistics.json');
+        static::assertResponseIsSuccessful();
+
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        static::assertIsArray($data);
+        static::assertSame(['downloads', 'packages', 'versions'], array_keys($data['totals']));
+    }
+
+    public function testStatsTotalsJsonIsUnavailableWhenRedisIsDown(): void
+    {
+        self::getContainer()->set('snc_redis.default', $this->createBrokenRedis());
+
+        $this->client->request('GET', '/statistics.json');
+        static::assertResponseStatusCodeSame(502);
+    }
+
+    private function createBrokenRedis(): RedisClient
+    {
+        return new class () extends RedisClient {
+            public function __call($commandID, $arguments): mixed
+            {
+                throw new ClientException('redis is down');
+            }
+        };
     }
 
     public function testRedirectsOnMatch(): void
@@ -39,6 +101,11 @@ class WebControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/', ['q' => 'symfony/process']);
         static::assertResponseIsSuccessful();
         static::assertEquals('symfony/process', $crawler->filter('input[type=search]')->attr('value'));
+
+        // the hero is collapsed server-side, which hands the page heading back to the navbar
+        static::assertCount(1, $crawler->filter('.wrapper-search-hero.search-active'));
+        static::assertCount(1, $crawler->filter('h1'));
+        static::assertCount(1, $crawler->filter('h1.navbar-brand'));
     }
 
     public function testSearchRedirectsOnMatch(): void

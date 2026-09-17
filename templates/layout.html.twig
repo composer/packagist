@@ -1,3 +1,7 @@
+{% set searchQuery = app.request.query.has('q') ? app.request.query.get('q') : app.request.query.get('query') %}
+{% set heroMode = showSearchDesc|default('show') == 'hero' %}
+{# the hero collapses as soon as a search is active, which moves the page h1 back into the navbar #}
+{% set heroCollapsed = heroMode and searchQuery is not empty %}
 <!DOCTYPE html>
 <html>
     <head>
@@ -53,7 +57,7 @@
             {% endif %}
             <nav class="container">
                 <div class="navbar navbar-expand-md" role="navigation">
-                    {%- if app.current_route == 'home' %}
+                    {%- if heroMode and not heroCollapsed %}
                         <div class="navbar-brand"><a href="{{ path('home') }}">{{ 'brandname'|trans }}</a> <em class="d-none d-lg-inline">{{ 'navclaim'|trans }}</em></div>
                     {%- else %}
                         <h1 class="navbar-brand"><a href="{{ path('home') }}">{{ 'brandname'|trans }}</a> <em class="d-none d-lg-inline">{{ 'navclaim'|trans }}</em></h1>
@@ -71,7 +75,7 @@
                                 <a href="{{ path('browse') }}">{{ 'menu.browse'|trans }}</a>
                             </li>
                             <li>
-                                <a href="{{ path('about') }}">{{ 'menu.about'|trans }}</a>
+                                <a href="{{ path('about') }}">{{ 'menu.about_packagist'|trans }}</a>
                             </li>
                             <li>
                                 <a href="{{ path('submit') }}">{{ 'menu.submit'|trans }}</a>
@@ -138,7 +142,7 @@
             </nav>
         </header>
 
-        {{ include("web/search_section.html.twig", {showSearchDesc: showSearchDesc|default('show')}) }}
+        {{ include("web/search_section.html.twig", {showSearchDesc: showSearchDesc|default('show'), searchQuery: searchQuery, heroCollapsed: heroCollapsed}) }}
 
         {% block flashMessages %}
             {%- if app.request.hasPreviousSession and app.session.flashbag.peekAll()|length > 0 %}

@@ -683,16 +683,6 @@ strong {
     .hero-brand-subtitle {
         font-size: 15px;
     }
-
-    .hero-search-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .hero-btn {
-        width: 100%;
-        text-align: center;
-    }
 }
 
 .wrapper-search-hero .js-search-field-wrapper {
@@ -712,10 +702,16 @@ strong {
     margin-top: 24px;
 }
 
-// Collapsed while a search is active (see js/search.js), so results aren't pushed below the fold
+// Collapsed while a search is active (rendered server-side, then kept in sync by js/search.js),
+// so results aren't pushed below the fold
 .wrapper-search-hero.search-active .hero-search-intro,
 .wrapper-search-hero.search-active .hero-search-footer {
     display: none;
+}
+
+.wrapper-search-hero.search-active .container {
+    padding: 10px 20px 15px; // same as the plain .wrapper-search bar, but keeps the hero width
+    max-width: 1320px;
 }
 
 .hero-search-stats {
@@ -785,6 +781,18 @@ strong {
 @media (max-width: 767px) {
     .hero-search-stats {
         gap: 20px;
+    }
+}
+
+@media (max-width: 575px) {
+    .hero-search-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .hero-btn {
+        width: 100%;
+        text-align: center;
     }
 }
 

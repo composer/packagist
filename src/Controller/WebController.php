@@ -20,6 +20,7 @@ use App\Search\Algolia;
 use App\Search\Query;
 use App\Service\BlogRssFetcher;
 use App\Util\Killswitch;
+use Doctrine\DBAL\Exception as DBALException;
 use Predis\Client as RedisClient;
 use Predis\PredisException;
 use Psr\Cache\CacheItemInterface;
@@ -43,27 +44,13 @@ class WebController extends Controller
             return $resp;
         }
 
-        $downloads = 'N/A';
-        if (Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
-            try {
-                $downloads = (int) ($redis->get('downloads') ?: 0);
-            } catch (\Predis\PredisException) {
-            }
-        }
-
-        // keep the homepage renderable for anonymous visitors even when the DB or Redis is down
-        $packages = $versions = 'N/A';
-        try {
-            $packages = $this->getEM()->getRepository(Package::class)->getTotal();
-            $versions = $this->getEM()->getRepository(Version::class)->getTotal();
-        } catch (\Doctrine\DBAL\Exception) {
-        }
+        $totals = $this->getTotals($redis);
 
         return $this->render('web/index.html.twig', [
             'newsItems' => $blogRssFetcher->getNewsItems(),
-            'packages' => $packages,
-            'versions' => $versions,
-            'downloads' => $downloads,
+            'packages' => $totals['packages'],
+            'versions' => $totals['versions'],
+            'downloads' => $totals['downloads'],
         ]);
     }
 
@@ -272,17 +259,38 @@ class WebController extends Controller
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
-        $downloads = (int) ($redis->get('downloads') ?: 0);
-        $packages = $this->getEM()->getRepository(Package::class)->getTotal();
-        $versions = $this->getEM()->getRepository(Version::class)->getTotal();
-
-        $totals = [
-            'downloads' => $downloads,
-            'packages' => $packages,
-            'versions' => $versions,
-        ];
+        $totals = $this->getTotals($redis);
+        if (\in_array(null, $totals, true)) {
+            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+        }
 
         return new JsonResponse(['totals' => $totals], 200);
+    }
+
+    /**
+     * Degrades to null for any total that cannot be read, so the homepage stays renderable while
+     * Redis or the DB is down.
+     *
+     * @return array{downloads: int|null, packages: int|null, versions: int|null}
+     */
+    private function getTotals(RedisClient $redis): array
+    {
+        $downloads = null;
+        if (Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
+            try {
+                $downloads = (int) ($redis->get('downloads') ?: 0);
+            } catch (PredisException) {
+            }
+        }
+
+        $packages = $versions = null;
+        try {
+            $packages = $this->getEM()->getRepository(Package::class)->getTotal();
+            $versions = $this->getEM()->getRepository(Version::class)->getTotal();
+        } catch (DBALException) {
+        }
+
+        return ['downloads' => $downloads, 'packages' => $packages, 'versions' => $versions];
     }
 
     private function checkForQueryMatch(Request $req): ?RedirectResponse

@@ -67,8 +67,9 @@ var customSearchClient = {
     },
 };
 
-// Collapses the hero (see css/app.scss .wrapper-search-hero.search-active) whenever a search is
-// active, whether that's on initial page load (below) or a later state change (onStateChange).
+// Collapses the hero (see css/app.scss .wrapper-search-hero.search-active) when a search becomes
+// active. The initial state is rendered server-side by search_section.html.twig, so this only has
+// to follow later state changes.
 function toggleHero(hasSearch) {
     var hero = document.querySelector('.wrapper-search-hero');
     if (hero) {
@@ -85,7 +86,6 @@ if (!isSearchPage && !hasQuery && hasFilters) {
     location.replace('/search/' + location.search);
 } else if (hasQuery || (isSearchPage && hasFilters)) {
     document.querySelector('#search-container').classList.remove('d-none');
-    toggleHero(true);
 }
 
 var opts = {
