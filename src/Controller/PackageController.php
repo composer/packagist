@@ -1629,7 +1629,9 @@ class PackageController extends Controller
         };
 
         $repo = $this->getEM()->getRepository(Package::class);
-        $depCount = $repo->getDependentCount($name, $requireType);
+        // uncached: this count drives the pager, so it has to match the rows fetched below or
+        // pagination truncates silently
+        $depCount = $repo->getDependentCount($name, $requireType, cached: false);
         $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
 
         $defaultBranchRequires = $repo->getDefaultBranchRequireFor(array_column($packages, 'name'), $name);
@@ -1701,7 +1703,8 @@ class PackageController extends Controller
         }
 
         $repo = $this->getEM()->getRepository(Package::class);
-        $suggestCount = $repo->getSuggestCount($name);
+        // uncached, see dependentsAction
+        $suggestCount = $repo->getSuggestCount($name, cached: false);
         $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
 
         $paginator = new Pagerfanta(new FixedAdapter($suggestCount, $packages));

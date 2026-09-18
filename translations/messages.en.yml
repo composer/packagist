@@ -57,7 +57,7 @@ explore:
 
 search:
     claim_html: |
-        Packagist is the main <a href="https://getcomposer.org/">Composer</a> repository. It aggregates public PHP packages installable with Composer.
+        Packagist aggregates public packages that anyone can install with <a href="https://getcomposer.org/">Composer</a>.
 
 hero:
     stats:
