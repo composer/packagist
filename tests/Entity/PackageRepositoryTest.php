@@ -285,6 +285,22 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame('0', $this->redisCache()->get('sug-count:test/nothing-requires-this'));
     }
 
+    public function testZeroCountsExpireSoonerThanRealOnes(): void
+    {
+        $requirer = self::createPackage('test/requirer', 'https://example.org/requirer');
+        $this->store($requirer);
+        $this->store(new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE));
+
+        $this->packageRepository->getDependentCount('test/required');
+        $this->packageRepository->getDependentCount('test/nothing-requires-this');
+
+        // a real count can sit for a day, a zero must not hide a package's first dependent that
+        // long. Reading the TTL also pins that these are set with an expiry at all.
+        $maxZeroTtl = 3600 + 600;
+        self::assertGreaterThan($maxZeroTtl, $this->redisCache()->ttl('dep-count:test/required:all'));
+        self::assertLessThanOrEqual($maxZeroTtl, $this->redisCache()->ttl('dep-count:test/nothing-requires-this:all'));
+    }
+
     private function createBrokenRedis(): Client
     {
         return new class () extends Client {

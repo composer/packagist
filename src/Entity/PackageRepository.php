@@ -721,8 +721,11 @@ class PackageRepository extends ServiceEntityRepository
         $count = max(0, $compute());
 
         try {
+            // zero is the one stale value anyone notices, a package's first dependent should show
+            // up sooner than a day later
+            $ttl = $count === 0 ? 3600 : 86400;
             // random variance spreads out the refresh of the most-requested packages
-            $this->redisCache->setex($cacheKey, 3600 + random_int(0, 600), (string) $count);
+            $this->redisCache->setex($cacheKey, $ttl + random_int(0, intdiv($ttl, 6)), (string) $count);
         } catch (PredisException) {
             // nothing to do, the count is correct it just stays uncached this time
         }
