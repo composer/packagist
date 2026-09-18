@@ -334,6 +334,21 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(['test/beta'], array_column($secondPage, 'name'));
     }
 
+    public function testGetDependentCountDedupesByPackage(): void
+    {
+        // A package requiring the same name in both require and require-dev has two dependent rows
+        // but is one entry in the listing, and this count is what paginates that listing.
+        $both = self::createPackage('test/both', 'https://example.org/both');
+        $this->store($both);
+        $this->store(
+            new Dependent($both, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($both, 'test/required', Dependent::TYPE_REQUIRE_DEV),
+        );
+
+        self::assertSame(1, $this->packageRepository->getDependentCount('test/required', cached: false));
+        self::assertCount(1, $this->packageRepository->getDependents('test/required'), 'the count must agree with the rows');
+    }
+
     public function testListingsHideSuppressedPackages(): void
     {
         // These rows are plain arrays with no frozen key, so the listPackages macro cannot filter

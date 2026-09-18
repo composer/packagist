@@ -40,9 +40,9 @@ class PackageRepository extends ServiceEntityRepository
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
 
     /**
-     * These listings sort the whole joined set before paginating, which for the most widely required
-     * packages has reached 37s while 99.9% of requests finish inside 1.3s. Callers degrade on the
-     * DriverException rather than let one request hold a PHP-FPM worker.
+     * These listings sort the whole joined set before paginating, which averages ~10ms but has run
+     * for nearly 9 minutes in production on the most widely required packages. Callers degrade on
+     * the DriverException rather than let one request hold a PHP-FPM worker.
      */
     private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
     // @phpstan-ignore classConstant.unused
@@ -608,7 +608,9 @@ class PackageRepository extends ServiceEntityRepository
         $hint = $cached ? '' : self::LISTING_QUERY_TIMEOUT_HINT.' ';
 
         $compute = function () use ($name, $type, $hint): int {
-            $sql = 'SELECT '.$hint.'COUNT(*) count FROM dependent WHERE packageName = :name';
+            // DISTINCT because the PK carries type, so one package requiring both in require and
+            // require-dev has two rows but is a single entry in the listing this count paginates
+            $sql = 'SELECT '.$hint.'COUNT(DISTINCT package_id) count FROM dependent WHERE packageName = :name';
             $args = ['name' => $name];
             if (null !== $type) {
                 $sql .= ' AND type = :type';
