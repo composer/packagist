@@ -1320,8 +1320,7 @@ class PackageController extends Controller
             $package->setIndexedAt(null);
             $package->setCrawledAt(new \DateTimeImmutable());
             $package->setUpdatedAt(new \DateTimeImmutable());
-            $package->setDumpedAt(null);
-            $package->setDumpedAtV2(null);
+            $package->markForDump();
 
             $em = $this->getEM();
             $em->flush();
@@ -1347,8 +1346,7 @@ class PackageController extends Controller
         $package->setIndexedAt(null);
         $package->setCrawledAt(new \DateTimeImmutable());
         $package->setUpdatedAt(new \DateTimeImmutable());
-        $package->setDumpedAt(null);
-        $package->setDumpedAtV2(null);
+        $package->markForDump();
 
         $em = $this->getEM();
         $em->flush();
