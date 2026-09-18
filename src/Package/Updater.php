@@ -41,6 +41,7 @@ use Composer\Config;
 use Composer\IO\ConsoleIO;
 use Composer\IO\IOInterface;
 use Composer\Package\AliasPackage;
+use Composer\Package\BasePackage;
 use Composer\Package\CompletePackageInterface;
 use Composer\Pcre\Preg;
 use Composer\Repository\InvalidRepositoryException;
@@ -758,6 +759,8 @@ class Updater
             array_walk_recursive($phpExt, $this->sanitizeStringLeaf(...));
         }
         $version->setPhpExt($phpExt);
+        $version->setFeatures($this->extractFeatures($data));
+        $version->setRequireFeatures($this->extractRequireFeatures($data));
 
         $em->persist($version);
 
@@ -899,18 +902,7 @@ class Updater
         foreach (self::SUPPORTED_LINK_TYPES as $opts) {
             $links = [];
             foreach ($data->{$opts['composer-getter']}() as $link) {
-                $constraint = $link->getPrettyConstraint();
-                if (str_contains($constraint, ',') && str_contains($constraint, '@')) {
-                    $constraint = Preg::replaceCallbackStrictGroups('{([><]=?\s*[^@]+?)@([a-z]+)}i', static function ($matches) {
-                        if ($matches[2] === 'stable') {
-                            return $matches[1];
-                        }
-
-                        return $matches[1].'-'.$matches[2];
-                    }, $constraint);
-                }
-
-                $links[$this->sanitize($link->getTarget())] = $this->sanitize($constraint);
+                $links[$this->sanitize($link->getTarget())] = $this->sanitize($this->normalizeConstraint($link->getPrettyConstraint()));
             }
 
             foreach ($version->{$opts['getter']}() as $link) {
@@ -1197,6 +1189,82 @@ class Updater
         $readme = Preg::replace('{^<(h[12])[^>]*>.*</(?1)>}', '', $readme);
 
         return str_replace("\r\n", "\n", $readme);
+    }
+
+    /**
+     * @return array<string, array{description?: string, require?: array<string, string>}>|null
+     */
+    private function extractFeatures(CompletePackageInterface $data): ?array
+    {
+        if (!$data instanceof BasePackage) {
+            return null;
+        }
+
+        $features = [];
+        foreach ($data->getFeatures() as $name => $feature) {
+            $name = $this->sanitize($name);
+            if ('' === $name) {
+                continue;
+            }
+
+            $features[$name] = [];
+            if (isset($feature['description'])) {
+                $features[$name]['description'] = $this->sanitize($feature['description']);
+            }
+
+            foreach ($feature['require'] ?? [] as $link) {
+                $features[$name]['require'][$this->sanitize($link->getTarget())] = $this->sanitize($this->normalizeConstraint($link->getPrettyConstraint()));
+            }
+        }
+
+        return [] === $features ? null : $features;
+    }
+
+    /**
+     * @return array<string, list<string>>|null
+     */
+    private function extractRequireFeatures(CompletePackageInterface $data): ?array
+    {
+        if (!$data instanceof BasePackage) {
+            return null;
+        }
+
+        $requireFeatures = [];
+        foreach ($data->getFeatureRequires() as $packageName => $featureNames) {
+            $packageName = $this->sanitize($packageName);
+            if ('' === $packageName) {
+                continue;
+            }
+
+            $names = [];
+            foreach ($featureNames as $featureName) {
+                $featureName = $this->sanitize($featureName);
+                if ('' !== $featureName) {
+                    $names[] = $featureName;
+                }
+            }
+
+            if ([] !== $names) {
+                $requireFeatures[$packageName] = $names;
+            }
+        }
+
+        return [] === $requireFeatures ? null : $requireFeatures;
+    }
+
+    private function normalizeConstraint(string $constraint): string
+    {
+        if (!str_contains($constraint, ',') || !str_contains($constraint, '@')) {
+            return $constraint;
+        }
+
+        return Preg::replaceCallbackStrictGroups('{([><]=?\s*[^@]+?)@([a-z]+)}i', static function ($matches) {
+            if ($matches[2] === 'stable') {
+                return $matches[1];
+            }
+
+            return $matches[1].'-'.$matches[2];
+        }, $constraint);
     }
 
     /**
