@@ -971,7 +971,7 @@ class PackageControllerTest extends IntegrationTestCase
 
     public function testMajorVersionStatsSumsEveryVersionInTheSeries(): void
     {
-        [$package] = $this->createPackageWithDownloads();
+        $this->createPackageWithDownloads();
 
         $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
 
@@ -1008,10 +1008,72 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertSame([10, 1], $data['values']['1.0.0']);
     }
 
-    /**
-     * @return array{Package, array<string, Version>}
-     */
-    private function createPackageWithDownloads(): array
+    public function testPackageStatsReadsThePackageLevelDownloadRow(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/all.json');
+
+        self::assertSame(['2026-01-01', '2026-01-02'], $data['labels']);
+        // the package row is stored independently of the version rows, so it is not their sum
+        self::assertSame([20, 3], $data['values']['test/pkg']);
+    }
+
+    public function testMajorVersionStatsAveragesOverMultiDayBuckets(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json', 'weekly');
+
+        // both days fall in one weekly bucket, so each series is ceil(sum / 2), not the sum
+        self::assertSame(['2026-01-01'], $data['labels']);
+        self::assertSame([8], $data['values']['1']);
+        self::assertSame([4], $data['values']['2']);
+        self::assertSame([0], $data['values']['3']);
+    }
+
+    public function testMajorVersionStatsSkipsRowsWhoseDataIsNotAnArray(): void
+    {
+        $package = $this->createPackageWithDownloads();
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy(['package' => $package, 'version' => '2.0.0']);
+        self::assertNotNull($version);
+
+        // a corrupt or NULL blob decodes to something that is not an array, which must not 500
+        $this->getEM()->getConnection()->executeStatement(
+            'UPDATE download SET data = :data WHERE id = :id AND type = :type',
+            ['data' => 'null', 'id' => $version->getId(), 'type' => Download::TYPE_VERSION]
+        );
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        // the series is still drawn, just without any downloads in it
+        self::assertSame([0, 0], $data['values']['2']);
+    }
+
+    public function testMajorVersionStatsIgnoresDownloadRowsPointingAtAnotherPackagesVersion(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        $other = self::createPackage('other/pkg', 'https://example.org/other');
+        $other->setCrawledAt(new \DateTimeImmutable());
+        $otherVersion = $this->createStableVersion($other, '9.0.0');
+        $this->store($other, $otherVersion);
+        $this->store($this->createDownload($other, $otherVersion->getId(), Download::TYPE_VERSION, ['20260101' => 500]));
+
+        // download.package_id is only written when the row is created, so it can end up pointing at
+        // the wrong package; package_version is what decides whose chart a version appears in
+        $this->getEM()->getConnection()->executeStatement(
+            'UPDATE download SET package_id = :package WHERE id = :id AND type = :type',
+            ['package' => $package->getId(), 'id' => $otherVersion->getId(), 'type' => Download::TYPE_VERSION]
+        );
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertArrayNotHasKey('9', $data['values']);
+        self::assertSame([15, 1], $data['values']['1']);
+    }
+
+    private function createPackageWithDownloads(): Package
     {
         $package = self::createPackage('test/pkg', 'https://example.org/pkg');
         $package->setCrawledAt(new \DateTimeImmutable());
@@ -1034,21 +1096,25 @@ class PackageControllerTest extends IntegrationTestCase
             '3.0.0' => [],
             // 1.2.0 deliberately gets no download row
         ];
-        foreach ($downloads as $version => $data) {
-            $this->store($this->createDownload($package, $versions[$version], $data));
-        }
 
-        return [$package, $versions];
+        // deliberately not the sum of the version rows, so that mixing the two up is visible
+        $rows = [$this->createDownload($package, $package->getId(), Download::TYPE_PACKAGE, ['20260101' => 20, '20260102' => 3])];
+        foreach ($downloads as $version => $data) {
+            $rows[] = $this->createDownload($package, $versions[$version]->getId(), Download::TYPE_VERSION, $data);
+        }
+        $this->store($rows);
+
+        return $package;
     }
 
     /**
      * @param array<numeric-string, int> $data
      */
-    private function createDownload(Package $package, Version $version, array $data): Download
+    private function createDownload(Package $package, int $id, int $type, array $data): Download
     {
         $download = new Download();
-        $download->setId($version->getId());
-        $download->setType(Download::TYPE_VERSION);
+        $download->setId($id);
+        $download->setType($type);
         $download->setPackage($package);
         $download->setData($data);
         $download->setLastUpdated(new \DateTimeImmutable());
@@ -1058,14 +1124,14 @@ class PackageControllerTest extends IntegrationTestCase
     }
 
     /**
-     * The date range is pinned so createDatePoints() yields exactly one Ymd key per label, which keeps
-     * the expected values plain sums rather than averages.
+     * The date range is pinned so createDatePoints() yields exactly one Ymd key per label for the
+     * daily average, which keeps the expected values plain sums.
      *
      * @return array{labels: list<string>, values: array<string, list<int>>, average: string}
      */
-    private function requestStatsJson(string $path): array
+    private function requestStatsJson(string $path, string $average = 'daily'): array
     {
-        $this->client->request('GET', $path.'?from=2026-01-01&to=2026-01-02&average=daily');
+        $this->client->request('GET', $path.'?from=2026-01-01&to=2026-01-02&average='.$average);
         self::assertResponseIsSuccessful();
 
         return json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
