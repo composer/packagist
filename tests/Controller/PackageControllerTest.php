@@ -286,6 +286,28 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringStartsWith('application/json', (string) $this->client->getResponse()->headers->get('Content-Type'));
     }
 
+    public function testJsonDependentsLinksKeepTheRequiresFilter(): void
+    {
+        // A consumer walking next must stay on the filter it asked for, otherwise it gets a
+        // require-only count paired with rows of every type and the two never reconcile.
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(500);
+        $repo->method('getDependents')->willReturn([
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+        ]);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['requires' => 'require']);
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertStringContainsString('requires=require', $data['next'] ?? '');
+        self::assertStringContainsString('requires=require', $data['ordered_by_name'] ?? '');
+        self::assertStringContainsString('requires=require', $data['ordered_by_downloads'] ?? '');
+    }
+
     /**
      * Replaces the repository before any DB work, because the TestContainer refuses to swap a
      * private service that has already been instantiated.

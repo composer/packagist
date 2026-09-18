@@ -603,8 +603,12 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getDependentCount(string $name, ?int $type = null, bool $cached = true): int
     {
-        $compute = function () use ($name, $type): int {
-            $sql = 'SELECT COUNT(*) count FROM dependent WHERE packageName = :name';
+        // Only the uncached listing path is bounded: there a timeout degrades into the listing's own
+        // 503, whereas the cached path feeds a badge on the package page, where it must not 500.
+        $hint = $cached ? '' : self::LISTING_QUERY_TIMEOUT_HINT.' ';
+
+        $compute = function () use ($name, $type, $hint): int {
+            $sql = 'SELECT '.$hint.'COUNT(*) count FROM dependent WHERE packageName = :name';
             $args = ['name' => $name];
             if (null !== $type) {
                 $sql .= ' AND type = :type';
@@ -637,7 +641,7 @@ class PackageRepository extends ServiceEntityRepository
             $orderBy = 'name';
         }
 
-        $args = ['name' => $name];
+        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
         $typeFilter = '';
         if (null !== $type) {
             $typeFilter = ' AND type = :type';
@@ -647,11 +651,13 @@ class PackageRepository extends ServiceEntityRepository
         $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
-            ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+            ) x ON x.package_id = p.id '.$join.'
+            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
+            ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $res = [];
         /** @var array{id: int, name: string, description: string|null, language: string|null, abandoned: bool, replacementPackage: string|null} $row */
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 
@@ -693,8 +699,10 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getSuggestCount(string $name, bool $cached = true): int
     {
-        $compute = function () use ($name): int {
-            $sql = 'SELECT COUNT(*) count FROM suggester WHERE packageName = :name';
+        $hint = $cached ? '' : self::LISTING_QUERY_TIMEOUT_HINT.' ';  // see getDependentCount()
+
+        $compute = function () use ($name, $hint): int {
+            $sql = 'SELECT '.$hint.'COUNT(*) count FROM suggester WHERE packageName = :name';
 
             return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, ['name' => $name]);
         };
@@ -748,10 +756,14 @@ class PackageRepository extends ServiceEntityRepository
         $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
-            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+            ) x ON x.package_id = p.id
+            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
+            ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+
+        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
 
         $res = [];
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]) as $row) {
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 

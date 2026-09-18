@@ -1639,8 +1639,8 @@ class PackageController extends Controller
         $repo = $this->getEM()->getRepository(Package::class);
         // uncached: this count drives the pager, so it has to match the rows fetched below or
         // pagination truncates silently
-        $depCount = $repo->getDependentCount($name, $requireType, cached: false);
         try {
+            $depCount = $repo->getDependentCount($name, $requireType, cached: false);
             $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
         } catch (DriverException $e) {
             if ($e->getCode() !== self::ER_QUERY_TIMEOUT) {
@@ -1680,10 +1680,10 @@ class PackageController extends Controller
             }
 
             if ($paginator->hasNextPage()) {
-                $data['next'] = $this->generateUrl('view_package_dependents', ['name' => $name, 'page' => $page + 1, '_format' => 'json', 'order_by' => $orderBy], UrlGeneratorInterface::ABSOLUTE_URL);
+                $data['next'] = $this->generateUrl('view_package_dependents', ['name' => $name, 'page' => $page + 1, '_format' => 'json', 'order_by' => $orderBy, 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
             }
-            $data['ordered_by_name'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'name'], UrlGeneratorInterface::ABSOLUTE_URL);
-            $data['ordered_by_downloads'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'downloads'], UrlGeneratorInterface::ABSOLUTE_URL);
+            $data['ordered_by_name'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'name', 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
+            $data['ordered_by_downloads'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'downloads', 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
 
             return new JsonResponse($data);
         }
@@ -1725,8 +1725,8 @@ class PackageController extends Controller
 
         $repo = $this->getEM()->getRepository(Package::class);
         // uncached, see dependentsAction
-        $suggestCount = $repo->getSuggestCount($name, cached: false);
         try {
+            $suggestCount = $repo->getSuggestCount($name, cached: false);
             $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
         } catch (DriverException $e) {
             if ($e->getCode() !== self::ER_QUERY_TIMEOUT) {

@@ -334,6 +334,32 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(['test/beta'], array_column($secondPage, 'name'));
     }
 
+    public function testListingsHideSuppressedPackages(): void
+    {
+        // These rows are plain arrays with no frozen key, so the listPackages macro cannot filter
+        // them the way it does for entity rows - a spam package requiring a popular one would
+        // otherwise be publicly listed under its dependents.
+        $spam = self::createPackage('test/spam', 'https://example.org/spam');
+        $spam->freeze(PackageFreezeReason::Spam);
+        $gone = self::createPackage('test/gone', 'https://example.org/gone');
+        $gone->freeze(PackageFreezeReason::Gone);
+        $ok = self::createPackage('test/ok', 'https://example.org/ok');
+        $this->store($spam, $gone, $ok);
+        $this->store(
+            new Dependent($spam, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($gone, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($ok, 'test/required', Dependent::TYPE_REQUIRE),
+            new Suggester($spam, 'test/suggested'),
+            new Suggester($ok, 'test/suggested'),
+        );
+
+        $dependents = array_column($this->packageRepository->getDependents('test/required'), 'name');
+        self::assertSame(['test/gone', 'test/ok'], $dependents, 'only spam/malware are suppressed, not every frozen reason');
+
+        $suggesters = array_column($this->packageRepository->getSuggests('test/suggested'), 'name');
+        self::assertSame(['test/ok'], $suggesters);
+    }
+
     public function testGetSuggestsListsTheSuggestingPackages(): void
     {
         $alpha = self::createPackage('test/alpha', 'https://example.org/alpha');
