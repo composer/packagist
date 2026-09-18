@@ -16,6 +16,7 @@ use App\Tests\Fixtures\Fixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Predis\Client;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -32,9 +33,8 @@ class IntegrationTestCase extends WebTestCase
         $this->client->disableReboot(); // prevent reboot to keep the transaction
 
         // The DB is rolled back per test but Redis is not, so cached values keyed by package name
-        // would leak into later tests that reuse a name. The cache client has its own DB in the
-        // test env (REDIS_CACHE_URL) so this cannot clear state the default client owns.
-        static::getContainer()->get('snc_redis.cache')->flushdb();
+        // would leak into later tests that reuse a name.
+        self::flushRedisCache();
 
         static::getService(Connection::class)->beginTransaction();
 
@@ -46,6 +46,42 @@ class IntegrationTestCase extends WebTestCase
         static::getService(Connection::class)->rollBack();
 
         parent::tearDown();
+    }
+
+    protected static function redisCache(): Client
+    {
+        $client = static::getContainer()->get('snc_redis.cache');
+        self::assertInstanceOf(Client::class, $client);
+
+        return $client;
+    }
+
+    /**
+     * REDIS_CACHE_URL defaults to ${REDIS_URL} outside .env.test and a real env var beats the
+     * dotenv file, so assert the separate DB this flush relies on instead of trusting it. The
+     * comparison goes through a throwaway client rather than snc_redis.default, which must stay
+     * uninitialised here so tests can still replace it. Predis connects lazily, so this is free.
+     */
+    private static function flushRedisCache(): void
+    {
+        $cache = self::redisCache();
+        $default = new Client((string) ($_ENV['REDIS_URL'] ?? ''));
+
+        if (self::redisTarget($cache) === self::redisTarget($default)) {
+            throw new \RuntimeException(
+                'Refusing to flush '.self::redisTarget($cache).': REDIS_CACHE_URL resolves to the same '
+                .'Redis database as REDIS_URL, point it at a dedicated one as .env.test does.'
+            );
+        }
+
+        $cache->flushdb();
+    }
+
+    private static function redisTarget(Client $client): string
+    {
+        $params = $client->getConnection()->getParameters();
+
+        return $params->host.':'.$params->port.'/'.($params->database ?? 0);
     }
 
     public static function getEM(): EntityManagerInterface

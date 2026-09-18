@@ -20,6 +20,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
+use Predis\PredisException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -587,14 +588,15 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param string   $name Package name to find the dependents of
-     * @param int|null $type One of Dependent::TYPE_*
+     * @param string   $name   Package name to find the dependents of
+     * @param int|null $type   One of Dependent::TYPE_*
+     * @param bool     $cached Pass false when the count must match a row list queried alongside it
      *
      * @return int<0, max>
      */
-    public function getDependentCount(string $name, ?int $type = null): int
+    public function getDependentCount(string $name, ?int $type = null, bool $cached = true): int
     {
-        return $this->getCachedCount('dep-count:'.strtolower($name).':'.($type ?? 'all'), function () use ($name, $type): int {
+        $compute = function () use ($name, $type): int {
             $sql = 'SELECT COUNT(*) count FROM dependent WHERE packageName = :name';
             $args = ['name' => $name];
             if (null !== $type) {
@@ -603,7 +605,11 @@ class PackageRepository extends ServiceEntityRepository
             }
 
             return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args);
-        });
+        };
+
+        return $cached
+            ? $this->getCachedCount('dep-count:'.strtolower($name).':'.($type ?? 'all'), $compute)
+            : max(0, $compute());
     }
 
     /**
@@ -674,24 +680,27 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param bool $cached Pass false when the count must match a row list queried alongside it
+     *
      * @return int<0, max>
      */
-    public function getSuggestCount(string $name): int
+    public function getSuggestCount(string $name, bool $cached = true): int
     {
-        return $this->getCachedCount('sug-count:'.strtolower($name), function () use ($name): int {
+        $compute = function () use ($name): int {
             $sql = 'SELECT COUNT(*) count FROM suggester WHERE packageName = :name';
 
             return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, ['name' => $name]);
-        });
+        };
+
+        return $cached
+            ? $this->getCachedCount('sug-count:'.strtolower($name), $compute)
+            : max(0, $compute());
     }
 
     /**
-     * Both counts are rendered as tab labels on every package page view, where the COUNT(*) is a
-     * large index scan for widely-required packages like psr/log. Being an hour out of date on a
-     * badge is harmless, so this is TTL-only with no explicit invalidation.
-     *
-     * Keys are lowercased because the packageName columns use a case-insensitive collation, so
-     * differently-cased requests must not get separate entries.
+     * TTL-only: dependent rows are keyed by the required package name while the writer operates on
+     * the requiring package, so precise invalidation would need a deletion per required name. Keys
+     * are lowercased because the packageName columns use a case-insensitive collation.
      *
      * @param callable(): int $compute
      *
@@ -699,14 +708,24 @@ class PackageRepository extends ServiceEntityRepository
      */
     private function getCachedCount(string $cacheKey, callable $compute): int
     {
-        $cached = $this->redisCache->get($cacheKey);
-        if ($cached !== null) {
-            return max(0, (int) $cached);
+        try {
+            $cached = $this->redisCache->get($cacheKey);
+            if ($cached !== null) {
+                return max(0, (int) $cached);
+            }
+        } catch (PredisException) {
+            // a cache outage must not take the package page down with it
+            return max(0, $compute());
         }
 
         $count = max(0, $compute());
-        // random variance spreads out the refresh of the most-requested packages
-        $this->redisCache->setex($cacheKey, 3600 + random_int(0, 600), (string) $count);
+
+        try {
+            // random variance spreads out the refresh of the most-requested packages
+            $this->redisCache->setex($cacheKey, 3600 + random_int(0, 600), (string) $count);
+        } catch (PredisException) {
+            // nothing to do, the count is correct it just stays uncached this time
+        }
 
         return $count;
     }
