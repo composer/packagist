@@ -15,6 +15,7 @@ namespace App\Tests\Controller;
 use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
+use App\Entity\Dependent;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -37,6 +38,29 @@ use Predis\Client;
 
 class PackageControllerTest extends IntegrationTestCase
 {
+    public function testDependentsPaginationIgnoresACachedCount(): void
+    {
+        $required = self::createPackage('test/required', 'https://example.com/test/required');
+        $requirer = self::createPackage('test/requirer', 'https://example.com/test/requirer');
+        $this->store($required, $requirer);
+        $this->store(new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE));
+
+        // a stale count drove the pager, so `next` pointed at a page that does not exist and,
+        // when it was low instead, the listing stopped short of the rows that were really there
+        self::redisCache()->set('dep-count:test/required:all', '500');
+
+        $this->client->request('GET', '/packages/test/required/dependents.json');
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertCount(1, $data['packages']);
+        self::assertArrayNotHasKey('next', $data);
+
+        // the listing must not refresh the key it refused to read either
+        self::assertSame('500', self::redisCache()->get('dep-count:test/required:all'));
+    }
+
     public function testView(): void
     {
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');

@@ -19,7 +19,9 @@ use App\Entity\PackageRepository;
 use App\Entity\Suggester;
 use App\Entity\Vendor;
 use App\Tests\IntegrationTestCase;
+use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
+use Predis\ClientException;
 
 class PackageRepositoryTest extends IntegrationTestCase
 {
@@ -244,6 +246,36 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(7, $this->packageRepository->getSuggestCount('test/suggested'));
     }
 
+    public function testCountsBypassTheCacheEntirelyWhenUncached(): void
+    {
+        $requirer = self::createPackage('test/requirer', 'https://example.org/requirer');
+        $this->store($requirer);
+        $this->store(new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE));
+
+        $this->redisCache()->set('dep-count:test/required:all', '42');
+
+        // the listing pager needs a count matching the rows queried alongside it, so no read
+        self::assertSame(1, $this->packageRepository->getDependentCount('test/required', cached: false));
+        self::assertSame(0, $this->packageRepository->getSuggestCount('test/required', cached: false));
+
+        // and no write back either, which is what keeps unvalidated route names out of Redis
+        self::assertSame('42', $this->redisCache()->get('dep-count:test/required:all'));
+        self::assertNull($this->redisCache()->get('sug-count:test/required'));
+    }
+
+    public function testCountsFallBackToTheQueryWhenTheCacheIsDown(): void
+    {
+        $requirer = self::createPackage('test/requirer', 'https://example.org/requirer');
+        $this->store($requirer);
+        $this->store(new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE));
+
+        // built by hand as the container's repository already holds the working client
+        $repo = new PackageRepository(self::getService(ManagerRegistry::class), $this->createBrokenRedis());
+
+        self::assertSame(1, $repo->getDependentCount('test/required'));
+        self::assertSame(0, $repo->getSuggestCount('test/required'));
+    }
+
     public function testCountsCacheZeroSoUnknownPackagesDoNotRequeryEveryPageView(): void
     {
         self::assertSame(0, $this->packageRepository->getDependentCount('test/nothing-requires-this'));
@@ -253,11 +285,29 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame('0', $this->redisCache()->get('sug-count:test/nothing-requires-this'));
     }
 
-    private function redisCache(): Client
+    public function testZeroCountsExpireSoonerThanRealOnes(): void
     {
-        $client = static::getContainer()->get('snc_redis.cache');
-        self::assertInstanceOf(Client::class, $client);
+        $requirer = self::createPackage('test/requirer', 'https://example.org/requirer');
+        $this->store($requirer);
+        $this->store(new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE));
 
-        return $client;
+        $this->packageRepository->getDependentCount('test/required');
+        $this->packageRepository->getDependentCount('test/nothing-requires-this');
+
+        // a real count can sit for a day, a zero must not hide a package's first dependent that
+        // long. Reading the TTL also pins that these are set with an expiry at all.
+        $maxZeroTtl = 3600 + 600;
+        self::assertGreaterThan($maxZeroTtl, $this->redisCache()->ttl('dep-count:test/required:all'));
+        self::assertLessThanOrEqual($maxZeroTtl, $this->redisCache()->ttl('dep-count:test/nothing-requires-this:all'));
+    }
+
+    private function createBrokenRedis(): Client
+    {
+        return new class () extends Client {
+            public function __call($commandID, $arguments): mixed
+            {
+                throw new ClientException('redis is down');
+            }
+        };
     }
 }
