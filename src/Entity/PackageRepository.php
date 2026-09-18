@@ -38,6 +38,13 @@ class PackageRepository extends ServiceEntityRepository
     public const SUSPECT_VIEWS_MAX_DOWNLOADS = 10;
 
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
+
+    /**
+     * These listings sort the whole joined set before paginating, which averages ~10ms but has run
+     * for nearly 9 minutes in production on the most widely required packages. Callers degrade on
+     * the DriverException rather than let one request hold a PHP-FPM worker.
+     */
+    private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
@@ -596,8 +603,14 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getDependentCount(string $name, ?int $type = null, bool $cached = true): int
     {
-        $compute = function () use ($name, $type): int {
-            $sql = 'SELECT COUNT(*) count FROM dependent WHERE packageName = :name';
+        // Only the uncached listing path is bounded: there a timeout degrades into the listing's own
+        // 503, whereas the cached path feeds a badge on the package page, where it must not 500.
+        $hint = $cached ? '' : self::LISTING_QUERY_TIMEOUT_HINT.' ';
+
+        $compute = function () use ($name, $type, $hint): int {
+            // DISTINCT because the PK carries type, so one package requiring both in require and
+            // require-dev has two rows but is a single entry in the listing this count paginates
+            $sql = 'SELECT '.$hint.'COUNT(DISTINCT package_id) count FROM dependent WHERE packageName = :name';
             $args = ['name' => $name];
             if (null !== $type) {
                 $sql .= ' AND type = :type';
@@ -630,21 +643,23 @@ class PackageRepository extends ServiceEntityRepository
             $orderBy = 'name';
         }
 
-        $args = ['name' => $name];
+        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
         $typeFilter = '';
         if (null !== $type) {
             $typeFilter = ' AND type = :type';
             $args['type'] = $type;
         }
 
-        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
-            ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+            ) x ON x.package_id = p.id '.$join.'
+            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
+            ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $res = [];
         /** @var array{id: int, name: string, description: string|null, language: string|null, abandoned: bool, replacementPackage: string|null} $row */
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 
@@ -686,8 +701,10 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getSuggestCount(string $name, bool $cached = true): int
     {
-        $compute = function () use ($name): int {
-            $sql = 'SELECT COUNT(*) count FROM suggester WHERE packageName = :name';
+        $hint = $cached ? '' : self::LISTING_QUERY_TIMEOUT_HINT.' ';  // see getDependentCount()
+
+        $compute = function () use ($name, $hint): int {
+            $sql = 'SELECT '.$hint.'COUNT(*) count FROM suggester WHERE packageName = :name';
 
             return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, ['name' => $name]);
         };
@@ -738,13 +755,17 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getSuggests(string $name, int $offset = 0, int $limit = 15): array
     {
-        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
-            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+            ) x ON x.package_id = p.id
+            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
+            ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+
+        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
 
         $res = [];
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]) as $row) {
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 
