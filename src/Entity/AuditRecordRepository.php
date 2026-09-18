@@ -12,8 +12,8 @@
 
 namespace App\Entity;
 
-use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
+use App\Log\AuditLogEventType;
 use App\Service\AuditRecordsManager;
 use App\Util\IpAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -42,11 +42,11 @@ class AuditRecordRepository extends ServiceEntityRepository
             ->where('a.type IN (:types)')
             ->andWhere("JSON_EXTRACT(a.attributes, '$.entry.public_id') = :publicId")
             ->setParameter('types', [
-                AuditRecordType::FilterListEntryAdded->value,
-                AuditRecordType::FilterListEntryDeleted->value,
-                AuditRecordType::FilterListEntryDisabled->value,
-                AuditRecordType::FilterListEntryEnabled->value,
-                AuditRecordType::FilterListEntryEdited->value,
+                AuditLogEventType::FilterListEntryAdded->value,
+                AuditLogEventType::FilterListEntryDeleted->value,
+                AuditLogEventType::FilterListEntryDisabled->value,
+                AuditLogEventType::FilterListEntryEnabled->value,
+                AuditLogEventType::FilterListEntryEdited->value,
             ])
             ->setParameter('publicId', $publicId)
             ->orderBy('a.datetime', 'DESC')
@@ -69,14 +69,14 @@ class AuditRecordRepository extends ServiceEntityRepository
             ->orWhere("(a.type = :softDeleted AND JSON_EXTRACT(a.attributes, '$.reason') IN (:adminVersionReasons))")
             ->orWhere("(a.type = :recovered AND JSON_EXTRACT(a.attributes, '$.previousReason') IN (:adminVersionReasons))")
             ->setParameter('alwaysTypes', [
-                AuditRecordType::UserFrozen->value,
-                AuditRecordType::UserUnfrozen->value,
-                AuditRecordType::UserDeleted->value,
-                AuditRecordType::PackageFrozen->value,
-                AuditRecordType::PackageUnfrozen->value,
+                AuditLogEventType::UserFrozen->value,
+                AuditLogEventType::UserUnfrozen->value,
+                AuditLogEventType::UserDeleted->value,
+                AuditLogEventType::PackageFrozen->value,
+                AuditLogEventType::PackageUnfrozen->value,
             ])
-            ->setParameter('softDeleted', AuditRecordType::VersionSoftDeleted->value)
-            ->setParameter('recovered', AuditRecordType::VersionRecovered->value)
+            ->setParameter('softDeleted', AuditLogEventType::VersionSoftDeleted->value)
+            ->setParameter('recovered', AuditLogEventType::VersionRecovered->value)
             ->setParameter('adminVersionReasons', [
                 VersionDeletionReason::DeletedByAdmin->value,
                 VersionDeletionReason::Hidden->value,

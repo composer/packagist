@@ -12,10 +12,10 @@
 
 namespace App\Tests\Audit;
 
-use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
+use App\Log\AuditLogEventType;
 use PHPUnit\Framework\TestCase;
 
 class UserAuditRecordTest extends TestCase
@@ -42,7 +42,7 @@ class UserAuditRecordTest extends TestCase
 
         $record = AuditRecord::gitHubLinkedWithUser($user, $actor, 'github-testuser', 123456);
 
-        self::assertSame(AuditRecordType::GitHubLinkedWithUser, $record->type);
+        self::assertSame(AuditLogEventType::GitHubLinkedWithUser, $record->type);
         self::assertSame('testuser', $record->attributes['user']['username']);
         self::assertSame('github-testuser', $record->attributes['github_username']);
         self::assertIsArray($record->attributes['actor']);
@@ -75,7 +75,7 @@ class UserAuditRecordTest extends TestCase
 
         $record = AuditRecord::gitHubDisconnectedFromUser($user, $actor);
 
-        self::assertSame(AuditRecordType::GitHubDisconnectedFromUser, $record->type);
+        self::assertSame(AuditLogEventType::GitHubDisconnectedFromUser, $record->type);
         self::assertSame('testuser', $record->attributes['user']['username']);
         self::assertArrayNotHasKey('github_username', $record->attributes);
         self::assertIsArray($record->attributes['actor']);
@@ -92,7 +92,7 @@ class UserAuditRecordTest extends TestCase
 
         $record = AuditRecord::userFrozen($user, $actor, UserFreezeReason::Spam, 'spamming packages', 'ticket #42');
 
-        self::assertSame(AuditRecordType::UserFrozen, $record->type);
+        self::assertSame(AuditLogEventType::UserFrozen, $record->type);
         self::assertSame('baduser', $record->attributes['user']['username']);
         self::assertSame('spam', $record->attributes['reason']);
         self::assertSame('spamming packages', $record->attributes['reasonText']);
@@ -110,7 +110,7 @@ class UserAuditRecordTest extends TestCase
 
         $record = AuditRecord::userUnfrozen($user, $actor, 'appeal accepted');
 
-        self::assertSame(AuditRecordType::UserUnfrozen, $record->type);
+        self::assertSame(AuditLogEventType::UserUnfrozen, $record->type);
         self::assertSame('reformed', $record->attributes['user']['username']);
         self::assertArrayNotHasKey('reason', $record->attributes);
         self::assertSame('appeal accepted', $record->attributes['reasonText']);

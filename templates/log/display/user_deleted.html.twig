@@ -1,0 +1,6 @@
+{% import 'log/macros.html.twig' as log %}
+
+<strong>{{ display.username }}</strong><br>
+{% if (display.actor.username != display.username) %}
+Removed by: {{ display.actor.username }}
+{% endif %}

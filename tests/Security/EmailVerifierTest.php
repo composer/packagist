@@ -12,8 +12,8 @@
 
 namespace App\Tests\Security;
 
-use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
+use App\Log\AuditLogEventType;
 use App\Security\EmailVerifier;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -52,7 +52,7 @@ class EmailVerifierTest extends IntegrationTestCase
         $this->assertTrue($user->isEnabled());
 
         $em = self::getEM();
-        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::UserVerified, 'userId' => $user->getId()]);
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::UserVerified, 'userId' => $user->getId()]);
         $this->assertNotNull($record, 'No audit record was created');
         $this->assertSame('user', $record->attributes['user']['username']);
         $this->assertSame('user@example.org', $record->attributes['email']);

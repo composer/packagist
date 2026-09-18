@@ -12,7 +12,7 @@
 
 namespace App\Support;
 
-use App\Audit\AuditRecordType;
+use App\Log\AuditLogEventType;
 use App\Entity\AuditRecord;
 use App\Entity\OrganizationMemberRepository;
 use App\Entity\Package;
@@ -131,7 +131,7 @@ class SupportRiskAssessor
     private function twoFactorEnabledAt(User $user): ?\DateTimeImmutable
     {
         $record = $this->em->getRepository(AuditRecord::class)->findOneBy(
-            ['type' => AuditRecordType::TwoFaAuthenticationActivated->value, 'userId' => $user->getId()],
+            ['type' => AuditLogEventType::TwoFaAuthenticationActivated->value, 'userId' => $user->getId()],
             ['datetime' => 'DESC'],
         );
 
@@ -149,7 +149,7 @@ class SupportRiskAssessor
             ->andWhere('a.type IN (:types)')
             ->andWhere('a.datetime > :since')
             ->setParameter('userId', $user->getId())
-            ->setParameter('types', array_map(static fn (AuditRecordType $t): string => $t->value, self::securityEventTypes()))
+            ->setParameter('types', array_map(static fn (AuditLogEventType $t): string => $t->value, self::securityEventTypes()))
             ->setParameter('since', new \DateTimeImmutable('-90 days'))
             ->orderBy('a.datetime', 'DESC')
             ->setMaxResults(25)
@@ -168,9 +168,9 @@ class SupportRiskAssessor
 
         foreach ($events as $event) {
             $isCredentialChange = \in_array($event->type, [
-                AuditRecordType::PasswordChanged,
-                AuditRecordType::PasswordReset,
-                AuditRecordType::EmailChanged,
+                AuditLogEventType::PasswordChanged,
+                AuditLogEventType::PasswordReset,
+                AuditLogEventType::EmailChanged,
             ], true);
 
             if ($isCredentialChange && $event->datetime > $cutoff) {
@@ -199,22 +199,22 @@ class SupportRiskAssessor
     }
 
     /**
-     * @return list<AuditRecordType>
+     * @return list<AuditLogEventType>
      */
     private static function securityEventTypes(): array
     {
         return [
-            AuditRecordType::PasswordChanged,
-            AuditRecordType::PasswordReset,
-            AuditRecordType::PasswordResetRequested,
-            AuditRecordType::EmailChanged,
-            AuditRecordType::UsernameChanged,
-            AuditRecordType::GitHubLinkedWithUser,
-            AuditRecordType::GitHubDisconnectedFromUser,
-            AuditRecordType::TwoFaAuthenticationActivated,
-            AuditRecordType::TwoFaAuthenticationDeactivated,
-            AuditRecordType::UserFrozen,
-            AuditRecordType::UserUnfrozen,
+            AuditLogEventType::PasswordChanged,
+            AuditLogEventType::PasswordReset,
+            AuditLogEventType::PasswordResetRequested,
+            AuditLogEventType::EmailChanged,
+            AuditLogEventType::UsernameChanged,
+            AuditLogEventType::GitHubLinkedWithUser,
+            AuditLogEventType::GitHubDisconnectedFromUser,
+            AuditLogEventType::TwoFaAuthenticationActivated,
+            AuditLogEventType::TwoFaAuthenticationDeactivated,
+            AuditLogEventType::UserFrozen,
+            AuditLogEventType::UserUnfrozen,
         ];
     }
 }

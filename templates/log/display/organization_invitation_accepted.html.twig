@@ -1,0 +1,4 @@
+{% import 'log/macros.html.twig' as log %}
+
+Invitation to <strong>{{ display.email }}</strong> accepted for <strong>{{ log.organizationLink(display.organization) }}</strong><br>
+Accepted by: {{ log.userLink(display.actor.username) }}
