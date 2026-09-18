@@ -14,6 +14,7 @@ namespace App\Tests\Controller;
 
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
+use App\Entity\Download;
 use App\Entity\Dependent;
 use App\Entity\Job;
 use App\Entity\Package;
@@ -1089,6 +1090,264 @@ class PackageControllerTest extends IntegrationTestCase
             'initReleaseStats(\'.js-release-stats\', {"2024-03":2},',
             (string) $this->client->getResponse()->getContent()
         );
+    }
+
+    public function testMajorVersionStatsSumsEveryVersionInTheSeries(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertSame(['2026-01-01', '2026-01-02'], $data['labels']);
+        // 1.0.0 + 1.1.0 on the first day, 1.0.0 alone on the second; 1.9.x-dev must not be counted
+        self::assertSame([15, 1], $data['values']['1']);
+        self::assertSame([0, 7], $data['values']['2']);
+        // 3.0.0 has a download row with empty data, so its series is still drawn, as zeroes
+        self::assertSame([0, 0], $data['values']['3']);
+        // 1.9.x-dev normalizes to 1.9.9999999.9999999-dev, so only development = 0 excludes it.
+        // Keys are ints because json_decode casts numeric object keys.
+        self::assertSame([1, 2, 3], array_keys($data['values']));
+    }
+
+    public function testSingleMajorVersionStatsSeriesByMinorAndSkipsVersionsWithoutDownloads(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/1.json');
+
+        self::assertSame(['2026-01-01', '2026-01-02'], $data['labels']);
+        self::assertSame([10, 1], $data['values']['1.0']);
+        self::assertSame([5, 0], $data['values']['1.1']);
+        // 1.2.0 exists but has no download row, so it is not a series at all
+        self::assertSame(['1.0', '1.1'], array_keys($data['values']));
+    }
+
+    public function testVersionStatsStillReturnsASingleSeries(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/1.0.0.json');
+
+        self::assertSame([10, 1], $data['values']['1.0.0']);
+    }
+
+    public function testPackageStatsReadsThePackageLevelDownloadRow(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/all.json');
+
+        self::assertSame(['2026-01-01', '2026-01-02'], $data['labels']);
+        // the package row is stored independently of the version rows, so it is not their sum
+        self::assertSame([20, 3], $data['values']['test/pkg']);
+    }
+
+    public function testMajorVersionStatsAveragesOverMultiDayBuckets(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json', 'weekly');
+
+        // both days fall in one weekly bucket, so each series is ceil(sum / 2), not the sum
+        self::assertSame(['2026-01-01'], $data['labels']);
+        self::assertSame([8], $data['values']['1']);
+        self::assertSame([4], $data['values']['2']);
+        self::assertSame([0], $data['values']['3']);
+    }
+
+    public function testMajorVersionStatsSkipsRowsWhoseDataIsNotAnArray(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        // a corrupt or NULL blob decodes to something that is not an array, which must not 500
+        $this->setRawDownloadData($this->findVersion($package, '2.0.0')->getId(), Download::TYPE_VERSION, 'null');
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        // the series is still drawn, just without any downloads in it
+        self::assertSame([0, 0], $data['values']['2']);
+    }
+
+    public function testMajorVersionStatsIgnoresDownloadRowsPointingAtAnotherPackagesVersion(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        $other = self::createPackage('other/pkg', 'https://example.org/other');
+        $other->setCrawledAt(new \DateTimeImmutable());
+        $otherVersion = $this->createStableVersion($other, '9.0.0');
+        $this->store($other, $otherVersion);
+        $this->store($this->createDownload($other, $otherVersion->getId(), Download::TYPE_VERSION, ['20260101' => 500]));
+
+        // download.package_id is only written when the row is created, so it can end up pointing at
+        // the wrong package; package_version is what decides whose chart a version appears in
+        $this->getEM()->getConnection()->executeStatement(
+            'UPDATE download SET package_id = :package WHERE id = :id AND type = :type',
+            ['package' => $package->getId(), 'id' => $otherVersion->getId(), 'type' => Download::TYPE_VERSION]
+        );
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertArrayNotHasKey('9', $data['values']);
+        self::assertSame([15, 1], $data['values']['1']);
+    }
+
+    public function testMajorVersionStatsKeepsVersionsWhoseDownloadRowHasNoPackageId(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        // package_version owns the relation, so a download row that never got a package_id (or got
+        // a stale one) must still be counted rather than silently dropped from the chart
+        $this->getEM()->getConnection()->executeStatement(
+            'UPDATE download SET package_id = NULL WHERE id = :id AND type = :type',
+            ['id' => $this->findVersion($package, '2.0.0')->getId(), 'type' => Download::TYPE_VERSION]
+        );
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertSame([0, 7], $data['values']['2']);
+    }
+
+    public function testMajorVersionStatsSkipsMalformedDataEntries(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        // an array value would otherwise count as 1 download, and a non-Ymd key would be stored and
+        // then never read; the valid entry alongside them proves only the bad ones are dropped
+        $this->setRawDownloadData(
+            $this->findVersion($package, '2.0.0')->getId(),
+            Download::TYPE_VERSION,
+            '{"20260101": [1, 2], "foo": 500, "20260102": 9}'
+        );
+        $this->setRawDownloadData(
+            $this->findVersion($package, '1.1.0')->getId(),
+            Download::TYPE_VERSION,
+            '{"20260101": "abc"}'
+        );
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertSame([0, 9], $data['values']['2']);
+        // 1.1.0 contributes nothing now, so the "1" series is just 1.0.0
+        self::assertSame([10, 1], $data['values']['1']);
+    }
+
+    public function testVersionAndPackageStatsSurviveAMalformedDataEntry(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        // these two routes read the hydrated entity rather than the repository, so they need the
+        // guard in the sum loop to avoid an "int + array" TypeError
+        $this->setRawDownloadData(
+            $this->findVersion($package, '2.0.0')->getId(),
+            Download::TYPE_VERSION,
+            '{"20260101": [1, 2], "20260102": 9}'
+        );
+        $this->setRawDownloadData($package->getId(), Download::TYPE_PACKAGE, '{"20260101": [1, 2], "20260102": 3}');
+        // these routes load the entity, so the identity map has to go before they see the raw write
+        $this->getEM()->clear();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/2.0.0.json');
+        self::assertSame([0, 9], $data['values']['2.0.0']);
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/all.json');
+        self::assertSame([0, 3], $data['values']['test/pkg']);
+    }
+
+    public function testMajorVersionStatsValuesAreAlwaysAJsonObject(): void
+    {
+        $package = $this->createPackageWithDownloads();
+        $zero = $this->createStableVersion($package, '0.9.0');
+        $this->store($zero);
+        $this->store($this->createDownload($package, $zero->getId(), Download::TYPE_VERSION, ['20260101' => 4]));
+
+        $this->client->request('GET', '/packages/test/pkg/stats/major/all.json?from=2026-01-01&to=2026-01-02&average=daily');
+        self::assertResponseIsSuccessful();
+
+        // series named 0, 1, ... are int keys in PHP, so without the cast json_encode emits a list
+        self::assertStringContainsString('"values":{"0":', (string) $this->client->getResponse()->getContent());
+    }
+
+    private function findVersion(Package $package, string $version): Version
+    {
+        $found = $this->getEM()->getRepository(Version::class)->findOneBy(['package' => $package, 'version' => $version]);
+        self::assertInstanceOf(Version::class, $found);
+
+        return $found;
+    }
+
+    /**
+     * Writes the json column directly, as the entity's array type cannot express a corrupt blob.
+     */
+    private function setRawDownloadData(int $id, int $type, string $json): void
+    {
+        $this->getEM()->getConnection()->executeStatement(
+            'UPDATE download SET data = :data WHERE id = :id AND type = :type',
+            ['data' => $json, 'id' => $id, 'type' => $type]
+        );
+    }
+
+    private function createPackageWithDownloads(): Package
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+
+        $versions = [];
+        foreach (['1.0.0', '1.1.0', '1.2.0', '2.0.0', '3.0.0', '1.9.x-dev'] as $version) {
+            $versions[$version] = $this->createStableVersion($package, $version);
+        }
+        $versions['1.9.x-dev']->setDevelopment(true);
+
+        $this->store($package, ...array_values($versions));
+
+        $downloads = [
+            '1.0.0' => ['20260101' => 10, '20260102' => 1],
+            '1.1.0' => ['20260101' => 5],
+            '2.0.0' => ['20260102' => 7],
+            // would swamp the "1" series if development versions were not filtered out
+            '1.9.x-dev' => ['20260101' => 1000],
+            // a row that exists but carries no data at all
+            '3.0.0' => [],
+            // 1.2.0 deliberately gets no download row
+        ];
+
+        // deliberately not the sum of the version rows, so that mixing the two up is visible
+        $rows = [$this->createDownload($package, $package->getId(), Download::TYPE_PACKAGE, ['20260101' => 20, '20260102' => 3])];
+        foreach ($downloads as $version => $data) {
+            $rows[] = $this->createDownload($package, $versions[$version]->getId(), Download::TYPE_VERSION, $data);
+        }
+        $this->store($rows);
+
+        return $package;
+    }
+
+    /**
+     * @param array<numeric-string, int> $data
+     */
+    private function createDownload(Package $package, int $id, int $type, array $data): Download
+    {
+        $download = new Download();
+        $download->setId($id);
+        $download->setType($type);
+        $download->setPackage($package);
+        $download->setData($data);
+        $download->setLastUpdated(new \DateTimeImmutable());
+        $download->computeSum();
+
+        return $download;
+    }
+
+    /**
+     * The date range is pinned so createDatePoints() yields exactly one Ymd key per label for the
+     * daily average, which keeps the expected values plain sums.
+     *
+     * @return array{labels: list<string>, values: array<string, list<int>>, average: string}
+     */
+    private function requestStatsJson(string $path, string $average = 'daily'): array
+    {
+        $this->client->request('GET', $path.'?from=2026-01-01&to=2026-01-02&average='.$average);
+        self::assertResponseIsSuccessful();
+
+        return json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
     }
 
     /**

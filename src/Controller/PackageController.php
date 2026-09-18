@@ -1846,10 +1846,10 @@ class PackageController extends Controller
             }
         } elseif (null !== $version) {
             $downloads = $this->getEM()->getRepository(Download::class)->findOneBy(['id' => $version->getId(), 'type' => Download::TYPE_VERSION]);
-            $dlData[$version->getVersion()] = [$downloads ? $downloads->getData() : []];
+            $dlData[$version->getVersion()] = $downloads ? $downloads->getData() : [];
         } else {
             $downloads = $this->getEM()->getRepository(Download::class)->findOneBy(['id' => $package->getId(), 'type' => Download::TYPE_PACKAGE]);
-            $dlData[$package->getName()] = [$downloads ? $downloads->getData() : []];
+            $dlData[$package->getName()] = $downloads ? $downloads->getData() : [];
         }
 
         $datePoints = $this->createDatePoints($from, $to, $average);
@@ -1859,9 +1859,12 @@ class PackageController extends Controller
             foreach ($dlData as $seriesName => $seriesData) {
                 $value = 0;
                 foreach ($values as $valueKey) {
-                    foreach ($seriesData as $data) {
-                        $value += $data[$valueKey] ?? 0;
+                    $dayValue = $seriesData[$valueKey] ?? 0;
+                    // hydrated json is not validated, so a corrupt blob can hold a non-number here
+                    if (!is_numeric($dayValue)) {
+                        continue;
                     }
+                    $value += $dayValue;
                 }
                 $series[$seriesName][] = ceil($value / \count($values));
             }
@@ -1878,6 +1881,9 @@ class PackageController extends Controller
             $datePoints['labels'][] = date('Y-m-d');
             $datePoints['values'][] = [0];
         }
+
+        // cast so values stays a JSON object: series named 0, 1, ... would otherwise encode as a list
+        $datePoints['values'] = (object) $datePoints['values'];
 
         $response = new JsonResponse($datePoints);
         $response->setSharedMaxAge(1800);
