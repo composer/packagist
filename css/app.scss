@@ -855,7 +855,8 @@ strong {
 .search-facets-active-filters .active-filter-remove {
     padding: 0;
 }
-.search-facets .ais-Menu-item--selected {
+.search-facets .ais-Menu-item--selected,
+.search-facets .ais-NumericMenu-item--selected {
     font-weight: bold;
 }
 .search-facets .ais-Panel-header {
@@ -864,22 +865,22 @@ strong {
     margin-bottom: 10px;
     font-weight: bold;
 }
-.search-facets .ais-Menu-list, .search-facets .ais-RefinementList-list {
+.search-facets .ais-Menu-list, .search-facets .ais-RefinementList-list, .search-facets .ais-NumericMenu-list {
     list-style: none;
     padding-left: 0;
     margin: 0;
 }
-.search-facets .ais-Menu-item, .search-facets .ais-RefinementList-item {
+.search-facets .ais-Menu-item, .search-facets .ais-RefinementList-item, .search-facets .ais-NumericMenu-item, .search-facets .ais-ToggleRefinement-label {
     padding: 0;
     line-height: 1.4;
     font-size: 13px;
 }
-.search-facets .ais-RefinementList-label {
+.search-facets .ais-RefinementList-label, .search-facets .ais-NumericMenu-label, .search-facets .ais-ToggleRefinement-label {
     display: flex;
     align-items: center;
     cursor: pointer;
 }
-.search-facets .ais-RefinementList-checkbox {
+.search-facets .ais-RefinementList-checkbox, .search-facets .ais-NumericMenu-radio, .search-facets .ais-ToggleRefinement-checkbox {
     margin-right: 6px;
     margin-top: 0;
 }
@@ -889,7 +890,7 @@ strong {
     text-decoration: none;
     color: inherit;
 }
-.search-facets .ais-RefinementList-labelText, .search-facets .ais-Menu-label {
+.search-facets .ais-RefinementList-labelText, .search-facets .ais-Menu-label, .search-facets .ais-NumericMenu-labelText {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
