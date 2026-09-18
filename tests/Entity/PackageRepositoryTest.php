@@ -313,8 +313,6 @@ class PackageRepositoryTest extends IntegrationTestCase
 
     public function testGetDependentsListsTheRequiringPackages(): void
     {
-        // Also exercises the MAX_EXECUTION_TIME optimizer hint against a real server: an invalid
-        // hint would be a syntax error here rather than a silently ignored comment.
         $alpha = self::createPackage('test/alpha', 'https://example.org/alpha');
         $beta = self::createPackage('test/beta', 'https://example.org/beta');
         $this->store($alpha, $beta);
@@ -345,5 +343,25 @@ class PackageRepositoryTest extends IntegrationTestCase
 
         $names = array_column($this->packageRepository->getSuggests('test/suggested'), 'name');
         self::assertSame(['test/alpha', 'test/beta'], $names);
+    }
+
+    public function testListingQueriesCarryAnAcceptedExecutionTimeHint(): void
+    {
+        // MySQL answers a malformed, mis-positioned or inapplicable optimizer hint with a warning
+        // and ignores the whole /*+ ... */ comment, so the rows coming back prove nothing about the
+        // cap being in force. An empty warning list is what does.
+        $this->packageRepository->getDependents('test/required');
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the dependents query');
+
+        $this->packageRepository->getSuggests('test/suggested');
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the suggesters query');
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function lastStatementWarnings(): array
+    {
+        return self::getEM()->getConnection()->fetchAllAssociative('SHOW WARNINGS');
     }
 }

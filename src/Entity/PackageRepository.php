@@ -40,11 +40,9 @@ class PackageRepository extends ServiceEntityRepository
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
 
     /**
-     * The dependents/suggesters listings materialise every row for the required package name and
-     * sort the whole joined set before paginating, so for the most widely required packages the
-     * sort is unbounded work that has been seen to run for over a minute. 99.9% of these requests
-     * finish inside 1.3s, so cap the statement rather than let one hold a PHP-FPM worker; callers
-     * degrade on the resulting DriverException.
+     * These listings sort the whole joined set before paginating, which for the most widely required
+     * packages has reached 37s while 99.9% of requests finish inside 1.3s. Callers degrade on the
+     * DriverException rather than let one request hold a PHP-FPM worker.
      */
     private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
     // @phpstan-ignore classConstant.unused

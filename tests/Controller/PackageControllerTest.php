@@ -36,11 +36,14 @@ use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
 use Predis\Client;
-use Doctrine\DBAL\Driver\PDO\Exception as PDOException;
+use Doctrine\DBAL\Driver\Exception as DriverExceptionInterface;
+use Doctrine\DBAL\Exception\ConnectionLost;
 use Doctrine\DBAL\Exception\DriverException;
 
 class PackageControllerTest extends IntegrationTestCase
 {
+    private const int ER_QUERY_TIMEOUT = 3024;
+
     public function testDependentsPaginationIgnoresACachedCount(): void
     {
         $required = self::createPackage('test/required', 'https://example.com/test/required');
@@ -249,30 +252,69 @@ class PackageControllerTest extends IntegrationTestCase
     #[TestWith(['/packages/test/pkg/suggesters.json', 'application/json'])]
     public function testListingsDegradeWhenTheStatementTimeoutFires(string $url, string $expectedType): void
     {
-        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
-        $this->store($package);
-
-        // The listing queries carry a MAX_EXECUTION_TIME hint, so MySQL aborts them for the most
-        // widely required packages instead of letting the sort hold a worker. That must degrade
-        // rather than surface as a 500.
-        $repo = $this->createStub(PackageRepository::class);
-        $repo->method('getDependents')->willThrowException($this->driverException());
-        $repo->method('getSuggests')->willThrowException($this->driverException());
-        static::getContainer()->set(PackageRepository::class, $repo);
+        $this->stubListingsWith(new DriverException(self::driverException(self::ER_QUERY_TIMEOUT), null));
 
         $this->client->request('GET', $url);
 
         self::assertResponseStatusCodeSame(503);
         self::assertStringStartsWith($expectedType, (string) $this->client->getResponse()->headers->get('Content-Type'));
+        self::assertSame('300', $this->client->getResponse()->headers->get('Retry-After'), 'crawlers must be told to back off');
     }
 
-    private function driverException(): DriverException
+    #[TestWith(['/packages/test/pkg/dependents'])]
+    #[TestWith(['/packages/test/pkg/suggesters'])]
+    public function testListingsDoNotSwallowOtherDatabaseErrors(string $url): void
     {
-        // 3024 is ER_QUERY_TIMEOUT, what MAX_EXECUTION_TIME reports
-        return new DriverException(
-            new PDOException('Query execution was interrupted, maximum statement execution time exceeded', 'HY000', 3024),
-            null,
-        );
+        // Every DBAL failure extends DriverException, so only the timeout may degrade to a 503 -
+        // a lost connection or a syntax error has to surface instead of being reported as a listing
+        // that is merely too large to sort.
+        $this->stubListingsWith(new ConnectionLost(self::driverException(2006), null));
+
+        $this->client->catchExceptions(true);
+        $this->client->request('GET', $url);
+
+        self::assertResponseStatusCodeSame(500);
+    }
+
+    #[TestWith(['/packages/test/pkg/dependents.json'])]
+    #[TestWith(['/packages/test/pkg/suggesters.json'])]
+    public function testJsonListingsRefuseToPageBeyondTheCap(string $url): void
+    {
+        $this->client->request('GET', $url, ['page' => '999999']);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertStringStartsWith('application/json', (string) $this->client->getResponse()->headers->get('Content-Type'));
+    }
+
+    /**
+     * Replaces the repository before any DB work, because the TestContainer refuses to swap a
+     * private service that has already been instantiated.
+     */
+    private function stubListingsWith(DriverException $e): void
+    {
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependents')->willThrowException($e);
+        $repo->method('getSuggests')->willThrowException($e);
+        static::getContainer()->set(PackageRepository::class, $repo);
+    }
+
+    /**
+     * DBAL's PDO exception class is internal and final, so build the driver-level exception off the
+     * public Driver\Exception interface instead.
+     */
+    private static function driverException(int $code): DriverExceptionInterface
+    {
+        return new class($code) extends \Exception implements DriverExceptionInterface {
+            public function __construct(int $code)
+            {
+                parent::__construct('Query execution was interrupted', $code);
+            }
+
+            public function getSQLState(): ?string
+            {
+                return 'HY000';
+            }
+        };
     }
 
     public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void

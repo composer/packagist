@@ -99,6 +99,10 @@ use Webmozart\Assert\Assert;
 class PackageController extends Controller
 {
     private const int LIST_FLUSH_EVERY = 500;
+    /** ER_QUERY_TIMEOUT, what MAX_EXECUTION_TIME reports. DBAL leaves it unmapped, so it arrives as a plain DriverException. */
+    private const int ER_QUERY_TIMEOUT = 3024;
+    /** 50k rows deep. The sort cost grows with the offset, so cap it rather than spend the statement timeout on a page nobody reads. */
+    private const int MAX_JSON_LISTING_PAGE = 500;
     private const string STATS_RECORD_DATE = '2012-04-13 00:00:00';
     private const string RELEASES_RECORD_DATE = '2011-01-01 00:00:00';
 
@@ -1596,10 +1600,10 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/dependents.{_format}', name: 'view_package_dependents', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
-    public function dependentsAction(Request $req, string $name): Response
+    public function dependentsAction(Request $req, LoggerInterface $logger, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
-            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+            return $this->listingErrorResponse($req, 'This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
         if ($resp = $this->blockAbusers($req)) {
@@ -1609,6 +1613,9 @@ class PackageController extends Controller
         $page = max(1, $req->query->getInt('page', 1));
         if ($req->getRequestFormat() === 'html' && $page > 3 && $this->getUser() === null) {
             return new Response('<html>You must <a href="'.$this->generateUrl('login').'">log in</a> to access this page.', Response::HTTP_FORBIDDEN);
+        }
+        if ($req->getRequestFormat() === 'json' && $page > self::MAX_JSON_LISTING_PAGE) {
+            return $this->listingErrorResponse($req, 'This listing cannot be paged beyond page '.self::MAX_JSON_LISTING_PAGE.'.', Response::HTTP_BAD_REQUEST);
         }
 
         $perPage = 15;
@@ -1635,7 +1642,13 @@ class PackageController extends Controller
         $depCount = $repo->getDependentCount($name, $requireType, cached: false);
         try {
             $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
-        } catch (DriverException) {
+        } catch (DriverException $e) {
+            if ($e->getCode() !== self::ER_QUERY_TIMEOUT) {
+                throw $e;
+            }
+
+            $logger->warning('Dependents listing timed out', ['package' => $name, 'page' => $page, 'orderBy' => $orderBy, 'requires' => $requires]);
+
             return $this->listingTooExpensiveResponse($req);
         }
 
@@ -1687,10 +1700,10 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}/suggesters.{_format}', name: 'view_package_suggesters', requirements: ['name' => Package::PACKAGE_NAME_OR_EXT_REGEX, '_format' => '(html|json)'], defaults: ['_format' => 'html'])]
-    public function suggestersAction(Request $req, string $name): Response
+    public function suggestersAction(Request $req, LoggerInterface $logger, string $name): Response
     {
         if (!Killswitch::isEnabled(Killswitch::LINKS_ENABLED)) {
-            return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
+            return $this->listingErrorResponse($req, 'This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
         if ($resp = $this->blockAbusers($req)) {
@@ -1700,6 +1713,9 @@ class PackageController extends Controller
         $page = max(1, $req->query->getInt('page', 1));
         if ($req->getRequestFormat() === 'html' && $page > 3 && $this->getUser() === null) {
             return new Response('<html>You must <a href="'.$this->generateUrl('login').'">log in</a> to access this page.', Response::HTTP_FORBIDDEN);
+        }
+        if ($req->getRequestFormat() === 'json' && $page > self::MAX_JSON_LISTING_PAGE) {
+            return $this->listingErrorResponse($req, 'This listing cannot be paged beyond page '.self::MAX_JSON_LISTING_PAGE.'.', Response::HTTP_BAD_REQUEST);
         }
 
         $perPage = 15;
@@ -1712,7 +1728,13 @@ class PackageController extends Controller
         $suggestCount = $repo->getSuggestCount($name, cached: false);
         try {
             $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
-        } catch (DriverException) {
+        } catch (DriverException $e) {
+            if ($e->getCode() !== self::ER_QUERY_TIMEOUT) {
+                throw $e;
+            }
+
+            $logger->warning('Suggesters listing timed out', ['package' => $name, 'page' => $page]);
+
             return $this->listingTooExpensiveResponse($req);
         }
 
@@ -2058,19 +2080,27 @@ class PackageController extends Controller
         return $this->createFormBuilder([])->getForm();
     }
 
-    /**
-     * The dependents/suggesters listing query carries a statement timeout, so it can be cut short
-     * for the most widely required packages rather than hold a worker for the full sort.
-     */
     private function listingTooExpensiveResponse(Request $req): Response
     {
-        $message = 'This listing is too large to sort right now, please try again later.';
+        // Retry-After so crawlers back off rather than re-spend the statement timeout immediately
+        return $this->listingErrorResponse(
+            $req,
+            'This listing is too large to sort right now, please try again later.',
+            Response::HTTP_SERVICE_UNAVAILABLE,
+            ['Retry-After' => 300],
+        );
+    }
 
+    /**
+     * @param array<string, string|int> $headers
+     */
+    private function listingErrorResponse(Request $req, string $message, int $status, array $headers = []): Response
+    {
         if ($req->getRequestFormat() === 'json') {
-            return new JsonResponse(['status' => 'error', 'message' => $message], Response::HTTP_SERVICE_UNAVAILABLE);
+            return new JsonResponse(['status' => 'error', 'message' => $message], $status, $headers);
         }
 
-        return new Response($message, Response::HTTP_SERVICE_UNAVAILABLE);
+        return new Response($message, $status, $headers);
     }
 
     private function getPackageByName(Request $req, string $name): Package|Response
