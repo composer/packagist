@@ -1,8 +1,11 @@
-import algoliasearch from 'algoliasearch/lite';
+/** @jsx h */
+/** @jsxFrag Fragment */
+import { h, Fragment } from 'preact';
 import instantsearch from 'instantsearch.js';
+import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import historyRouter from 'instantsearch.js/es/lib/routers/history';
 import { connectSearchBox, connectCurrentRefinements } from 'instantsearch.js/es/connectors';
-import { hits, pagination, clearRefinements, menu, refinementList, configure, panel } from 'instantsearch.js/es/widgets';
+import { hits, pagination, clearRefinements, menu, numericMenu, refinementList, toggleRefinement, configure, panel } from 'instantsearch.js/es/widgets';
 
 // this file is imported by app.js ahead of every other module, so an unguarded lookup here would
 // take out view.js, the tooltips and the bootstrap data-api handlers on any page without the search
@@ -80,7 +83,7 @@ function toggleHero(hasSearch) {
 // Show search container on initial load if URL has search params
 var urlParams = new URLSearchParams(window.location.search);
 var hasQuery = (urlParams.get('query') || '').trim() !== '' || (urlParams.get('q') || '').trim() !== '';
-var hasFilters = urlParams.get('type') || urlParams.get('tags');
+var hasFilters = urlParams.get('type') || urlParams.get('tags') || urlParams.get('license') || urlParams.get('released') || urlParams.get('vendor') || urlParams.get('language') || urlParams.get('hide_abandoned');
 if (!isSearchPage && !hasQuery && hasFilters) {
     // Redirect to canonical /search/ URL with the filter params
     location.replace('/search/' + location.search);
@@ -96,8 +99,14 @@ var opts = {
         var searchResults = document.querySelector('#search-container');
 
         var hasQuery = indexState.query && indexState.query.trim() !== '';
+        var refined = indexState.refinementList || {};
         var hasFilters = (indexState.menu && indexState.menu.type)
-            || (indexState.refinementList && indexState.refinementList.tags && indexState.refinementList.tags.length > 0);
+            || (refined.tags && refined.tags.length > 0)
+            || (refined['meta.license'] && refined['meta.license'].length > 0)
+            || (refined.package_organisation && refined.package_organisation.length > 0)
+            || (refined.language && refined.language.length > 0)
+            || (indexState.toggle && indexState.toggle.abandoned)
+            || (indexState.numericMenu && Object.keys(indexState.numericMenu).length > 0);
         var hasSearch = hasQuery || (isSearchPage && hasFilters);
 
         toggleHero(hasSearch);
@@ -140,10 +149,16 @@ var opts = {
         stateMapping: {
             stateToRoute: function (uiState) {
                 var indexUiState = uiState[indexName] || {};
+                var refined = indexUiState.refinementList || {};
                 return {
                     query: indexUiState.query && indexUiState.query.replace(/([^\s])--/g, '$1-'),
                     type: indexUiState.menu && indexUiState.menu.type,
-                    tags: indexUiState.refinementList && indexUiState.refinementList.tags && indexUiState.refinementList.tags.join('~'),
+                    tags: refined.tags && refined.tags.join('~'),
+                    license: refined['meta.license'] && refined['meta.license'].join('~'),
+                    released: indexUiState.numericMenu && indexUiState.numericMenu['meta.released_ts'],
+                    vendor: refined.package_organisation && refined.package_organisation.join('~'),
+                    language: refined.language && refined.language.join('~'),
+                    hide_abandoned: indexUiState.toggle && indexUiState.toggle.abandoned ? '1' : undefined,
                     page: indexUiState.page,
                 };
             },
@@ -154,7 +169,12 @@ var opts = {
 
                 var hasQuery = routeState.query && routeState.query.trim() !== '';
                 var hasFilters = (routeState.type && routeState.type !== '')
-                    || (routeState.tags && routeState.tags !== '');
+                    || (routeState.tags && routeState.tags !== '')
+                    || (routeState.license && routeState.license !== '')
+                    || (routeState.released && routeState.released !== '')
+                    || (routeState.vendor && routeState.vendor !== '')
+                    || (routeState.language && routeState.language !== '')
+                    || routeState.hide_abandoned === '1';
                 if (!hasQuery && !(isSearchPage && hasFilters)) {
                     return { [indexName]: {} };
                 }
@@ -167,7 +187,12 @@ var opts = {
                         },
                         refinementList: {
                             tags: routeState.tags && routeState.tags.replace(/[\s-]+/g, ' ').split('~'),
+                            'meta.license': routeState.license && routeState.license.split('~'),
+                            package_organisation: routeState.vendor && routeState.vendor.split('~'),
+                            language: routeState.language && routeState.language.split('~'),
                         },
+                        toggle: routeState.hide_abandoned === '1' ? { abandoned: true } : undefined,
+                        numericMenu: routeState.released ? { 'meta.released_ts': routeState.released } : undefined,
                         page: routeState.page,
                     }
                 };
@@ -227,9 +252,10 @@ var customCurrentRefinements = connectCurrentRefinements(function (renderOptions
         wrapper.style.display = items.length > 0 ? '' : 'none';
     }
 
+    var attributeLabels = { tags: 'tag', 'meta.license': 'license', package_organisation: 'vendor' };
     var html = '';
     items.forEach(function (item) {
-        var label = item.attribute === 'tags' ? 'tag' : item.attribute;
+        var label = attributeLabels[item.attribute] || item.attribute;
         item.refinements.forEach(function (refinement) {
             html += '<span class="badge bg-primary active-filter-item">'
                 + escapeHtml(label) + ': ' + escapeHtml(refinement.label)
@@ -261,6 +287,61 @@ var panelRefinementList = panel({
     templates: { header: function () { return 'Tags'; } },
     hidden: function (_ref) { return _ref.items.length === 0; },
 })(refinementList);
+var panelLicense = panel({
+    templates: { header: function () { return 'License'; } },
+    hidden: function (_ref) { return _ref.items.length === 0; },
+})(refinementList);
+var panelVendor = panel({
+    templates: { header: function () { return 'Vendor'; } },
+    hidden: function (_ref) { return _ref.items.length === 0; },
+})(refinementList);
+var panelLanguage = panel({
+    templates: { header: function () { return 'Language'; } },
+    hidden: function (_ref) { return _ref.items.length === 0; },
+})(refinementList);
+var panelReleased = panel({ templates: { header: function () { return 'Released'; } } })(numericMenu);
+
+var releasedNow = Date.now();
+function releasedStart(daysAgo) {
+    return Math.floor((releasedNow - daysAgo * 86400000) / 1000);
+}
+
+function PackageHit(hit) {
+    var nameHighlight = hit._highlightResult && hit._highlightResult.name ? hit._highlightResult.name.value : hit.name;
+    var descHighlight = hit._highlightResult && hit._highlightResult.description ? hit._highlightResult.description.value : (hit.description || '');
+
+    return (
+        <div data-url={hit.url} class="col-12 package-item">
+            <div class="row">
+                <div class="col-md-9 col-xl-10">
+                    <p class="float-end language">{hit.language || ''}</p>
+                    <h4 class="font-bold">
+                        <a href={hit.url} tabindex="2" rel="nofollow noindex" dangerouslySetInnerHTML={{ __html: nameHighlight }} />
+                        {hit.extension ? <span title="PIE installable extension package">🥧</span> : null}
+                        {hit.virtual ? <Fragment>{' '}<small>(Virtual Package)</small></Fragment> : null}
+                    </h4>
+                    <p dangerouslySetInnerHTML={{ __html: descHighlight }} />
+                    {hit.abandoned ? (
+                        <p class="abandoned">
+                            <i class="bi bi-exclamation-circle-fill" /> Abandoned!
+                            {hit.replacementPackage ? (
+                                <Fragment>{' '}See <a href={hit.replacementPackageUrl} rel="nofollow noindex">{hit.replacementPackage}</a></Fragment>
+                            ) : null}
+                        </p>
+                    ) : null}
+                </div>
+                <div class="col-md-3 col-xl-2">
+                    {hit.meta ? (
+                        <p class="metadata">
+                            <span class="metadata-block"><i class="bi bi-download" />{' '}{hit.meta.downloads_formatted}</span>
+                            <span class="metadata-block"><i class="bi bi-star-fill" />{' '}{hit.meta.favers_formatted}</span>
+                        </p>
+                    ) : null}
+                </div>
+            </div>
+        </div>
+    );
+}
 
 search.addWidgets([
     customSearchBox({}),
@@ -289,47 +370,7 @@ search.addWidgets([
         },
         templates: {
             empty: function () { return 'No packages found.'; },
-            item: function (hit) {
-                var abandonedHtml = '';
-                if (hit.abandoned) {
-                    var replacementHtml = '';
-                    if (hit.replacementPackage) {
-                        replacementHtml = ` See <a href="${hit.replacementPackageUrl}" rel="nofollow noindex">${hit.replacementPackage}</a>`;
-                    }
-                    abandonedHtml = `<p class="abandoned"><i class="bi bi-exclamation-circle-fill"></i> Abandoned!${replacementHtml}</p>`;
-                }
-
-                var virtualHtml = hit.virtual ? '<small>(Virtual Package)</small>' : '';
-                var extensionHtml = hit.extension ? '<span title="PIE installable extension package">🥧</span>' : '';
-
-                var metaHtml = '';
-                if (hit.meta) {
-                    metaHtml = `<p class="metadata">
-                        <span class="metadata-block"><i class="bi bi-download"></i> ${hit.meta.downloads_formatted}</span>
-                        <span class="metadata-block"><i class="bi bi-star-fill"></i> ${hit.meta.favers_formatted}</span>
-                    </p>`;
-                }
-
-                var nameHighlight = hit._highlightResult && hit._highlightResult.name ? hit._highlightResult.name.value : hit.name;
-                var descHighlight = hit._highlightResult && hit._highlightResult.description ? hit._highlightResult.description.value : (hit.description || '');
-
-                return `<div data-url="${hit.url}" class="col-12 package-item">
-                    <div class="row">
-                        <div class="col-md-9 col-xl-10">
-                            <p class="float-end language">${hit.language || ''}</p>
-                            <h4 class="font-bold">
-                                <a href="${hit.url}" tabindex="2" rel="nofollow noindex">${nameHighlight}</a>${extensionHtml}
-                                ${virtualHtml}
-                            </h4>
-                            <p>${descHighlight}</p>
-                            ${abandonedHtml}
-                        </div>
-                        <div class="col-md-3 col-xl-2">
-                            ${metaHtml}
-                        </div>
-                    </div>
-                </div>`;
-            },
+            item: function (hit) { return PackageHit(hit); },
         },
         cssClasses: {
             root: 'packages',
@@ -359,12 +400,71 @@ search.addWidgets([
         },
     }),
 
-    customCurrentRefinements({}),
+    customCurrentRefinements({ excludedAttributes: ['query', 'meta.released_ts', 'abandoned'] }),
 
     panelMenu({
         container: '.search-facets-type',
         attribute: 'type',
         limit: 15,
+    }),
+
+    toggleRefinement({
+        container: '.search-facets-abandoned',
+        attribute: 'abandoned',
+        on: 0,
+        templates: {
+            labelText: function () { return 'Hide abandoned packages'; },
+        },
+        cssClasses: {
+            checkbox: 'form-check-input',
+        },
+    }),
+
+    panelVendor({
+        container: '.search-facets-vendor',
+        attribute: 'package_organisation',
+        limit: 10,
+        showMore: true,
+        searchable: true,
+        cssClasses: {
+            checkbox: 'form-check-input',
+            searchableForm: 'input-group input-group-sm',
+            searchableInput: 'form-control',
+            searchableSubmit: 'search-facets-searchbox-btn',
+            searchableReset: 'search-facets-searchbox-btn',
+        },
+    }),
+
+    panelLanguage({
+        container: '.search-facets-language',
+        attribute: 'language',
+        limit: 10,
+        showMore: true,
+        cssClasses: {
+            checkbox: 'form-check-input',
+        },
+    }),
+
+    panelLicense({
+        container: '.search-facets-license',
+        attribute: 'meta.license',
+        limit: 10,
+        showMore: true,
+        cssClasses: {
+            checkbox: 'form-check-input',
+        },
+    }),
+
+    panelReleased({
+        container: '.search-facets-released',
+        attribute: 'meta.released_ts',
+        items: [
+            { label: 'Any time' },
+            { label: 'Past week', start: releasedStart(7) },
+            { label: 'Past month', start: releasedStart(30) },
+            { label: 'Past 3 months', start: releasedStart(90) },
+            { label: 'Past year', start: releasedStart(365) },
+        ],
     }),
 
     panelRefinementList({

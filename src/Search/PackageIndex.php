@@ -38,7 +38,7 @@ use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
  *     abandoned: int,
  *     replacementPackage: string,
  *     tags: list<string>,
- *     meta?: array{downloads: int, downloads_formatted: string, favers: int, favers_formatted: string},
+ *     meta?: array{downloads: int, downloads_formatted: string, favers: int, favers_formatted: string, released_ts?: int|null, license?: list<string>},
  *     extension?: int,
  *     extensionName?: string|null,
  *     ...<string, mixed>
