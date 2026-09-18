@@ -81,7 +81,7 @@
         {% for package in packages %}
             <li>
                 <a href="{{ path('view_package', {'name' : package.name }) }}">{{ package.name }}{% if showVersion is defined and showVersion %}<strong>{{ package.version }}</strong>{% endif %}</a>
-                {{ package.description|u.truncate(60) }}
+                <span data-bs-toggle="tooltip" data-bs-placement="top" title="{{ package.description }}" data-bs-container="body">{{ package.description|u.truncate(60, '…') }}</span>
             </li>
         {% endfor %}
         {% if showMoreUrl is defined and showMoreUrl %}
