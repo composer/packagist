@@ -1828,7 +1828,12 @@ class PackageController extends Controller
             foreach ($dlData as $seriesName => $seriesData) {
                 $value = 0;
                 foreach ($values as $valueKey) {
-                    $value += $seriesData[$valueKey] ?? 0;
+                    $dayValue = $seriesData[$valueKey] ?? 0;
+                    // hydrated json is not validated, so a corrupt blob can hold a non-number here
+                    if (!is_numeric($dayValue)) {
+                        continue;
+                    }
+                    $value += $dayValue;
                 }
                 $series[$seriesName][] = ceil($value / \count($values));
             }
@@ -1845,6 +1850,9 @@ class PackageController extends Controller
             $datePoints['labels'][] = date('Y-m-d');
             $datePoints['values'][] = [0];
         }
+
+        // cast so values stays a JSON object: series named 0, 1, ... would otherwise encode as a list
+        $datePoints['values'] = (object) $datePoints['values'];
 
         $response = new JsonResponse($datePoints);
         $response->setSharedMaxAge(1800);
