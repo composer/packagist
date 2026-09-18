@@ -423,6 +423,24 @@ const init = function ($) {
     $('.package').on('click', '.requireme input', function () {
         this.select();
     });
+
+    $('.package').on('click', '.requireme-copy', function (e) {
+        e.stopPropagation();
+        var $btn = $(this);
+        var text = $btn.closest('.requireme').find('input').val();
+        navigator.clipboard.writeText(text).then(function () {
+            $btn.addClass('is-copied');
+            setTimeout(function () {
+                $btn.removeClass('is-copied');
+            }, 2000);
+        });
+    });
+
+    $('.package').on('click', '.requireme', function (e) {
+        if (window.matchMedia('(max-width: 767px)').matches && !$(e.target).closest('.requireme-copy').length) {
+            $(this).find('.requireme-copy').trigger('click');
+        }
+    });
     if ($('.package').data('force-crawl')) {
         forceUpdatePackage(null, true);
     }
