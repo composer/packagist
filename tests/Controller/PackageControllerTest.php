@@ -294,7 +294,7 @@ class PackageControllerTest extends IntegrationTestCase
         $repo = $this->createStub(PackageRepository::class);
         $repo->method('getDependentCount')->willReturn(500);
         $repo->method('getDependents')->willReturn([
-            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
         ]);
         $repo->method('getDefaultBranchRequireFor')->willReturn([]);
         static::getContainer()->set(PackageRepository::class, $repo);
@@ -307,6 +307,57 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('requires=require', $data['next'] ?? '');
         self::assertStringContainsString('requires=require', $data['ordered_by_name'] ?? '');
         self::assertStringContainsString('requires=require', $data['ordered_by_downloads'] ?? '');
+    }
+
+    public function testDependentsPageDegradesToAnUnsortedListing(): void
+    {
+        $this->stubDependentsTimingOutWhenSorted(fallbackWorks: true);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents', ['order_by' => 'downloads']);
+
+        self::assertResponseIsSuccessful();
+        $body = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('no particular order', $body, 'the reader has to be told the listing is not ordered');
+        self::assertStringContainsString('test/dep', $body, 'the rows themselves are still shown');
+    }
+
+    public function testDependentsJsonStillFailsWhenTheSortTimesOut(): void
+    {
+        // Deliberate asymmetry: a json client cannot see the warning, so it gets the error instead
+        // of silently receiving arbitrarily ordered rows.
+        $this->stubDependentsTimingOutWhenSorted(fallbackWorks: true);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['order_by' => 'downloads']);
+
+        self::assertResponseStatusCodeSame(503);
+    }
+
+    public function testDependentsPageFailsWhenEvenTheUnsortedQueryTimesOut(): void
+    {
+        $this->stubDependentsTimingOutWhenSorted(fallbackWorks: false);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents');
+
+        self::assertResponseStatusCodeSame(503);
+    }
+
+    private function stubDependentsTimingOutWhenSorted(bool $fallbackWorks): void
+    {
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(1);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        $repo->method('getDependents')->willReturnCallback(
+            function (string $name, int $offset = 0, int $limit = 15, ?string $orderBy = 'name', ?int $type = null) use ($fallbackWorks): array {
+                if ($orderBy !== null || !$fallbackWorks) {
+                    throw new DriverException(self::driverException(self::ER_QUERY_TIMEOUT), null);
+                }
+
+                return [
+                    ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+                ];
+            },
+        );
+        static::getContainer()->set(PackageRepository::class, $repo);
     }
 
     /**

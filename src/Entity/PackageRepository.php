@@ -626,21 +626,23 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param string             $name    Package name to find the dependents of
-     * @param int|null           $type    One of Dependent::TYPE_*
-     * @param 'downloads'|'name' $orderBy
+     * @param string                  $name    Package name to find the dependents of
+     * @param int|null                $type    One of Dependent::TYPE_*
+     * @param 'downloads'|'name'|null $orderBy null skips the sort, for when ordering the whole set
+     *                                         exceeds the statement timeout. The download join goes
+     *                                         with it, as it only exists to sort on.
      *
-     * @return list<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
+     * @return list<array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
      */
-    public function getDependents(string $name, int $offset = 0, int $limit = 15, string $orderBy = 'name', ?int $type = null): array
+    public function getDependents(string $name, int $offset = 0, int $limit = 15, ?string $orderBy = 'name', ?int $type = null): array
     {
-        $orderByField = 'p.name ASC';
         $join = '';
+        $orderByClause = '';
         if ($orderBy === 'downloads') {
-            $orderByField = 'd.total DESC';
             $join = 'LEFT JOIN download d ON d.id = p.id AND d.type = '.Download::TYPE_PACKAGE;
-        } else {
-            $orderBy = 'name';
+            $orderByClause = ' ORDER BY d.total DESC';
+        } elseif (null !== $orderBy) {
+            $orderByClause = ' ORDER BY p.name ASC';
         }
 
         $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
@@ -650,15 +652,15 @@ class PackageRepository extends ServiceEntityRepository
             $args['type'] = $type;
         }
 
-        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
             ) x ON x.package_id = p.id '.$join.'
-            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
-            ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))'.$orderByClause.'
+            LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $res = [];
-        /** @var array{id: int, name: string, description: string|null, language: string|null, abandoned: bool, replacementPackage: string|null} $row */
+        /** @var array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: bool, replacementPackage: string|null} $row */
         foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
@@ -751,11 +753,11 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
+     * @return array<array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
      */
     public function getSuggests(string $name, int $offset = 0, int $limit = 15): array
     {
-        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
             ) x ON x.package_id = p.id
