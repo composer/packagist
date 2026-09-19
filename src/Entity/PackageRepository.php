@@ -41,10 +41,11 @@ class PackageRepository extends ServiceEntityRepository
 
     /**
      * These listings sort the whole joined set before paginating, which averages ~10ms but has run
-     * for nearly 9 minutes in production on the most widely required packages. Callers degrade on
-     * the DriverException rather than let one request hold a PHP-FPM worker.
+     * for nearly 9 minutes in production. 3s leaves headroom over the worst case measured warm
+     * (phpunit/phpunit, 163k dependents, 1.2s) while capping what a cold request waits before the
+     * caller degrades on the DriverException.
      */
-    private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
+    private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(3000) */';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
