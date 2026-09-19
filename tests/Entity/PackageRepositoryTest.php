@@ -334,6 +334,27 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(['test/beta'], array_column($secondPage, 'name'));
     }
 
+    public function testGetDependentsCanSkipTheSort(): void
+    {
+        // The unsorted variant drops the download join with the ORDER BY, so it has to still return
+        // the same rows - only their order is given up.
+        $alpha = self::createPackage('test/alpha', 'https://example.org/alpha');
+        $beta = self::createPackage('test/beta', 'https://example.org/beta');
+        $spam = self::createPackage('test/spam', 'https://example.org/spam');
+        $spam->freeze(PackageFreezeReason::Spam);
+        $this->store($alpha, $beta, $spam);
+        $this->store(
+            new Dependent($alpha, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($beta, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($spam, 'test/required', Dependent::TYPE_REQUIRE),
+        );
+
+        $unsorted = array_column($this->packageRepository->getDependents('test/required', orderBy: null), 'name');
+        sort($unsorted);
+
+        self::assertSame(['test/alpha', 'test/beta'], $unsorted, 'same rows as the sorted call, suppressed ones still hidden');
+    }
+
     public function testGetDependentCountDedupesByPackage(): void
     {
         // A package requiring the same name in both require and require-dev has two dependent rows
