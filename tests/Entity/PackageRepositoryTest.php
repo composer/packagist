@@ -368,11 +368,14 @@ class PackageRepositoryTest extends IntegrationTestCase
             new Suggester($ok, 'test/suggested'),
         );
 
-        $dependents = array_column($this->packageRepository->getDependents('test/required'), 'name');
-        self::assertSame(['test/gone', 'test/ok'], $dependents, 'only spam/malware are suppressed, not every frozen reason');
+        $dependentRows = $this->packageRepository->getDependents('test/required');
+        self::assertSame(['test/gone', 'test/ok'], array_column($dependentRows, 'name'), 'only spam/malware are suppressed, not every frozen reason');
+        // frozen is selected to drive the filter above, never to be published
+        self::assertArrayNotHasKey('frozen', $dependentRows[0]);
 
-        $suggesters = array_column($this->packageRepository->getSuggests('test/suggested'), 'name');
-        self::assertSame(['test/ok'], $suggesters);
+        $suggesterRows = $this->packageRepository->getSuggests('test/suggested');
+        self::assertSame(['test/ok'], array_column($suggesterRows, 'name'));
+        self::assertArrayNotHasKey('frozen', $suggesterRows[0]);
     }
 
     public function testGetSuggestsListsTheSuggestingPackages(): void
