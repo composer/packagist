@@ -15,6 +15,8 @@ namespace App\Tests\Command;
 use App\Command\DumpPackageListCommand;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
+use App\Entity\ProvideLink;
+use App\Entity\Version;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
 use App\Service\Locker;
@@ -50,7 +52,7 @@ class DumpPackageListCommandTest extends IntegrationTestCase
     protected function tearDown(): void
     {
         $this->cache->clear();
-        $this->redis->del(['set:packages:new', 'set:packages:old']);
+        $this->redis->del(['set:packages:new', 'set:packages:old', 'set:providers', 'set:providers:new', 'set:providers:old']);
 
         parent::tearDown();
     }
@@ -157,5 +159,49 @@ class DumpPackageListCommandTest extends IntegrationTestCase
         self::assertFalse($providerManager->packageExists('listvendor/gone'), 'drift must be reset');
         self::assertSame(0, (int) $this->redis->exists('set:packages:new'));
         self::assertSame(0, (int) $this->redis->exists('set:packages:old'));
+    }
+
+    public function testRebuildProvidersMatchesTheDbAndLeavesNoScratchKeys(): void
+    {
+        $providerManager = self::getService(ProviderManager::class);
+        $this->storeProvidingPackage('listvendor/provider', 'listvendor/virtual-api');
+
+        // a name that is in the set but no longer provided by anything
+        $this->redis->sadd('set:providers', ['listvendor/gone-virtual']);
+        self::assertTrue($providerManager->packageIsProvided('listvendor/gone-virtual'));
+
+        $this->commandTester->execute(['--rebuild-providers' => true]);
+        $this->commandTester->assertCommandIsSuccessful();
+
+        self::assertTrue($providerManager->packageIsProvided('listvendor/virtual-api'));
+        self::assertFalse($providerManager->packageIsProvided('listvendor/gone-virtual'), 'drift must be reset');
+        self::assertSame(0, (int) $this->redis->exists('set:providers:new'));
+        self::assertSame(0, (int) $this->redis->exists('set:providers:old'));
+        // the cron owns the set now - a TTL would bring back the lazy repopulate this replaced
+        self::assertSame(-1, (int) $this->redis->ttl('set:providers'));
+    }
+
+    private function storeProvidingPackage(string $packageName, string $providedName): void
+    {
+        $package = self::createPackage($packageName, 'https://example.org/'.$packageName);
+
+        $version = new Version();
+        $version->setPackage($package);
+        $version->setName($package->getName());
+        $version->setVersion('dev-main');
+        $version->setNormalizedVersion('dev-main');
+        // getProvidedNames() only reads dev versions
+        $version->setDevelopment(true);
+        $version->setLicense([]);
+        $version->setAutoload([]);
+        $package->getVersions()->add($version);
+
+        $provide = new ProvideLink();
+        $provide->setVersion($version);
+        $provide->setPackageName($providedName);
+        $provide->setPackageVersion('1.0.0');
+        $version->addProvideLink($provide);
+
+        $this->store($package, $version, $provide);
     }
 }
