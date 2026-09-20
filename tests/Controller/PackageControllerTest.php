@@ -341,6 +341,26 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(503);
     }
 
+    public function testDependentsPageDropsTheRequirementWhenItsLookupTimesOut(): void
+    {
+        // this query only annotates rows already in hand, so losing it costs the "Latest version
+        // requires" line and nothing else - a 503 for the whole listing would be the worse trade
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(1);
+        $repo->method('getDependents')->willReturn([
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+        ]);
+        $repo->method('getDefaultBranchRequireFor')->willThrowException(new DriverException(self::driverException(self::ER_QUERY_TIMEOUT), null));
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents');
+
+        self::assertResponseIsSuccessful();
+        $body = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('test/dep', $body, 'the rows themselves are still shown');
+        self::assertStringNotContainsString('Latest version requires', $body);
+    }
+
     private function stubDependentsTimingOutWhenSorted(bool $fallbackWorks): void
     {
         $repo = $this->createStub(PackageRepository::class);

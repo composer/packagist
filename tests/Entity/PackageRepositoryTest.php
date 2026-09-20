@@ -424,6 +424,9 @@ class PackageRepositoryTest extends IntegrationTestCase
 
         $this->packageRepository->getSuggests('test/suggested');
         self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the suggesters query');
+
+        $this->packageRepository->getDefaultBranchRequireFor(['test/requirer'], 'test/required');
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the requirement query');
     }
 
     /**

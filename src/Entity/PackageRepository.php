@@ -681,21 +681,25 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * Bounded like the listing it annotates: it runs once per listing page with one name per row,
+     * so left unbounded it hands back the worker occupancy the listing's own cap buys. The caller
+     * drops the annotation on a timeout rather than failing the page.
+     *
      * @param list<string> $requirers
      *
      * @return array<string, string|null> array keyed by requirer name and the value is requirement or null if not found
      */
     public function getDefaultBranchRequireFor(array $requirers, string $requiree): array
     {
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.name, COALESCE(lr.packageVersion, lrd.packageVersion, NULL) AS requirement
+            FROM package p
+            LEFT JOIN package_version pv ON pv.package_id = p.id AND pv.defaultBranch = 1
+            LEFT JOIN link_require lr ON lr.version_id = pv.id AND lr.packageName = :requiree
+            LEFT JOIN link_require_dev lrd ON lrd.version_id = pv.id AND lrd.packageName = :requiree
+            WHERE p.name IN (:requirers)';
+
         $requires = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            <<<'SQL'
-                SELECT p.name, COALESCE(lr.packageVersion, lrd.packageVersion, NULL) AS requirement
-                FROM package p
-                LEFT JOIN package_version pv ON pv.package_id = p.id AND pv.defaultBranch = 1
-                LEFT JOIN link_require lr ON lr.version_id = pv.id AND lr.packageName = :requiree
-                LEFT JOIN link_require_dev lrd ON lrd.version_id = pv.id AND lrd.packageName = :requiree
-                WHERE p.name IN (:requirers)
-                SQL,
+            $sql,
             ['requiree' => $requiree, 'requirers' => $requirers],
             ['requirers' => ArrayParameterType::STRING],
         );
