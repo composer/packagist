@@ -12,8 +12,8 @@
 
 namespace App\Tests\Controller;
 
-use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
+use App\Log\AuditLogEventType;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -92,7 +92,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         ];
 
         yield [
-            ['type' => [AuditRecordType::CanonicalUrlChanged->value, AuditRecordType::PackageDeleted->value]],
+            ['type' => [AuditLogEventType::CanonicalUrlChanged->value, AuditLogEventType::PackageDeleted->value]],
             ['Package deleted', 'Canonical URL changed'],
         ];
     }

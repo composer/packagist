@@ -12,11 +12,11 @@
 
 namespace App\Tests\Controller;
 
-use App\Audit\AuditRecordType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\RequireLink;
 use App\Entity\Version;
+use App\Log\AuditLogEventType;
 use App\Tests\Fixtures\Fixtures;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -49,7 +49,7 @@ class VersionAuditRecordTest extends KernelTestCase
         $version = $this->createPackageAndVersion();
 
         $log = $em->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditRecordType::VersionCreated,
+            'type' => AuditLogEventType::VersionCreated,
             'packageId' => $version->getPackage()->getId(),
         ]);
 

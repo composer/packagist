@@ -1,0 +1,5 @@
+{% import 'log/macros.html.twig' as log %}
+
+Team renamed in <strong>{{ log.organizationLink(display.organization) }}</strong><br>
+<strong>{{ display.teamNameFrom }}</strong> → <strong>{{ display.teamNameTo }}</strong><br>
+Renamed by: {{ log.userLink(display.actor.username) }}

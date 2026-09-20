@@ -12,7 +12,7 @@
 
 namespace App\Controller\Admin;
 
-use App\Audit\Display\AuditLogDisplayFactory;
+use App\Log\Display\AuditLogDisplayFactory;
 use App\Controller\Controller;
 use App\Entity\Package;
 use App\Entity\SupportRequest;

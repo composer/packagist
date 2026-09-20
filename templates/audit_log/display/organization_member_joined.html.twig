@@ -1,6 +1,0 @@
-{% import 'audit_log/macros.html.twig' as auditLog %}
-
-<strong>{{ display.member.username }}</strong> joined <strong>{{ auditLog.organizationLink(display.organization) }}</strong><br>
-{%- if display.actor.username != display.member.username %}
-Added by: {{ auditLog.userLink(display.actor.username) }}
-{%- endif %}

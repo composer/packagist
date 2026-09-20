@@ -101,7 +101,7 @@
         </div>
     {% endif %}
 
-     {% include 'audit_log/_transparency_log_table.html.twig' with {
+     {% include 'log/_table.html.twig' with {
          displays: auditLogDisplays,
          linkSurroundingLogs: true,
      } only %}

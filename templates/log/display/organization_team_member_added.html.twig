@@ -1,0 +1,4 @@
+{% import 'log/macros.html.twig' as log %}
+
+<strong>{{ log.userLink(display.member.username) }}</strong> added to team <strong>{{ display.teamName }}</strong> in <strong>{{ log.organizationLink(display.organization) }}</strong><br>
+Added by: {{ log.userLink(display.actor.username) }}

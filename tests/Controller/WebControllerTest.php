@@ -27,7 +27,7 @@ class WebControllerTest extends IntegrationTestCase
     {
         $crawler = $this->client->request('GET', '/');
         static::assertResponseIsSuccessful();
-        $this->assertStringContainsString('Packagist is the main', $crawler->filter('.hero-search-claim')->text());
+        $this->assertStringContainsString('Packagist aggregates public packages', $crawler->filter('.hero-search-claim')->text());
 
         // while the hero is visible it owns the page heading, so the navbar brand must not be one
         static::assertCount(1, $crawler->filter('h1'));

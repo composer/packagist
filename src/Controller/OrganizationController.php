@@ -12,8 +12,6 @@
 
 namespace App\Controller;
 
-use App\Audit\AuditRecordType;
-use App\Audit\Display\AuditLogDisplayFactory;
 use App\Entity\AuditRecordRepository;
 use App\Entity\Organization;
 use App\Entity\OrganizationInvitation;
@@ -40,6 +38,8 @@ use App\Form\Type\RemoveTeamMemberType;
 use App\Form\Type\ResendInvitationType;
 use App\Form\Type\RevokeInvitationType;
 use App\Form\Type\TeamType;
+use App\Log\AuditLogEventType;
+use App\Log\Display\AuditLogDisplayFactory;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\Domain\Organization as OrganizationDomain;
 use App\Organization\Domain\Slug;
@@ -47,9 +47,9 @@ use App\Organization\InvitationManager;
 use App\Organization\OrganizationManager;
 use App\Organization\OrganizationMembershipManager;
 use App\QueryFilter\AuditLog\ActorFilter;
-use App\QueryFilter\AuditLog\AuditRecordTypeFilter;
 use App\QueryFilter\AuditLog\DateTimeFromFilter;
 use App\QueryFilter\AuditLog\DateTimeToFilter;
+use App\QueryFilter\AuditLog\EventTypeFilter;
 use App\QueryFilter\QueryFilterInterface;
 use App\Security\Voter\OrganizationActions;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -147,7 +147,7 @@ class OrganizationController extends Controller
 
         /** @var QueryFilterInterface[] $filters */
         $filters = [
-            AuditRecordTypeFilter::fromQuery($request->query),
+            EventTypeFilter::fromQuery($request->query),
             ActorFilter::fromQuery($request->query, 'actor', $isAuditAdmin),
             $dateTimeFromFilter,
             $dateTimeToFilter,
@@ -176,7 +176,7 @@ class OrganizationController extends Controller
             'organization' => $organization,
             'auditLogDisplays' => $displayFactory->build($auditLogs, revealEmails: true),
             'auditLogPaginator' => $auditLogs,
-            'types' => AuditRecordType::organizationCases(),
+            'types' => AuditLogEventType::organizationCases(),
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,
             'dateTimeToFilter' => $dateTimeToFilter,

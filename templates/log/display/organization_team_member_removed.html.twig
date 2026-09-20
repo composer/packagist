@@ -1,0 +1,4 @@
+{% import 'log/macros.html.twig' as log %}
+
+<strong>{{ log.userLink(display.member.username) }}</strong> removed from team <strong>{{ display.teamName }}</strong> in <strong>{{ log.organizationLink(display.organization) }}</strong><br>
+Removed by: {{ log.userLink(display.actor.username) }}

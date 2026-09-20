@@ -19,7 +19,9 @@ use App\Entity\PackageRepository;
 use App\Entity\Suggester;
 use App\Entity\Vendor;
 use App\Tests\IntegrationTestCase;
+use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
+use Predis\ClientException;
 
 class PackageRepositoryTest extends IntegrationTestCase
 {
@@ -244,6 +246,36 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(7, $this->packageRepository->getSuggestCount('test/suggested'));
     }
 
+    public function testCountsBypassTheCacheEntirelyWhenUncached(): void
+    {
+        $requirer = self::createPackage('test/requirer', 'https://example.org/requirer');
+        $this->store($requirer);
+        $this->store(new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE));
+
+        $this->redisCache()->set('dep-count:test/required:all', '42');
+
+        // the listing pager needs a count matching the rows queried alongside it, so no read
+        self::assertSame(1, $this->packageRepository->getDependentCount('test/required', cached: false));
+        self::assertSame(0, $this->packageRepository->getSuggestCount('test/required', cached: false));
+
+        // and no write back either, which is what keeps unvalidated route names out of Redis
+        self::assertSame('42', $this->redisCache()->get('dep-count:test/required:all'));
+        self::assertNull($this->redisCache()->get('sug-count:test/required'));
+    }
+
+    public function testCountsFallBackToTheQueryWhenTheCacheIsDown(): void
+    {
+        $requirer = self::createPackage('test/requirer', 'https://example.org/requirer');
+        $this->store($requirer);
+        $this->store(new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE));
+
+        // built by hand as the container's repository already holds the working client
+        $repo = new PackageRepository(self::getService(ManagerRegistry::class), $this->createBrokenRedis());
+
+        self::assertSame(1, $repo->getDependentCount('test/required'));
+        self::assertSame(0, $repo->getSuggestCount('test/required'));
+    }
+
     public function testCountsCacheZeroSoUnknownPackagesDoNotRequeryEveryPageView(): void
     {
         self::assertSame(0, $this->packageRepository->getDependentCount('test/nothing-requires-this'));
@@ -253,11 +285,124 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame('0', $this->redisCache()->get('sug-count:test/nothing-requires-this'));
     }
 
-    private function redisCache(): Client
+    public function testZeroCountsExpireSoonerThanRealOnes(): void
     {
-        $client = static::getContainer()->get('snc_redis.cache');
-        self::assertInstanceOf(Client::class, $client);
+        $requirer = self::createPackage('test/requirer', 'https://example.org/requirer');
+        $this->store($requirer);
+        $this->store(new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE));
 
-        return $client;
+        $this->packageRepository->getDependentCount('test/required');
+        $this->packageRepository->getDependentCount('test/nothing-requires-this');
+
+        // a real count can sit for a day, a zero must not hide a package's first dependent that
+        // long. Reading the TTL also pins that these are set with an expiry at all.
+        $maxZeroTtl = 3600 + 600;
+        self::assertGreaterThan($maxZeroTtl, $this->redisCache()->ttl('dep-count:test/required:all'));
+        self::assertLessThanOrEqual($maxZeroTtl, $this->redisCache()->ttl('dep-count:test/nothing-requires-this:all'));
+    }
+
+    private function createBrokenRedis(): Client
+    {
+        return new class () extends Client {
+            public function __call($commandID, $arguments): mixed
+            {
+                throw new ClientException('redis is down');
+            }
+        };
+    }
+
+    public function testGetDependentsListsTheRequiringPackages(): void
+    {
+        $alpha = self::createPackage('test/alpha', 'https://example.org/alpha');
+        $beta = self::createPackage('test/beta', 'https://example.org/beta');
+        $this->store($alpha, $beta);
+        $this->store(
+            new Dependent($beta, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($alpha, 'test/required', Dependent::TYPE_REQUIRE_DEV),
+        );
+
+        $names = array_column($this->packageRepository->getDependents('test/required'), 'name');
+        self::assertSame(['test/alpha', 'test/beta'], $names, 'ordered by name by default');
+
+        $requireOnly = array_column(
+            $this->packageRepository->getDependents('test/required', type: Dependent::TYPE_REQUIRE),
+            'name',
+        );
+        self::assertSame(['test/beta'], $requireOnly);
+
+        $secondPage = $this->packageRepository->getDependents('test/required', offset: 1, limit: 1);
+        self::assertSame(['test/beta'], array_column($secondPage, 'name'));
+    }
+
+    public function testGetDependentCountDedupesByPackage(): void
+    {
+        // A package requiring the same name in both require and require-dev has two dependent rows
+        // but is one entry in the listing, and this count is what paginates that listing.
+        $both = self::createPackage('test/both', 'https://example.org/both');
+        $this->store($both);
+        $this->store(
+            new Dependent($both, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($both, 'test/required', Dependent::TYPE_REQUIRE_DEV),
+        );
+
+        self::assertSame(1, $this->packageRepository->getDependentCount('test/required', cached: false));
+        self::assertCount(1, $this->packageRepository->getDependents('test/required'), 'the count must agree with the rows');
+    }
+
+    public function testListingsHideSuppressedPackages(): void
+    {
+        // These rows are plain arrays with no frozen key, so the listPackages macro cannot filter
+        // them the way it does for entity rows - a spam package requiring a popular one would
+        // otherwise be publicly listed under its dependents.
+        $spam = self::createPackage('test/spam', 'https://example.org/spam');
+        $spam->freeze(PackageFreezeReason::Spam);
+        $gone = self::createPackage('test/gone', 'https://example.org/gone');
+        $gone->freeze(PackageFreezeReason::Gone);
+        $ok = self::createPackage('test/ok', 'https://example.org/ok');
+        $this->store($spam, $gone, $ok);
+        $this->store(
+            new Dependent($spam, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($gone, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($ok, 'test/required', Dependent::TYPE_REQUIRE),
+            new Suggester($spam, 'test/suggested'),
+            new Suggester($ok, 'test/suggested'),
+        );
+
+        $dependents = array_column($this->packageRepository->getDependents('test/required'), 'name');
+        self::assertSame(['test/gone', 'test/ok'], $dependents, 'only spam/malware are suppressed, not every frozen reason');
+
+        $suggesters = array_column($this->packageRepository->getSuggests('test/suggested'), 'name');
+        self::assertSame(['test/ok'], $suggesters);
+    }
+
+    public function testGetSuggestsListsTheSuggestingPackages(): void
+    {
+        $alpha = self::createPackage('test/alpha', 'https://example.org/alpha');
+        $beta = self::createPackage('test/beta', 'https://example.org/beta');
+        $this->store($alpha, $beta);
+        $this->store(new Suggester($beta, 'test/suggested'), new Suggester($alpha, 'test/suggested'));
+
+        $names = array_column($this->packageRepository->getSuggests('test/suggested'), 'name');
+        self::assertSame(['test/alpha', 'test/beta'], $names);
+    }
+
+    public function testListingQueriesCarryAnAcceptedExecutionTimeHint(): void
+    {
+        // MySQL answers a malformed, mis-positioned or inapplicable optimizer hint with a warning
+        // and ignores the whole /*+ ... */ comment, so the rows coming back prove nothing about the
+        // cap being in force. An empty warning list is what does.
+        $this->packageRepository->getDependents('test/required');
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the dependents query');
+
+        $this->packageRepository->getSuggests('test/suggested');
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the suggesters query');
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function lastStatementWarnings(): array
+    {
+        return self::getEM()->getConnection()->fetchAllAssociative('SHOW WARNINGS');
     }
 }

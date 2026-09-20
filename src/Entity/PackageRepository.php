@@ -20,6 +20,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
+use Predis\PredisException;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -37,6 +38,13 @@ class PackageRepository extends ServiceEntityRepository
     public const SUSPECT_VIEWS_MAX_DOWNLOADS = 10;
 
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
+
+    /**
+     * These listings sort the whole joined set before paginating, which averages ~10ms but has run
+     * for nearly 9 minutes in production on the most widely required packages. Callers degrade on
+     * the DriverException rather than let one request hold a PHP-FPM worker.
+     */
+    private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
@@ -626,15 +634,22 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param string   $name Package name to find the dependents of
-     * @param int|null $type One of Dependent::TYPE_*
+     * @param string   $name   Package name to find the dependents of
+     * @param int|null $type   One of Dependent::TYPE_*
+     * @param bool     $cached Pass false when the count must match a row list queried alongside it
      *
      * @return int<0, max>
      */
-    public function getDependentCount(string $name, ?int $type = null): int
+    public function getDependentCount(string $name, ?int $type = null, bool $cached = true): int
     {
-        return $this->getCachedCount('dep-count:'.strtolower($name).':'.($type ?? 'all'), function () use ($name, $type): int {
-            $sql = 'SELECT COUNT(*) count FROM dependent WHERE packageName = :name';
+        // Only the uncached listing path is bounded: there a timeout degrades into the listing's own
+        // 503, whereas the cached path feeds a badge on the package page, where it must not 500.
+        $hint = $cached ? '' : self::LISTING_QUERY_TIMEOUT_HINT.' ';
+
+        $compute = function () use ($name, $type, $hint): int {
+            // DISTINCT because the PK carries type, so one package requiring both in require and
+            // require-dev has two rows but is a single entry in the listing this count paginates
+            $sql = 'SELECT '.$hint.'COUNT(DISTINCT package_id) count FROM dependent WHERE packageName = :name';
             $args = ['name' => $name];
             if (null !== $type) {
                 $sql .= ' AND type = :type';
@@ -642,7 +657,11 @@ class PackageRepository extends ServiceEntityRepository
             }
 
             return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, $args);
-        });
+        };
+
+        return $cached
+            ? $this->getCachedCount('dep-count:'.strtolower($name).':'.($type ?? 'all'), $compute)
+            : max(0, $compute());
     }
 
     /**
@@ -663,21 +682,23 @@ class PackageRepository extends ServiceEntityRepository
             $orderBy = 'name';
         }
 
-        $args = ['name' => $name];
+        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
         $typeFilter = '';
         if (null !== $type) {
             $typeFilter = ' AND type = :type';
             $args['type'] = $type;
         }
 
-        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
-            ) x ON x.package_id = p.id '.$join.' ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+            ) x ON x.package_id = p.id '.$join.'
+            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
+            ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
         $res = [];
         /** @var array{id: int, name: string, description: string|null, language: string|null, abandoned: bool, replacementPackage: string|null} $row */
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 
@@ -713,24 +734,29 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param bool $cached Pass false when the count must match a row list queried alongside it
+     *
      * @return int<0, max>
      */
-    public function getSuggestCount(string $name): int
+    public function getSuggestCount(string $name, bool $cached = true): int
     {
-        return $this->getCachedCount('sug-count:'.strtolower($name), function () use ($name): int {
-            $sql = 'SELECT COUNT(*) count FROM suggester WHERE packageName = :name';
+        $hint = $cached ? '' : self::LISTING_QUERY_TIMEOUT_HINT.' ';  // see getDependentCount()
+
+        $compute = function () use ($name, $hint): int {
+            $sql = 'SELECT '.$hint.'COUNT(*) count FROM suggester WHERE packageName = :name';
 
             return (int) $this->getEntityManager()->getConnection()->fetchOne($sql, ['name' => $name]);
-        });
+        };
+
+        return $cached
+            ? $this->getCachedCount('sug-count:'.strtolower($name), $compute)
+            : max(0, $compute());
     }
 
     /**
-     * Both counts are rendered as tab labels on every package page view, where the COUNT(*) is a
-     * large index scan for widely-required packages like psr/log. Being an hour out of date on a
-     * badge is harmless, so this is TTL-only with no explicit invalidation.
-     *
-     * Keys are lowercased because the packageName columns use a case-insensitive collation, so
-     * differently-cased requests must not get separate entries.
+     * TTL-only: dependent rows are keyed by the required package name while the writer operates on
+     * the requiring package, so precise invalidation would need a deletion per required name. Keys
+     * are lowercased because the packageName columns use a case-insensitive collation.
      *
      * @param callable(): int $compute
      *
@@ -738,14 +764,27 @@ class PackageRepository extends ServiceEntityRepository
      */
     private function getCachedCount(string $cacheKey, callable $compute): int
     {
-        $cached = $this->redisCache->get($cacheKey);
-        if ($cached !== null) {
-            return max(0, (int) $cached);
+        try {
+            $cached = $this->redisCache->get($cacheKey);
+            if ($cached !== null) {
+                return max(0, (int) $cached);
+            }
+        } catch (PredisException) {
+            // a cache outage must not take the package page down with it
+            return max(0, $compute());
         }
 
         $count = max(0, $compute());
-        // random variance spreads out the refresh of the most-requested packages
-        $this->redisCache->setex($cacheKey, 3600 + random_int(0, 600), (string) $count);
+
+        try {
+            // zero is the one stale value anyone notices, a package's first dependent should show
+            // up sooner than a day later
+            $ttl = $count === 0 ? 3600 : 86400;
+            // random variance spreads out the refresh of the most-requested packages
+            $this->redisCache->setex($cacheKey, $ttl + random_int(0, intdiv($ttl, 6)), (string) $count);
+        } catch (PredisException) {
+            // nothing to do, the count is correct it just stays uncached this time
+        }
 
         return $count;
     }
@@ -755,13 +794,17 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getSuggests(string $name, int $offset = 0, int $limit = 15): array
     {
-        $sql = 'SELECT p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
-            ) x ON x.package_id = p.id ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+            ) x ON x.package_id = p.id
+            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
+            ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+
+        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
 
         $res = [];
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, ['name' => $name]) as $row) {
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 

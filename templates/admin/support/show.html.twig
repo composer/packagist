@@ -236,7 +236,7 @@
                 {% endif %}
 
                 <h4>Recent account activity</h4>
-                {% include 'audit_log/_transparency_log_table.html.twig' with {
+                {% include 'log/_table.html.twig' with {
                     displays: riskAuditDisplays,
                     linkSurroundingLogs: false,
                     emptyMessage: 'No recent security events.'

@@ -12,16 +12,19 @@
 
 namespace App\Tests\Controller;
 
-use App\Audit\AuditRecordType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
+use App\Entity\Download;
+use App\Entity\Dependent;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
+use App\Entity\PackageRepository;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
+use App\Log\AuditLogEventType;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
 use App\Service\Spam\FeatureExtractor;
@@ -34,9 +37,37 @@ use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\NullLogger;
 use Predis\Client;
+use Doctrine\DBAL\Driver\Exception as DriverExceptionInterface;
+use Doctrine\DBAL\Exception\ConnectionLost;
+use Doctrine\DBAL\Exception\DriverException;
 
 class PackageControllerTest extends IntegrationTestCase
 {
+    private const int ER_QUERY_TIMEOUT = 3024;
+
+    public function testDependentsPaginationIgnoresACachedCount(): void
+    {
+        $required = self::createPackage('test/required', 'https://example.com/test/required');
+        $requirer = self::createPackage('test/requirer', 'https://example.com/test/requirer');
+        $this->store($required, $requirer);
+        $this->store(new Dependent($requirer, 'test/required', Dependent::TYPE_REQUIRE));
+
+        // a stale count drove the pager, so `next` pointed at a page that does not exist and,
+        // when it was low instead, the listing stopped short of the rows that were really there
+        self::redisCache()->set('dep-count:test/required:all', '500');
+
+        $this->client->request('GET', '/packages/test/required/dependents.json');
+        self::assertResponseIsSuccessful();
+
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertCount(1, $data['packages']);
+        self::assertArrayNotHasKey('next', $data);
+
+        // the listing must not refresh the key it refused to read either
+        self::assertSame('500', self::redisCache()->get('dep-count:test/required:all'));
+    }
+
     public function testView(): void
     {
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
@@ -216,6 +247,99 @@ class PackageControllerTest extends IntegrationTestCase
         return $client;
     }
 
+    #[TestWith(['/packages/test/pkg/dependents', 'text/html'])]
+    #[TestWith(['/packages/test/pkg/dependents.json', 'application/json'])]
+    #[TestWith(['/packages/test/pkg/suggesters', 'text/html'])]
+    #[TestWith(['/packages/test/pkg/suggesters.json', 'application/json'])]
+    public function testListingsDegradeWhenTheStatementTimeoutFires(string $url, string $expectedType): void
+    {
+        $this->stubListingsWith(new DriverException(self::driverException(self::ER_QUERY_TIMEOUT), null));
+
+        $this->client->request('GET', $url);
+
+        self::assertResponseStatusCodeSame(503);
+        self::assertStringStartsWith($expectedType, (string) $this->client->getResponse()->headers->get('Content-Type'));
+        self::assertSame('300', $this->client->getResponse()->headers->get('Retry-After'), 'crawlers must be told to back off');
+    }
+
+    #[TestWith(['/packages/test/pkg/dependents'])]
+    #[TestWith(['/packages/test/pkg/suggesters'])]
+    public function testListingsDoNotSwallowOtherDatabaseErrors(string $url): void
+    {
+        // Every DBAL failure extends DriverException, so only the timeout may degrade to a 503 -
+        // a lost connection or a syntax error has to surface instead of being reported as a listing
+        // that is merely too large to sort.
+        $this->stubListingsWith(new ConnectionLost(self::driverException(2006), null));
+
+        $this->client->catchExceptions(true);
+        $this->client->request('GET', $url);
+
+        self::assertResponseStatusCodeSame(500);
+    }
+
+    #[TestWith(['/packages/test/pkg/dependents.json'])]
+    #[TestWith(['/packages/test/pkg/suggesters.json'])]
+    public function testJsonListingsRefuseToPageBeyondTheCap(string $url): void
+    {
+        $this->client->request('GET', $url, ['page' => '999999']);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertStringStartsWith('application/json', (string) $this->client->getResponse()->headers->get('Content-Type'));
+    }
+
+    public function testJsonDependentsLinksKeepTheRequiresFilter(): void
+    {
+        // A consumer walking next must stay on the filter it asked for, otherwise it gets a
+        // require-only count paired with rows of every type and the two never reconcile.
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(500);
+        $repo->method('getDependents')->willReturn([
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+        ]);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['requires' => 'require']);
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertStringContainsString('requires=require', $data['next'] ?? '');
+        self::assertStringContainsString('requires=require', $data['ordered_by_name'] ?? '');
+        self::assertStringContainsString('requires=require', $data['ordered_by_downloads'] ?? '');
+    }
+
+    /**
+     * Replaces the repository before any DB work, because the TestContainer refuses to swap a
+     * private service that has already been instantiated.
+     */
+    private function stubListingsWith(DriverException $e): void
+    {
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependents')->willThrowException($e);
+        $repo->method('getSuggests')->willThrowException($e);
+        static::getContainer()->set(PackageRepository::class, $repo);
+    }
+
+    /**
+     * DBAL's PDO exception class is internal and final, so build the driver-level exception off the
+     * public Driver\Exception interface instead.
+     */
+    private static function driverException(int $code): DriverExceptionInterface
+    {
+        return new class($code) extends \Exception implements DriverExceptionInterface {
+            public function __construct(int $code)
+            {
+                parent::__construct('Query execution was interrupted', $code);
+            }
+
+            public function getSQLState(): ?string
+            {
+                return 'HY000';
+            }
+        };
+    }
+
     public function testFreezePackageAsModeratorAuditsAndSchedulesPurge(): void
     {
         $mod = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
@@ -236,7 +360,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertSame(PackageFreezeReason::Spam, $package->getFreezeReason());
 
         // Freezing goes through the entity, so PackageListener records the transition.
-        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::PackageFrozen->value, 'packageId' => $packageId]);
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::PackageFrozen->value, 'packageId' => $packageId]);
         self::assertNotNull($record, 'a PackageFrozen audit record should be created');
 
         // Spam suppresses the package, so a purge is scheduled.
@@ -264,7 +388,7 @@ class PackageControllerTest extends IntegrationTestCase
         $package = $em->find(Package::class, $packageId);
         self::assertSame(PackageFreezeReason::Gone, $package->getFreezeReason());
 
-        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditRecordType::PackageFrozen->value, 'packageId' => $packageId]);
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::PackageFrozen->value, 'packageId' => $packageId]);
         self::assertNotNull($record, 'a PackageFrozen audit record should be created');
         self::assertSame('gone', $record->attributes['reason']);
         // a manual freeze is attributed to the moderator, unlike the crawler's 'automation'
@@ -402,7 +526,7 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertTrue($package->isMaintainer($maintainer));
 
         $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
-            'type' => AuditRecordType::MaintainerAdded->value,
+            'type' => AuditLogEventType::MaintainerAdded->value,
             'packageId' => $package->getId(),
             'actorId' => $owner->getId(),
         ]);
@@ -443,7 +567,7 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertFalse($package->isMaintainer($maintainer));
 
         $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
-            'type' => AuditRecordType::MaintainerRemoved->value,
+            'type' => AuditLogEventType::MaintainerRemoved->value,
             'packageId' => $package->getId(),
             'actorId' => $owner->getId(),
         ]);
@@ -498,7 +622,7 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertNotContains($john->getId(), $maintainerIds);
 
         $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
-            'type' => AuditRecordType::PackageTransferred->value,
+            'type' => AuditLogEventType::PackageTransferred->value,
             'packageId' => $package->getId(),
         ]);
 
@@ -966,6 +1090,264 @@ class PackageControllerTest extends IntegrationTestCase
             'initReleaseStats(\'.js-release-stats\', {"2024-03":2},',
             (string) $this->client->getResponse()->getContent()
         );
+    }
+
+    public function testMajorVersionStatsSumsEveryVersionInTheSeries(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertSame(['2026-01-01', '2026-01-02'], $data['labels']);
+        // 1.0.0 + 1.1.0 on the first day, 1.0.0 alone on the second; 1.9.x-dev must not be counted
+        self::assertSame([15, 1], $data['values']['1']);
+        self::assertSame([0, 7], $data['values']['2']);
+        // 3.0.0 has a download row with empty data, so its series is still drawn, as zeroes
+        self::assertSame([0, 0], $data['values']['3']);
+        // 1.9.x-dev normalizes to 1.9.9999999.9999999-dev, so only development = 0 excludes it.
+        // Keys are ints because json_decode casts numeric object keys.
+        self::assertSame([1, 2, 3], array_keys($data['values']));
+    }
+
+    public function testSingleMajorVersionStatsSeriesByMinorAndSkipsVersionsWithoutDownloads(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/1.json');
+
+        self::assertSame(['2026-01-01', '2026-01-02'], $data['labels']);
+        self::assertSame([10, 1], $data['values']['1.0']);
+        self::assertSame([5, 0], $data['values']['1.1']);
+        // 1.2.0 exists but has no download row, so it is not a series at all
+        self::assertSame(['1.0', '1.1'], array_keys($data['values']));
+    }
+
+    public function testVersionStatsStillReturnsASingleSeries(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/1.0.0.json');
+
+        self::assertSame([10, 1], $data['values']['1.0.0']);
+    }
+
+    public function testPackageStatsReadsThePackageLevelDownloadRow(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/all.json');
+
+        self::assertSame(['2026-01-01', '2026-01-02'], $data['labels']);
+        // the package row is stored independently of the version rows, so it is not their sum
+        self::assertSame([20, 3], $data['values']['test/pkg']);
+    }
+
+    public function testMajorVersionStatsAveragesOverMultiDayBuckets(): void
+    {
+        $this->createPackageWithDownloads();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json', 'weekly');
+
+        // both days fall in one weekly bucket, so each series is ceil(sum / 2), not the sum
+        self::assertSame(['2026-01-01'], $data['labels']);
+        self::assertSame([8], $data['values']['1']);
+        self::assertSame([4], $data['values']['2']);
+        self::assertSame([0], $data['values']['3']);
+    }
+
+    public function testMajorVersionStatsSkipsRowsWhoseDataIsNotAnArray(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        // a corrupt or NULL blob decodes to something that is not an array, which must not 500
+        $this->setRawDownloadData($this->findVersion($package, '2.0.0')->getId(), Download::TYPE_VERSION, 'null');
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        // the series is still drawn, just without any downloads in it
+        self::assertSame([0, 0], $data['values']['2']);
+    }
+
+    public function testMajorVersionStatsIgnoresDownloadRowsPointingAtAnotherPackagesVersion(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        $other = self::createPackage('other/pkg', 'https://example.org/other');
+        $other->setCrawledAt(new \DateTimeImmutable());
+        $otherVersion = $this->createStableVersion($other, '9.0.0');
+        $this->store($other, $otherVersion);
+        $this->store($this->createDownload($other, $otherVersion->getId(), Download::TYPE_VERSION, ['20260101' => 500]));
+
+        // download.package_id is only written when the row is created, so it can end up pointing at
+        // the wrong package; package_version is what decides whose chart a version appears in
+        $this->getEM()->getConnection()->executeStatement(
+            'UPDATE download SET package_id = :package WHERE id = :id AND type = :type',
+            ['package' => $package->getId(), 'id' => $otherVersion->getId(), 'type' => Download::TYPE_VERSION]
+        );
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertArrayNotHasKey('9', $data['values']);
+        self::assertSame([15, 1], $data['values']['1']);
+    }
+
+    public function testMajorVersionStatsKeepsVersionsWhoseDownloadRowHasNoPackageId(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        // package_version owns the relation, so a download row that never got a package_id (or got
+        // a stale one) must still be counted rather than silently dropped from the chart
+        $this->getEM()->getConnection()->executeStatement(
+            'UPDATE download SET package_id = NULL WHERE id = :id AND type = :type',
+            ['id' => $this->findVersion($package, '2.0.0')->getId(), 'type' => Download::TYPE_VERSION]
+        );
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertSame([0, 7], $data['values']['2']);
+    }
+
+    public function testMajorVersionStatsSkipsMalformedDataEntries(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        // an array value would otherwise count as 1 download, and a non-Ymd key would be stored and
+        // then never read; the valid entry alongside them proves only the bad ones are dropped
+        $this->setRawDownloadData(
+            $this->findVersion($package, '2.0.0')->getId(),
+            Download::TYPE_VERSION,
+            '{"20260101": [1, 2], "foo": 500, "20260102": 9}'
+        );
+        $this->setRawDownloadData(
+            $this->findVersion($package, '1.1.0')->getId(),
+            Download::TYPE_VERSION,
+            '{"20260101": "abc"}'
+        );
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/major/all.json');
+
+        self::assertSame([0, 9], $data['values']['2']);
+        // 1.1.0 contributes nothing now, so the "1" series is just 1.0.0
+        self::assertSame([10, 1], $data['values']['1']);
+    }
+
+    public function testVersionAndPackageStatsSurviveAMalformedDataEntry(): void
+    {
+        $package = $this->createPackageWithDownloads();
+
+        // these two routes read the hydrated entity rather than the repository, so they need the
+        // guard in the sum loop to avoid an "int + array" TypeError
+        $this->setRawDownloadData(
+            $this->findVersion($package, '2.0.0')->getId(),
+            Download::TYPE_VERSION,
+            '{"20260101": [1, 2], "20260102": 9}'
+        );
+        $this->setRawDownloadData($package->getId(), Download::TYPE_PACKAGE, '{"20260101": [1, 2], "20260102": 3}');
+        // these routes load the entity, so the identity map has to go before they see the raw write
+        $this->getEM()->clear();
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/2.0.0.json');
+        self::assertSame([0, 9], $data['values']['2.0.0']);
+
+        $data = $this->requestStatsJson('/packages/test/pkg/stats/all.json');
+        self::assertSame([0, 3], $data['values']['test/pkg']);
+    }
+
+    public function testMajorVersionStatsValuesAreAlwaysAJsonObject(): void
+    {
+        $package = $this->createPackageWithDownloads();
+        $zero = $this->createStableVersion($package, '0.9.0');
+        $this->store($zero);
+        $this->store($this->createDownload($package, $zero->getId(), Download::TYPE_VERSION, ['20260101' => 4]));
+
+        $this->client->request('GET', '/packages/test/pkg/stats/major/all.json?from=2026-01-01&to=2026-01-02&average=daily');
+        self::assertResponseIsSuccessful();
+
+        // series named 0, 1, ... are int keys in PHP, so without the cast json_encode emits a list
+        self::assertStringContainsString('"values":{"0":', (string) $this->client->getResponse()->getContent());
+    }
+
+    private function findVersion(Package $package, string $version): Version
+    {
+        $found = $this->getEM()->getRepository(Version::class)->findOneBy(['package' => $package, 'version' => $version]);
+        self::assertInstanceOf(Version::class, $found);
+
+        return $found;
+    }
+
+    /**
+     * Writes the json column directly, as the entity's array type cannot express a corrupt blob.
+     */
+    private function setRawDownloadData(int $id, int $type, string $json): void
+    {
+        $this->getEM()->getConnection()->executeStatement(
+            'UPDATE download SET data = :data WHERE id = :id AND type = :type',
+            ['data' => $json, 'id' => $id, 'type' => $type]
+        );
+    }
+
+    private function createPackageWithDownloads(): Package
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+
+        $versions = [];
+        foreach (['1.0.0', '1.1.0', '1.2.0', '2.0.0', '3.0.0', '1.9.x-dev'] as $version) {
+            $versions[$version] = $this->createStableVersion($package, $version);
+        }
+        $versions['1.9.x-dev']->setDevelopment(true);
+
+        $this->store($package, ...array_values($versions));
+
+        $downloads = [
+            '1.0.0' => ['20260101' => 10, '20260102' => 1],
+            '1.1.0' => ['20260101' => 5],
+            '2.0.0' => ['20260102' => 7],
+            // would swamp the "1" series if development versions were not filtered out
+            '1.9.x-dev' => ['20260101' => 1000],
+            // a row that exists but carries no data at all
+            '3.0.0' => [],
+            // 1.2.0 deliberately gets no download row
+        ];
+
+        // deliberately not the sum of the version rows, so that mixing the two up is visible
+        $rows = [$this->createDownload($package, $package->getId(), Download::TYPE_PACKAGE, ['20260101' => 20, '20260102' => 3])];
+        foreach ($downloads as $version => $data) {
+            $rows[] = $this->createDownload($package, $versions[$version]->getId(), Download::TYPE_VERSION, $data);
+        }
+        $this->store($rows);
+
+        return $package;
+    }
+
+    /**
+     * @param array<numeric-string, int> $data
+     */
+    private function createDownload(Package $package, int $id, int $type, array $data): Download
+    {
+        $download = new Download();
+        $download->setId($id);
+        $download->setType($type);
+        $download->setPackage($package);
+        $download->setData($data);
+        $download->setLastUpdated(new \DateTimeImmutable());
+        $download->computeSum();
+
+        return $download;
+    }
+
+    /**
+     * The date range is pinned so createDatePoints() yields exactly one Ymd key per label for the
+     * daily average, which keeps the expected values plain sums.
+     *
+     * @return array{labels: list<string>, values: array<string, list<int>>, average: string}
+     */
+    private function requestStatsJson(string $path, string $average = 'daily'): array
+    {
+        $this->client->request('GET', $path.'?from=2026-01-01&to=2026-01-02&average='.$average);
+        self::assertResponseIsSuccessful();
+
+        return json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
     }
 
     /**
