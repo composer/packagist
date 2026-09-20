@@ -61,6 +61,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Index(name: 'release_idx', columns: ['releasedAt'])]
 #[ORM\Index(name: 'is_devel_idx', columns: ['development'])]
 #[ORM\Index(name: 'softdel_reason_idx', columns: ['softDeletedAt', 'deletionReason'])]
+#[ORM\Index(name: 'package_default_branch_idx', columns: ['package_id', 'defaultBranch'])]
 class Version implements VersionSummary
 {
     use VersionSummaryTrait;

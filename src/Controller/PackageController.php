@@ -1681,7 +1681,20 @@ class PackageController extends Controller
             $unsorted = true;
         }
 
-        $defaultBranchRequires = $repo->getDefaultBranchRequireFor(array_column($packages, 'name'), $name);
+        try {
+            $defaultBranchRequires = $repo->getDefaultBranchRequireFor(array_column($packages, 'name'), $name);
+        } catch (DriverException $e) {
+            if (!self::isStatementTimeout($e)) {
+                throw $e;
+            }
+
+            // unlike the queries above this one only annotates rows we already have, so the listing
+            // is still worth rendering - dropping the requirement beats a 503 for the whole page
+            $logger->warning('Dependents requirement lookup timed out', ['package' => $name, 'page' => $page, 'requires' => $requires]);
+
+            $defaultBranchRequires = [];
+        }
+
         foreach ($packages as $index => $pkg) {
             if (isset($defaultBranchRequires[$pkg['name']])) {
                 if ($req->getRequestFormat() === 'json') {
