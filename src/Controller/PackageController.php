@@ -1641,15 +1641,44 @@ class PackageController extends Controller
         // pagination truncates silently
         try {
             $depCount = $repo->getDependentCount($name, $requireType, cached: false);
+        } catch (DriverException $e) {
+            // a count has no cheaper variant to fall back to, unlike the listing below
+            if (!self::isStatementTimeout($e)) {
+                throw $e;
+            }
+
+            $logger->warning('Dependents count timed out', ['package' => $name, 'requires' => $requires]);
+
+            return $this->listingTooExpensiveResponse($req);
+        }
+
+        $unsorted = false;
+        try {
             $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
         } catch (DriverException $e) {
-            if ($e->getCode() !== self::ER_QUERY_TIMEOUT) {
+            if (!self::isStatementTimeout($e)) {
                 throw $e;
             }
 
             $logger->warning('Dependents listing timed out', ['package' => $name, 'page' => $page, 'orderBy' => $orderBy, 'requires' => $requires]);
 
-            return $this->listingTooExpensiveResponse($req);
+            // Fetching the rows is cheap, it is ordering the whole set that is not, so the page
+            // degrades to an unsorted listing. Not offered as json: a client cannot see the warning.
+            if ($req->getRequestFormat() === 'json') {
+                return $this->listingTooExpensiveResponse($req);
+            }
+
+            try {
+                $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, null, $requireType);
+            } catch (DriverException $retry) {
+                if (!self::isStatementTimeout($retry)) {
+                    throw $retry;
+                }
+
+                return $this->listingTooExpensiveResponse($req);
+            }
+
+            $unsorted = true;
         }
 
         $defaultBranchRequires = $repo->getDefaultBranchRequireFor(array_column($packages, 'name'), $name);
@@ -1695,6 +1724,7 @@ class PackageController extends Controller
         $data['name'] = $name;
         $data['order_by'] = $orderBy;
         $data['requires'] = $requires;
+        $data['unsorted'] = $unsorted;
 
         return $this->render('package/dependents.html.twig', $data);
     }
@@ -1729,7 +1759,7 @@ class PackageController extends Controller
             $suggestCount = $repo->getSuggestCount($name, cached: false);
             $packages = $repo->getSuggests($name, ($page - 1) * $perPage, $perPage);
         } catch (DriverException $e) {
-            if ($e->getCode() !== self::ER_QUERY_TIMEOUT) {
+            if (!self::isStatementTimeout($e)) {
                 throw $e;
             }
 
@@ -2084,6 +2114,11 @@ class PackageController extends Controller
     private function createDeletePackageForm(Package $package): FormInterface
     {
         return $this->createFormBuilder([])->getForm();
+    }
+
+    private static function isStatementTimeout(DriverException $e): bool
+    {
+        return $e->getCode() === self::ER_QUERY_TIMEOUT;
     }
 
     private function listingTooExpensiveResponse(Request $req): Response
