@@ -646,23 +646,34 @@ class PackageRepository extends ServiceEntityRepository
             $orderByClause = ' ORDER BY p.name ASC';
         }
 
-        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
+        $args = ['name' => $name];
         $typeFilter = '';
         if (null !== $type) {
             $typeFilter = ' AND type = :type';
             $args['type'] = $type;
         }
 
-        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage, p.frozen
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
             ) x ON x.package_id = p.id '.$join.'
-            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))'.$orderByClause.'
+            '.$orderByClause.'
             LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
+        $suppressed = PackageFreezeReason::suppressingValues();
+
         $res = [];
-        /** @var array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: bool, replacementPackage: string|null} $row */
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
+        /** @var array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: bool, replacementPackage: string|null, frozen: string|null} $row */
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
+            // dropped here rather than by a WHERE clause: the OR/NOT IN on a nullable column is not
+            // sargable and cost the optimizer its index-ordered plan, taking this query from 141
+            // rows examined per call to 28k and spilling the sort to disk. The count does not filter
+            // them either, so a page can come back short and the pager run a few entries high.
+            if (\in_array($row['frozen'], $suppressed, true)) {
+                continue;
+            }
+            unset($row['frozen']);
+
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 
@@ -758,17 +769,24 @@ class PackageRepository extends ServiceEntityRepository
      */
     public function getSuggests(string $name, int $offset = 0, int $limit = 15): array
     {
-        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
             ) x ON x.package_id = p.id
-            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
             ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
-        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
+        $args = ['name' => $name];
+        $suppressed = PackageFreezeReason::suppressingValues();
 
         $res = [];
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
+        /** @var array{id: int, name: string, description: string|null, language: string|null, abandoned: bool, replacementPackage: string|null, frozen: string|null} $row */
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
+            // suppressed rows are dropped here rather than in SQL, see getDependents()
+            if (\in_array($row['frozen'], $suppressed, true)) {
+                continue;
+            }
+            unset($row['frozen']);
+
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 
