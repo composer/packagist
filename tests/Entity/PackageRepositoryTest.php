@@ -393,10 +393,14 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(['test/gone', 'test/ok'], array_column($dependentRows, 'name'), 'only spam/malware are suppressed, not every frozen reason');
         // frozen is selected to drive the filter above, never to be published
         self::assertArrayNotHasKey('frozen', $dependentRows[0]);
+        // listPackages() reads type for the PIE badge, and a missing SELECT column is invisible to
+        // PHPStan while the docblock still promises it
+        self::assertArrayHasKey('type', $dependentRows[0]);
 
         $suggesterRows = $this->packageRepository->getSuggests('test/suggested');
         self::assertSame(['test/ok'], array_column($suggesterRows, 'name'));
         self::assertArrayNotHasKey('frozen', $suggesterRows[0]);
+        self::assertArrayHasKey('type', $suggesterRows[0]);
     }
 
     public function testGetSuggestsListsTheSuggestingPackages(): void

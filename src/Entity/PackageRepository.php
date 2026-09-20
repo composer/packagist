@@ -653,7 +653,7 @@ class PackageRepository extends ServiceEntityRepository
             $args['type'] = $type;
         }
 
-        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage, p.frozen
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
             ) x ON x.package_id = p.id '.$join.'
@@ -779,7 +779,7 @@ class PackageRepository extends ServiceEntityRepository
         $suppressed = PackageFreezeReason::suppressingValues();
 
         $res = [];
-        /** @var array{id: int, name: string, description: string|null, language: string|null, abandoned: bool, replacementPackage: string|null, frozen: string|null} $row */
+        /** @var array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: bool, replacementPackage: string|null, frozen: string|null} $row */
         foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
             // suppressed rows are dropped here rather than in SQL, see getDependents()
             if (\in_array($row['frozen'], $suppressed, true)) {
