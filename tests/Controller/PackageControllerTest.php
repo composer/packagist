@@ -363,15 +363,22 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringNotContainsString('Latest version requires', $body);
     }
 
-    #[TestWith(['/packages/test/pkg/dependents'])]
-    #[TestWith(['/packages/test/pkg/dependents.json'])]
-    public function testDependentsRejectsTheRemovedNameOrder(string $url): void
+    public function testDependentsRejectsTheRemovedNameOrderInJson(): void
     {
-        $this->client->request('GET', $url, ['order_by' => 'name']);
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['order_by' => 'name']);
 
         self::assertResponseStatusCodeSame(400);
         // a consumer that was paging through it needs to be told where to go, not just refused
         self::assertStringContainsString('order_by=none', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testDependentsRedirectsTheRemovedNameOrderInHtml(): void
+    {
+        // it was the html default, so bookmarks and inbound links carry it; they land on the
+        // current default instead of an unstyled 400, keeping the filter they came with
+        $this->client->request('GET', '/packages/test/pkg/dependents', ['order_by' => 'name', 'requires' => 'require-dev']);
+
+        self::assertResponseRedirects('/packages/test/pkg/dependents?requires=require-dev');
     }
 
     public function testDependentsCapsThePagesOfASortedListing(): void
@@ -382,9 +389,10 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('order_by=none', (string) $this->client->getResponse()->getContent());
     }
 
-    public function testDependentsDoesNotCapThePagesOfTheUnsortedListing(): void
+    public function testDependentsDoesNotApplyTheSortedCapToTheUnsortedListing(): void
     {
-        // deep paging is exactly what this mode is for, and it costs the same at any depth
+        // deep paging is exactly what this mode is for; the 500 page json cap still applies to it,
+        // the 5 page sorted one does not
         $this->stubUnsortedDependents(cursor: null);
 
         $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 6]);
@@ -436,6 +444,79 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('test/dep', $body);
         self::assertStringContainsString('<span class="active">downloads</span>', $body);
         self::assertStringNotContainsString('listing.unsorted_warning', $body);
+    }
+
+    public function testJsonDependentsPagesTheUnsortedListingWithoutACursor(): void
+    {
+        // a consumer that kept its page loop when order_by=name went away has to get the rows it
+        // asked for, not page 1 with a 200; an after cursor still wins over the page number
+        $calls = [];
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(1);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        $repo->method('getDependentsUnsorted')->willReturnCallback(
+            function (string $name, ?int $afterId, int $offset, int $limit, ?int $type) use (&$calls): array {
+                $calls[] = ['after' => $afterId, 'offset' => $offset];
+
+                return ['packages' => [], 'cursor' => null];
+            },
+        );
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 3]);
+        self::assertResponseIsSuccessful();
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 3, 'after' => 42]);
+        self::assertResponseIsSuccessful();
+
+        self::assertSame(
+            [['after' => null, 'offset' => 200], ['after' => 42, 'offset' => 0]],
+            $calls,
+        );
+    }
+
+    public function testJsonDependentsStopsOfferingNextAtTheSortedCap(): void
+    {
+        // the docs say to follow next until it is gone, so it must never point at a page the
+        // listing itself refuses
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(100000);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        $repo->method('getDependents')->willReturn([
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+        ]);
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['order_by' => 'downloads', 'page' => 4]);
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertArrayHasKey('next', $data, 'still short of the cap');
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['order_by' => 'downloads', 'page' => 5]);
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertArrayNotHasKey('next', $data, 'page 6 would be a 400');
+    }
+
+    public function testDependentsPagerStopsAtTheSortedCap(): void
+    {
+        // a pager built from the real count would offer thousands of numbered links, every one of
+        // them past page 5 a bare 400
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(100000);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        $repo->method('getDependents')->willReturn([
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+        ]);
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents');
+
+        self::assertResponseIsSuccessful();
+        $body = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('100000', $body, 'the header still shows the real total');
+        self::assertStringContainsString('page=5', $body, 'the pager is rendering links at all');
+        self::assertStringNotContainsString('page=6', $body);
     }
 
     private function stubUnsortedDependents(?int $cursor): void

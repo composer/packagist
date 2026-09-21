@@ -1625,6 +1625,13 @@ class PackageController extends Controller
         // no use to anyone.
         $orderBy = $req->query->getString('order_by', $isJson ? 'none' : 'downloads');
         if ($orderBy === 'name') {
+            // it was the html default, so it is in bookmarks and inbound links - those get moved
+            // onto the current default rather than a bare unstyled 400. 302, not 301: a permanent
+            // redirect would outlive any decision to bring the order back.
+            if (!$isJson) {
+                return $this->redirectToRoute('view_package_dependents', ['name' => $name, 'requires' => $req->query->getString('requires', 'all')]);
+            }
+
             return $this->listingErrorResponse($req, 'Ordering by name has been removed: it sorted every dependent of the package to return one page, which cost the same at page 1 as at page 500. Use order_by=none to iterate the whole list, or order_by=downloads for the most installed first.', Response::HTTP_BAD_REQUEST);
         }
         if (!\in_array($orderBy, ['none', 'downloads'], true)) {
@@ -1679,11 +1686,14 @@ class PackageController extends Controller
 
         try {
             if ($orderBy === 'none') {
-                $after = $req->query->getInt('after');
+                // a cursor if one was handed back to us, an offset otherwise: a client that kept
+                // its page loop when order_by=name went away has to get the rows it asked for, not
+                // page 1 with a 200. Following next moves it onto the cursor from then on.
+                $after = $useCursor ? $req->query->getInt('after') : 0;
                 $result = $repo->getDependentsUnsorted(
                     $name,
-                    $useCursor && $after > 0 ? $after : null,
-                    $useCursor ? 0 : ($page - 1) * $perPage,
+                    $after > 0 ? $after : null,
+                    $after > 0 ? 0 : ($page - 1) * $perPage,
                     $perPage,
                     $requireType,
                 );
@@ -1747,7 +1757,11 @@ class PackageController extends Controller
             }
         }
 
-        $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
+        // the sorted listing refuses pages past the cap, so the pager must not offer them: this
+        // drives both the numbered html links and the json next url. The count in the header is
+        // still the real total.
+        $pagerCount = $orderBy === 'downloads' ? min($depCount, self::MAX_SORTED_LISTING_PAGE * $perPage) : $depCount;
+        $paginator = new Pagerfanta(new FixedAdapter($pagerCount, $packages));
         $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage($perPage);
         $paginator->setCurrentPage($page);
