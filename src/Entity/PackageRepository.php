@@ -684,8 +684,14 @@ class PackageRepository extends ServiceEntityRepository
      * Keyset pagination for the json listing. The offset variant sorts the whole joined set and
      * throws all but a page of it away, so page 200 costs exactly what page 1 costs - deep
      * traversal of a widely required package was most of this route's cost, and it is our own
-     * `next` link that walks it. Seeking on p.name lets the plan drive package_name_idx and stop at
-     * the limit, and the EXISTS probe is a prefix of dependent's PK (package_id, packageName, type).
+     * `next` link that walks it. Seeking on p.name instead lets the plan range-scan
+     * package_name_idx and stop at the limit, with a dependent PK lookup per candidate.
+     *
+     * The membership test is a scalar subquery rather than EXISTS on purpose: EXISTS is flattened
+     * into a semijoin, and MySQL then drives from dependent - 105,878 rows for illuminate/support,
+     * a temporary table and a filesort, measured, which is the plan this exists to get away from. A
+     * scalar subquery is not semijoin-eligible, so package keeps the drive with no optimizer hint to
+     * depend on. `= 1` and not IS NOT NULL: the subquery yields 1 or NULL, and NULL = 1 is not true.
      *
      * Name order only: d.total is neither unique nor ordered by an index here, so it cannot carry a
      * cursor - and that variant already costs 127 rows a call.
@@ -713,9 +719,9 @@ class PackageRepository extends ServiceEntityRepository
 
         $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
             FROM package p
-            WHERE '.$seek.'EXISTS (
-                SELECT 1 FROM dependent d WHERE d.package_id = p.id AND d.packageName = :name'.$typeFilter.'
-            )
+            WHERE '.$seek.'(
+                SELECT 1 FROM dependent d WHERE d.package_id = p.id AND d.packageName = :name'.$typeFilter.' LIMIT 1
+            ) = 1
             ORDER BY p.name ASC
             LIMIT '.((int) $limit);
 
