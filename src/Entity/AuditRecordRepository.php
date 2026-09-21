@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Audit\AuditLogSearchType;
 use App\Audit\VersionDeletionReason;
 use App\Log\AuditLogEventType;
 use App\Service\AuditRecordsManager;
@@ -85,6 +86,47 @@ class AuditRecordRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * The user's own records of the given types, newest first.
+     *
+     * Narrows through audit_log_search like the transparency-log filters do, because audit_log.userId
+     * has no index and on its own makes the optimizer walk datetime_idx backwards — a whole-table
+     * scan for a user who has no such record at all. userId stays in the WHERE for precision: the
+     * search index is keyed by name, so a released username would otherwise surface its previous
+     * holder's events. The cost of that key is that records written under a previous handle are not
+     * returned (the rename itself indexes both handles, so it still shows up).
+     *
+     * @param list<AuditLogEventType> $types
+     *
+     * @return list<AuditRecord>
+     */
+    public function findForUser(User $user, array $types, ?\DateTimeImmutable $since = null, ?int $limit = null): array
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->where(\sprintf('a.id IN (SELECT s.auditLogId FROM %s s WHERE s.type = :searchType AND s.name = :username)', AuditLogSearch::class))
+            ->andWhere('a.userId = :userId')
+            ->andWhere('a.type IN (:types)')
+            ->setParameter('searchType', AuditLogSearchType::User->value)
+            ->setParameter('username', $user->getUsernameCanonical())
+            ->setParameter('userId', $user->getId())
+            ->setParameter('types', array_map(static fn (AuditLogEventType $type): string => $type->value, $types))
+            // ULIDs sort by creation time, so this is the datetime order without the filesort
+            ->orderBy('a.id', 'DESC');
+
+        if (null !== $since) {
+            $qb->andWhere('a.datetime > :since')->setParameter('since', $since);
+        }
+
+        if (null !== $limit) {
+            $qb->setMaxResults($limit);
+        }
+
+        /** @var list<AuditRecord> $records */
+        $records = $qb->getQuery()->getResult();
+
+        return $records;
     }
 
     /**
