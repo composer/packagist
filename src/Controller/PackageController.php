@@ -1717,9 +1717,9 @@ class PackageController extends Controller
             }
 
             $packages = $result['packages'];
-            // from here $orderBy is the order the page is in, not the one asked for; $degraded is
-            // what tells that apart from a deliberate order_by=none, which warrants no warning
-            $orderBy = 'none';
+            // $orderBy stays what was asked for: it is still what the url says and what the pager
+            // links will request. $degraded is what the banner keys off, and it leaves the none
+            // tab a link, so the reader has a way out of the sort that just failed.
             $degraded = true;
         }
 
