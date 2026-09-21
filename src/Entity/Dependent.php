@@ -16,7 +16,6 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: DependentRepository::class)]
 #[ORM\Table(name: 'dependent')]
-#[ORM\Index(name: 'all_deps', columns: ['package_id', 'packageName'])]
 #[ORM\Index(name: 'by_type', columns: ['packageName', 'type'])]
 class Dependent
 {

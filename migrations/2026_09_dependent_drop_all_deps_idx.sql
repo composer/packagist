@@ -1,0 +1,15 @@
+-- all_deps (package_id, packageName) is a strict prefix of the primary key
+-- (package_id, packageName, type), and dependent has no columns outside that key, so there is no
+-- lookup it can serve that PRIMARY cannot. performance_schema agrees: 0 reads over 155 days of
+-- uptime, against PRIMARY's 43M and by_type's 64G.
+--
+-- It costs 100MB and a second copy of this table's churn: every crawl deletes and reinserts a
+-- package's whole dependent set, which came to ~39M inserts and ~39M deletes over that same window.
+--
+-- Deliberately NOT dropping IDX_BB9077A4F44CABFF (package_id), which sys.schema_redundant_indexes
+-- also reports and which is redundant by the same rule: it has 66M reads. The clustered index
+-- carries DB_TRX_ID and DB_ROLL_PTR per row, making it 152MB against that index's 100MB, so it is
+-- the cheaper covering copy for the by-package_id delete every crawl runs.
+--
+-- Dropping a secondary index is in-place and near-instant, unlike building one.
+ALTER TABLE dependent DROP INDEX all_deps, ALGORITHM=INPLACE, LOCK=NONE;
