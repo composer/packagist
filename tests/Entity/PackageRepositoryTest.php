@@ -414,6 +414,54 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(['test/alpha', 'test/beta'], $names);
     }
 
+    public function testGetDependentsAfterSeeksByNameAndAdvancesPastSuppressedRows(): void
+    {
+        $aaa = self::createPackage('test/aaa', 'https://example.org/aaa');
+        $bbb = self::createPackage('test/bbb', 'https://example.org/bbb');
+        $bbb->freeze(PackageFreezeReason::Spam);
+        $ccc = self::createPackage('test/ccc', 'https://example.org/ccc');
+        $this->store($aaa, $bbb, $ccc);
+        $this->store(
+            new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($bbb, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($ccc, 'test/required', Dependent::TYPE_REQUIRE),
+        );
+
+        $first = $this->packageRepository->getDependentsAfter('test/required', null, 1);
+        self::assertSame(['test/aaa'], array_column($first['packages'], 'name'));
+        self::assertSame('test/aaa', $first['cursor']);
+
+        // the suppressed row yields no package, but the cursor still has to move or a client
+        // following next asks for this same page forever
+        $second = $this->packageRepository->getDependentsAfter('test/required', $first['cursor'], 1);
+        self::assertSame([], $second['packages']);
+        self::assertSame('test/bbb', $second['cursor']);
+
+        $third = $this->packageRepository->getDependentsAfter('test/required', $second['cursor'], 1);
+        self::assertSame(['test/ccc'], array_column($third['packages'], 'name'));
+
+        // a page shorter than the limit is the end of the set, and stops offering a next link
+        $end = $this->packageRepository->getDependentsAfter('test/required', $third['cursor'], 1);
+        self::assertSame([], $end['packages']);
+        self::assertNull($end['cursor']);
+    }
+
+    public function testGetDependentsAfterHonoursTheRequireType(): void
+    {
+        $aaa = self::createPackage('test/aaa', 'https://example.org/aaa');
+        $this->store($aaa);
+        $this->store(new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE));
+
+        self::assertSame(
+            ['test/aaa'],
+            array_column($this->packageRepository->getDependentsAfter('test/required', null, 10, Dependent::TYPE_REQUIRE)['packages'], 'name'),
+        );
+        self::assertSame(
+            [],
+            $this->packageRepository->getDependentsAfter('test/required', null, 10, Dependent::TYPE_REQUIRE_DEV)['packages'],
+        );
+    }
+
     public function testListingQueriesCarryAnAcceptedExecutionTimeHint(): void
     {
         // MySQL answers a malformed, mis-positioned or inapplicable optimizer hint with a warning
@@ -427,6 +475,9 @@ class PackageRepositoryTest extends IntegrationTestCase
 
         $this->packageRepository->getDefaultBranchRequireFor(['test/requirer'], 'test/required');
         self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the requirement query');
+
+        $this->packageRepository->getDependentsAfter('test/required', 'test/aaa', 10);
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the cursor query');
     }
 
     /**

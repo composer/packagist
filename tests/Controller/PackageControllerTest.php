@@ -289,10 +289,10 @@ class PackageControllerTest extends IntegrationTestCase
 
     public function testJsonDependentsLinksKeepTheRequiresFilter(): void
     {
-        // A consumer walking next must stay on the filter it asked for, otherwise it gets a
-        // require-only count paired with rows of every type and the two never reconcile.
+        // A consumer walking next must stay on the filter it asked for, otherwise it gets rows of
+        // every type back and the traversal never reconciles with what it asked for.
         $repo = $this->createStub(PackageRepository::class);
-        $repo->method('getDependentCount')->willReturn(500);
+        $repo->method('getDependentCount')->willReturn(50000);
         $repo->method('getDependents')->willReturn([
             ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
         ]);
@@ -305,8 +305,72 @@ class PackageControllerTest extends IntegrationTestCase
         $data = json_decode((string) $this->client->getResponse()->getContent(), true);
         self::assertIsArray($data);
         self::assertStringContainsString('requires=require', $data['next'] ?? '');
+        self::assertStringContainsString('after=test/dep', $data['next'] ?? '', 'next has to carry the cursor, not a page');
+        self::assertStringNotContainsString('page=', $data['next'] ?? '');
         self::assertStringContainsString('requires=require', $data['ordered_by_name'] ?? '');
         self::assertStringContainsString('requires=require', $data['ordered_by_downloads'] ?? '');
+    }
+
+    public function testJsonDependentsStopsOfferingNextAtTheEndOfTheSet(): void
+    {
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentsAfter')->willReturn([
+            'packages' => [
+                ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+            ],
+            'cursor' => null,
+        ]);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['after' => 'test/aaa']);
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertArrayNotHasKey('next', $data);
+    }
+
+    public function testJsonDependentsKeepsNumberedPagesForSmallSets(): void
+    {
+        // seeking scans package_name_idx until it has a page of matches, so on a set this size it
+        // would read far more than the sort it replaces
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(150);
+        $repo->method('getDependents')->willReturn([
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+        ]);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json');
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertStringContainsString('page=2', $data['next'] ?? '');
+        self::assertStringNotContainsString('after=', $data['next'] ?? '');
+    }
+
+    public function testJsonDependentsKeepsNumberedPagesForDownloadOrder(): void
+    {
+        // d.total is not unique, so that ordering cannot carry a cursor - and it is the cheap
+        // variant anyway, 127 rows a call against the name sort's 31k
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(500);
+        $repo->method('getDependents')->willReturn([
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+        ]);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['order_by' => 'downloads']);
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertStringContainsString('page=2', $data['next'] ?? '');
+        self::assertStringNotContainsString('after=', $data['next'] ?? '');
     }
 
     public function testDependentsPageDegradesToAnUnsortedListing(): void
@@ -388,6 +452,7 @@ class PackageControllerTest extends IntegrationTestCase
     {
         $repo = $this->createStub(PackageRepository::class);
         $repo->method('getDependents')->willThrowException($e);
+        $repo->method('getDependentsAfter')->willThrowException($e);
         $repo->method('getSuggests')->willThrowException($e);
         static::getContainer()->set(PackageRepository::class, $repo);
     }

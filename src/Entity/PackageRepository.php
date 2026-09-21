@@ -681,6 +681,72 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * Keyset pagination for the json listing. The offset variant sorts the whole joined set and
+     * throws all but a page of it away, so page 200 costs exactly what page 1 costs - deep
+     * traversal of a widely required package was most of this route's cost, and it is our own
+     * `next` link that walks it. Seeking on p.name lets the plan drive package_name_idx and stop at
+     * the limit, and the EXISTS probe is a prefix of dependent's PK (package_id, packageName, type).
+     *
+     * Name order only: d.total is neither unique nor ordered by an index here, so it cannot carry a
+     * cursor - and that variant already costs 127 rows a call.
+     *
+     * @param int|null $type One of Dependent::TYPE_*
+     *
+     * @return array{packages: list<array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>, cursor: string|null}
+     */
+    public function getDependentsAfter(string $name, ?string $after, int $limit = 100, ?int $type = null): array
+    {
+        $args = ['name' => $name];
+        $typeFilter = '';
+        if (null !== $type) {
+            $typeFilter = ' AND d.type = :type';
+            $args['type'] = $type;
+        }
+
+        $seek = '';
+        if (null !== $after) {
+            // package.name is unique under a case-insensitive collation, so two names comparing
+            // equal are the same row and the seek can neither skip nor repeat one
+            $seek = 'p.name > :after AND ';
+            $args['after'] = $after;
+        }
+
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
+            FROM package p
+            WHERE '.$seek.'EXISTS (
+                SELECT 1 FROM dependent d WHERE d.package_id = p.id AND d.packageName = :name'.$typeFilter.'
+            )
+            ORDER BY p.name ASC
+            LIMIT '.((int) $limit);
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args);
+
+        $suppressed = PackageFreezeReason::suppressingValues();
+        $packages = [];
+        $lastFetched = null;
+        /** @var array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: bool, replacementPackage: string|null, frozen: string|null} $row */
+        foreach ($rows as $row) {
+            // the cursor tracks every row fetched, not every row kept: a page made entirely of
+            // suppressed packages still has to advance or the client asks for it forever
+            $lastFetched = $row['name'];
+
+            // see getDependents() for why these are dropped here rather than in SQL
+            if (\in_array($row['frozen'], $suppressed, true)) {
+                continue;
+            }
+            unset($row['frozen']);
+
+            $packages[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
+        }
+
+        return [
+            'packages' => $packages,
+            // a short page is the end of the set, so there is nothing further to ask for
+            'cursor' => \count($rows) === $limit ? $lastFetched : null,
+        ];
+    }
+
+    /**
      * Bounded like the listing it annotates: it runs once per listing page with one name per row,
      * so left unbounded it hands back the worker occupancy the listing's own cap buys. The caller
      * drops the annotation on a timeout rather than failing the page.

@@ -102,6 +102,14 @@ class PackageController extends Controller
     /** ER_QUERY_TIMEOUT, what MAX_EXECUTION_TIME reports. DBAL leaves it unmapped, so it arrives as a plain DriverException. */
     private const int ER_QUERY_TIMEOUT = 3024;
     /** 50k rows deep. The sort cost grows with the offset, so cap it rather than spend the statement timeout on a page nobody reads. */
+    /**
+     * Dependents below this many are cheaper to sort than to seek, so their traversal keeps numbered
+     * pages. Well above the crossover, which sits nearer a few thousand - the seek only has to win
+     * for the handful of packages whose dependents run into five figures, and those are the ones a
+     * crawler walks page after page.
+     */
+    private const int CURSOR_PAGINATION_MIN_DEPENDENTS = 10000;
+
     private const int MAX_JSON_LISTING_PAGE = 500;
     private const string STATS_RECORD_DATE = '2012-04-13 00:00:00';
     private const string RELEASES_RECORD_DATE = '2011-01-01 00:00:00';
@@ -1636,49 +1644,77 @@ class PackageController extends Controller
             default => throw new BadRequestHttpException('Invalid requires parameter provided'),
         };
 
+        $after = $req->query->getString('after');
+        // json traversal moves onto a cursor, which costs the same at the end of a set as at the
+        // start, once the first page shows the set is big enough to be worth it. html keeps numbered
+        // pages: a keyset cannot address them, 91% of that traffic is page 1, and anonymous visitors
+        // are capped at page 3 anyway. Downloads order cannot carry a cursor either.
+        $cursorMode = $req->getRequestFormat() === 'json' && $orderBy === 'name' && $after !== '';
+
         $repo = $this->getEM()->getRepository(Package::class);
-        // uncached: this count drives the pager, so it has to match the rows fetched below or
-        // pagination truncates silently
-        try {
-            $depCount = $repo->getDependentCount($name, $requireType, cached: false);
-        } catch (DriverException $e) {
-            // a count has no cheaper variant to fall back to, unlike the listing below
-            if (!self::isStatementTimeout($e)) {
-                throw $e;
-            }
-
-            $logger->warning('Dependents count timed out', ['package' => $name, 'requires' => $requires]);
-
-            return $this->listingTooExpensiveResponse($req);
-        }
-
         $unsorted = false;
-        try {
-            $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
-        } catch (DriverException $e) {
-            if (!self::isStatementTimeout($e)) {
-                throw $e;
+        $cursor = null;
+        $depCount = 0;
+
+        if ($cursorMode) {
+            try {
+                // no count: nothing paginates by it here, and it is a 7.8k row scan of its own
+                $result = $repo->getDependentsAfter($name, $after !== '' ? $after : null, $perPage, $requireType);
+            } catch (DriverException $e) {
+                if (!self::isStatementTimeout($e)) {
+                    throw $e;
+                }
+
+                $logger->warning('Dependents cursor listing timed out', ['package' => $name, 'after' => $after, 'requires' => $requires]);
+
+                return $this->listingTooExpensiveResponse($req);
             }
 
-            $logger->warning('Dependents listing timed out', ['package' => $name, 'page' => $page, 'orderBy' => $orderBy, 'requires' => $requires]);
+            $packages = $result['packages'];
+            $cursor = $result['cursor'];
+        } else {
+            // uncached: this count drives the pager, so it has to match the rows fetched below or
+            // pagination truncates silently
+            try {
+                $depCount = $repo->getDependentCount($name, $requireType, cached: false);
+            } catch (DriverException $e) {
+                // a count has no cheaper variant to fall back to, unlike the listing below
+                if (!self::isStatementTimeout($e)) {
+                    throw $e;
+                }
 
-            // Fetching the rows is cheap, it is ordering the whole set that is not, so the page
-            // degrades to an unsorted listing. Not offered as json: a client cannot see the warning.
-            if ($req->getRequestFormat() === 'json') {
+                $logger->warning('Dependents count timed out', ['package' => $name, 'requires' => $requires]);
+
                 return $this->listingTooExpensiveResponse($req);
             }
 
             try {
-                $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, null, $requireType);
-            } catch (DriverException $retry) {
-                if (!self::isStatementTimeout($retry)) {
-                    throw $retry;
+                $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
+            } catch (DriverException $e) {
+                if (!self::isStatementTimeout($e)) {
+                    throw $e;
                 }
 
-                return $this->listingTooExpensiveResponse($req);
-            }
+                $logger->warning('Dependents listing timed out', ['package' => $name, 'page' => $page, 'orderBy' => $orderBy, 'requires' => $requires]);
 
-            $unsorted = true;
+                // Fetching the rows is cheap, it is ordering the whole set that is not, so the page
+                // degrades to an unsorted listing. Not offered as json: a client cannot see the warning.
+                if ($req->getRequestFormat() === 'json') {
+                    return $this->listingTooExpensiveResponse($req);
+                }
+
+                try {
+                    $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, null, $requireType);
+                } catch (DriverException $retry) {
+                    if (!self::isStatementTimeout($retry)) {
+                        throw $retry;
+                    }
+
+                    return $this->listingTooExpensiveResponse($req);
+                }
+
+                $unsorted = true;
+            }
         }
 
         try {
@@ -1705,30 +1741,40 @@ class PackageController extends Controller
             }
         }
 
-        $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
-        $paginator->setNormalizeOutOfRangePages(true);
-        $paginator->setMaxPerPage($perPage);
-        $paginator->setCurrentPage($page);
-
         if ($req->getRequestFormat() === 'json') {
-            $data = [
-                'packages' => $paginator->getCurrentPageResults(),
-            ];
-            Assert::isArray($data['packages']);
+            $data = ['packages' => $packages];
             $meta = $this->getPackagesMetadata($this->favoriteManager, $this->downloadManager, $data['packages']);
             foreach ($data['packages'] as $index => $package) {
                 $data['packages'][$index]['downloads'] = $meta['downloads'][$package['id']];
                 $data['packages'][$index]['favers'] = $meta['favers'][$package['id']];
             }
 
-            if ($paginator->hasNextPage()) {
-                $data['next'] = $this->generateUrl('view_package_dependents', ['name' => $name, 'page' => $page + 1, '_format' => 'json', 'order_by' => $orderBy, 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
+            $nextParams = ['name' => $name, '_format' => 'json', 'order_by' => $orderBy, 'requires' => $requires];
+            if ($cursorMode) {
+                // a null cursor is the end of the set, so the link simply stops being offered
+                if (null !== $cursor) {
+                    $data['next'] = $this->generateUrl('view_package_dependents', ['after' => $cursor] + $nextParams, UrlGeneratorInterface::ABSOLUTE_URL);
+                }
+            } elseif ($page * $perPage < $depCount) {
+                // Hand out a cursor only once the set is dense enough for the seek to pay: it walks
+                // package_name_idx until it has a page of matches, so its cost scales with how rare
+                // dependents are, while the sort it replaces scales with how many there are. Below
+                // the threshold the sort is the cheap one and numbered pages stay.
+                $lastName = [] === $packages ? null : $packages[array_key_last($packages)]['name'];
+                $data['next'] = $depCount >= self::CURSOR_PAGINATION_MIN_DEPENDENTS && null !== $lastName
+                    ? $this->generateUrl('view_package_dependents', ['after' => $lastName] + $nextParams, UrlGeneratorInterface::ABSOLUTE_URL)
+                    : $this->generateUrl('view_package_dependents', ['page' => $page + 1] + $nextParams, UrlGeneratorInterface::ABSOLUTE_URL);
             }
             $data['ordered_by_name'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'name', 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
             $data['ordered_by_downloads'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'downloads', 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
 
             return new JsonResponse($data);
         }
+
+        $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
+        $paginator->setNormalizeOutOfRangePages(true);
+        $paginator->setMaxPerPage($perPage);
+        $paginator->setCurrentPage($page);
 
         $data['packages'] = $paginator;
         $data['count'] = $depCount;
