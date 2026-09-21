@@ -16,8 +16,8 @@
                     <span class="filters">
                         <span class="filter">
                             Order by:
-                            {% if order_by == 'downloads' and not (unsorted ?? false) %}<span class="active">downloads</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'downloads', requires: requires}) }}">downloads</a>{% endif %} |
-                            {% if unsorted ?? false %}<span class="active">none</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'none', requires: requires}) }}">none</a>{% endif %}
+                            {% if order_by == 'downloads' %}<span class="active">downloads</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'downloads', requires: requires}) }}">downloads</a>{% endif %} |
+                            {% if order_by == 'none' %}<span class="active">none</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'none', requires: requires}) }}">none</a>{% endif %}
                         </span>
                         <span class="filter">
                             Show:

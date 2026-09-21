@@ -319,6 +319,7 @@ class PackageControllerTest extends IntegrationTestCase
         $body = (string) $this->client->getResponse()->getContent();
         self::assertStringContainsString('no particular order', $body, 'the reader has to be told the listing is not ordered');
         self::assertStringContainsString('test/dep', $body, 'the rows themselves are still shown');
+        self::assertStringContainsString('<span class="active">none</span>', $body, 'the highlighted order has to be the one the page is actually in');
     }
 
     public function testDependentsJsonStillFailsWhenTheSortTimesOut(): void

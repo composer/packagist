@@ -1652,9 +1652,6 @@ class PackageController extends Controller
         };
 
         $repo = $this->getEM()->getRepository(Package::class);
-        $unsorted = $orderBy === 'none';
-        // told apart from $unsorted because one is what was asked for and the other is what we
-        // could manage - only the second is worth warning the reader about
         $degraded = false;
         $cursor = null;
         $depCount = 0;
@@ -1662,7 +1659,7 @@ class PackageController extends Controller
         // json walks the unsorted listing by cursor, which costs the same wherever it has got to.
         // html pages it by number like any other listing - with nothing to sort, an offset is only
         // a few more entries of the same index range.
-        $useCursor = $isJson && $unsorted;
+        $useCursor = $isJson && $orderBy === 'none';
 
         // the count only feeds the numbered pager, and it is a 7.8k row scan of its own
         if (!$useCursor) {
@@ -1681,7 +1678,7 @@ class PackageController extends Controller
         }
 
         try {
-            if ($unsorted) {
+            if ($orderBy === 'none') {
                 $after = $req->query->getInt('after');
                 $result = $repo->getDependentsUnsorted(
                     $name,
@@ -1705,7 +1702,7 @@ class PackageController extends Controller
             // The unsorted listing is the cheap one, so a sorted page that gives up degrades into
             // it rather than into a second attempt at the same sort. Not offered as json: a client
             // cannot see the warning that the order it asked for is not the order it got.
-            if ($unsorted || $isJson) {
+            if ($isJson || $orderBy === 'none') {
                 return $this->listingTooExpensiveResponse($req);
             }
 
@@ -1720,7 +1717,9 @@ class PackageController extends Controller
             }
 
             $packages = $result['packages'];
-            $unsorted = true;
+            // from here $orderBy is the order the page is in, not the one asked for; $degraded is
+            // what tells that apart from a deliberate order_by=none, which warrants no warning
+            $orderBy = 'none';
             $degraded = true;
         }
 
@@ -1786,7 +1785,6 @@ class PackageController extends Controller
         $data['name'] = $name;
         $data['order_by'] = $orderBy;
         $data['requires'] = $requires;
-        $data['unsorted'] = $unsorted;
         $data['degraded'] = $degraded;
 
         return $this->render('package/dependents.html.twig', $data);
