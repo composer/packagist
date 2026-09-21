@@ -289,13 +289,12 @@ class PackageControllerTest extends IntegrationTestCase
 
     public function testJsonDependentsLinksKeepTheRequiresFilter(): void
     {
-        // A consumer walking next must stay on the filter it asked for, otherwise it gets a
-        // require-only count paired with rows of every type and the two never reconcile.
+        // A consumer walking next must stay on the filter it asked for, otherwise it gets rows of
+        // every type back and the traversal never matches what it asked for.
         $repo = $this->createStub(PackageRepository::class);
-        $repo->method('getDependentCount')->willReturn(500);
-        $repo->method('getDependents')->willReturn([
+        $repo->method('getDependentsUnsorted')->willReturn(['packages' => [
             ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
-        ]);
+        ], 'cursor' => 42]);
         $repo->method('getDefaultBranchRequireFor')->willReturn([]);
         static::getContainer()->set(PackageRepository::class, $repo);
 
@@ -305,7 +304,8 @@ class PackageControllerTest extends IntegrationTestCase
         $data = json_decode((string) $this->client->getResponse()->getContent(), true);
         self::assertIsArray($data);
         self::assertStringContainsString('requires=require', $data['next'] ?? '');
-        self::assertStringContainsString('requires=require', $data['ordered_by_name'] ?? '');
+        self::assertStringContainsString('after=42', $data['next'] ?? '', 'json walks by cursor, not by page');
+        self::assertStringContainsString('requires=require', $data['unordered'] ?? '');
         self::assertStringContainsString('requires=require', $data['ordered_by_downloads'] ?? '');
     }
 
@@ -361,20 +361,107 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringNotContainsString('Latest version requires', $body);
     }
 
+    #[TestWith(['/packages/test/pkg/dependents'])]
+    #[TestWith(['/packages/test/pkg/dependents.json'])]
+    public function testDependentsRejectsTheRemovedNameOrder(string $url): void
+    {
+        $this->client->request('GET', $url, ['order_by' => 'name']);
+
+        self::assertResponseStatusCodeSame(400);
+        // a consumer that was paging through it needs to be told where to go, not just refused
+        self::assertStringContainsString('order_by=none', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testDependentsCapsThePagesOfASortedListing(): void
+    {
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['order_by' => 'downloads', 'page' => 6]);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertStringContainsString('order_by=none', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testDependentsDoesNotCapThePagesOfTheUnsortedListing(): void
+    {
+        // deep paging is exactly what this mode is for, and it costs the same at any depth
+        $this->stubUnsortedDependents(cursor: null);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 6]);
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testJsonDependentsDefaultsToTheUnsortedListing(): void
+    {
+        $this->stubUnsortedDependents(cursor: 42);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json');
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertStringContainsString('after=42', $data['next'] ?? '');
+        self::assertStringContainsString('order_by=none', $data['next'] ?? '');
+    }
+
+    public function testJsonDependentsStopsOfferingNextAtTheEndOfTheSet(): void
+    {
+        $this->stubUnsortedDependents(cursor: null);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json');
+
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true);
+        self::assertIsArray($data);
+        self::assertArrayNotHasKey('next', $data);
+    }
+
+    public function testHtmlDependentsDefaultsToTheDownloadOrder(): void
+    {
+        // an anonymous visitor only gets three pages, so 45 arbitrary packages would be no use;
+        // the sort is affordable here because html traffic is spread across small packages
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(1);
+        $repo->method('getDependents')->willReturn([
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+        ]);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        static::getContainer()->set(PackageRepository::class, $repo);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents');
+
+        self::assertResponseIsSuccessful();
+        $body = (string) $this->client->getResponse()->getContent();
+        self::assertStringContainsString('test/dep', $body);
+        self::assertStringContainsString('<span class="active">downloads</span>', $body);
+        self::assertStringNotContainsString('listing.unsorted_warning', $body);
+    }
+
+    private function stubUnsortedDependents(?int $cursor): void
+    {
+        $repo = $this->createStub(PackageRepository::class);
+        $repo->method('getDependentCount')->willReturn(1);
+        $repo->method('getDependentsUnsorted')->willReturn(['packages' => [
+            ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
+        ], 'cursor' => $cursor]);
+        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
+        static::getContainer()->set(PackageRepository::class, $repo);
+    }
+
     private function stubDependentsTimingOutWhenSorted(bool $fallbackWorks): void
     {
         $repo = $this->createStub(PackageRepository::class);
         $repo->method('getDependentCount')->willReturn(1);
         $repo->method('getDefaultBranchRequireFor')->willReturn([]);
-        $repo->method('getDependents')->willReturnCallback(
-            function (string $name, int $offset = 0, int $limit = 15, ?string $orderBy = 'name', ?int $type = null) use ($fallbackWorks): array {
-                if ($orderBy !== null || !$fallbackWorks) {
+        $repo->method('getDependents')->willThrowException(new DriverException(self::driverException(self::ER_QUERY_TIMEOUT), null));
+        $repo->method('getDependentsUnsorted')->willReturnCallback(
+            function () use ($fallbackWorks): array {
+                if (!$fallbackWorks) {
                     throw new DriverException(self::driverException(self::ER_QUERY_TIMEOUT), null);
                 }
 
-                return [
+                return ['packages' => [
                     ['id' => 1, 'name' => 'test/dep', 'description' => null, 'type' => 'library', 'language' => null, 'abandoned' => 0, 'replacementPackage' => null],
-                ];
+                ], 'cursor' => null];
             },
         );
         static::getContainer()->set(PackageRepository::class, $repo);
@@ -388,6 +475,7 @@ class PackageControllerTest extends IntegrationTestCase
     {
         $repo = $this->createStub(PackageRepository::class);
         $repo->method('getDependents')->willThrowException($e);
+        $repo->method('getDependentsUnsorted')->willThrowException($e);
         $repo->method('getSuggests')->willThrowException($e);
         static::getContainer()->set(PackageRepository::class, $repo);
     }

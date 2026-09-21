@@ -358,6 +358,34 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package]/stats.json
 
 
 <section class="col-md-12">
+<h3 id="list-dependents">List the dependents of a package <span class="badge bg-success">Anonymous</span></h3>
+
+<pre>
+GET https://{{ packagist_host }}/packages/[vendor]/[package]/dependents.json?order_by=none
+<code>
+{
+  "packages": [
+    "[list of packages requiring this one]"
+  ],
+  "next": "[url of the next page, absent once you have reached the end]",
+  "unordered": "[url of this listing in no particular order]",
+  "ordered_by_downloads": "[url of this listing with the most installed first]"
+}
+</code></pre>
+
+<p><code>requires</code> narrows the listing to <code>require</code> or <code>require-dev</code>; it defaults to <code>all</code>.</p>
+
+<p><strong>To fetch every dependent, use <code>order_by=none</code> and follow <code>next</code> until it is no longer returned.</strong> That listing is served straight from an index, so a page costs the same whether it is the first or the five hundredth, and it is not page-limited. Its <code>next</code> carries an <code>after</code> cursor rather than a page number, so do not construct those URLs yourself - follow the one in the response.</p>
+
+<p><code>order_by=downloads</code> sorts the whole set to build each page, so it is limited to the first 5 pages. It is for looking at the most installed dependents, not for walking the list.</p>
+
+<p><code>order_by=name</code> has been removed. It sorted every dependent of the package to return a single page, which cost the same at page 1 as at page 500 and could take seconds on a widely required package. Use <code>order_by=none</code> if you were paging through it, or <code>order_by=downloads</code> if you wanted the interesting entries first.</p>
+
+<p>Working example: <code><a href="https://{{ packagist_host }}/packages/monolog/monolog/dependents.json?order_by=none">https://{{ packagist_host }}/packages/monolog/monolog/dependents.json?order_by=none</a></code></p>
+</section>
+
+
+<section class="col-md-12">
 <h3 id="track-package-updates">Track package updates <span class="badge bg-success">Anonymous</span></h3>
 
 <p>This endpoint provides you with a feed of metadata changes you can poll to know what packages you need to update.</p>
