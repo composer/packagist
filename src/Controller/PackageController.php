@@ -102,6 +102,7 @@ class PackageController extends Controller
     /** ER_QUERY_TIMEOUT, what MAX_EXECUTION_TIME reports. DBAL leaves it unmapped, so it arrives as a plain DriverException. */
     private const int ER_QUERY_TIMEOUT = 3024;
     /** 50k rows deep. The sort cost grows with the offset, so cap it rather than spend the statement timeout on a page nobody reads. */
+    private const int MAX_JSON_LISTING_PAGE = 500;
     /**
      * Dependents below this many are cheaper to sort than to seek, so their traversal keeps numbered
      * pages. Well above the crossover, which sits nearer a few thousand - the seek only has to win
@@ -109,8 +110,6 @@ class PackageController extends Controller
      * crawler walks page after page.
      */
     private const int CURSOR_PAGINATION_MIN_DEPENDENTS = 10000;
-
-    private const int MAX_JSON_LISTING_PAGE = 500;
     private const string STATS_RECORD_DATE = '2012-04-13 00:00:00';
     private const string RELEASES_RECORD_DATE = '2011-01-01 00:00:00';
 
