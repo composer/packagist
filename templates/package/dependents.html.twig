@@ -16,8 +16,8 @@
                     <span class="filters">
                         <span class="filter">
                             Order by:
-                            {% if order_by == 'name' and not unsorted|default(false) %}<span class="active">name</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'name', requires: requires}) }}">name</a>{% endif %} |
-                            {% if order_by == 'downloads' and not unsorted|default(false) %}<span class="active">downloads</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'downloads', requires: requires}) }}">downloads</a>{% endif %}
+                            {% if order_by == 'name' and not (unsorted ?? false) %}<span class="active">name</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'name', requires: requires}) }}">name</a>{% endif %} |
+                            {% if order_by == 'downloads' and not (unsorted ?? false) %}<span class="active">downloads</span>{% else %}<a href="{{ path("view_package_dependents", {name: name, order_by: 'downloads', requires: requires}) }}">downloads</a>{% endif %}
                         </span>
                         <span class="filter">
                             Show:
@@ -33,7 +33,7 @@
 
     <section class="row">
         <section class="col-lg-12">
-        {% if unsorted|default(false) %}
+        {% if unsorted ?? false %}
             <div class="alert alert-warning">
                 <p>{{ 'listing.unsorted_warning'|trans }}</p>
             </div>
