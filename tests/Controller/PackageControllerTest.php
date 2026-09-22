@@ -277,11 +277,11 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(500);
     }
 
-    #[TestWith(['/packages/test/pkg/dependents.json'])]
-    #[TestWith(['/packages/test/pkg/suggesters.json'])]
-    public function testJsonListingsRefuseToPageBeyondTheCap(string $url): void
+    public function testJsonSuggestersRefuseToPageBeyondTheCap(): void
     {
-        $this->client->request('GET', $url, ['page' => '999999']);
+        // it sorts the whole set to build each page, so the cost grows with the offset. The
+        // dependents listing is deliberately not capped alongside it - see the test below.
+        $this->client->request('GET', '/packages/test/pkg/suggesters.json', ['page' => '999999']);
 
         self::assertResponseStatusCodeSame(400);
         self::assertStringStartsWith('application/json', (string) $this->client->getResponse()->headers->get('Content-Type'));
@@ -389,13 +389,25 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('order_by=none', (string) $this->client->getResponse()->getContent());
     }
 
-    public function testDependentsDoesNotApplyTheSortedCapToTheUnsortedListing(): void
+    public function testDependentsPagesTheUnsortedListingAsDeepAsAsked(): void
     {
-        // deep paging is exactly what this mode is for; the 500 page json cap still applies to it,
-        // the 5 page sorted one does not
+        // deep paging is exactly what this mode is for: no sort means no cost that grows with the
+        // page, so neither the 5 page sorted cap nor a round json one has anything to buy here.
+        // Page 600 is past where both used to stop, and short of where illuminate/support ends.
         $this->stubUnsortedDependents(cursor: null);
 
-        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 6]);
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 600]);
+
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testDependentsSurvivesAPageNumberThatWouldOverflowTheOffset(): void
+    {
+        // uncapped paging means nothing rejects an absurd page before (page - 1) * perPage runs,
+        // and that arithmetic overflowing to a float is a TypeError under strict_types
+        $this->stubUnsortedDependents(cursor: null);
+
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => (string) \PHP_INT_MAX]);
 
         self::assertResponseIsSuccessful();
     }

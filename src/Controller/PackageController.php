@@ -101,7 +101,7 @@ class PackageController extends Controller
     private const int LIST_FLUSH_EVERY = 500;
     /** ER_QUERY_TIMEOUT, what MAX_EXECUTION_TIME reports. DBAL leaves it unmapped, so it arrives as a plain DriverException. */
     private const int ER_QUERY_TIMEOUT = 3024;
-    /** 50k rows deep. The sort cost grows with the offset, so cap it rather than spend the statement timeout on a page nobody reads. */
+    /** 50k rows deep, and only for the sorted suggesters listing: the sort cost grows with the offset, so cap it rather than spend the statement timeout on a page nobody reads. */
     private const int MAX_JSON_LISTING_PAGE = 500;
     /** Ordered listings sort the whole set per page, so they are for looking at the top of, not for walking. */
     private const int MAX_SORTED_LISTING_PAGE = 5;
@@ -1613,12 +1613,16 @@ class PackageController extends Controller
         }
 
         $isJson = $req->getRequestFormat() === 'json';
-        $page = max(1, $req->query->getInt('page', 1));
 
         $perPage = 15;
         if ($isJson) {
             $perPage = 100;
         }
+
+        // Bounded where (page - 1) * perPage stops being an int: an absurd page number is not a
+        // listing concern - it lands past the end and comes back empty either way - but the
+        // overflow turns the offset into a float, and strict_types then makes that a TypeError.
+        $page = max(1, min($req->query->getInt('page', 1), intdiv(\PHP_INT_MAX, $perPage)));
 
         // json defaults to the order it can iterate cheaply, html to the one worth reading: an
         // anonymous visitor only ever sees three pages, and 45 arbitrary packages out of 105k is
@@ -1645,9 +1649,6 @@ class PackageController extends Controller
         // past the first few pages a download ranking is not telling anyone anything anyway.
         if ($orderBy === 'downloads' && $page > self::MAX_SORTED_LISTING_PAGE) {
             return $this->listingErrorResponse($req, 'A sorted listing cannot be paged beyond page '.self::MAX_SORTED_LISTING_PAGE.'. Use order_by=none to iterate the whole list.', Response::HTTP_BAD_REQUEST);
-        }
-        if ($isJson && $page > self::MAX_JSON_LISTING_PAGE) {
-            return $this->listingErrorResponse($req, 'This listing cannot be paged beyond page '.self::MAX_JSON_LISTING_PAGE.'.', Response::HTTP_BAD_REQUEST);
         }
 
         $requires = $req->query->getString('requires', 'all');

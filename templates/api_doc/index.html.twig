@@ -378,7 +378,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package]/dependents.json?ord
 
 <p><strong>To fetch every dependent, use <code>order_by=none</code> and follow <code>next</code> until it is no longer returned.</strong> Its <code>next</code> carries an <code>after</code> cursor rather than a page number: that listing is served straight from an index, so a page reached by cursor costs the same whether it is the first or the ten thousandth, and the cursor is not page-limited. Do not construct those URLs yourself - follow the one in the response.</p>
 
-<p>A <code>page</code> parameter still works on this listing and returns the rows you asked for, but it gets slower the deeper it goes and remains capped at 500 pages. It is there so an existing page loop keeps working; the cursor is what you want for a full traversal.</p>
+<p>A <code>page</code> parameter also works on this listing and is not capped, so an existing page loop keeps working and can reach the end of the set. It does get slower the deeper it goes, which the cursor does not, so prefer the cursor for a full traversal.</p>
 
 <p><code>order_by=downloads</code> sorts the whole set to build each page, so it is limited to the first 5 pages. It is for looking at the most installed dependents, not for walking the list.</p>
 
