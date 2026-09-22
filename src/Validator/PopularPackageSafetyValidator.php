@@ -59,10 +59,17 @@ class PopularPackageSafetyValidator extends ConstraintValidator
             return;
         }
 
+        // Fails closed: without a count we cannot tell a popular package from a new one, and the
+        // safe answer is to block. Tracked separately from a real count because it means EVERY
+        // package on the site looks popular, so the block must not then advertise the support
+        // workflow -- that would funnel the whole site into the queue during a Redis outage, and
+        // SupportRequestRateLimiter fails open on the same exception.
+        $countIsKnown = true;
         try {
             $downloads = $this->downloadManager->getTotalDownloads($value);
         } catch (PredisException $e) {
             $downloads = \PHP_INT_MAX;
+            $countIsKnown = false;
         }
 
         // more than 50000 downloads = established package, do not allow editing URL anymore
@@ -81,7 +88,7 @@ class PopularPackageSafetyValidator extends ConstraintValidator
                 }
             }
 
-            $this->context->buildViolation($constraint->message)
+            $this->context->buildViolation($countIsKnown ? $constraint->message : $constraint->unknownMessage)
                 ->atPath('repository')
                 ->addViolation()
             ;
