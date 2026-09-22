@@ -1619,24 +1619,18 @@ class PackageController extends Controller
             $perPage = 100;
         }
 
-        // Bounded where (page - 1) * perPage stops being an int: an absurd page number is not a
-        // listing concern - it lands past the end and comes back empty either way - but the
-        // overflow turns the offset into a float, and strict_types then makes that a TypeError.
-        $page = max(1, min($req->query->getInt('page', 1), intdiv(\PHP_INT_MAX, $perPage)));
+        $page = max(1, min($req->query->getInt('page', 1), 1_000_000));
 
         // json defaults to the order it can iterate cheaply, html to the one worth reading: an
         // anonymous visitor only ever sees three pages, and 45 arbitrary packages out of 105k is
         // no use to anyone.
         $orderBy = $req->query->getString('order_by', $isJson ? 'none' : 'downloads');
         if ($orderBy === 'name') {
-            // it was the html default, so it is in bookmarks and inbound links - those get moved
-            // onto the current default rather than a bare unstyled 400. 302, not 301: a permanent
-            // redirect would outlive any decision to bring the order back.
             if (!$isJson) {
                 return $this->redirectToRoute('view_package_dependents', ['name' => $name, 'requires' => $req->query->getString('requires', 'all')]);
             }
 
-            return $this->listingErrorResponse($req, 'Ordering by name has been removed: it sorted every dependent of the package to return one page, which cost the same at page 1 as at page 500. Use order_by=none to iterate the whole list, or order_by=downloads for the most installed first.', Response::HTTP_BAD_REQUEST);
+            return $this->listingErrorResponse($req, 'Ordering by name has been removed. Use order_by=none to iterate the whole list, or order_by=downloads for the most installed dependents (max '.self::MAX_SORTED_LISTING_PAGE.' pages).', Response::HTTP_BAD_REQUEST);
         }
         if (!\in_array($orderBy, ['none', 'downloads'], true)) {
             throw new BadRequestHttpException('Invalid order_by parameter provided');
