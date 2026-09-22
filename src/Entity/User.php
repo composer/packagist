@@ -49,6 +49,7 @@ enum UserFreezeReason: string
 #[ORM\Entity(repositoryClass: 'App\Entity\UserRepository')]
 #[ORM\Table(name: 'fos_user')]
 #[ORM\Index(name: 'user_frozen_idx', columns: ['frozen', 'frozenAt'])]
+#[ORM\Index(name: 'user_github_id_idx', columns: ['githubId'])]
 #[UniqueEntity(fields: ['usernameCanonical'], message: 'There is already an account with this username', errorPath: 'username')]
 #[UniqueEntity(fields: ['emailCanonical'], message: 'There is already an account with this email', errorPath: 'email')]
 class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, EquatableInterface, PasswordAuthenticatedUserInterface, LegacyPasswordAuthenticatedUserInterface
