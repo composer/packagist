@@ -101,8 +101,10 @@ class PackageController extends Controller
     private const int LIST_FLUSH_EVERY = 500;
     /** ER_QUERY_TIMEOUT, what MAX_EXECUTION_TIME reports. DBAL leaves it unmapped, so it arrives as a plain DriverException. */
     private const int ER_QUERY_TIMEOUT = 3024;
-    /** 50k rows deep. The sort cost grows with the offset, so cap it rather than spend the statement timeout on a page nobody reads. */
+    /** 50k rows deep, and only for the sorted suggesters listing: the sort cost grows with the offset, so cap it rather than spend the statement timeout on a page nobody reads. */
     private const int MAX_JSON_LISTING_PAGE = 500;
+    /** Ordered listings sort the whole set per page, so they are for looking at the top of, not for walking. */
+    private const int MAX_SORTED_LISTING_PAGE = 5;
     private const string STATS_RECORD_DATE = '2012-04-13 00:00:00';
     private const string RELEASES_RECORD_DATE = '2011-01-01 00:00:00';
 
@@ -1610,22 +1612,40 @@ class PackageController extends Controller
             return $resp;
         }
 
-        $page = max(1, $req->query->getInt('page', 1));
-        if ($req->getRequestFormat() === 'html' && $page > 3 && $this->getUser() === null) {
-            return new Response('<html>You must <a href="'.$this->generateUrl('login').'">log in</a> to access this page.', Response::HTTP_FORBIDDEN);
-        }
-        if ($req->getRequestFormat() === 'json' && $page > self::MAX_JSON_LISTING_PAGE) {
-            return $this->listingErrorResponse($req, 'This listing cannot be paged beyond page '.self::MAX_JSON_LISTING_PAGE.'.', Response::HTTP_BAD_REQUEST);
-        }
+        $isJson = $req->getRequestFormat() === 'json';
 
         $perPage = 15;
-        if ($req->getRequestFormat() === 'json') {
+        if ($isJson) {
             $perPage = 100;
         }
 
-        $orderBy = $req->query->getString('order_by', 'name');
-        if (!\in_array($orderBy, ['name', 'downloads'], true)) {
+        $page = max(1, min($req->query->getInt('page', 1), 1_000_000));
+
+        // json defaults to the order it can iterate cheaply, html to the one worth reading: an
+        // anonymous visitor only ever sees three pages, and 45 arbitrary packages out of 105k is
+        // no use to anyone.
+        $orderBy = $req->query->getString('order_by', $isJson ? 'none' : 'downloads');
+        if ($orderBy === 'name') {
+            if (!$isJson) {
+                return $this->redirectToRoute('view_package_dependents', ['name' => $name, 'requires' => $req->query->getString('requires', 'all')]);
+            }
+
+            return $this->listingErrorResponse($req, 'Ordering by name has been removed. Use order_by=none to iterate the whole list, or order_by=downloads for the most installed dependents (max '.self::MAX_SORTED_LISTING_PAGE.' pages).', Response::HTTP_BAD_REQUEST);
+        }
+        if (!\in_array($orderBy, ['none', 'downloads'], true)) {
             throw new BadRequestHttpException('Invalid order_by parameter provided');
+        }
+
+        if ($req->getRequestFormat() === 'html' && $page > 3 && $this->getUser() === null) {
+            return new Response('<html>You must <a href="'.$this->generateUrl('login').'">log in</a> to access this page.', Response::HTTP_FORBIDDEN);
+        }
+        // Sorting cannot be paged cheaply - the whole set is sorted however shallow the page - and
+        // past the first few pages a download ranking is not telling anyone anything anyway.
+        if ($isJson && $orderBy === 'none' && $page > 1) {
+            return $this->listingErrorResponse($req, 'This listing is not paged by number, follow the next url in the response to iterate it.', Response::HTTP_BAD_REQUEST);
+        }
+        if ($orderBy === 'downloads' && $page > self::MAX_SORTED_LISTING_PAGE) {
+            return $this->listingErrorResponse($req, 'A sorted listing cannot be paged beyond page '.self::MAX_SORTED_LISTING_PAGE.'. Use order_by=none to iterate the whole list.', Response::HTTP_BAD_REQUEST);
         }
 
         $requires = $req->query->getString('requires', 'all');
@@ -1637,24 +1657,46 @@ class PackageController extends Controller
         };
 
         $repo = $this->getEM()->getRepository(Package::class);
-        // uncached: this count drives the pager, so it has to match the rows fetched below or
-        // pagination truncates silently
-        try {
-            $depCount = $repo->getDependentCount($name, $requireType, cached: false);
-        } catch (DriverException $e) {
-            // a count has no cheaper variant to fall back to, unlike the listing below
-            if (!self::isStatementTimeout($e)) {
-                throw $e;
+        $degraded = false;
+        $cursor = null;
+        $depCount = 0;
+
+        // json walks the unsorted listing by cursor, which costs the same wherever it has got to.
+        // html pages it by number like any other listing - with nothing to sort, an offset is only
+        // a few more entries of the same index range.
+        $useCursor = $isJson && $orderBy === 'none';
+
+        // the count only feeds the numbered pager, and it is a 7.8k row scan of its own
+        if (!$useCursor) {
+            try {
+                $depCount = $repo->getDependentCount($name, $requireType, cached: false);
+            } catch (DriverException $e) {
+                // a count has no cheaper variant to fall back to, unlike the listing below
+                if (!self::isStatementTimeout($e)) {
+                    throw $e;
+                }
+
+                $logger->warning('Dependents count timed out', ['package' => $name, 'requires' => $requires]);
+
+                return $this->listingTooExpensiveResponse($req);
             }
-
-            $logger->warning('Dependents count timed out', ['package' => $name, 'requires' => $requires]);
-
-            return $this->listingTooExpensiveResponse($req);
         }
 
-        $unsorted = false;
         try {
-            $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
+            if ($orderBy === 'none') {
+                $after = $req->query->getInt('after');
+                $result = $repo->getDependentsUnsorted(
+                    $name,
+                    $useCursor && $after > 0 ? $after : null,
+                    $useCursor ? 0 : ($page - 1) * $perPage,
+                    $perPage,
+                    $requireType,
+                );
+                $packages = $result['packages'];
+                $cursor = $result['cursor'];
+            } else {
+                $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, $orderBy, $requireType);
+            }
         } catch (DriverException $e) {
             if (!self::isStatementTimeout($e)) {
                 throw $e;
@@ -1662,14 +1704,15 @@ class PackageController extends Controller
 
             $logger->warning('Dependents listing timed out', ['package' => $name, 'page' => $page, 'orderBy' => $orderBy, 'requires' => $requires]);
 
-            // Fetching the rows is cheap, it is ordering the whole set that is not, so the page
-            // degrades to an unsorted listing. Not offered as json: a client cannot see the warning.
-            if ($req->getRequestFormat() === 'json') {
+            // The unsorted listing is the cheap one, so a sorted page that gives up degrades into
+            // it rather than into a second attempt at the same sort. Not offered as json: a client
+            // cannot see the warning that the order it asked for is not the order it got.
+            if ($isJson || $orderBy === 'none') {
                 return $this->listingTooExpensiveResponse($req);
             }
 
             try {
-                $packages = $repo->getDependents($name, ($page - 1) * $perPage, $perPage, null, $requireType);
+                $result = $repo->getDependentsUnsorted($name, null, ($page - 1) * $perPage, $perPage, $requireType);
             } catch (DriverException $retry) {
                 if (!self::isStatementTimeout($retry)) {
                     throw $retry;
@@ -1678,7 +1721,11 @@ class PackageController extends Controller
                 return $this->listingTooExpensiveResponse($req);
             }
 
-            $unsorted = true;
+            $packages = $result['packages'];
+            // $orderBy stays what was asked for: it is still what the url says and what the pager
+            // links will request. $degraded is what the banner keys off, and it leaves the none
+            // tab a link, so the reader has a way out of the sort that just failed.
+            $degraded = true;
         }
 
         try {
@@ -1705,7 +1752,11 @@ class PackageController extends Controller
             }
         }
 
-        $paginator = new Pagerfanta(new FixedAdapter($depCount, $packages));
+        // the sorted listing refuses pages past the cap, so the pager must not offer them: this
+        // drives both the numbered html links and the json next url. The count in the header is
+        // still the real total.
+        $pagerCount = $orderBy === 'downloads' ? min($depCount, self::MAX_SORTED_LISTING_PAGE * $perPage) : $depCount;
+        $paginator = new Pagerfanta(new FixedAdapter($pagerCount, $packages));
         $paginator->setNormalizeOutOfRangePages(true);
         $paginator->setMaxPerPage($perPage);
         $paginator->setCurrentPage($page);
@@ -1721,10 +1772,16 @@ class PackageController extends Controller
                 $data['packages'][$index]['favers'] = $meta['favers'][$package['id']];
             }
 
-            if ($paginator->hasNextPage()) {
-                $data['next'] = $this->generateUrl('view_package_dependents', ['name' => $name, 'page' => $page + 1, '_format' => 'json', 'order_by' => $orderBy, 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
+            $nextParams = ['name' => $name, '_format' => 'json', 'order_by' => $orderBy, 'requires' => $requires];
+            if ($useCursor) {
+                // a null cursor is the end of the set, so the link simply stops being offered
+                if (null !== $cursor) {
+                    $data['next'] = $this->generateUrl('view_package_dependents', ['after' => $cursor] + $nextParams, UrlGeneratorInterface::ABSOLUTE_URL);
+                }
+            } elseif ($paginator->hasNextPage()) {
+                $data['next'] = $this->generateUrl('view_package_dependents', ['page' => $page + 1] + $nextParams, UrlGeneratorInterface::ABSOLUTE_URL);
             }
-            $data['ordered_by_name'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'name', 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
+            $data['unordered'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'none', 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
             $data['ordered_by_downloads'] = $this->generateUrl('view_package_dependents', ['name' => $name, '_format' => 'json', 'order_by' => 'downloads', 'requires' => $requires], UrlGeneratorInterface::ABSOLUTE_URL);
 
             return new JsonResponse($data);
@@ -1737,7 +1794,7 @@ class PackageController extends Controller
         $data['name'] = $name;
         $data['order_by'] = $orderBy;
         $data['requires'] = $requires;
-        $data['unsorted'] = $unsorted;
+        $data['degraded'] = $degraded;
 
         return $this->render('package/dependents.html.twig', $data);
     }

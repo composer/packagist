@@ -414,6 +414,67 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(['test/alpha', 'test/beta'], $names);
     }
 
+    public function testGetDependentsUnsortedWalksByPackageIdAndCollapsesBothRequireTypes(): void
+    {
+        $aaa = self::createPackage('test/aaa', 'https://example.org/aaa');
+        $bbb = self::createPackage('test/bbb', 'https://example.org/bbb');
+        $this->store($aaa, $bbb);
+        $this->store(
+            new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE),
+            // the same package on both types is two rows but one dependent
+            new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE_DEV),
+            new Dependent($bbb, 'test/required', Dependent::TYPE_REQUIRE),
+        );
+
+        $all = $this->packageRepository->getDependentsUnsorted('test/required');
+        self::assertSame(['test/aaa', 'test/bbb'], array_column($all['packages'], 'name'));
+        self::assertNull($all['cursor'], 'a page shorter than the limit ends the walk');
+
+        $devOnly = $this->packageRepository->getDependentsUnsorted('test/required', type: Dependent::TYPE_REQUIRE_DEV);
+        self::assertSame(['test/aaa'], array_column($devOnly['packages'], 'name'));
+    }
+
+    public function testGetDependentsUnsortedSeeksPastSuppressedPackages(): void
+    {
+        $aaa = self::createPackage('test/aaa', 'https://example.org/aaa');
+        $bbb = self::createPackage('test/bbb', 'https://example.org/bbb');
+        $bbb->freeze(PackageFreezeReason::Spam);
+        $ccc = self::createPackage('test/ccc', 'https://example.org/ccc');
+        $this->store($aaa, $bbb, $ccc);
+        $this->store(
+            new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($bbb, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($ccc, 'test/required', Dependent::TYPE_REQUIRE),
+        );
+
+        $first = $this->packageRepository->getDependentsUnsorted('test/required', limit: 1);
+        self::assertSame(['test/aaa'], array_column($first['packages'], 'name'));
+        self::assertSame($aaa->getId(), $first['cursor']);
+
+        // the suppressed row yields no package, but the cursor still has to move or a client
+        // following next asks for this same page forever
+        $second = $this->packageRepository->getDependentsUnsorted('test/required', $first['cursor'], limit: 1);
+        self::assertSame([], $second['packages']);
+        self::assertSame($bbb->getId(), $second['cursor']);
+
+        $third = $this->packageRepository->getDependentsUnsorted('test/required', $second['cursor'], limit: 1);
+        self::assertSame(['test/ccc'], array_column($third['packages'], 'name'));
+    }
+
+    public function testGetDependentsUnsortedPagesByOffsetForTheNumberedPager(): void
+    {
+        $aaa = self::createPackage('test/aaa', 'https://example.org/aaa');
+        $bbb = self::createPackage('test/bbb', 'https://example.org/bbb');
+        $this->store($aaa, $bbb);
+        $this->store(
+            new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($bbb, 'test/required', Dependent::TYPE_REQUIRE),
+        );
+
+        $secondPage = $this->packageRepository->getDependentsUnsorted('test/required', offset: 1, limit: 1);
+        self::assertSame(['test/bbb'], array_column($secondPage['packages'], 'name'));
+    }
+
     public function testListingQueriesCarryAnAcceptedExecutionTimeHint(): void
     {
         // MySQL answers a malformed, mis-positioned or inapplicable optimizer hint with a warning
@@ -424,6 +485,9 @@ class PackageRepositoryTest extends IntegrationTestCase
 
         $this->packageRepository->getSuggests('test/suggested');
         self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the suggesters query');
+
+        $this->packageRepository->getDependentsUnsorted('test/required', 1);
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the unsorted query');
 
         $this->packageRepository->getDefaultBranchRequireFor(['test/requirer'], 'test/required');
         self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the requirement query');

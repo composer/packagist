@@ -681,6 +681,73 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * The unsorted listing: dependents in package_id order, which is whatever order by_name_package
+     * already holds them in, so nothing has to be sorted at any depth.
+     *
+     * The ordering listings do by p.name or d.total lives on the joined package, so the whole set
+     * has to be materialised and filesorted before a page can be taken off it - 105,878 rows and
+     * ~3s on illuminate/support, and the same work for page 1 as for page 500. Here the limit is
+     * pushed into the index scan instead: the derived table is a range over
+     * (packageName, package_id, type), stops at $limit, and only then joins package by primary key.
+     *
+     * DISTINCT because a package requiring the same name in both require and require-dev has two
+     * rows; the index puts them next to each other so collapsing them costs nothing.
+     *
+     * @param int|null $afterId Seek past this package id, for cursor paging. Mutually exclusive
+     *                          with $offset, which is what the numbered html pager uses.
+     * @param int|null $type    One of Dependent::TYPE_*
+     *
+     * @return array{packages: list<array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>, cursor: int|null}
+     */
+    public function getDependentsUnsorted(string $name, ?int $afterId = null, int $offset = 0, int $limit = 100, ?int $type = null): array
+    {
+        $args = ['name' => $name];
+        $filter = '';
+        if (null !== $type) {
+            $filter .= ' AND type = :type';
+            $args['type'] = $type;
+        }
+        if (null !== $afterId) {
+            $filter .= ' AND package_id > :afterId';
+            $args['afterId'] = $afterId;
+        }
+
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
+            FROM package p INNER JOIN (
+                SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$filter.'
+                ORDER BY package_id ASC
+                LIMIT '.((int) $limit).' OFFSET '.((int) $offset).'
+            ) x ON x.package_id = p.id
+            ORDER BY x.package_id ASC';
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args);
+
+        $suppressed = PackageFreezeReason::suppressingValues();
+        $packages = [];
+        $lastFetched = null;
+        /** @var array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: bool, replacementPackage: string|null, frozen: string|null} $row */
+        foreach ($rows as $row) {
+            // the cursor tracks every row fetched, not every row kept: a page made entirely of
+            // suppressed packages still has to advance or a client asks for it forever
+            $lastFetched = (int) $row['id'];
+
+            // see getDependents() for why these are dropped here rather than in SQL
+            if (\in_array($row['frozen'], $suppressed, true)) {
+                continue;
+            }
+            unset($row['frozen']);
+
+            $packages[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
+        }
+
+        return [
+            'packages' => $packages,
+            // a short page is the end of the set, so there is nothing further to ask for
+            'cursor' => \count($rows) === $limit ? $lastFetched : null,
+        ];
+    }
+
+    /**
      * Bounded like the listing it annotates: it runs once per listing page with one name per row,
      * so left unbounded it hands back the worker occupancy the listing's own cap buys. The caller
      * drops the annotation on a timeout rather than failing the page.
