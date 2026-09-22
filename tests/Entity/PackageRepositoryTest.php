@@ -483,6 +483,11 @@ class PackageRepositoryTest extends IntegrationTestCase
         $this->packageRepository->getDependents('test/required');
         self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the dependents query');
 
+        // the download sort carries its own, larger budget, and adds a join between the hint and
+        // the ORDER BY it applies to
+        $this->packageRepository->getDependents('test/required', orderBy: 'downloads');
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the download-sorted dependents query');
+
         $this->packageRepository->getSuggests('test/suggested');
         self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the suggesters query');
 
