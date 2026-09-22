@@ -55,7 +55,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    {% if row.transferred %}
+                                    {% if row.maintainedByRequester %}
                                         <span class="badge bg-success">Transferred</span>
                                     {% elseif row.package and supportRequest.status.value == 'open' %}
                                         <form method="post" action="{{ path('admin_support_request_transfer_package', {publicId: supportRequest.publicId}) }}"
@@ -130,6 +130,139 @@
                     <a href="{{ path('user_profile', {name: supportRequest.user.username}) }}">their profile</a>, once the
                     packages have been dealt with. That also removes this request.
                 </p>
+            {% endif %}
+
+            {% if supportRequest.type.value == 'package_unfreeze' %}
+                <h3>Packages to unfreeze</h3>
+                <table class="table">
+                    <thead><tr><th>Package</th><th>Downloads</th><th>Frozen as</th><th>Repository</th><th></th></tr></thead>
+                    <tbody>
+                        {% for row in resolvedPackages %}
+                            <tr>
+                                <td>
+                                    {% if row.package %}
+                                        <a href="{{ path('view_package', {name: row.package.name}) }}">{{ row.package.name }}</a>
+                                        {% if not row.maintainedByRequester %}<span class="badge bg-warning text-dark">not theirs</span>{% endif %}
+                                    {% else %}
+                                        {{ row.name }} <span class="badge bg-secondary">not found</span>
+                                    {% endif %}
+                                </td>
+                                <td>{% if row.package %}{{ row.downloads|number_format }}{% endif %}</td>
+                                <td>
+                                    {% if row.freezeReason %}
+                                        <code>{{ row.freezeReason.value }}</code>
+                                        {% if row.freezeReason.value == 'remote_id' %}
+                                            <br/><small class="text-danger">Unfreezing clears the stored remote id, so the package adopts whatever the repo claims next crawl. Confirm they control it first.</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-success">Unfrozen</span>
+                                    {% endif %}
+                                </td>
+                                <td>{% if row.package %}<code>{{ row.package.repository }}</code>{% endif %}</td>
+                                <td class="text-end">
+                                    {% if row.package and row.freezeReason and supportRequest.status.value == 'open' %}
+                                        <form method="post" action="{{ path('admin_support_request_unfreeze_package', {publicId: supportRequest.publicId}) }}"
+                                              onsubmit="return confirm('Unfreeze {{ row.package.name|e('js') }}? It will be crawled again from {{ row.package.repository|e('js') }}.')">
+                                            <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+                                            <input type="hidden" name="package" value="{{ row.package.name }}" />
+                                            <button type="submit" class="btn btn-primary btn-xs">Unfreeze</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+            {% if supportRequest.type.value == 'package_url_change' %}
+                <h3>Repository changes requested</h3>
+                <p class="text-muted">
+                    The requested URL is shown exactly as it was submitted. Read it before following
+                    the link - the description and the URL are both written by the requester, and the
+                    edit form will be prefilled with whatever is here.
+                </p>
+                <table class="table">
+                    <thead><tr><th>Package</th><th>Now</th><th>Requested</th><th></th></tr></thead>
+                    <tbody>
+                        {% for row in urlChanges %}
+                            <tr>
+                                <td>
+                                    {% if row.package %}
+                                        <a href="{{ path('view_package', {name: row.package.name}) }}">{{ row.package.name }}</a>
+                                        {% if not row.maintainedByRequester %}<span class="badge bg-danger">requester is NOT a maintainer</span>{% endif %}
+                                        {% if row.freezeReason %}<br/><span class="badge bg-warning text-dark">frozen: {{ row.freezeReason.value }}</span>{% endif %}
+                                        <br/><small class="text-muted">{{ row.downloads|number_format }} downloads{% if row.remoteId %}, remote id <code>{{ row.remoteId }}</code>{% else %}, no stored remote id{% endif %}</small>
+                                    {% else %}
+                                        {{ row.name }} <span class="badge bg-secondary">not found</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.currentUrl %}<code>{{ row.currentUrl }}</code><br/><small class="text-muted">{{ row.currentHost }}</small>{% endif %}
+                                </td>
+                                <td>
+                                    <code>{{ row.requestedUrl }}</code>
+                                    <br/><small class="{{ row.currentHost and row.requestedHost != row.currentHost ? 'text-danger' : 'text-muted' }}">
+                                        {{ row.requestedHost }}{% if row.currentHost and row.requestedHost != row.currentHost %} - different host{% endif %}
+                                    </small>
+                                </td>
+                                <td class="text-end">
+                                    {% if row.applied %}
+                                        <span class="badge bg-success">Applied</span>
+                                    {% elseif row.package and supportRequest.status.value == 'open' %}
+                                        <a class="btn btn-primary btn-xs" rel="noopener" target="_blank"
+                                           href="{{ path('edit_package', {name: row.package.name, repository: row.requestedUrl, supportRequest: supportRequest.publicId}) }}">
+                                            Open the edit form
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="text-muted">
+                    The change itself is made on the package's own edit form, not from here. The task
+                    resolves itself once every package above has moved, unless one is still frozen.
+                </p>
+            {% endif %}
+
+            {% if supportRequest.type.value == 'package_deletion' %}
+                <h3>Packages to delete</h3>
+                <table class="table">
+                    <thead><tr><th>Package</th><th>Downloads</th><th>Maintainers</th><th></th></tr></thead>
+                    <tbody>
+                        {% for row in resolvedPackages %}
+                            <tr>
+                                <td>
+                                    {% if row.package %}
+                                        <a href="{{ path('view_package', {name: row.package.name}) }}">{{ row.package.name }}</a>
+                                        {% if not row.maintainedByRequester %}<span class="badge bg-danger">requester is NOT a maintainer</span>{% endif %}
+                                    {% else %}
+                                        {{ row.name }} <span class="badge bg-success">deleted</span>
+                                    {% endif %}
+                                </td>
+                                <td>{% if row.package %}{{ row.downloads|number_format }}{% endif %}</td>
+                                <td>
+                                    {% if row.package %}
+                                        {% for maintainer in row.package.maintainers %}
+                                            <a href="{{ path('user_profile', {name: maintainer.username}) }}">{{ maintainer.username }}</a>{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if row.package and supportRequest.status.value == 'open' %}
+                                        <form method="post" action="{{ path('admin_support_request_delete_package', {publicId: supportRequest.publicId}) }}"
+                                              onsubmit="return confirm('Permanently delete {{ row.package.name|e('js') }}? This cannot be undone and will break anything still requiring it.')">
+                                            <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+                                            <input type="hidden" name="package" value="{{ row.package.name }}" />
+                                            <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% endif %}
 
             <h3>Thread</h3>

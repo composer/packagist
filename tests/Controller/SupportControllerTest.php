@@ -12,11 +12,15 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\PackageFreezeReason;
 use App\Entity\SupportRequest;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
 use App\Support\Attributes\AccountDeletionAttributes;
+use App\Support\Attributes\PackageDeletionAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\PackageUnfreezeAttributes;
+use App\Support\Attributes\PackageUrlChangeAttributes;
 use App\Support\PackageDisposition;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
@@ -37,6 +41,9 @@ class SupportControllerTest extends IntegrationTestCase
         $this->assertCount(1, $crawler->filter('#package-transfer'));
         $this->assertCount(1, $crawler->filter('#vendor-claim'));
         $this->assertCount(1, $crawler->filter('#delete-account'));
+        $this->assertCount(1, $crawler->filter('#unfreeze-package'));
+        $this->assertCount(1, $crawler->filter('#package-url-change'));
+        $this->assertCount(1, $crawler->filter('#delete-packages'));
 
         $this->assertCount(1, $crawler->filter('a[href="https://phpc.social/@packagist"]'));
         $this->assertCount(1, $crawler->filter('a[href="https://bsky.app/profile/packagist.com"]'));
@@ -521,6 +528,342 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertNotNull($request);
 
         return $request;
+    }
+
+    /**
+     * @return array{0: User, 1: \App\Entity\Package}
+     */
+    private function givenFrozenPackage(string $name, PackageFreezeReason $reason, ?User $user = null): array
+    {
+        $user ??= self::createUser('frosty', 'frosty@example.org');
+        $package = self::createPackage($name, 'https://example.org/'.$name, maintainers: [$user]);
+        $package->freeze($reason);
+        $this->store($user, $package);
+
+        return [$user, $package];
+    }
+
+    public function testUnfreezeOnlyOffersGentlyFrozenPackagesTheUserMaintains(): void
+    {
+        $user = self::createUser('frosty', 'frosty@example.org');
+        $stranger = self::createUser('stranger', 'stranger@example.org');
+        $this->store($user, $stranger);
+
+        $gentle = self::createPackage('frosty/gone', 'https://example.org/frosty/gone', maintainers: [$user]);
+        $gentle->freeze(PackageFreezeReason::Gone);
+        $spam = self::createPackage('frosty/spam', 'https://example.org/frosty/spam', maintainers: [$user]);
+        $spam->freeze(PackageFreezeReason::Spam);
+        $healthy = self::createPackage('frosty/fine', 'https://example.org/frosty/fine', maintainers: [$user]);
+        $theirs = self::createPackage('stranger/gone', 'https://example.org/stranger/gone', maintainers: [$stranger]);
+        $theirs->freeze(PackageFreezeReason::Gone);
+        $this->store($gentle, $spam, $healthy, $theirs);
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/unfreeze-package');
+
+        $this->assertResponseIsSuccessful();
+        $values = $crawler->filter('input[name="package_unfreeze_request[packageNames][]"]')->extract(['value']);
+        self::assertSame(['frosty/gone'], $values);
+    }
+
+    /**
+     * The checkbox list is the authorization check, so a package the requester cannot appeal must
+     * not become selectable just because the query string names it -- including a suppressed one,
+     * which would otherwise confirm to a stranger that it exists.
+     */
+    public function testUnfreezeIgnoresAPackageQueryParamTheUserCannotAppeal(): void
+    {
+        $user = self::createUser('frosty', 'frosty@example.org');
+        $this->store($user);
+        $spam = self::createPackage('frosty/spam', 'https://example.org/frosty/spam', maintainers: [$user]);
+        $spam->freeze(PackageFreezeReason::Spam);
+        $gentle = self::createPackage('frosty/gone', 'https://example.org/frosty/gone', maintainers: [$user]);
+        $gentle->freeze(PackageFreezeReason::Gone);
+        $this->store($spam, $gentle);
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/unfreeze-package?package=frosty/spam');
+
+        $this->assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('input[name="package_unfreeze_request[packageNames][]"][checked]'));
+        self::assertSame(['frosty/gone'], $crawler->filter('input[name="package_unfreeze_request[packageNames][]"]')->extract(['value']));
+    }
+
+    public function testUnfreezePreselectsThePackageFromTheQueryString(): void
+    {
+        [$user] = $this->givenFrozenPackage('frosty/gone', PackageFreezeReason::Gone);
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/unfreeze-package?package=frosty/gone');
+
+        $this->assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('input[name="package_unfreeze_request[packageNames][]"][checked]'));
+    }
+
+    public function testUnfreezeSendsUsersWithNothingEligibleAway(): void
+    {
+        $user = self::createUser('frosty', 'frosty@example.org');
+        $this->store($user);
+
+        $this->client->loginUser($user);
+        $this->client->request('GET', '/contact/unfreeze-package');
+
+        $this->assertResponseRedirects('/contact');
+    }
+
+    public function testUnfreezeRequestStoresTheTickedPackages(): void
+    {
+        [$user] = $this->givenFrozenPackage('frosty/gone', PackageFreezeReason::Gone);
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/unfreeze-package');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_unfreeze_request[packageNames]' => ['frosty/gone'],
+            'package_unfreeze_request[description]' => 'The repository is back up, it was a hosting outage.',
+        ]);
+
+        $this->client->submit($form);
+        $this->assertResponseRedirects('/contact');
+
+        $request = $this->findRequest($user, SupportRequestType::PackageUnfreeze);
+        self::assertNotNull($request);
+        self::assertSame(['frosty/gone'], $request->attributesOf(PackageUnfreezeAttributes::class)->packageNames);
+    }
+
+    public function testUnfreezeRejectsAPackageOutsideTheChoiceList(): void
+    {
+        $user = self::createUser('frosty', 'frosty@example.org');
+        $stranger = self::createUser('stranger', 'stranger@example.org');
+        $this->store($user, $stranger);
+        $mine = self::createPackage('frosty/gone', 'https://example.org/frosty/gone', maintainers: [$user]);
+        $mine->freeze(PackageFreezeReason::Gone);
+        $theirs = self::createPackage('stranger/gone', 'https://example.org/stranger/gone', maintainers: [$stranger]);
+        $theirs->freeze(PackageFreezeReason::Gone);
+        $this->store($mine, $theirs);
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/unfreeze-package');
+        $token = $crawler->filter('input[name="package_unfreeze_request[_token]"]')->attr('value');
+
+        $this->client->request('POST', '/contact/unfreeze-package', ['package_unfreeze_request' => [
+            'packageNames' => ['stranger/gone'],
+            'description' => 'Give me that one instead.',
+            '_token' => $token,
+        ]]);
+
+        $this->assertResponseStatusCodeSame(422);
+        self::assertNull($this->findRequest($user, SupportRequestType::PackageUnfreeze));
+    }
+
+    public function testPackageUrlChangePrefillsFromTheQueryString(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('mover/thing', 'https://example.org/mover/thing', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/package-url-change?package=mover/thing&repository=https://example.org/mover/moved');
+
+        $this->assertResponseIsSuccessful();
+        self::assertSame('https://example.org/mover/moved', $crawler->filter('#package_url_change_request_repository')->attr('value'));
+        self::assertCount(1, $crawler->filter('#package_url_change_request_packageName option[value="mover/thing"][selected]'));
+    }
+
+    public function testPackageUrlChangeRejectsAPackageTheUserDoesNotMaintain(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $stranger = self::createUser('stranger', 'stranger@example.org');
+        $this->store($user, $stranger);
+        $this->store(self::createPackage('mover/thing', 'https://example.org/mover/thing', maintainers: [$user]));
+        $this->store(self::createPackage('stranger/thing', 'https://example.org/stranger/thing', maintainers: [$stranger]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/package-url-change');
+        $token = $crawler->filter('input[name="package_url_change_request[_token]"]')->attr('value');
+
+        $this->client->request('POST', '/contact/package-url-change', ['package_url_change_request' => [
+            'packageName' => 'stranger/thing',
+            'repository' => 'https://example.org/attacker/thing',
+            'description' => 'It moved, honest.',
+            '_token' => $token,
+        ]]);
+
+        $this->assertResponseStatusCodeSame(422);
+        self::assertNull($this->findRequest($user, SupportRequestType::PackageUrlChange));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function unreachableRepositoryUrls(): iterable
+    {
+        yield 'plain http' => ['http://example.org/mover/moved'];
+        yield 'ip literal' => ['https://127.0.0.1/mover/moved'];
+        yield 'localhost' => ['https://localhost/mover/moved'];
+        yield 'explicit port' => ['https://example.org:8080/mover/moved'];
+        yield 'embedded credentials' => ['https://user:pass@example.org/mover/moved'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('unreachableRepositoryUrls')]
+    public function testPackageUrlChangeRejectsUrlsItCouldNeverActOn(string $url): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('mover/thing', 'https://example.org/mover/thing', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/package-url-change');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_url_change_request[packageName]' => 'mover/thing',
+            'package_url_change_request[repository]' => $url,
+            'package_url_change_request[description]' => 'It moved.',
+        ]);
+
+        $this->client->submit($form);
+
+        $this->assertResponseStatusCodeSame(422);
+        self::assertNull($this->findRequest($user, SupportRequestType::PackageUrlChange));
+    }
+
+    public function testPackageUrlChangeRejectsTheUrlItAlreadyHas(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('mover/thing', 'https://example.org/mover/thing', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/package-url-change');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_url_change_request[packageName]' => 'mover/thing',
+            'package_url_change_request[repository]' => 'https://example.org/mover/thing',
+            'package_url_change_request[description]' => 'It moved.',
+        ]);
+
+        $crawler = $this->client->submit($form);
+
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertFormError('already the repository URL', 'package_url_change_request', $crawler);
+    }
+
+    /**
+     * One open request per type is a database invariant, but a GitHub org rename breaks every
+     * package under it at once, so the second filing has to land somewhere rather than bounce.
+     */
+    public function testPackageUrlChangeAppendsToAnOpenRequest(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('mover/one', 'https://example.org/mover/one', maintainers: [$user]));
+        $this->store(self::createPackage('mover/two', 'https://example.org/mover/two', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        foreach (['one', 'two'] as $which) {
+            $crawler = $this->client->request('GET', '/contact/package-url-change');
+            $form = $crawler->selectButton('Send request')->form();
+            $form->setValues([
+                'package_url_change_request[packageName]' => 'mover/'.$which,
+                'package_url_change_request[repository]' => 'https://example.org/moved/'.$which,
+                'package_url_change_request[description]' => 'The org was renamed.',
+            ]);
+            $this->client->submit($form);
+            $this->assertResponseRedirects('/contact');
+        }
+
+        $request = $this->findRequest($user, SupportRequestType::PackageUrlChange);
+        self::assertNotNull($request);
+        self::assertSame(['mover/one', 'mover/two'], $request->attributesOf(PackageUrlChangeAttributes::class)->names());
+    }
+
+    public function testDeletePackagesOnlyOffersTheUsersOwnPackages(): void
+    {
+        $user = self::createUser('owner', 'owner@example.org');
+        $stranger = self::createUser('stranger', 'stranger@example.org');
+        $this->store($user, $stranger);
+        $this->store(self::createPackage('owner/thing', 'https://example.org/owner/thing', maintainers: [$user]));
+        $this->store(self::createPackage('stranger/thing', 'https://example.org/stranger/thing', maintainers: [$stranger]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/delete-packages');
+
+        $this->assertResponseIsSuccessful();
+        self::assertSame(['owner/thing'], $crawler->filter('input[name="package_deletion_request[packageNames][]"]')->extract(['value']));
+    }
+
+    public function testDeletePackagesStoresTheTickedPackages(): void
+    {
+        $user = self::createUser('owner', 'owner@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('owner/one', 'https://example.org/owner/one', maintainers: [$user]));
+        $this->store(self::createPackage('owner/two', 'https://example.org/owner/two', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/delete-packages');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_deletion_request[packageNames]' => ['owner/one', 'owner/two'],
+            'package_deletion_request[description]' => 'These were a mistake, they duplicate another package.',
+            'package_deletion_request[acknowledged]' => '1',
+        ]);
+
+        $this->client->submit($form);
+        $this->assertResponseRedirects('/contact');
+
+        $request = $this->findRequest($user, SupportRequestType::PackageDeletion);
+        self::assertNotNull($request);
+        self::assertSame(['owner/one', 'owner/two'], $request->attributesOf(PackageDeletionAttributes::class)->packageNames);
+    }
+
+    public function testDeletePackagesRequiresTheAcknowledgement(): void
+    {
+        $user = self::createUser('owner', 'owner@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('owner/one', 'https://example.org/owner/one', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/delete-packages');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_deletion_request[packageNames]' => ['owner/one'],
+            'package_deletion_request[description]' => 'It was a mistake.',
+        ]);
+
+        $this->client->submit($form);
+
+        $this->assertResponseStatusCodeSame(422);
+        self::assertNull($this->findRequest($user, SupportRequestType::PackageDeletion));
+    }
+
+    public function testDeletePackagesSendsUsersWithNoPackagesAway(): void
+    {
+        $user = self::createUser('owner', 'owner@example.org');
+        $this->store($user);
+
+        $this->client->loginUser($user);
+        $this->client->request('GET', '/contact/delete-packages');
+
+        $this->assertResponseRedirects('/contact');
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function loggedInWorkflowPaths(): iterable
+    {
+        yield 'unfreeze' => ['/contact/unfreeze-package'];
+        yield 'url change' => ['/contact/package-url-change'];
+        yield 'deletion' => ['/contact/delete-packages'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('loggedInWorkflowPaths')]
+    public function testNewWorkflowsRequireLogin(string $path): void
+    {
+        $this->client->request('GET', $path);
+
+        $this->assertResponseRedirects();
+        self::assertStringContainsString('/login', (string) $this->client->getResponse()->headers->get('Location'));
     }
 
     private function findRequest(User $user, SupportRequestType $type): ?SupportRequest

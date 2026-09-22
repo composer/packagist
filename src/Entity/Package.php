@@ -78,6 +78,18 @@ enum PackageFreezeReason: string
     }
 
     /**
+     * The freeze reasons a maintainer may appeal, derived as the complement of the suppressing ones
+     * rather than listed by hand: a suppressed package 404s for its own maintainer, so offering it
+     * in the appeal form would both be useless and confirm the package exists.
+     *
+     * @return list<self>
+     */
+    public static function appealableCases(): array
+    {
+        return array_values(array_filter(self::cases(), static fn (self $reason): bool => !$reason->suppressesPackage()));
+    }
+
+    /**
      * Freeze reasons a package moderator may apply through the UI, given whether they hold
      * ROLE_DISABLE_PACKAGES. Gone is offered here as well as being crawler-set, for repos which are
      * gone in a way the 404 detection cannot conclude on its own. Excludes RemoteIdMismatch, which

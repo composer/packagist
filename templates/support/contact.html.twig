@@ -67,5 +67,36 @@
             </p>
             <a class="btn btn-primary" href="{{ path('support_delete_account') }}">Request deletion</a>
         </section>
+
+        <div class="clearfix"></div>
+
+        <section class="col-lg-6">
+            <h3 id="unfreeze-package">Get a frozen package unfrozen</h3>
+            <p>
+                Frozen packages are no longer crawled, so new tags stop appearing. If one of yours is
+                frozen and you think it should not be, ask us to take another look.
+            </p>
+            <a class="btn btn-primary" href="{{ path('support_unfreeze_package') }}">Request an unfreeze</a>
+        </section>
+
+        <section class="col-lg-6">
+            <h3 id="package-url-change">Change a package's repository URL</h3>
+            <p>
+                Editing the URL yourself is disabled once a package is widely used, since that is how
+                a package gets hijacked. Tell us where the repository moved and we will do it.
+            </p>
+            <a class="btn btn-primary" href="{{ path('support_package_url_change') }}">Request a URL change</a>
+        </section>
+
+        <div class="clearfix"></div>
+
+        <section class="col-lg-6">
+            <h3 id="delete-packages">Delete packages</h3>
+            <p>
+                Packages you can still remove yourself have a Delete button on their own page. Use
+                this for the ones that are too widely used for that, or to clear several at once.
+            </p>
+            <a class="btn btn-primary" href="{{ path('support_delete_packages') }}">Request deletion</a>
+        </section>
     </section>
 {% endblock %}

@@ -36,6 +36,8 @@ use App\Entity\VersionSummary;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
 use App\FilterList\FilterLists;
+use App\Entity\SupportRequestMessage;
+use App\Entity\SupportRequestRepository;
 use App\Form\Model\MaintainerRequest;
 use App\Form\Model\TransferPackageRequest;
 use App\Form\Type\AbandonedType;
@@ -56,6 +58,9 @@ use App\Util\Killswitch;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
+use App\Support\Attributes\PackageUrlChangeAttributes;
+use App\Support\SupportRequestType;
+use App\Validator\PopularPackageSafety;
 use Composer\Semver\Constraint\Constraint;
 use Composer\Semver\Constraint\MatchNoneConstraint;
 use Composer\Semver\Constraint\MultiConstraint;
@@ -68,9 +73,11 @@ use Predis\Client as RedisClient;
 use Predis\PredisException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\HttpFoundation\AcceptHeader;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -1280,17 +1287,30 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name:package}/edit', name: 'edit_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
-    public function editAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] ?User $user = null): Response
+    public function editAction(Request $req, #[MapEntity] Package $package, SupportRequestRepository $supportRequests, #[CurrentUser] ?User $user = null): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::Edit->value, $package);
 
+        // Seeded through the field's data option, never through $package->setRepository(): that
+        // setter probes the URL over the network and dirties the managed entity, so prefilling
+        // through it would make a plain GET reach out to a host somebody else chose.
+        $prefill = $req->isMethod('GET') ? trim($req->query->getString('repository')) : '';
+        $previousUrl = $package->getRepository();
+
         $form = $this->createFormBuilder($package, ['validation_groups' => ['Update']])
-            ->add('repository', TextType::class)
+            ->add('repository', TextType::class, $prefill !== '' && mb_strlen($prefill) <= 255 ? ['data' => $prefill] : [])
+            // Unmapped and hidden so the reference survives the POST: the form's action is generated
+            // without a query string, so reading it back off the URL would only ever work on the GET.
+            ->add('supportRequest', HiddenType::class, [
+                'mapped' => false,
+                'data' => $req->isMethod('GET') ? $req->query->getString('supportRequest') : '',
+            ])
             ->setMethod('POST')
             ->setAction($this->generateUrl('edit_package', ['name' => $package->getName()]))
             ->getForm();
 
         $form->handleRequest($req);
+        $supportRequestId = is_string($id = $form->get('supportRequest')->getData()) ? $id : '';
         if ($form->isSubmitted() && $form->isValid()) {
             // Force updating of packages once the package is viewed after the redirect.
             $package->setCrawledAt(null);
@@ -1301,6 +1321,8 @@ class PackageController extends Controller
             $em->persist($package);
             $em->flush();
 
+            $this->noteUrlChangeOnSupportRequest($supportRequests, $package, $previousUrl, $supportRequestId, $user);
+
             $this->addFlash('success', 'Changes saved.');
 
             return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
@@ -1309,7 +1331,99 @@ class PackageController extends Controller
         return $this->render('package/edit.html.twig', [
             'package' => $package,
             'form' => $form,
+            // Set only when the popularity guard is what rejected the edit, so the support workflow
+            // is offered exactly where it is the answer.
+            'urlChangeBlocked' => $this->popularityBlockedUrl($form),
+            'prefilled' => $prefill !== '',
+            'supportRequestId' => $supportRequestId,
         ]);
+    }
+
+    /**
+     * The URL the popularity guard rejected, or null if that is not why the form failed.
+     *
+     * Matched on the constraint type rather than on the message, the way
+     * FormInvalidPasswordSubscriber does. The unknownMessage variant is deliberately excluded: it
+     * means the download count could not be read, so every package on the site looks popular, and
+     * pointing all of them at the support queue would be the wrong answer.
+     *
+     * @param FormInterface<Package> $form
+     */
+    private function popularityBlockedUrl(FormInterface $form): ?string
+    {
+        foreach ($form->getErrors(true) as $error) {
+            $cause = $error->getCause();
+            if (!$cause instanceof ConstraintViolation) {
+                continue;
+            }
+
+            $constraint = $cause->getConstraint();
+            if ($constraint instanceof PopularPackageSafety && $cause->getMessageTemplate() === $constraint->message) {
+                $data = $form->get('repository')->getViewData();
+
+                return is_string($data) && $data !== '' ? $data : null;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Records an applied URL change on the support request it came from, and resolves that request
+     * once every package it names has moved.
+     *
+     * Deliberately here rather than in PackageListener: the listener also fires for webhook-driven
+     * rewrites, where there is no admin and no ticket, and it would have to write from inside a
+     * flush. The reference is admin-supplied on an admin-only page, and the worst a wrong one can do
+     * is annotate a request that already names this package.
+     */
+    private function noteUrlChangeOnSupportRequest(SupportRequestRepository $supportRequests, Package $package, string $previousUrl, string $publicId, ?User $actor): void
+    {
+        if ($publicId === '' || $previousUrl === $package->getRepository()) {
+            return;
+        }
+
+        $request = $supportRequests->findOneByPublicId($publicId);
+        if ($request === null || !$request->isOpen() || $request->type !== SupportRequestType::PackageUrlChange) {
+            return;
+        }
+
+        $attributes = $request->attributesOf(PackageUrlChangeAttributes::class);
+        if (!in_array($package->getName(), $attributes->names(), true)) {
+            return;
+        }
+
+        $em = $this->getEM();
+        $em->persist(SupportRequestMessage::internalNote(
+            $request,
+            'Repository for '.$package->getName().' changed from '.$previousUrl.' to '.$package->getRepository().'.',
+            $actor,
+        ));
+
+        $now = new \DateTimeImmutable();
+        $request->touch($now);
+
+        // Only once every requested move is done, and never while the package is still frozen: a
+        // remote id mismatch freeze survives the URL change (Package::unfreeze() only auto-clears
+        // Gone), so resolving here would close the task on a package that still will not update.
+        if (!$package->isFrozen() && $this->everyUrlChangeApplied($attributes)) {
+            $request->resolve($now);
+        }
+
+        $em->flush();
+    }
+
+    private function everyUrlChangeApplied(PackageUrlChangeAttributes $attributes): bool
+    {
+        $repo = $this->getEM()->getRepository(Package::class);
+        foreach ($attributes->changes as $change) {
+            $target = $repo->findOneBy(['name' => $change->packageName]);
+            if ($target === null || $target->getRepository() !== $change->repository) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     #[Route(path: '/packages/{name:package}/abandon', name: 'abandon_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
