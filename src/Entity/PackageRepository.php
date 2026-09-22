@@ -40,12 +40,20 @@ class PackageRepository extends ServiceEntityRepository
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
 
     /**
-     * These listings sort the whole joined set before paginating, which averages ~10ms but has run
-     * for nearly 9 minutes in production. 3s leaves headroom over the worst case measured warm
-     * (phpunit/phpunit, 163k dependents, 1.2s) while capping what a cold request waits before the
-     * caller degrades on the DriverException.
+     * The index ranges, counts and annotations on the listing path, none of which sorts anything.
+     * 3s is far above what any of them should need; it is here to stop a bad plan holding a worker,
+     * not as a budget anything is expected to spend.
      */
     private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(3000) */';
+
+    /**
+     * The download sort filesorts the whole joined set before paginating however shallow the page,
+     * which averages ~10ms but has run for nearly 9 minutes in production, and ~3s on the largest
+     * packages cold. It gets the larger budget because giving up does not save the work: the cap is
+     * spent in full and then the caller pays for the unsorted listing on top. 5s buys the packages
+     * that sit just past 3s a correct answer for roughly what the timeout already costs them.
+     */
+    private const SORTED_LISTING_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
@@ -653,7 +661,7 @@ class PackageRepository extends ServiceEntityRepository
             $args['type'] = $type;
         }
 
-        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
+        $sql = 'SELECT '.self::SORTED_LISTING_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
             ) x ON x.package_id = p.id '.$join.'
