@@ -113,6 +113,8 @@ class IndexPackagesCommand extends Command
             $indexTime = new \DateTime();
             $idsSlice = array_splice($ids, 0, 50);
             $packages = $this->getEM()->getRepository(Package::class)->findBy(['id' => $idsSlice]);
+            $tagsById = $this->getTags($idsSlice);
+            $providersById = $this->getProviders($idsSlice);
 
             $idsToUpdate = [];
             $records = [];
@@ -134,9 +136,7 @@ class IndexPackagesCommand extends Command
                 }
 
                 try {
-                    $tags = $this->getTags($package);
-
-                    $records[] = $this->packageToSearchableArray($package, $tags);
+                    $records[] = $this->packageToSearchableArray($package, $tagsById[$package->getId()] ?? []);
 
                     $idsToUpdate[] = $package->getId();
                 } catch (\Exception $e) {
@@ -145,9 +145,8 @@ class IndexPackagesCommand extends Command
                     continue;
                 }
 
-                $providers = $this->getProviders($package);
-                foreach ($providers as $provided) {
-                    $records[] = $this->createSearchableProvider($provided['packageName']);
+                foreach ($providersById[$package->getId()] ?? [] as $provided) {
+                    $records[] = $this->createSearchableProvider($provided);
                 }
             }
 
@@ -258,46 +257,64 @@ class IndexPackagesCommand extends Command
     }
 
     /**
-     * @return array<array{packageName: string}>
+     * Virtual packages provided by each package's default branch, keyed by package id.
+     *
+     * Per slice rather than per package: this ran 74,912,681 times for 104,677s of DB time in the
+     * prod digests, one execution per package per pass, where 50 packages share one query.
+     *
+     * @param list<int> $ids
+     *
+     * @return array<int, list<string>>
      */
-    private function getProviders(Package $package): array
+    private function getProviders(array $ids): array
     {
-        return $this->getEM()->getConnection()->fetchAllAssociative(
-            'SELECT lp.packageName
-                FROM package p
-                JOIN package_version pv ON p.id = pv.package_id
+        $rows = $this->getEM()->getConnection()->fetchAllAssociative(
+            'SELECT pv.package_id AS packageId, lp.packageName AS packageName
+                FROM package_version pv
                 JOIN link_provide lp ON lp.version_id = pv.id
-                WHERE p.id = :id
+                WHERE pv.package_id IN (:ids)
                 AND pv.development = true
-                GROUP BY lp.packageName',
-            ['id' => $package->getId()]
+                GROUP BY pv.package_id, lp.packageName',
+            ['ids' => $ids],
+            ['ids' => ArrayParameterType::INTEGER]
         );
+
+        $providersById = [];
+        foreach ($rows as $row) {
+            $providersById[(int) $row['packageId']][] = (string) $row['packageName'];
+        }
+
+        return $providersById;
     }
 
     /**
-     * @return list<string>
+     * Normalized tags across all of each package's versions, keyed by package id. Batched per slice
+     * for the same reason as {@see getProviders()}.
+     *
+     * @param list<int> $ids
+     *
+     * @return array<int, list<string>>
      */
-    private function getTags(Package $package): array
+    private function getTags(array $ids): array
     {
         $rows = $this->getEM()->getConnection()->fetchAllAssociative(
-            'SELECT t.name FROM package p
-                            JOIN package_version pv ON p.id = pv.package_id
-                            JOIN version_tag vt ON vt.version_id = pv.id
-                            JOIN tag t ON t.id = vt.tag_id
-                            WHERE p.id = :id
-                            GROUP BY t.id, t.name',
-            ['id' => $package->getId()]
+            'SELECT pv.package_id AS packageId, t.name AS name
+                FROM package_version pv
+                JOIN version_tag vt ON vt.version_id = pv.id
+                JOIN tag t ON t.id = vt.tag_id
+                WHERE pv.package_id IN (:ids)
+                GROUP BY pv.package_id, t.id, t.name',
+            ['ids' => $ids],
+            ['ids' => ArrayParameterType::INTEGER]
         );
 
-        $tags = [];
-        foreach ($rows as $tag) {
-            $tags[] = $tag['name'];
+        $tagsById = [];
+        foreach ($rows as $row) {
+            $tagsById[(int) $row['packageId']][] = Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', (string) $row['name']), 'UTF-8'));
         }
 
-        return array_values(array_unique(array_map(
-            static fn (string $tag) => Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', $tag), 'UTF-8')),
-            $tags
-        )));
+        // deduped after normalizing, so tags differing only in case or spacing collapse together
+        return array_map(static fn (array $tags): array => array_values(array_unique($tags)), $tagsById);
     }
 
     /**
