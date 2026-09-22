@@ -326,13 +326,26 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * Packages whose search index entry is behind their last crawl.
+     *
+     * Bounded by $since because `indexedAt <= crawledAt` compares two columns, which no index can
+     * serve — unbounded it walks the whole table. A package only goes stale by being crawled, so
+     * the window loses nothing while the command keeps up, and the nightly --all pass catches the
+     * rest.
+     *
      * @return list<array{id: int}>
      */
-    public function getStalePackagesForIndexing(): array
+    public function getStalePackagesForIndexing(\DateTimeImmutable $since): array
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchAllAssociative('SELECT p.id FROM package p WHERE p.indexedAt IS NULL OR p.indexedAt <= p.crawledAt ORDER BY p.id ASC');
+        return $conn->fetchAllAssociative(
+            'SELECT p.id FROM package p
+            WHERE p.indexedAt IS NULL
+               OR (p.crawledAt > :since AND p.indexedAt <= p.crawledAt)
+            ORDER BY p.id ASC',
+            ['since' => $since->format('Y-m-d H:i:s')]
+        );
     }
 
     /**
