@@ -368,7 +368,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package]/dependents.json?ord
   "packages": [
     "[list of packages requiring this one]"
   ],
-  "next": "[url of the next page, absent once you have reached the end]",
+  "next": "[url to fetch the next results, absent once you have reached the end]",
   "unordered": "[url of this listing in no particular order]",
   "ordered_by_downloads": "[url of this listing with the most installed first]"
 }
@@ -376,13 +376,11 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package]/dependents.json?ord
 
 <p><code>requires</code> narrows the listing to <code>require</code> or <code>require-dev</code>; it defaults to <code>all</code>.</p>
 
-<p><strong>To fetch every dependent, use <code>order_by=none</code> and follow <code>next</code> until it is no longer returned.</strong> Its <code>next</code> carries an <code>after</code> cursor rather than a page number: that listing is served straight from an index, so a page reached by cursor costs the same whether it is the first or the ten thousandth, and the cursor is not page-limited. Do not construct those URLs yourself - follow the one in the response.</p>
+<p><strong>To fetch every dependent, use <code>order_by=none</code> and follow <code>next</code> until it is no longer returned.</strong> Always follow the <code>next</code> url as it is returned to you, do not construct it yourself.</p>
 
-<p>A <code>page</code> parameter also works on this listing and is not capped, so an existing page loop keeps working and can reach the end of the set. It does get slower the deeper it goes, which the cursor does not, so prefer the cursor for a full traversal.</p>
+<p><code>order_by=downloads</code> gives the most installed dependents first. It is for looking at the top of the list rather than walking it, and stops after the first 500.</p>
 
-<p><code>order_by=downloads</code> sorts the whole set to build each page, so it is limited to the first 5 pages. It is for looking at the most installed dependents, not for walking the list.</p>
-
-<p><code>order_by=name</code> has been removed. It sorted every dependent of the package to return a single page, which cost the same at page 1 as at page 500 and could take seconds on a widely required package. Use <code>order_by=none</code> if you were paging through it, or <code>order_by=downloads</code> if you wanted the interesting entries first.</p>
+<p><code>order_by=name</code> has been removed, as it could take seconds to answer on a widely required package. Use <code>order_by=none</code> if you were iterating the whole list, or <code>order_by=downloads</code> if you wanted the interesting entries first.</p>
 
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/monolog/monolog/dependents.json?order_by=none">https://{{ packagist_host }}/packages/monolog/monolog/dependents.json?order_by=none</a></code></p>
 </section>

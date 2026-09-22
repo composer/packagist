@@ -1641,6 +1641,9 @@ class PackageController extends Controller
         }
         // Sorting cannot be paged cheaply - the whole set is sorted however shallow the page - and
         // past the first few pages a download ranking is not telling anyone anything anyway.
+        if ($isJson && $orderBy === 'none' && $page > 1) {
+            return $this->listingErrorResponse($req, 'This listing is not paged by number, follow the next url in the response to iterate it.', Response::HTTP_BAD_REQUEST);
+        }
         if ($orderBy === 'downloads' && $page > self::MAX_SORTED_LISTING_PAGE) {
             return $this->listingErrorResponse($req, 'A sorted listing cannot be paged beyond page '.self::MAX_SORTED_LISTING_PAGE.'. Use order_by=none to iterate the whole list.', Response::HTTP_BAD_REQUEST);
         }
@@ -1681,14 +1684,11 @@ class PackageController extends Controller
 
         try {
             if ($orderBy === 'none') {
-                // a cursor if one was handed back to us, an offset otherwise: a client that kept
-                // its page loop when order_by=name went away has to get the rows it asked for, not
-                // page 1 with a 200. Following next moves it onto the cursor from then on.
-                $after = $useCursor ? $req->query->getInt('after') : 0;
+                $after = $req->query->getInt('after');
                 $result = $repo->getDependentsUnsorted(
                     $name,
-                    $after > 0 ? $after : null,
-                    $after > 0 ? 0 : ($page - 1) * $perPage,
+                    $useCursor && $after > 0 ? $after : null,
+                    $useCursor ? 0 : ($page - 1) * $perPage,
                     $perPage,
                     $requireType,
                 );

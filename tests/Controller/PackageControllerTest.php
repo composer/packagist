@@ -389,14 +389,14 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('order_by=none', (string) $this->client->getResponse()->getContent());
     }
 
-    public function testDependentsPagesTheUnsortedListingAsDeepAsAsked(): void
+    public function testDependentsPagesTheUnsortedHtmlListingAsDeepAsAsked(): void
     {
-        // deep paging is exactly what this mode is for: no sort means no cost that grows with the
-        // page, so neither the 5 page sorted cap nor a round json one has anything to buy here.
-        // Page 600 is past where both used to stop, and short of where illuminate/support ends.
-        $this->stubUnsortedDependents(cursor: null);
+        // no sort means no cost that grows with the page, so the sorted listing's cap has nothing
+        // to buy here. Page 600 is past where the json cap used to stop, and short of where
+        // illuminate/support ends.
+        $this->loginPastThePageWall();
 
-        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 600]);
+        $this->client->request('GET', '/packages/test/pkg/dependents', ['order_by' => 'none', 'page' => 600]);
 
         self::assertResponseIsSuccessful();
     }
@@ -405,9 +405,9 @@ class PackageControllerTest extends IntegrationTestCase
     {
         // uncapped paging means nothing rejects an absurd page before (page - 1) * perPage runs,
         // and that arithmetic overflowing to a float is a TypeError under strict_types
-        $this->stubUnsortedDependents(cursor: null);
+        $this->loginPastThePageWall();
 
-        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => (string) \PHP_INT_MAX]);
+        $this->client->request('GET', '/packages/test/pkg/dependents', ['order_by' => 'none', 'page' => (string) \PHP_INT_MAX]);
 
         self::assertResponseIsSuccessful();
     }
@@ -458,33 +458,16 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringNotContainsString('listing.unsorted_warning', $body);
     }
 
-    public function testJsonDependentsPagesTheUnsortedListingWithoutACursor(): void
+    public function testJsonDependentsRefusesAPageNumber(): void
     {
-        // a consumer that kept its page loop when order_by=name went away has to get the rows it
-        // asked for, not page 1 with a 200; an after cursor still wins over the page number
-        $calls = [];
-        $repo = $this->createStub(PackageRepository::class);
-        $repo->method('getDependentCount')->willReturn(1);
-        $repo->method('getDefaultBranchRequireFor')->willReturn([]);
-        $repo->method('getDependentsUnsorted')->willReturnCallback(
-            function (string $name, ?int $afterId, int $offset, int $limit, ?int $type) use (&$calls): array {
-                $calls[] = ['after' => $afterId, 'offset' => $offset];
+        // json iterates this listing by following next. Answering a self-constructed page number
+        // with the first page and a 200 is the one outcome that corrupts a consumer silently.
+        $this->stubUnsortedDependents(cursor: 42);
 
-                return ['packages' => [], 'cursor' => null];
-            },
-        );
-        static::getContainer()->set(PackageRepository::class, $repo);
+        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 2]);
 
-        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 3]);
-        self::assertResponseIsSuccessful();
-
-        $this->client->request('GET', '/packages/test/pkg/dependents.json', ['page' => 3, 'after' => 42]);
-        self::assertResponseIsSuccessful();
-
-        self::assertSame(
-            [['after' => null, 'offset' => 200], ['after' => 42, 'offset' => 0]],
-            $calls,
-        );
+        self::assertResponseStatusCodeSame(400);
+        self::assertStringContainsString('next', (string) $this->client->getResponse()->getContent());
     }
 
     public function testJsonDependentsStopsOfferingNextAtTheSortedCap(): void
@@ -529,6 +512,17 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('100000', $body, 'the header still shows the real total');
         self::assertStringContainsString('page=5', $body, 'the pager is rendering links at all');
         self::assertStringNotContainsString('page=6', $body);
+    }
+
+    /**
+     * Anonymous visitors are refused past page 3, so the deep pages need someone logged in. No
+     * repository stub here: these run against the real query, which simply comes back empty.
+     */
+    private function loginPastThePageWall(): void
+    {
+        $user = self::createUser();
+        $this->store($user);
+        $this->client->loginUser($user);
     }
 
     private function stubUnsortedDependents(?int $cursor): void
