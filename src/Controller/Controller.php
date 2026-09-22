@@ -79,6 +79,10 @@ abstract class Controller extends AbstractController
             return new JsonResponse('Please respect noindex/nofollow meta tags, and email contact@packagist.org to get unblocked once this is resolved', 429, ['Retry-After' => 31536000]);
         }
 
+        if (str_contains((string) $req->headers->get('User-Agent'), 'laravel-toolbox.com API client')) {
+            return new JsonResponse('Please stop crawling dependants data every 20minutes for no reason. Email contact@packagist.org to explain and get unblocked', 429, ['Retry-After' => 31536000]);
+        }
+
         if ($req->getClientIp() === '18.190.1.42') {
             return new JsonResponse('Please use the updatedSince flag to fetch new security advisories, and email contact@packagist.org to get unblocked once this is resolved', 429, ['Retry-After' => 31536000]);
         }
