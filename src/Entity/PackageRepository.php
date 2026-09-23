@@ -604,6 +604,45 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param list<int> $ids
+     *
+     * @return array<int, array{releasedAt: \DateTimeImmutable|null, license: list<string>}>
+     */
+    public function getPackagesLatestReleaseMetadata(array $ids): array
+    {
+        if (\count($ids) === 0) {
+            return [];
+        }
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT package_id AS pid, releasedAt, license
+             FROM (
+                 SELECT package_id, releasedAt, license,
+                     ROW_NUMBER() OVER (
+                         PARTITION BY package_id
+                         ORDER BY development ASC, releasedAt DESC, id DESC
+                     ) AS rn
+                 FROM package_version
+                 WHERE package_id IN (:ids) AND softDeletedAt IS NULL
+             ) ranked
+             WHERE rn = 1',
+            ['ids' => $ids],
+            ['ids' => ArrayParameterType::INTEGER],
+        );
+
+        $byId = [];
+        foreach ($rows as $row) {
+            $license = json_decode((string) $row['license'], true);
+            $byId[(int) $row['pid']] = [
+                'releasedAt' => null !== $row['releasedAt'] ? new \DateTimeImmutable((string) $row['releasedAt']) : null,
+                'license' => \is_array($license) ? array_values(array_filter(array_map(strval(...), $license))) : [],
+            ];
+        }
+
+        return $byId;
+    }
+
+    /**
      * @param string   $name   Package name to find the dependents of
      * @param int|null $type   One of Dependent::TYPE_*
      * @param bool     $cached Pass false when the count must match a row list queried alongside it
