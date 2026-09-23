@@ -2596,7 +2596,28 @@ body {
     }
 
     .audit-log-ip {
-        width: 280px;
+        width: 150px;
+        overflow-wrap: anywhere;
+    }
+
+    .audit-log-details-ip {
+        display: none;
+    }
+}
+
+.audit-log-table-container {
+    container-type: inline-size;
+}
+
+@container (max-width: 800px) {
+    .audit-log-table {
+        .audit-log-ip {
+            display: none;
+        }
+
+        .audit-log-details-ip {
+            display: block;
+        }
     }
 }
 

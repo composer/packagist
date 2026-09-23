@@ -2,42 +2,47 @@
 {% set emptyMessage = emptyMessage ?? 'No transparency logs found.' %}
 
 {% if displays|length %}
-    <table class="table audit-log-table">
-        <thead>
-            <tr>
-                <th class="audit-log-datetime">Date & Time</th>
-                <th class="audit-log-type">Type</th>
-                <th class="audit-log-details">Details</th>
-                {% if is_granted('ROLE_AUDITOR') %}
-                    <th class="audit-log-ip">IP</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for display in displays %}
+    <div class="audit-log-table-container">
+        <table class="table audit-log-table">
+            <thead>
                 <tr>
-                    <td class="audit-log-datetime">
-                        {% if linkSurroundingLogs %}
-                            {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
-                            {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
-                            <a href="{{ path('view_transparency_log', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
-                                <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
-                            </a>
-                        {% else %}
-                            <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
-                        {% endif %}
-                    </td>
-                    <td class="audit-log-type" data-test="audit-log-type">{{ display.typeTranslationKey|trans }}</td>
-                    <td class="audit-log-details">
-                        {% include display.templateName with {display} only %}
-                    </td>
+                    <th class="audit-log-datetime">Date & Time</th>
+                    <th class="audit-log-type">Type</th>
+                    <th class="audit-log-details">Details</th>
                     {% if is_granted('ROLE_AUDITOR') %}
-                        <td class="audit-log-ip">{{ display.ip }}</td>
+                        <th class="audit-log-ip">IP</th>
                     {% endif %}
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for display in displays %}
+                    <tr>
+                        <td class="audit-log-datetime">
+                            {% if linkSurroundingLogs %}
+                                {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
+                                {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
+                                <a href="{{ path('view_transparency_log', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
+                                    <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
+                                </a>
+                            {% else %}
+                                <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
+                            {% endif %}
+                        </td>
+                        <td class="audit-log-type" data-test="audit-log-type">{{ display.typeTranslationKey|trans }}</td>
+                        <td class="audit-log-details">
+                            {% include display.templateName with {display} only %}
+                            {% if is_granted('ROLE_AUDITOR') %}
+                                <div class="audit-log-details-ip">IP: {{ display.ip }}</div>
+                            {% endif %}
+                        </td>
+                        {% if is_granted('ROLE_AUDITOR') %}
+                            <td class="audit-log-ip">{{ display.ip }}</td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% else %}
     <div class="alert alert-info">
         <p>{{ emptyMessage }}</p>
