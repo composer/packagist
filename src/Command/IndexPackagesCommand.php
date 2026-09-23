@@ -35,6 +35,13 @@ class IndexPackagesCommand extends Command
 {
     use \App\Util\DoctrineTrait;
 
+    /**
+     * How far back the incremental run looks for freshly crawled packages. Four times the 15min
+     * cron interval, so a few missed runs still overlap; anything crawled before that is left to
+     * the nightly --all pass rather than paid for on every run.
+     */
+    private const CRAWL_WINDOW = '-1 hour';
+
     public function __construct(
         private PackageIndex $packageIndex,
         private Locker $locker,
@@ -97,7 +104,7 @@ class IndexPackagesCommand extends Command
 
             $packages = $this->getEM()->getConnection()->fetchAllAssociative('SELECT id FROM package ORDER BY id ASC');
         } else {
-            $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForIndexing();
+            $packages = $this->getEM()->getRepository(Package::class)->getStalePackagesForIndexing(new \DateTimeImmutable(self::CRAWL_WINDOW));
         }
 
         $ids = [];

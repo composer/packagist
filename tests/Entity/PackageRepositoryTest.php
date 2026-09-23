@@ -498,6 +498,60 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the requirement query');
     }
 
+    public function testStalePackagesForIndexingFindsPackagesCrawledInsideTheWindow(): void
+    {
+        $stale = self::createPackage('vendor/stale', 'https://example.org/stale');
+        $stale->setIndexedAt(new \DateTimeImmutable('-20 minutes'));
+        $stale->setCrawledAt(new \DateTimeImmutable('-10 minutes'));
+        $this->store($stale);
+
+        self::assertContains($stale->getId(), $this->staleForIndexingSince('-1 hour'));
+    }
+
+    public function testStalePackagesForIndexingSkipsPackagesAlreadyIndexedSinceTheirCrawl(): void
+    {
+        $fresh = self::createPackage('vendor/fresh', 'https://example.org/fresh');
+        $fresh->setCrawledAt(new \DateTimeImmutable('-10 minutes'));
+        $fresh->setIndexedAt(new \DateTimeImmutable('-5 minutes'));
+        $this->store($fresh);
+
+        self::assertNotContains($fresh->getId(), $this->staleForIndexingSince('-1 hour'));
+    }
+
+    public function testStalePackagesForIndexingLeavesOlderStragglersToTheNightlyPass(): void
+    {
+        // The cost of bounding the scan: a package that went stale before the window is not picked
+        // up by the incremental run at all. packagist:index --all is what catches it.
+        $straggler = self::createPackage('vendor/straggler', 'https://example.org/straggler');
+        $straggler->setIndexedAt(new \DateTimeImmutable('-4 hours'));
+        $straggler->setCrawledAt(new \DateTimeImmutable('-3 hours'));
+        $this->store($straggler);
+
+        self::assertNotContains($straggler->getId(), $this->staleForIndexingSince('-1 hour'));
+        self::assertContains($straggler->getId(), $this->staleForIndexingSince('-1 day'));
+    }
+
+    public function testStalePackagesForIndexingAlwaysFindsNeverIndexedPackages(): void
+    {
+        // The IS NULL branch is deliberately outside the window, so a package that has never been
+        // indexed cannot be stranded by one however old its last crawl is.
+        $neverIndexed = self::createPackage('vendor/never-indexed', 'https://example.org/never-indexed');
+        $neverIndexed->setCrawledAt(new \DateTimeImmutable('-3 hours'));
+        $this->store($neverIndexed);
+
+        self::assertContains($neverIndexed->getId(), $this->staleForIndexingSince('-1 hour'));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function staleForIndexingSince(string $modifier): array
+    {
+        $rows = $this->packageRepository->getStalePackagesForIndexing(new \DateTimeImmutable($modifier));
+
+        return array_map(static fn (array $row): int => $row['id'], $rows);
+    }
+
     /**
      * @return list<array<string, mixed>>
      */
