@@ -661,7 +661,9 @@ class PackageRepositoryTest extends IntegrationTestCase
     private function dumpablePackage(string $name, ?string $dumpedAtV2, ?string $dumpRequestedAt, ?string $crawledAt = null): Package
     {
         $package = self::createPackage($name, 'https://github.com/'.$name);
-        $package->setDumpedAtV2(null === $dumpedAtV2 ? null : new \DateTimeImmutable($dumpedAtV2));
+        if (null !== $dumpedAtV2) {
+            $package->setDumpedAtV2(new \DateTimeImmutable($dumpedAtV2));
+        }
         $package->setCrawledAt(null === $crawledAt ? null : new \DateTimeImmutable($crawledAt));
         if (null !== $dumpRequestedAt) {
             new \ReflectionProperty($package, 'dumpRequestedAt')->setValue($package, new \DateTimeImmutable($dumpRequestedAt));
