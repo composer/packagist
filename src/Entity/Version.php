@@ -52,7 +52,9 @@ use Symfony\Component\Validator\Constraints as Assert;
  *     provide?: array<string, string>,
  *     replace?: array<string, string>,
  *     abandoned?: string|true,
- *     php-ext?: array{priority?: int, configure-options?: list<array{name: string, description?: string}>}
+ *     php-ext?: array{priority?: int, configure-options?: list<array{name: string, description?: string}>},
+ *     features?: array<string, array{description?: string, require?: array<string, string>}>,
+ *     require-features?: array<string, list<string>>
  * }
  */
 #[ORM\Entity(repositoryClass: 'App\Entity\VersionRepository')]
@@ -215,6 +217,18 @@ class Version implements VersionSummary
     #[ORM\Column(type: 'json', options: ['default' => null], nullable: true)]
     private ?array $phpExt = null;
 
+    /**
+     * @var array<string, array{description?: string, require?: array<string, string>}>|null
+     */
+    #[ORM\Column(type: 'json', options: ['default' => null], nullable: true)]
+    private ?array $features = null;
+
+    /**
+     * @var array<string, list<string>>|null
+     */
+    #[ORM\Column(type: 'json', options: ['default' => null], nullable: true)]
+    private ?array $requireFeatures = null;
+
     #[ORM\Column(name: 'defaultBranch', type: 'boolean', options: ['default' => false])]
     private bool $isDefaultBranch = false;
 
@@ -297,6 +311,12 @@ class Version implements VersionSummary
         }
         if ($serializeForApi && $this->getPhpExt() !== null) {
             $data['php-ext'] = $this->getPhpExt();
+        }
+        if ($serializeForApi && $this->getFeatures() !== null) {
+            $data['features'] = $this->getFeatures();
+        }
+        if ($serializeForApi && $this->getRequireFeatures() !== null) {
+            $data['require-features'] = $this->getRequireFeatures();
         }
         $funding = $this->getFundingSorted();
         if ($funding !== null) {
@@ -782,6 +802,38 @@ class Version implements VersionSummary
     public function setPhpExt(?array $phpExt): void
     {
         $this->phpExt = $phpExt;
+    }
+
+    /**
+     * @return array<string, array{description?: string, require?: array<string, string>}>|null
+     */
+    public function getFeatures(): ?array
+    {
+        return $this->features;
+    }
+
+    /**
+     * @param array<string, array{description?: string, require?: array<string, string>}>|null $features
+     */
+    public function setFeatures(?array $features): void
+    {
+        $this->features = $features;
+    }
+
+    /**
+     * @return array<string, list<string>>|null
+     */
+    public function getRequireFeatures(): ?array
+    {
+        return $this->requireFeatures;
+    }
+
+    /**
+     * @param array<string, list<string>>|null $requireFeatures
+     */
+    public function setRequireFeatures(?array $requireFeatures): void
+    {
+        $this->requireFeatures = $requireFeatures;
     }
 
     public function getPieName(): ?string

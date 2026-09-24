@@ -40,6 +40,49 @@
             {% endfor %}
         </div>
     {% endfor %}
+
+    {% if version.requireFeatures %}
+        <div class="section-title">
+            <p class="link-type">{{ 'link_type.requireFeatures'|trans }}</p>
+        </div>
+        <div class="row">
+            <div class="col-12 require-features">
+                <ul>
+                    {% for packageName in version.requireFeatures|keys|sort %}
+                        <li>{{ packagist.packageLink(packageName, 'require') }}: {% for featureName in version.requireFeatures[packageName]|sort %}<code>{{ featureName }}</code>{% if not loop.last %}, {% endif %}{% endfor %}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if version.features %}
+        {# MySQL does not keep the JSON key order, so features and their requires are sorted by name here #}
+        <div class="section-title">
+            <p class="link-type">{{ 'link_type.features'|trans }}</p>
+        </div>
+        <div class="row features">
+            {% for featureName in version.features|keys|sort %}
+                {% set feature = version.features[featureName] %}
+                {% if loop.index0 is even %}<div class="clearfix d-none d-md-block d-lg-none"></div>{% endif %}
+                {% if loop.index0 % 3 == 0 %}<div class="clearfix d-none d-lg-block"></div>{% endif %}
+                <div class="feature col-md-6 col-lg-4">
+                    <p class="feature-name"><code>{{ featureName }}</code></p>
+                    {% if feature.description|default('') %}<p class="feature-description">{{ feature.description }}</p>{% endif %}
+                    {% if feature.require|default({}) %}
+                        <ul>
+                            {% for packageName in feature.require|keys|sort %}
+                                {% set packageVersion = feature.require[packageName] %}
+                                <li>{{ packagist.packageLink(packageName, 'require') }}{% if packageVersion is not empty %}: {{ packageVersion == 'self.version' ? version.version : packageVersion }}{% endif %}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="no-links">None</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 </div>
 
 <div class="metadata">

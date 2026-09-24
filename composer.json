@@ -20,6 +20,12 @@
     "support": {
           "email": "contact@packagist.org"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/joelwurtz/composer"
+        }
+    ],
     "require": {
         "php": "^8.4",
         "ext-apcu": "*",
@@ -29,7 +35,7 @@
         "babdev/pagerfanta-bundle": "^4.2",
         "beelab/recaptcha2-bundle": "^2.3",
         "cebe/markdown": "^1.1",
-        "composer/composer": "^2.8@dev",
+        "composer/composer": "dev-feat/feature-system as 2.10.x-dev",
         "composer/pcre": "^3.0",
         "doctrine/common": "^3",
         "doctrine/doctrine-bundle": "^3",
