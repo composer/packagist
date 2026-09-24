@@ -14,7 +14,6 @@ namespace App\Command;
 
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
-use App\Package\DumpWatermark;
 use App\Package\V2Dumper;
 use App\Service\Locker;
 use Doctrine\DBAL\ArrayParameterType;
@@ -34,9 +33,16 @@ class DumpPackagesV2Command extends Command
 {
     use \App\Util\DoctrineTrait;
 
+    /**
+     * How far back the staleness select looks. A rolling offset rather than a remembered position,
+     * so every pass re-covers the whole window: a mark that committed late, a clock a few seconds
+     * out, or an id dropped by the backlog cap below is found again next time instead of stranded.
+     * Wide enough that the cap can drain a burst well before its rows age out.
+     */
+    private const DUMP_WINDOW = '-1 hour';
+
     public function __construct(
         private V2Dumper $dumper,
-        private DumpWatermark $watermark,
         private Locker $locker,
         private ManagerRegistry $doctrine,
         private string $cacheDir,
@@ -139,17 +145,14 @@ class DumpPackagesV2Command extends Command
                     $sql .= ' ORDER BY id ASC';
                     $ids = $this->getEM()->getConnection()->fetchFirstColumn($sql, $params, $types);
                 } else {
-                    // Null after the watermark's TTL lapses, or if Redis lost it, which makes this
-                    // iteration the unbounded sweep that recovers anything a failed dump stranded.
-                    $since = $this->watermark->since($workerId, $numWorkers);
-                    $selectedAt = new \DateTimeImmutable();
-
                     // instrumentation only: time the stale-select query to rule it out as a bottleneck during a buildup
                     $selectStart = microtime(true);
-                    $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers, $since);
-                    $this->statsd->timing('packagist.metadata_dump.select_time', round((microtime(true) - $selectStart) * 1000, 4), ['worker' => (string) $workerId, 'bounded' => $since !== null ? 'true' : 'false']);
+                    $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers, new \DateTimeImmutable(self::DUMP_WINDOW));
+                    $this->statsd->timing('packagist.metadata_dump.select_time', round((microtime(true) - $selectStart) * 1000, 4), ['worker' => (string) $workerId]);
                     if (\count($ids) > 2000) {
                         $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids), 'worker' => (string) $workerId]);
+                        // the select orders oldest first, so what is dropped here is what has the most
+                        // window left to be picked up again
                         $ids = \array_slice($ids, 0, 2000);
                     }
                 }
@@ -164,12 +167,6 @@ class DumpPackagesV2Command extends Command
                     $this->dumper->dump($ids, $force, $verbose, $workerId);
 
                     $this->logger->reset();
-                }
-
-                if (!$force) {
-                    // Only reached when the dump above did not throw, so an aborted run keeps the
-                    // previous watermark and re-selects the same work next time.
-                    $this->watermark->markCompleted($workerId, $numWorkers, $selectedAt);
                 }
 
                 if ($signal !== null && $signal->isTriggered()) {

@@ -55,10 +55,7 @@ class PackageRepository extends ServiceEntityRepository
      */
     private const SORTED_LISTING_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
 
-    /**
-     * Stands in for a missing dump watermark. Predates every row in the table, so the bounded
-     * staleness select degrades to the unbounded sweep without needing a second query for it.
-     */
+    /** Predates every row, so an unbounded sweep needs no second query. */
     private const DUMP_SWEEP_EPOCH = '2000-01-01 00:00:00';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
@@ -349,18 +346,14 @@ class PackageRepository extends ServiceEntityRepository
         // comparison, a missed one is a lost change.
         // The crawledAt clause is a transitional safety net, droppable once
         // metadata_dump.file{result:written, requested:false} sits at ~0 outside --force runs.
-        // Both clauses compare column to column, so neither can be seeked. $since adds the bound that
-        // can be: a package only goes stale by being marked or crawled, so the write that made it
-        // stale is inside the window. Unbounded this scanned the index instead, 468,848 rows a call,
-        // every two seconds per worker.
-        // dumpedAtV2 IS NULL stays outside the window so a never-dumped package can never be stranded
-        // by one, however old its timestamps are.
+        // Both staleness clauses compare column to column, so neither can be seeked; $since is the
+        // bound that can be, since a package only goes stale by being marked or crawled. Unbounded
+        // this scanned the index instead, 468,848 rows a call, every two seconds per worker.
+        // dumpedAtV2 IS NULL stays outside the window: a forceDump() must be found however stale.
+        // Oldest first so that the caller's backlog cap drops the rows with the most window left.
         $sql = 'SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpRequestedAt > :since AND p.dumpRequestedAt >= p.dumpedAtV2) OR (p.crawledAt > :since AND p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
         $params = [
             'suppressed' => PackageFreezeReason::suppressingValues(),
-            // No watermark — first run, evicted key, or the TTL lapsed — sweeps everything through
-            // this same query rather than a second one: a date predating the table makes both bounds
-            // no-ops. Worth the wider plan on a path that runs once per worker per TTL.
             'since' => ($since ?? new \DateTimeImmutable(self::DUMP_SWEEP_EPOCH))->format('Y-m-d H:i:s'),
         ];
         $types = ['suppressed' => ArrayParameterType::STRING];
@@ -370,6 +363,8 @@ class PackageRepository extends ServiceEntityRepository
             $params['numWorkers'] = $numWorkers;
             $params['workerId'] = $workerId;
         }
+
+        $sql .= ' ORDER BY COALESCE(p.dumpRequestedAt, p.crawledAt) ASC, p.id ASC';
 
         return $conn->fetchFirstColumn($sql, $params, $types);
     }

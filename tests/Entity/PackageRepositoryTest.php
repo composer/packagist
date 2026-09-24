@@ -612,12 +612,26 @@ class PackageRepositoryTest extends IntegrationTestCase
 
     public function testStaleForDumpingV2SkipsPackagesMarkedBeforeTheWindow(): void
     {
-        // The cost of bounding the select: a package stranded by a dump that failed after selecting it
-        // is not re-found until the watermark's TTL lapses and the unbounded sweep comes back around.
+        // The cost of bounding the select. Every pass re-covers the whole window, so this only bites
+        // a package that stayed undumped for longer than the window; forceDump() is the way back.
         $stranded = $this->dumpablePackage('acme/stranded', dumpedAtV2: '-5 hours', dumpRequestedAt: '-4 hours');
 
         self::assertNotContains($stranded->getId(), $this->staleForDumpingSince('-1 hour'));
-        self::assertContains($stranded->getId(), $this->staleForDumpingSince(null), 'the unbounded sweep is what recovers it');
+        self::assertContains($stranded->getId(), $this->staleForDumpingSince(null), 'an unbounded select still finds it');
+    }
+
+    public function testStaleForDumpingV2ReturnsOldestFirst(): void
+    {
+        // Load-bearing for the caller's 2000-id backlog cap: truncating the tail has to sacrifice the
+        // rows with the most window left, not an arbitrary subset the optimizer happened to order.
+        $newest = $this->dumpablePackage('acme/newest', dumpedAtV2: '-2 hours', dumpRequestedAt: '-2 minutes');
+        $oldest = $this->dumpablePackage('acme/oldest', dumpedAtV2: '-2 hours', dumpRequestedAt: '-50 minutes');
+        $middle = $this->dumpablePackage('acme/middle', dumpedAtV2: '-2 hours', dumpRequestedAt: '-20 minutes');
+
+        $ids = $this->staleForDumpingSince('-1 hour');
+        $ours = array_values(array_intersect($ids, [$newest->getId(), $oldest->getId(), $middle->getId()]));
+
+        self::assertSame([$oldest->getId(), $middle->getId(), $newest->getId()], $ours);
     }
 
     public function testStaleForDumpingV2SkipsPackagesAlreadyDumpedSinceTheirRequest(): void
