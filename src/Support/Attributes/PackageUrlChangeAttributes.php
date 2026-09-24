@@ -12,6 +12,7 @@
 
 namespace App\Support\Attributes;
 
+use App\Entity\Package;
 use App\Support\SupportRequestType;
 
 /**
@@ -62,6 +63,24 @@ final readonly class PackageUrlChangeAttributes implements SupportRequestAttribu
     public function withChange(PackageUrlChange $change): self
     {
         return new self([...$this->changes, $change]);
+    }
+
+    /**
+     * Frozen targets count as not done: a remote id mismatch freeze survives the URL change, so the
+     * package would still not update.
+     *
+     * @param callable(string): ?Package $find
+     */
+    public function isFullyApplied(callable $find): bool
+    {
+        foreach ($this->changes as $change) {
+            $target = $find($change->packageName);
+            if ($target === null || $target->isFrozen() || $target->getRepository() !== $change->repository) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** @return list<string> */

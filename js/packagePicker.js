@@ -20,7 +20,7 @@ const init = function ($, form) {
 
     const vendors = [];
     checkboxes.each(function () {
-        const vendor = $(this).data('bulk-select-group');
+        const vendor = $(this).attr('data-bulk-select-group');
         if (vendor && vendors.indexOf(vendor) === -1) {
             vendors.push(vendor);
         }
@@ -37,7 +37,7 @@ const init = function ($, form) {
         bar.append(wrapper);
 
         const members = group === null ? checkboxes : checkboxes.filter(function () {
-            return $(this).data('bulk-select-group') === group;
+            return $(this).attr('data-bulk-select-group') === group;
         });
 
         box.on('change', function () {

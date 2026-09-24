@@ -188,8 +188,7 @@ enum SupportRequestType: string
 
                 {$deletedNames}
 
-                Note that this cannot be undone, and that the names stay reserved so nobody else can
-                republish under them.
+                Note that this cannot be undone.
 
                 --- or ---
 
