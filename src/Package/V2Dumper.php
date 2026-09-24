@@ -54,6 +54,9 @@ class V2Dumper
 
     private bool $bypassIndividualPurges = false;
 
+    /** Whether the current run dumps everything regardless of staleness, i.e. packagist:dump-v2 --force. */
+    private bool $forcedRun = false;
+
     // instrumentation only: the current run's worker id, used to tag statsd metrics emitted from writeV2File
     private int $workerId = 0;
 
@@ -147,6 +150,8 @@ class V2Dumper
         if ($initialRun && !$force) {
             throw new \RuntimeException('Run this again with --force the first time around to make sure it dumps all packages');
         }
+
+        $this->forcedRun = $force;
 
         if ($verbose) {
             echo 'Web dir is '.$webDir.'/p2 ('.realpath($webDir.'/p2').')'.\PHP_EOL;
@@ -534,6 +539,18 @@ class V2Dumper
             $this->statsd->increment('packagist.metadata_dump.file', 1, 1, ['result' => $result] + $gapTags + $workerTag);
             if (($result === 'written' || $result === 'created') && $fileMs > 2000) {
                 $this->logger->warning('Slow v2 metadata file dump', ['file' => $path, 'duration_ms' => $fileMs, 'ops_ms' => $opTimings, 'worker' => $this->workerId]);
+            }
+            // Names the packages behind the {written, requested:false} counter, i.e. content that changed
+            // without any path marking it — the gap that keeps the crawledAt clause alive. Self-limiting:
+            // the write updates dumpedAtV2, so a package can only reappear on its next real change.
+            if ($result === 'written' && !$this->forcedRun && !$package->isDumpRequested()) {
+                $this->logger->warning('Dumped a changed v2 file for a package nothing had marked', [
+                    'package' => $package->getName(),
+                    'dumpedAtV2' => $package->getDumpedAtV2()?->format('c'),
+                    'dumpRequestedAt' => $package->getDumpRequestedAt()?->format('c'),
+                    'crawledAt' => $package->getCrawledAt()?->format('c'),
+                    'worker' => $this->workerId,
+                ]);
             }
         }
     }
