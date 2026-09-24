@@ -747,6 +747,44 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertStringContainsString('supportRequest='.$request->publicId, (string) $link);
     }
 
+    public function testUrlChangePanelReadsTheHostOfAnScpUrl(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+        $this->store(self::createPackage('mover/thing', 'https://git.example.org/mover/thing', maintainers: [$requester]));
+
+        $request = SupportRequest::create($requester, 'Switching to ssh.', new PackageUrlChangeAttributes([
+            new PackageUrlChange('mover/thing', 'git@git.example.org:mover/thing.git'),
+        ]));
+        $this->store($request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        $this->assertResponseIsSuccessful();
+        self::assertStringNotContainsString('different host', $crawler->filter('table')->text());
+    }
+
+    public function testUrlChangePanelShowsAppliedOnceTheRepositoryMatches(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+        $this->store(self::createPackage('mover/thing', 'https://github.com/moved/thing', maintainers: [$requester]));
+
+        $request = SupportRequest::create($requester, 'The org was renamed.', new PackageUrlChangeAttributes([
+            new PackageUrlChange('mover/thing', 'https://github.com/moved/thing'),
+        ]));
+        $this->store($request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        $this->assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('table .badge.bg-success'));
+    }
+
     private function givenTransferRequest(): array
     {
         $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);

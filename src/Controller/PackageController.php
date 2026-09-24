@@ -1291,26 +1291,34 @@ class PackageController extends Controller
     {
         $this->denyAccessUnlessGranted(PackageActions::Edit->value, $package);
 
+        // Only for support admins: from a link, the prefill and the reference would let anyone dress
+        // up a hijack URL as an official request to a maintainer.
+        $isSupportAdmin = $this->isGranted('ROLE_EDIT_PACKAGES');
+        $fromSupport = $isSupportAdmin && $req->isMethod('GET');
+
         // Seeded through the field's data option, never through $package->setRepository(): that
         // setter probes the URL over the network and dirties the managed entity, so prefilling
         // through it would make a plain GET reach out to a host somebody else chose.
-        $prefill = $req->isMethod('GET') ? trim($req->query->getString('repository')) : '';
+        $prefill = $fromSupport ? trim($req->query->getString('repository')) : '';
         $previousUrl = $package->getRepository();
 
-        $form = $this->createFormBuilder($package, ['validation_groups' => ['Update']])
-            ->add('repository', TextType::class, $prefill !== '' && mb_strlen($prefill) <= 255 ? ['data' => $prefill] : [])
+        $builder = $this->createFormBuilder($package, ['validation_groups' => ['Update']])
+            ->add('repository', TextType::class, $prefill !== '' && mb_strlen($prefill) <= 255 ? ['data' => $prefill] : []);
+        if ($isSupportAdmin) {
             // Unmapped and hidden so the reference survives the POST: the form's action is generated
             // without a query string, so reading it back off the URL would only ever work on the GET.
-            ->add('supportRequest', HiddenType::class, [
+            $builder->add('supportRequest', HiddenType::class, [
                 'mapped' => false,
-                'data' => $req->isMethod('GET') ? $req->query->getString('supportRequest') : '',
-            ])
+                'data' => $fromSupport ? $req->query->getString('supportRequest') : '',
+            ]);
+        }
+        $form = $builder
             ->setMethod('POST')
             ->setAction($this->generateUrl('edit_package', ['name' => $package->getName()]))
             ->getForm();
 
         $form->handleRequest($req);
-        $supportRequestId = is_string($id = $form->get('supportRequest')->getData()) ? $id : '';
+        $supportRequestId = $form->has('supportRequest') && is_string($id = $form->get('supportRequest')->getData()) ? $id : '';
         if ($form->isSubmitted() && $form->isValid()) {
             // Force updating of packages once the package is viewed after the redirect.
             $package->setCrawledAt(null);
@@ -1374,8 +1382,8 @@ class PackageController extends Controller
      *
      * Deliberately here rather than in PackageListener: the listener also fires for webhook-driven
      * rewrites, where there is no admin and no ticket, and it would have to write from inside a
-     * flush. The reference is admin-supplied on an admin-only page, and the worst a wrong one can do
-     * is annotate a request that already names this package.
+     * flush. The reference is only accepted from ROLE_EDIT_PACKAGES users, and the worst a wrong one
+     * can do is annotate a request that already names this package.
      */
     private function noteUrlChangeOnSupportRequest(SupportRequestRepository $supportRequests, Package $package, string $previousUrl, string $publicId, ?User $actor): void
     {
@@ -1403,27 +1411,12 @@ class PackageController extends Controller
         $now = new \DateTimeImmutable();
         $request->touch($now);
 
-        // Only once every requested move is done, and never while the package is still frozen: a
-        // remote id mismatch freeze survives the URL change (Package::unfreeze() only auto-clears
-        // Gone), so resolving here would close the task on a package that still will not update.
-        if (!$package->isFrozen() && $this->everyUrlChangeApplied($attributes)) {
+        $repo = $this->getEM()->getRepository(Package::class);
+        if ($attributes->isFullyApplied(static fn (string $name): ?Package => $repo->findOneBy(['name' => $name]))) {
             $request->resolve($now);
         }
 
         $em->flush();
-    }
-
-    private function everyUrlChangeApplied(PackageUrlChangeAttributes $attributes): bool
-    {
-        $repo = $this->getEM()->getRepository(Package::class);
-        foreach ($attributes->changes as $change) {
-            $target = $repo->findOneBy(['name' => $change->packageName]);
-            if ($target === null || $target->getRepository() !== $change->repository) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     #[Route(path: '/packages/{name:package}/abandon', name: 'abandon_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]

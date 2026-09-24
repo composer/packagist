@@ -29,6 +29,7 @@ use App\Support\Attributes\LostTwoFactorAttributes;
 use App\Support\Attributes\PackageDeletionAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\PackageUnfreezeAttributes;
+use App\Support\Attributes\PackageUrlChange;
 use App\Support\Attributes\PackageUrlChangeAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\SupportNotifier;
@@ -170,8 +171,8 @@ class SupportController extends Controller
                     'requestedUrl' => $change->repository,
                     'currentUrl' => $package?->getRepository(),
                     // Shown side by side so a move to another host reads as the unusual thing it is.
-                    'requestedHost' => parse_url($change->repository, \PHP_URL_HOST),
-                    'currentHost' => $package !== null ? parse_url($package->getRepository(), \PHP_URL_HOST) : null,
+                    'requestedHost' => PackageUrlChange::hostOf($change->repository),
+                    'currentHost' => $package !== null ? PackageUrlChange::hostOf($package->getRepository()) : null,
                     'remoteId' => $package?->getRemoteId(),
                     'applied' => $package !== null && $package->getRepository() === $change->repository,
                 ];

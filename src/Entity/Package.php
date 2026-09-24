@@ -560,15 +560,11 @@ class Package
         return $this->createdAt;
     }
 
-    public function setRepository(string $repoUrl): void
+    /**
+     * The rewrites setRepository() applies before storing, without its network probe.
+     */
+    public static function normalizeRepositoryUrl(string $repoUrl): string
     {
-        $this->vcsDriver = null;
-
-        // prevent local filesystem URLs
-        if (Preg::isMatch('{^(\.|[a-z]:|/)}i', $repoUrl)) {
-            return;
-        }
-
         $repoUrl = Preg::replace('{^git@github.com:}i', 'https://github.com/', $repoUrl);
         $repoUrl = Preg::replace('{^git://github.com/}i', 'https://github.com/', $repoUrl);
         $repoUrl = Preg::replace('{^(https://github.com/.*?)\.git$}i', '$1', $repoUrl);
@@ -586,6 +582,20 @@ class Package
 
         // normalize protocol case
         $repoUrl = Preg::replaceCallbackStrictGroups('{^(https?|git|svn)://}i', static fn ($match) => strtolower($match[1]).'://', $repoUrl);
+
+        return $repoUrl;
+    }
+
+    public function setRepository(string $repoUrl): void
+    {
+        $this->vcsDriver = null;
+
+        // prevent local filesystem URLs
+        if (Preg::isMatch('{^(\.|[a-z]:|/)}i', $repoUrl)) {
+            return;
+        }
+
+        $repoUrl = self::normalizeRepositoryUrl($repoUrl);
 
         $this->repository = $repoUrl;
         $this->remoteId = null;

@@ -12,6 +12,7 @@
 
 namespace App\Form\Model;
 
+use App\Support\Attributes\PackageUrlChange;
 use Composer\Pcre\Preg;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
@@ -23,11 +24,12 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
  * chose. The admin's own edit form runs ValidPackageRepository and the real VCS probe on save, which
  * is where a dead or bogus URL is meant to fail.
  *
- * packageName is not validated here either: the form offers it as a choice list built from the
- * requester's own packages, so the shape and the ownership both come from that.
+ * packageName only needs NotBlank (for the placeholder): the form offers it as a choice list built
+ * from the requester's own packages, so the shape and the ownership both come from that.
  */
 class PackageUrlChangeSupportRequest
 {
+    #[Assert\NotBlank]
     public string $packageName = '';
 
     #[Assert\NotBlank]
@@ -55,11 +57,9 @@ class PackageUrlChangeSupportRequest
             return;
         }
 
-        $host = $isScpLike
-            ? (string) Preg::replace('{^[^@]*@([^:]+):.*$}', '$1', $url)
-            : (string) parse_url($url, \PHP_URL_HOST);
+        $host = PackageUrlChange::hostOf($url);
 
-        if ($host === '') {
+        if ($host === null) {
             $context->buildViolation('That does not look like a repository URL.')->atPath('repository')->addViolation();
 
             return;

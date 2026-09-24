@@ -381,11 +381,13 @@ class SupportController extends Controller
         $form = $this->createForm(PackageUrlChangeSupportType::class, $data, ['packages' => $packages])->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Stored as the admin's save will write it, so the request can tell when it has been applied.
+            $url = Package::normalizeRepositoryUrl(trim($data->repository));
             $package = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $data->packageName]);
-            if ($package !== null && $package->getRepository() === $data->repository) {
+            if ($package !== null && $package->getRepository() === $url) {
                 $form->get('repository')->addError(new FormError('That is already the repository URL we have on file for this package.'));
             } else {
-                $change = new PackageUrlChange($data->packageName, $data->repository);
+                $change = new PackageUrlChange($data->packageName, $url);
 
                 // Appended rather than turned away: one open request per type is a database
                 // invariant, and a GitHub org rename breaks every package under it at once, so the
@@ -394,7 +396,7 @@ class SupportController extends Controller
                 // the failed flush has closed the entity manager.
                 $existing = $this->supportRequests->findOpen($user, SupportRequestType::PackageUrlChange);
                 if ($existing !== null) {
-                    return $this->appendUrlChange($existing, $change);
+                    return $this->appendUrlChange($existing, $change, $data->description);
                 }
 
                 $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUrlChangeAttributes([$change]));
@@ -446,7 +448,7 @@ class SupportController extends Controller
      * Appends a package to an open URL change request and notes it on the thread, so a second filing
      * adds to the admin's task rather than bouncing off the one-open-per-type invariant.
      */
-    private function appendUrlChange(SupportRequest $request, PackageUrlChange $change): Response
+    private function appendUrlChange(SupportRequest $request, PackageUrlChange $change, string $description): Response
     {
         $attributes = $request->attributesOf(PackageUrlChangeAttributes::class);
 
@@ -461,7 +463,7 @@ class SupportController extends Controller
         $em = $this->getEM();
         $em->persist(SupportRequestMessage::internalNote(
             $request,
-            'The requester added '.$change->packageName.' to this request, asking for '.$change->repository.'.',
+            'The requester added '.$change->packageName.' to this request, asking for '.$change->repository.":\n\n".$description,
             null,
         ));
         $request->touch(new \DateTimeImmutable());

@@ -248,6 +248,22 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertSame('/packages/mover/thing/edit', $crawler->filter('form[action*="/edit"]')->first()->attr('action'));
     }
 
+    public function testPrefillAndReferenceAreIgnoredForPlainMaintainers(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$user]);
+        $this->store($package);
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository=https://evil.example/mover/thing&supportRequest=Approved-by-staff');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('https://example.com/mover/thing', $crawler->filter('#form_repository')->attr('value'));
+        self::assertCount(0, $crawler->filter('.alert-warning'));
+        self::assertCount(0, $crawler->filter('input[name="form[supportRequest]"]'));
+    }
+
     public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void
     {
         $fresh = self::createPackage('test/fresh', 'https://example.com/test/fresh');

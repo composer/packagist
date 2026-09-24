@@ -748,6 +748,70 @@ class SupportControllerTest extends IntegrationTestCase
         $this->assertFormError('already the repository URL', 'package_url_change_request', $crawler);
     }
 
+    public function testPackageUrlChangeStoresTheUrlAsTheEditFormWillSaveIt(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('mover/thing', 'https://github.com/mover/thing', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/package-url-change');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_url_change_request[packageName]' => 'mover/thing',
+            'package_url_change_request[repository]' => ' git@github.com:moved/thing.git ',
+            'package_url_change_request[description]' => 'It moved.',
+        ]);
+        $this->client->submit($form);
+        $this->assertResponseRedirects('/contact');
+
+        $request = $this->findRequest($user, SupportRequestType::PackageUrlChange);
+        self::assertNotNull($request);
+        self::assertSame('https://github.com/moved/thing', $request->attributesOf(PackageUrlChangeAttributes::class)->changes[0]->repository);
+    }
+
+    public function testPackageUrlChangeRejectsAnotherSpellingOfTheUrlItAlreadyHas(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('mover/thing', 'https://github.com/mover/thing', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/package-url-change');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_url_change_request[packageName]' => 'mover/thing',
+            'package_url_change_request[repository]' => 'https://github.com/mover/thing.git',
+            'package_url_change_request[description]' => 'It moved.',
+        ]);
+
+        $crawler = $this->client->submit($form);
+
+        $this->assertResponseStatusCodeSame(422);
+        $this->assertFormError('already the repository URL', 'package_url_change_request', $crawler);
+    }
+
+    public function testPackageUrlChangeRejectsThePlaceholderPackage(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('mover/thing', 'https://example.org/mover/thing', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/package-url-change');
+        $token = $crawler->filter('input[name="package_url_change_request[_token]"]')->attr('value');
+
+        $this->client->request('POST', '/contact/package-url-change', ['package_url_change_request' => [
+            'packageName' => '',
+            'repository' => 'https://example.org/moved/thing',
+            'description' => 'It moved.',
+            '_token' => $token,
+        ]]);
+
+        $this->assertResponseStatusCodeSame(422);
+        self::assertNull($this->findRequest($user, SupportRequestType::PackageUrlChange));
+    }
+
     /**
      * One open request per type is a database invariant, but a GitHub org rename breaks every
      * package under it at once, so the second filing has to land somewhere rather than bounce.
@@ -766,7 +830,7 @@ class SupportControllerTest extends IntegrationTestCase
             $form->setValues([
                 'package_url_change_request[packageName]' => 'mover/'.$which,
                 'package_url_change_request[repository]' => 'https://example.org/moved/'.$which,
-                'package_url_change_request[description]' => 'The org was renamed.',
+                'package_url_change_request[description]' => 'The org was renamed, see commit '.$which.'.',
             ]);
             $this->client->submit($form);
             $this->assertResponseRedirects('/contact');
@@ -775,6 +839,8 @@ class SupportControllerTest extends IntegrationTestCase
         $request = $this->findRequest($user, SupportRequestType::PackageUrlChange);
         self::assertNotNull($request);
         self::assertSame(['mover/one', 'mover/two'], $request->attributesOf(PackageUrlChangeAttributes::class)->names());
+        // the proof for the added package reaches the admin too
+        self::assertStringContainsString('see commit two.', $request->messages->last()->contents);
     }
 
     public function testDeletePackagesOnlyOffersTheUsersOwnPackages(): void

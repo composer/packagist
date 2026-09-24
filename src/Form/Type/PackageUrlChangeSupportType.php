@@ -14,6 +14,7 @@ namespace App\Form\Type;
 
 use App\Form\Model\PackageUrlChangeSupportRequest;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -50,6 +51,13 @@ class PackageUrlChangeSupportType extends AbstractType
                 'help' => 'Tell us where the repository moved and how we can tell it is still yours, such as a commit you just pushed there.',
                 'attr' => ['rows' => 6, 'maxlength' => 4000],
             ]);
+
+        // The placeholder reverse-transforms to null, which the string property cannot take, so hand
+        // NotBlank an empty string instead of a 500.
+        $builder->get('packageName')->addModelTransformer(new CallbackTransformer(
+            static fn (?string $name): ?string => $name,
+            static fn (?string $name): string => $name ?? '',
+        ));
     }
 
     public function configureOptions(OptionsResolver $resolver): void
