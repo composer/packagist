@@ -181,6 +181,24 @@ class PackageRepository extends ServiceEntityRepository
         return $query->getResult();
     }
 
+    /**
+     * The frozen packages this user maintains whose freeze is open to appeal. `frozen IN (...)`
+     * excludes NULL by itself, so unfrozen packages drop out without a second clause.
+     *
+     * @return list<Package>
+     */
+    public function findAppealableFrozenPackagesByMaintainer(int $userId): array
+    {
+        return $this->createQueryBuilder('p')
+            ->join('p.maintainers', 'm')
+            ->where('m.id = :userId')
+            ->andWhere('p.frozen IN (:reasons)')
+            ->orderBy('p.name', 'ASC')
+            ->getQuery()
+            ->setParameters(['userId' => $userId, 'reasons' => PackageFreezeReason::appealableCases()])
+            ->getResult();
+    }
+
     public function isPackageMaintainedBy(Package $package, int $userId): bool
     {
         $query = $this->createQueryBuilder('p')

@@ -168,6 +168,102 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(0, $crawler->filter('.package[data-force-crawl]'));
     }
 
+    /**
+     * The constraint message stays plain text because three consumers render it with three different
+     * escaping rules, so the support workflow has to be offered by the template instead.
+     */
+    public function testBlockedUrlEditOffersTheSupportWorkflow(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $package = self::createPackage('mover/popular', 'https://example.com/mover/popular', maintainers: [$user]);
+        $this->store($package);
+
+        $redis = $this->redis();
+        $redis->set('dl:'.$package->getId(), '500000');
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/packages/mover/popular/edit');
+        $form = $crawler->selectButton('Update')->form();
+        $form->setValues(['form[repository]' => 'https://example.com/mover/moved']);
+
+        $crawler = $this->client->submit($form);
+
+        $redis->del(['dl:'.$package->getId()]);
+
+        self::assertCount(1, $crawler->filter('a[href*="/contact/package-url-change"]'));
+        // and the constraint message itself carries no markup to be escaped into view
+        self::assertStringNotContainsString('&lt;a href', $crawler->filter('body')->html());
+    }
+
+    /**
+     * The prefill goes through the form field's data option rather than Package::setRepository(),
+     * which probes the URL over the network. A GET that merely renders the form must not touch the
+     * package or reach out to the host somebody put in the query string.
+     */
+    public function testPrefilledEditFormChangesNothingUntilItIsSaved(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $this->store($admin);
+        $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$admin]);
+        $this->store($package);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository=https://example.com/mover/moved&supportRequest=PKSR-test');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('https://example.com/mover/moved', $crawler->filter('#form_repository')->attr('value'));
+        // the admin is told where the value came from, so it cannot be saved unnoticed
+        self::assertStringContainsString('PKSR-test', $crawler->filter('.alert-warning')->html());
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->findOneBy(['name' => 'mover/thing']);
+        self::assertNotNull($reloaded);
+        self::assertSame('https://example.com/mover/thing', $reloaded->getRepository());
+    }
+
+    /**
+     * The reference has to survive the POST: the form's action is generated without a query string,
+     * so once the admin hits save there is nothing left on the URL to read it back off. Asserted on
+     * the rendered field rather than by saving, because a successful save runs the real VCS probe
+     * in ValidPackageRepositoryValidator and there is no driver stub in the test kernel.
+     */
+    public function testPrefilledEditCarriesTheSupportReferenceThroughThePost(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $this->store($admin);
+        $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$admin]);
+        $this->store($package);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository=https://example.com/mover/moved&supportRequest=PKSR-1111-2222-3333');
+
+        self::assertResponseIsSuccessful();
+        $hidden = $crawler->filter('input[name="form[supportRequest]"]');
+        self::assertCount(1, $hidden);
+        self::assertSame('PKSR-1111-2222-3333', $hidden->attr('value'));
+
+        // and the form posts back to a URL that carries nothing, which is why the field has to exist
+        self::assertSame('/packages/mover/thing/edit', $crawler->filter('form[action*="/edit"]')->first()->attr('action'));
+    }
+
+    public function testPrefillAndReferenceAreIgnoredForPlainMaintainers(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$user]);
+        $this->store($package);
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository=https://evil.example/mover/thing&supportRequest=Approved-by-staff');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('https://example.com/mover/thing', $crawler->filter('#form_repository')->attr('value'));
+        self::assertCount(0, $crawler->filter('.alert-warning'));
+        self::assertCount(0, $crawler->filter('input[name="form[supportRequest]"]'));
+    }
+
     public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void
     {
         $fresh = self::createPackage('test/fresh', 'https://example.com/test/fresh');
