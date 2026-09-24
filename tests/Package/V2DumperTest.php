@@ -30,7 +30,9 @@ use App\Tests\IntegrationTestCase;
 use Composer\Semver\VersionParser;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
+use Monolog\Handler\TestHandler;
 use Monolog\Logger;
+use Monolog\LogRecord;
 use Predis\Client as RedisClient;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -365,6 +367,60 @@ class V2DumperTest extends IntegrationTestCase
         self::assertSame(2, $uploads, 'a marked package with unchanged content must still not be rewritten');
     }
 
+    public function testAChangedFileNobodyMarkedIsLogged(): void
+    {
+        // Names the packages behind metadata_dump.file{written, requested:false}: content changed but
+        // no path marked it, so only the transitional crawledAt clause caught it. That counter is the
+        // gate on dropping the clause, and it is not at zero, so the log says which package to chase.
+        $logs = [];
+        $this->rebuildDumperWithLogger(self::capturingLogger($logs));
+        $this->primeBuildDir();
+
+        $package = self::createPackage('acme/package', 'https://example.com/acme/package');
+        $this->store($package, $this->createVersion($package, '1.0.0'));
+        $packageId = $package->getId();
+
+        $this->requestDumpAt($packageId, '-1 minute');
+        $this->dumper->dump([$packageId]);
+        self::assertSame([], self::gapWarnings($logs), 'a marked package is the normal path and must stay quiet');
+
+        // content changes with nothing marking it, which is exactly the gap being hunted
+        $reloaded = self::getEM()->getRepository(Package::class)->find($packageId);
+        self::assertInstanceOf(Package::class, $reloaded);
+        $this->store($this->createVersion($reloaded, '2.0.0'));
+        $this->dumper->dump([$packageId]);
+
+        $gaps = self::gapWarnings($logs);
+        self::assertNotEmpty($gaps);
+        self::assertStringContainsString('acme/package', $gaps[0]);
+    }
+
+    /**
+     * @param list<string> $logs
+     *
+     * @return list<string>
+     */
+    private static function gapWarnings(array $logs): array
+    {
+        return array_values(array_filter($logs, static fn (string $line): bool => str_contains($line, 'nothing had marked')));
+    }
+
+    public function testAForcedRunDoesNotLogEveryPackageAsUnmarked(): void
+    {
+        // --force dumps everything regardless of staleness, so every package in it looks unmarked.
+        // Logging those would bury the handful of real gaps under a full-database run.
+        $logs = [];
+        $this->rebuildDumperWithLogger(self::capturingLogger($logs));
+        $this->primeBuildDir();
+
+        $package = self::createPackage('acme/package', 'https://example.com/acme/package');
+        $this->store($package, $this->createVersion($package, '1.0.0'));
+
+        $this->dumper->dump([$package->getId()], force: true);
+
+        self::assertSame([], self::gapWarnings($logs));
+    }
+
     public function testForceDumpRewritesUnchangedContent(): void
     {
         // The deliberate escape hatch: forceDump() nulls dumpedAtV2, which the dumper reads as "write
@@ -410,6 +466,48 @@ class V2DumperTest extends IntegrationTestCase
      * Lets dump() run without --force, which is what exercises the real staleness bookkeeping — the
      * dumper otherwise refuses a first run against an empty build dir.
      */
+    /**
+     * Captures log records in a processor rather than reading them back off a TestHandler, because
+     * V2Dumper::dump() calls logger->reset() between batches and that clears a handler's records.
+     * Processors are not resettable, so what they have already collected survives.
+     *
+     * @param list<string> $captured
+     */
+    private static function capturingLogger(array &$captured): Logger
+    {
+        $logger = new Logger('test', [new TestHandler()]);
+        $logger->pushProcessor(static function (LogRecord $record) use (&$captured): LogRecord {
+            $captured[] = $record->message.' '.json_encode($record->context, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES);
+
+            return $record;
+        });
+
+        return $logger;
+    }
+
+    private function rebuildDumperWithLogger(Logger $logger): void
+    {
+        $cdnClient = $this->createStub(CdnClient::class);
+        $cdnClient->method('uploadMetadata')->willReturn(16062106090001);
+        $cdnClient->method('purgeMetadataCache')->willReturn(true);
+
+        $this->dumper = new V2Dumper(
+            static::getContainer()->get(ManagerRegistry::class),
+            new Filesystem(),
+            $this->createStub(RedisClient::class),
+            $this->webDir,
+            $this->buildDir,
+            $this->createStub(StatsDClient::class),
+            $this->createStub(ProviderManager::class),
+            $logger,
+            $cdnClient,
+            $this->createStub(ReplicaClient::class),
+            static::getContainer()->get(UrlGeneratorInterface::class),
+            new MockHttpClient(),
+            static::getContainer()->get(FilterListDumperProvider::class),
+        );
+    }
+
     private function primeBuildDir(): void
     {
         mkdir($this->buildDir.'/p2', 0o777, true);
