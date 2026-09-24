@@ -54,6 +54,9 @@ class PackageRepository extends ServiceEntityRepository
      * that sit just past 3s a correct answer for roughly what the timeout already costs them.
      */
     private const SORTED_LISTING_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
+
+    /** Predates every row, so an unbounded sweep needs no second query. */
+    private const DUMP_SWEEP_EPOCH = '2000-01-01 00:00:00';
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
@@ -334,7 +337,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return list<int>
      */
-    public function getStalePackagesForDumpingV2(int $workerId = 0, int $numWorkers = 1): array
+    public function getStalePackagesForDumpingV2(int $workerId = 0, int $numWorkers = 1, ?\DateTimeImmutable $since = null): array
     {
         $conn = $this->getEntityManager()->getConnection();
 
@@ -343,10 +346,16 @@ class PackageRepository extends ServiceEntityRepository
         // comparison, a missed one is a lost change.
         // The crawledAt clause is a transitional safety net, droppable once
         // metadata_dump.file{result:written, requested:false} sits at ~0 outside --force runs.
-        // Both clauses compare column to column, so this scans the index rather than seeking it — hence
-        // the hint, and covering all four columns.
-        $sql = 'SELECT p.id FROM package p USE INDEX (dumped2_requested_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR p.dumpRequestedAt >= p.dumpedAtV2 OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
-        $params = ['suppressed' => PackageFreezeReason::suppressingValues()];
+        // Both staleness clauses compare column to column, so neither can be seeked; $since is the
+        // bound that can be, since a package only goes stale by being marked or crawled. Unbounded
+        // this scanned the index instead, 468,848 rows a call, every two seconds per worker.
+        // dumpedAtV2 IS NULL stays outside the window: a forceDump() must be found however stale.
+        // Oldest first so that the caller's backlog cap drops the rows with the most window left.
+        $sql = 'SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpRequestedAt > :since AND p.dumpRequestedAt >= p.dumpedAtV2) OR (p.crawledAt > :since AND p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
+        $params = [
+            'suppressed' => PackageFreezeReason::suppressingValues(),
+            'since' => ($since ?? new \DateTimeImmutable(self::DUMP_SWEEP_EPOCH))->format('Y-m-d H:i:s'),
+        ];
         $types = ['suppressed' => ArrayParameterType::STRING];
 
         if ($numWorkers > 1) {
@@ -354,6 +363,8 @@ class PackageRepository extends ServiceEntityRepository
             $params['numWorkers'] = $numWorkers;
             $params['workerId'] = $workerId;
         }
+
+        $sql .= ' ORDER BY COALESCE(p.dumpRequestedAt, p.crawledAt) ASC, p.id ASC';
 
         return $conn->fetchFirstColumn($sql, $params, $types);
     }

@@ -104,6 +104,7 @@ enum PackageFreezeReason: string
 #[ORM\Index(name: 'repository_idx', columns: ['repository'])]
 #[ORM\Index(name: 'remoteid_idx', columns: ['remoteId'])]
 #[ORM\Index(name: 'dumped2_requested_crawled_frozen_idx', columns: ['dumpedAtV2', 'dumpRequestedAt', 'crawledAt', 'frozen'])]
+#[ORM\Index(name: 'dump_requested_idx', columns: ['dumpRequestedAt'])]
 #[ORM\Index(name: 'vendor_idx', columns: ['vendor'])]
 #[ORM\Index(name: 'frozen_idx', columns: ['frozen'])]
 #[ORM\Index(name: 'type_frozen_idx', columns: ['type', 'frozen'])]
