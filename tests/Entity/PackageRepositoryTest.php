@@ -603,6 +603,84 @@ class PackageRepositoryTest extends IntegrationTestCase
         return $package;
     }
 
+    public function testStaleForDumpingV2FindsPackagesMarkedInsideTheWindow(): void
+    {
+        $marked = $this->dumpablePackage('acme/marked', dumpedAtV2: '-2 hours', dumpRequestedAt: '-10 minutes');
+
+        self::assertContains($marked->getId(), $this->staleForDumpingSince('-1 hour'));
+    }
+
+    public function testStaleForDumpingV2SkipsPackagesMarkedBeforeTheWindow(): void
+    {
+        // The cost of bounding the select: a package stranded by a dump that failed after selecting it
+        // is not re-found until the watermark's TTL lapses and the unbounded sweep comes back around.
+        $stranded = $this->dumpablePackage('acme/stranded', dumpedAtV2: '-5 hours', dumpRequestedAt: '-4 hours');
+
+        self::assertNotContains($stranded->getId(), $this->staleForDumpingSince('-1 hour'));
+        self::assertContains($stranded->getId(), $this->staleForDumpingSince(null), 'the unbounded sweep is what recovers it');
+    }
+
+    public function testStaleForDumpingV2SkipsPackagesAlreadyDumpedSinceTheirRequest(): void
+    {
+        $fresh = $this->dumpablePackage('acme/fresh', dumpedAtV2: '-1 minute', dumpRequestedAt: '-10 minutes');
+
+        self::assertNotContains($fresh->getId(), $this->staleForDumpingSince('-1 hour'));
+        self::assertNotContains($fresh->getId(), $this->staleForDumpingSince(null));
+    }
+
+    public function testStaleForDumpingV2AlwaysFindsNeverDumpedPackages(): void
+    {
+        // dumpedAtV2 IS NULL sits outside the window on purpose — a package that has never been
+        // dumped must not be reachable only via the sweep, however old its other timestamps are.
+        $neverDumped = $this->dumpablePackage('acme/never-dumped', dumpedAtV2: null, dumpRequestedAt: '-4 hours');
+
+        self::assertContains($neverDumped->getId(), $this->staleForDumpingSince('-1 hour'));
+    }
+
+    public function testStaleForDumpingV2StillFollowsCrawledAtInsideTheWindow(): void
+    {
+        // The crawledAt clause is the transitional fallback for content changes that never got an
+        // explicit mark; bounding the select must not quietly drop it.
+        $crawled = $this->dumpablePackage('acme/crawled', dumpedAtV2: '-2 hours', dumpRequestedAt: null, crawledAt: '-10 minutes');
+
+        self::assertContains($crawled->getId(), $this->staleForDumpingSince('-1 hour'));
+    }
+
+    public function testDumpRequestedAtIsIndexed(): void
+    {
+        // The bounded select ranges on dumpRequestedAt, which dumped2_requested_crawled_frozen_idx
+        // cannot lead. Guards the mapping; prod gets it from
+        // migrations/2026_09_package_dump_requested_idx.sql, which this cannot see.
+        $indexes = self::getEM()->getConnection()->createSchemaManager()->listTableIndexes('package');
+
+        $indexedColumns = array_map(static fn ($index): array => $index->getColumns(), array_values($indexes));
+
+        self::assertContains(['dumpRequestedAt'], $indexedColumns, 'package needs an index leading on dumpRequestedAt');
+    }
+
+    private function dumpablePackage(string $name, ?string $dumpedAtV2, ?string $dumpRequestedAt, ?string $crawledAt = null): Package
+    {
+        $package = self::createPackage($name, 'https://github.com/'.$name);
+        $package->setDumpedAtV2(null === $dumpedAtV2 ? null : new \DateTimeImmutable($dumpedAtV2));
+        $package->setCrawledAt(null === $crawledAt ? null : new \DateTimeImmutable($crawledAt));
+        if (null !== $dumpRequestedAt) {
+            new \ReflectionProperty($package, 'dumpRequestedAt')->setValue($package, new \DateTimeImmutable($dumpRequestedAt));
+        }
+        $this->store($package);
+
+        return $package;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function staleForDumpingSince(?string $modifier): array
+    {
+        return array_map('intval', $this->packageRepository->getStalePackagesForDumpingV2(
+            since: null === $modifier ? null : new \DateTimeImmutable($modifier),
+        ));
+    }
+
     /**
      * @return list<array<string, mixed>>
      */
