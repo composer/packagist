@@ -1869,9 +1869,10 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 
 .package .requireme {
     margin-top: 15px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 5px;
+    max-width: 100%;
 }
 .package .requireme input {
   cursor: text;
@@ -1879,8 +1880,50 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
   border-radius: 0;
   background-color: transparent;
   font-family: Consolas, "Courier New", Courier, monospace;
-  flex: 1;
   min-width: 0;
+}
+.package .requireme-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--color-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity .15s ease;
+}
+.package .requireme-copy:hover,
+.package .requireme-copy:focus {
+    color: var(--color-brand-orange);
+}
+.package .requireme-copy .bi-check2 {
+    display: none;
+}
+.package .requireme-copy.is-copied {
+    color: var(--color-success);
+    visibility: visible;
+    opacity: 1;
+}
+.package .requireme-copy.is-copied .bi-clipboard {
+    display: none;
+}
+.package .requireme-copy.is-copied .bi-check2 {
+    display: inline-block;
+}
+.package .requireme-copy-label {
+    display: none;
+}
+.package .requireme-copy.is-copied .requireme-copy-label {
+    display: inline;
+}
+.package .requireme:hover .requireme-copy,
+.package .requireme:focus-within .requireme-copy {
+    visibility: visible;
+    opacity: 1;
 }
 
 
