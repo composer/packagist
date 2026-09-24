@@ -16,8 +16,10 @@ use App\Entity\Dependent;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
+use App\Entity\ProvideLink;
 use App\Entity\Suggester;
 use App\Entity\Vendor;
+use App\Entity\Version;
 use App\Tests\IntegrationTestCase;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
@@ -550,6 +552,55 @@ class PackageRepositoryTest extends IntegrationTestCase
         $rows = $this->packageRepository->getStalePackagesForIndexing(new \DateTimeImmutable($modifier));
 
         return array_map(static fn (array $row): int => $row['id'], $rows);
+    }
+
+    public function testFindProvidersMatchesOnlyDefaultBranchProvides(): void
+    {
+        $provider = $this->packageProviding('acme/logger', 'psr/log-implementation');
+        $tagged = $this->packageProviding('acme/tagged-logger', 'psr/log-implementation', development: false);
+        $unrelated = $this->packageProviding('acme/client', 'psr/http-client-implementation');
+
+        $names = array_map(static fn (Package $p): string => $p->getName(), $this->packageRepository->findProviders('psr/log-implementation'));
+
+        self::assertContains($provider->getName(), $names);
+        self::assertNotContains($tagged->getName(), $names, 'only the default branch counts as providing a name');
+        self::assertNotContains($unrelated->getName(), $names);
+    }
+
+    public function testProvidedPackageNameIsIndexed(): void
+    {
+        // findProviders() filters link_provide on packageName and had no index to use, so it scanned
+        // all ~78k rows on every /providers/{name} request. This guards the mapping; putting it on
+        // prod is migrations/2026_09_link_provide_name_idx.sql, which this cannot see.
+        $indexes = self::getEM()->getConnection()->createSchemaManager()->listTableIndexes('link_provide');
+
+        $indexedColumns = array_map(static fn ($index): array => $index->getColumns(), array_values($indexes));
+
+        self::assertContains(['packageName'], $indexedColumns, 'link_provide needs an index on packageName');
+    }
+
+    private function packageProviding(string $name, string $provided, bool $development = true): Package
+    {
+        $package = self::createPackage($name, 'https://github.com/'.$name);
+
+        $version = new Version();
+        $version->setPackage($package);
+        $version->setName($name);
+        $version->setVersion('dev-main');
+        $version->setNormalizedVersion('dev-main');
+        $version->setDevelopment($development);
+        $version->setLicense([]);
+        $version->setAutoload([]);
+        $package->getVersions()->add($version);
+
+        $link = new ProvideLink();
+        $link->setVersion($version);
+        $link->setPackageName($provided);
+        $link->setPackageVersion('*');
+
+        $this->store($package, $version, $link);
+
+        return $package;
     }
 
     /**
