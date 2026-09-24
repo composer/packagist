@@ -477,7 +477,7 @@ class V2DumperTest extends IntegrationTestCase
     {
         $logger = new Logger('test', [new TestHandler()]);
         $logger->pushProcessor(static function (LogRecord $record) use (&$captured): LogRecord {
-            $captured[] = $record->message.' '.json_encode($record->context, \JSON_THROW_ON_ERROR);
+            $captured[] = $record->message.' '.json_encode($record->context, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES);
 
             return $record;
         });
