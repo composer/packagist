@@ -11,13 +11,17 @@
  */
 
 namespace App\Tests\Controller;
+use App\Audit\VersionDeletionReason;
 use App\Service\Scheduler;
+use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
+use App\Entity\Version;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;
 use App\Model\VersionIdCache;
 use App\Tests\IntegrationTestCase;
+use Composer\Package\Version\VersionParser;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -370,6 +374,90 @@ class ApiControllerTest extends IntegrationTestCase
         $body = $this->decodeResponse();
         self::assertSame('partial', $body['status']);
         self::assertStringContainsString('9999999-dev', $body['message'], 'the unresolved entry is reported back to the client');
+    }
+
+    public function testDeletePackageVersionSoftDeletesStableVersions(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/pkg', 'https://github.com/composer/composer', maintainers: [$user]);
+        $version = $this->createVersion($package, '1.0.0');
+        $this->store($user, $package, $version);
+
+        $this->client->request('DELETE', '/api/packages/test/pkg/versions/v1.0.0', server: ['HTTP_AUTHORIZATION' => 'Bearer test:api-token']);
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('', $this->client->getResponse()->getContent());
+
+        $em = self::getEM();
+        $em->clear();
+        $version = $em->getRepository(Version::class)->find($version->getId());
+        self::assertNotNull($version);
+        self::assertTrue($version->isSoftDeleted());
+        self::assertSame(VersionDeletionReason::DeletedByMaintainer, $version->getDeletionReason());
+
+        $this->client->request('DELETE', '/api/packages/test/pkg/versions/1.0.0', server: ['HTTP_AUTHORIZATION' => 'Bearer test:api-token']);
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testDeletePackageVersionRemovesDevVersions(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/pkg', 'https://github.com/composer/composer', maintainers: [$user]);
+        $version = $this->createVersion($package, 'dev-feature/foo');
+        $this->store($user, $package, $version);
+        $versionId = $version->getId();
+
+        $this->client->request('DELETE', '/api/packages/test/pkg/versions/dev-feature/foo', server: ['HTTP_AUTHORIZATION' => 'Bearer test:api-token']);
+        self::assertResponseStatusCodeSame(204);
+
+        self::getEM()->clear();
+        self::assertNull(self::getEM()->getRepository(Version::class)->find($versionId));
+    }
+
+    public function testDeletePackageVersionErrors(): void
+    {
+        $user = self::createUser();
+        $other = self::createUser('other', 'other@example.org', apiToken: 'other-token', safeApiToken: 'other-safe-token', githubId: '54321');
+        $package = self::createPackage('test/pkg', 'https://github.com/composer/composer', maintainers: [$user]);
+        $version = $this->createVersion($package, '1.0.0');
+        $this->store($user, $other, $package, $version);
+
+        $this->client->request('DELETE', '/api/packages/test/pkg/versions/1.0.0');
+        self::assertResponseStatusCodeSame(401);
+
+        $this->client->request('DELETE', '/api/packages/test/pkg/versions/1.0.0', server: ['HTTP_AUTHORIZATION' => 'Bearer test:safe-api-token']);
+        self::assertResponseStatusCodeSame(401, 'the safe token must not allow deletions');
+
+        $this->client->request('DELETE', '/api/packages/test/pkg/versions/1.0.0', server: ['HTTP_AUTHORIZATION' => 'Bearer other:other-token']);
+        self::assertResponseStatusCodeSame(403);
+
+        $this->client->request('DELETE', '/api/packages/test/pkg/versions/2.0.0', server: ['HTTP_AUTHORIZATION' => 'Bearer test:api-token']);
+        self::assertResponseStatusCodeSame(404);
+
+        $this->client->request('DELETE', '/api/packages/test/pkg/versions/not-a-version', server: ['HTTP_AUTHORIZATION' => 'Bearer test:api-token']);
+        self::assertResponseStatusCodeSame(404);
+
+        $this->client->request('POST', '/api/packages/test/pkg/versions/1.0.0', server: ['HTTP_AUTHORIZATION' => 'Bearer test:api-token']);
+        self::assertResponseStatusCodeSame(405);
+
+        self::getEM()->clear();
+        self::assertFalse(self::getEM()->getRepository(Version::class)->find($version->getId())?->isSoftDeleted());
+    }
+
+    private function createVersion(Package $package, string $version): Version
+    {
+        $v = new Version();
+        $v->setName($package->getName());
+        $v->setVersion($version);
+        $v->setNormalizedVersion(new VersionParser()->normalize($version));
+        $v->setLicense(['MIT']);
+        $v->setAutoload([]);
+        $v->setDevelopment(str_starts_with($version, 'dev-'));
+        $v->setPackage($package);
+        $package->getVersions()->add($v);
+        $v->setReleasedAt(new \DateTimeImmutable());
+        $v->setUpdatedAt(new \DateTimeImmutable());
+
+        return $v;
     }
 
     /**

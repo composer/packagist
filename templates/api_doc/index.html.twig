@@ -30,6 +30,7 @@
   <li><a href="#list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</a></li>
   <li><a href="#create-package">{{ 'api_doc.api_create_package'|trans }}</a></li>
   <li><a href="#edit-package">Edit a package</a></li>
+  <li><a href="#delete-package-version">Delete a package version</a></li>
   <li><a href="#update-package">Update a package</a></li>
 </ul>
 
@@ -554,6 +555,25 @@ PUT https://{{ packagist_host }}/api/packages/[package name] {"repository":"[url
 </code></pre>
     <p>Working example:<br/>
         <code>curl -X PUT -H'Content-Type:application/json' -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/packages/monolog/monolog' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code>
+    </p>
+
+</section>
+
+<section class="col-md-12">
+    <h3 id="delete-package-version">Delete a package version <span class="badge bg-warning">Authentication Required</span></h3>
+
+    <p>This endpoint deletes a version of a package you maintain. Only the <code>DELETE</code> method is allowed. The version can be given as it appears on the package page (e.g. <code>1.0.0</code>, <code>v1.0.0</code> or <code>dev-main</code>).</p>
+    <p>Development versions are deleted permanently and come back if the branch is still present on the next update. Stable versions are immutable, so they are marked as deleted instead: they are removed from the Composer metadata but the version number cannot be released again. They can be recovered from the package page.</p>
+    <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
+
+    <pre>
+DELETE https://{{ packagist_host }}/api/packages/[package name]/versions/[version]
+<code>
+HTTP/1.1 204 No Content
+</code></pre>
+    <p>A <code>401</code> is returned for missing or invalid credentials, <code>403</code> if you do not maintain the package, and <code>404</code> if the package or version does not exist or the version was already deleted.</p>
+    <p>Working example:<br/>
+        <code>curl -X DELETE -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/packages/monolog/monolog/versions/1.0.0'</code>
     </p>
 
 </section>
