@@ -14,8 +14,8 @@ namespace App\Service;
 
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
-use App\Entity\PackageRepository;
 use App\Entity\PackageTransparencyLog;
+use App\Entity\PackageTransparencyLogQueue;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
 use App\Log\TransparencyLogEventType;
@@ -56,7 +56,6 @@ class TransparencyLogProjector
         private AuditRecordRepository $auditRecordRepository,
         private PackageTransparencyLogRepository $transparencyLogRepository,
         private PackageTransparencyLogQueueRepository $queueRepository,
-        private PackageRepository $packageRepository,
         private LoggerInterface $logger,
     ) {
     }
@@ -84,11 +83,11 @@ class TransparencyLogProjector
         $after = null;
 
         do {
-            $pendingIds = $this->queueRepository->fetchPendingIds($after, self::BATCH_SIZE);
-            $records = $this->auditRecordRepository->getRecordsByIds($pendingIds);
+            $pending = $this->queueRepository->fetchPending($after, self::BATCH_SIZE);
+            $records = $this->auditRecordRepository->getRecordsByIds(array_map(static fn (PackageTransparencyLogQueue $queued): Ulid => $queued->auditLogId, $pending));
 
-            foreach ($pendingIds as $id) {
-                $after = $id;
+            foreach ($pending as $queued) {
+                $id = $after = $queued->auditLogId;
 
                 $record = $records[(string) $id] ?? null;
                 if ($record === null) {
@@ -105,7 +104,7 @@ class TransparencyLogProjector
                 }
 
                 try {
-                    $inserted = $this->projectAndDequeue($record, $leafIndex);
+                    $inserted = $this->projectAndDequeue($record, $queued->targets, $leafIndex);
                     $failures = 0;
                 } catch (\Throwable $e) {
                     // The queue row stays, so this is retried next run. The order is not guaranteed
@@ -129,14 +128,14 @@ class TransparencyLogProjector
 
             $em->clear();
 
-            if ($onProgress !== null && $pendingIds !== []) {
+            if ($onProgress !== null && $pending !== []) {
                 $onProgress($projected, $leafIndex);
             }
 
             if ($signal?->isTriggered()) {
                 break;
             }
-        } while (\count($pendingIds) === self::BATCH_SIZE);
+        } while (\count($pending) === self::BATCH_SIZE);
 
         return $projected;
     }
@@ -144,14 +143,16 @@ class TransparencyLogProjector
     /**
      * Projects one record and dequeues it in one transaction: either every target package gets its
      * entry and the record is dequeued, or nothing happens and it stays queued.
+     *
+     * @param list<array{id: int, vendor: string|null, name: string}>|null $queuedTargets
      */
-    private function projectAndDequeue(AuditRecord $record, int $leafIndex): int
+    private function projectAndDequeue(AuditRecord $record, ?array $queuedTargets, int $leafIndex): int
     {
         $connection = $this->getEM()->getConnection();
         $connection->beginTransaction();
 
         try {
-            $inserted = $this->projectRecord($record, $leafIndex);
+            $inserted = $this->projectRecord($record, $queuedTargets, $leafIndex);
             $this->queueRepository->dequeue($record->id);
             $connection->commit();
 
@@ -168,9 +169,11 @@ class TransparencyLogProjector
     /**
      * Projects one record to its target package(s) and returns how many rows it wrote, which is how
      * many leaf indices it used. 0 is not a failure: the caller dequeues an out-of-scope record, or
-     * an account event of a user who maintains nothing, because neither can ever be projected.
+     * an account event of a user who maintained nothing, because neither can ever be projected.
+     *
+     * @param list<array{id: int, vendor: string|null, name: string}>|null $queuedTargets
      */
-    private function projectRecord(AuditRecord $record, int $leafIndex): int
+    private function projectRecord(AuditRecord $record, ?array $queuedTargets, int $leafIndex): int
     {
         $type = TransparencyLogEventType::fromAuditLogEventType($record->type);
         if ($type === null) {
@@ -178,7 +181,7 @@ class TransparencyLogProjector
             return 0;
         }
 
-        $targets = $this->resolveTargets($record, $type);
+        $targets = $this->resolveTargets($record, $type, $queuedTargets);
         if ($targets === []) {
             return 0;
         }
@@ -190,14 +193,16 @@ class TransparencyLogProjector
 
     /**
      * The packages a record is written to. A package-native event uses its own package, an account
-     * event every package the user maintains right now.
+     * event the packages the user maintained when it was enqueued ({@see PackageTransparencyLogQueue::$targets}).
+     *
+     * @param list<array{id: int, vendor: string|null, name: string}>|null $queuedTargets
      *
      * @return list<array{id: int, vendor: string|null, name: string}>
      */
-    private function resolveTargets(AuditRecord $record, TransparencyLogEventType $type): array
+    private function resolveTargets(AuditRecord $record, TransparencyLogEventType $type, ?array $queuedTargets): array
     {
         if ($type->fansOutToMaintainedPackages()) {
-            return $record->userId !== null ? $this->packageRepository->getPackageRefsByMaintainer($record->userId) : [];
+            return $queuedTargets ?? [];
         }
 
         if ($record->packageId === null) {

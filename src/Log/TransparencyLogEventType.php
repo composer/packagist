@@ -118,7 +118,7 @@ enum TransparencyLogEventType: string implements LogEventType
 
     /**
      * Account events have no package of their own, so the projector writes them to every package the
-     * user directly maintains ({@see \App\Entity\PackageRepository::getPackageRefsByMaintainer()}).
+     * user directly maintained when the event was recorded ({@see \App\Entity\PackageTransparencyLogQueue::$targets}).
      * Organization-owned packages are out of scope for now.
      */
     public function fansOutToMaintainedPackages(): bool

@@ -38,13 +38,21 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
      */
     public function enqueue(AuditRecord $record): void
     {
-        if (TransparencyLogEventType::fromAuditLogEventType($record->type) === null) {
+        $type = TransparencyLogEventType::fromAuditLogEventType($record->type);
+        if ($type === null) {
             return;
         }
 
+        $targets = null;
+        if ($type->fansOutToMaintainedPackages()) {
+            $packageRepository = $this->getEntityManager()->getRepository(Package::class);
+            \assert($packageRepository instanceof PackageRepository);
+            $targets = $record->userId !== null ? $packageRepository->getPackageRefsByMaintainer($record->userId) : [];
+        }
+
         $this->getEntityManager()->getConnection()->executeStatement(
-            'INSERT IGNORE INTO package_transparency_log_queue (auditLogId) VALUES (?)',
-            [$record->id->toBinary()],
+            'INSERT IGNORE INTO package_transparency_log_queue (auditLogId, targets) VALUES (?, ?)',
+            [$record->id->toBinary(), $targets !== null ? json_encode($targets, \JSON_THROW_ON_ERROR) : null],
         );
     }
 
@@ -61,27 +69,25 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
     }
 
     /**
-     * The oldest pending audit ids after $after, in ULID order so leaf assignment is deterministic.
+     * The oldest pending queue rows after $after, in ULID order so leaf assignment is deterministic.
      *
      * $after is only a cursor within one run and is never stored. Without it a record that stays
      * pending (too fresh for the safety lag, or one that threw) would come first in every batch.
      *
-     * @return list<Ulid>
+     * @return list<PackageTransparencyLogQueue>
      */
-    public function fetchPendingIds(?Ulid $after, int $limit): array
+    public function fetchPending(?Ulid $after, int $limit): array
     {
         $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('q.auditLogId')
+            ->select('q')
             ->from(PackageTransparencyLogQueue::class, 'q')
             ->where('q.auditLogId > :after')
             ->setParameter('after', $after ?? new NilUlid(), UlidType::NAME)
             ->orderBy('q.auditLogId', 'ASC')
             ->setMaxResults($limit);
 
-        /** @var list<array{auditLogId: Ulid}> $rows */
-        $rows = $qb->getQuery()->getResult();
-
-        return array_map(static fn (array $row): Ulid => $row['auditLogId'], $rows);
+        /** @var list<PackageTransparencyLogQueue> */
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -118,7 +124,8 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
 
     /**
      * Marks a batch of audit ids as pending, for seeding. Skips the type filter in
-     * {@see self::enqueue()} because the caller already chose the types.
+     * {@see self::enqueue()} because the caller already chose the types. Stores no targets, so only
+     * package-native types can be seeded.
      *
      * @param non-empty-list<Ulid> $auditLogIds
      *
