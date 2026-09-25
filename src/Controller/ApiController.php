@@ -12,10 +12,12 @@
 
 namespace App\Controller;
 
+use App\Audit\VersionDeletionReason;
 use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Entity\Vendor;
+use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
@@ -23,6 +25,7 @@ use App\Service\FallbackGitHubAuthProvider;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\UserAgentParser;
+use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use Graze\DogStatsD\Client as StatsDClient;
 use Psr\Log\LoggerInterface;
@@ -255,6 +258,43 @@ class ApiController extends Controller
         $em->flush();
 
         return new JsonResponse(['status' => 'success'], 200);
+    }
+
+    #[Route(path: '/api/packages/{package}/versions/{version}', name: 'api_delete_package_version', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'version' => '.+'], defaults: ['_format' => 'json'], methods: ['DELETE'])]
+    public function deletePackageVersionAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $version, StatsDClient $statsd): Response
+    {
+        $user = $this->findUser($request);
+        if (!$user) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 401, ['WWW-Authenticate' => 'Bearer']);
+        }
+        if (!$package->isMaintainer($user)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to delete versions of this package'], 403);
+        }
+
+        $statsd->increment('delete_package_version_api');
+
+        try {
+            $normalizedVersion = new VersionParser()->normalize($version);
+        } catch (\UnexpectedValueException) {
+            $normalizedVersion = null;
+        }
+
+        $repo = $this->getEM()->getRepository(Version::class);
+        $packageVersion = $normalizedVersion !== null ? $repo->findOneBy(['package' => $package, 'normalizedVersion' => $normalizedVersion]) : null;
+        // re-deleting a pulled version would overwrite its deletion reason, possibly an admin's
+        if (!$packageVersion || $packageVersion->isSoftDeleted()) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Version '.$version.' not found'], 404);
+        }
+
+        $this->getEM()->wrapInTransaction(static function () use ($repo, $packageVersion, $user): void {
+            if ($packageVersion->isDevelopment()) {
+                $repo->remove($packageVersion);
+            } else {
+                $repo->softDelete($packageVersion, VersionDeletionReason::DeletedByMaintainer, null, null, $user);
+            }
+        });
+
+        return new Response(null, 204);
     }
 
     #[Route(path: '/jobs/{id}', name: 'get_job', requirements: ['id' => '[a-f0-9]+'], defaults: ['_format' => 'json'], methods: ['GET'])]
