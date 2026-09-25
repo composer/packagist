@@ -18,9 +18,11 @@ use App\Log\AuditLogEventType;
 use App\Service\AuditRecordsManager;
 use App\Util\IpAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Types\UlidType;
+use Symfony\Component\Uid\Ulid;
 
 /**
  * @extends ServiceEntityRepository<AuditRecord>
@@ -30,6 +32,7 @@ class AuditRecordRepository extends ServiceEntityRepository
     public function __construct(
         ManagerRegistry $registry,
         private readonly AuditRecordsManager $auditRecordsManager,
+        private readonly PackageTransparencyLogQueueRepository $transparencyLogQueue,
     ) {
         parent::__construct($registry, AuditRecord::class);
     }
@@ -130,12 +133,59 @@ class AuditRecordRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param list<Ulid> $ids
+     *
+     * @return array<string, AuditRecord> map of ULID string => record (only ids that exist)
+     */
+    public function getRecordsByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('a')
+            ->where('a.id IN (:ids)')
+            ->setParameter('ids', array_map(static fn (Ulid $id): string => $id->toBinary(), $ids), ArrayParameterType::BINARY);
+
+        $records = [];
+        /** @var AuditRecord $record */
+        foreach ($qb->getQuery()->getResult() as $record) {
+            $records[(string) $record->id] = $record;
+        }
+
+        return $records;
+    }
+
+    /**
      * Performs a direct insert not requiring usage of the ORM so it can be used within ORM lifecycle listeners
+     *
+     * The queue row must be written in the same transaction as the audit_log row, or the record can
+     * never be projected. Some callers, like {@see \App\Security\TwoFactorAuthManager}, are not in a
+     * transaction, so start one here.
      */
     public function insert(AuditRecord $record): void
     {
         $this->auditRecordsManager->enrichWithClientIP($record);
 
+        $connection = $this->getEntityManager()->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $this->insertRecord($record);
+            $this->indexSearchTerms($record);
+            $this->transparencyLogQueue->enqueue($record);
+            $connection->commit();
+        } catch (\Throwable $e) {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+    private function insertRecord(AuditRecord $record): void
+    {
         $this->getEntityManager()->getConnection()->insert('audit_log', [
             'id' => $record->id,
             'datetime' => $record->datetime,
@@ -153,8 +203,6 @@ class AuditRecordRepository extends ServiceEntityRepository
             'attributes' => Types::JSON,
             'organizationId' => UlidType::NAME,
         ]);
-
-        $this->indexSearchTerms($record);
     }
 
     /**

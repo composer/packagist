@@ -12,29 +12,33 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Log\LogEventType;
 
-readonly class MaintainerRemovedDisplay extends AbstractLogDisplay
+/**
+ * A maintainer being added to or removed from a package; which one it is, is the type label.
+ */
+readonly class MaintainerChangeDisplay extends AbstractLogDisplay
 {
     public function __construct(
+        private LogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
         public ActorDisplay $maintainer,
         ActorDisplay $actor,
-        ?string $ip,
+        ?string $ip = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getType(): LogEventType
     {
-        return AuditLogEventType::MaintainerRemoved;
+        return $this->type;
     }
 
     public function getTemplateName(): string
     {
-        return 'log/display/maintainer_removed.html.twig';
+        return 'log/display/maintainer_change.html.twig';
     }
 }

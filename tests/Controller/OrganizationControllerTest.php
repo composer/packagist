@@ -844,7 +844,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/acme/audit-log');
         self::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test=log-type]')->each(fn ($element) => trim($element->text()));
         self::assertCount(2, $types, 'Only the two records for this organization should be listed');
     }
 
@@ -864,7 +864,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/acme/audit-log?type[]='.AuditLogEventType::OrganizationNameChanged->value);
         self::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test=log-type]')->each(fn ($element) => trim($element->text()));
         self::assertCount(1, $types, 'The type filter should narrow the results to a single record');
     }
 

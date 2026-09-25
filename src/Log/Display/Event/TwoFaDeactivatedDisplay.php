@@ -30,7 +30,7 @@ readonly class TwoFaDeactivatedDisplay extends AbstractLogDisplay
 
     public function getType(): AuditLogEventType
     {
-        return AuditLogEventType::TwoFaAuthenticationDeactivated;
+        return AuditLogEventType::TwoFactorAuthenticationDeactivated;
     }
 
     public function getTemplateName(): string

@@ -77,10 +77,14 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertSame('composer require test/pkg', $crawler->filter('.requireme input')->attr('value'));
 
-        $auditLink = $crawler->filter('a[href*="transparency-log"]');
-        self::assertCount(1, $auditLink);
-        self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
-        self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+        // The package page deep-links into the transparency log filtered to this package, and does not
+        // expose the admin audit log to non-auditors.
+        $transparencyLink = $crawler->filter('a[href*="transparency-log"]');
+        self::assertCount(1, $transparencyLink);
+        self::assertSame('Transparency log', trim($transparencyLink->text()));
+        self::assertStringContainsString('package=test/pkg', (string) $transparencyLink->attr('href'));
+        self::assertStringContainsString('noindex', (string) $transparencyLink->attr('rel'));
+        self::assertCount(0, $crawler->filter('a[href*="/admin/audit-log"]'));
     }
 
     public function testVersionListMakesTheWholeVersionNumberCellALink(): void

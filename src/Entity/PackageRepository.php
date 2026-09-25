@@ -194,6 +194,29 @@ class PackageRepository extends ServiceEntityRepository
         return (bool) $query->getOneOrNullResult();
     }
 
+    /**
+     * All packages the user directly maintains, ordered by id so the fan-out is always in the same
+     * order. Will need to take organization membership into account later.
+     *
+     * @return list<array{id: int, vendor: string, name: string}>
+     */
+    public function getPackageRefsByMaintainer(int $userId): array
+    {
+        /** @var list<array{id: int|string, vendor: string, name: string}> $rows */
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT p.id AS id, p.vendor AS vendor, p.name AS name
+                FROM package p
+                JOIN maintainers_packages mp ON mp.package_id = p.id AND mp.user_id = :userId
+                ORDER BY p.id ASC',
+            ['userId' => $userId],
+        );
+
+        return array_map(
+            static fn (array $row): array => ['id' => (int) $row['id'], 'vendor' => (string) $row['vendor'], 'name' => (string) $row['name']],
+            $rows,
+        );
+    }
+
     public function getPackageIdByName(string $name): ?int
     {
         $id = $this->createQueryBuilder('p')

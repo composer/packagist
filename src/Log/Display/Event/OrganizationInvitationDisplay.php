@@ -18,10 +18,9 @@ use App\Log\Display\ActorDisplay;
 use App\Log\Display\OrganizationDisplay;
 
 /**
- * Shared display for the invitation lifecycle (sent/resent/revoked/declined/accepted/expired). Every
- * one of these renders the organization, the invited email (already obfuscated by the factory when the
- * viewer may not see it) and the actor, so a single display carries them all; the concrete type drives
- * the wording via its own template and translation key.
+ * One display for all invitation events (sent/resent/revoked/declined/accepted/expired). They all
+ * show the organization, the invited email and the actor, and the type picks the template and the
+ * wording.
  */
 readonly class OrganizationInvitationDisplay extends AbstractLogDisplay
 {
@@ -41,8 +40,20 @@ readonly class OrganizationInvitationDisplay extends AbstractLogDisplay
         return $this->type;
     }
 
+    /**
+     * Spelled out rather than derived from the type so the template-parity guard in
+     * LogDisplayTemplatesTest can see which partials this display owns.
+     */
     public function getTemplateName(): string
     {
-        return 'log/display/'.$this->type->value.'.html.twig';
+        return match ($this->type) {
+            AuditLogEventType::OrganizationInvitationSent => 'log/display/organization_invitation_sent.html.twig',
+            AuditLogEventType::OrganizationInvitationResent => 'log/display/organization_invitation_resent.html.twig',
+            AuditLogEventType::OrganizationInvitationRevoked => 'log/display/organization_invitation_revoked.html.twig',
+            AuditLogEventType::OrganizationInvitationAccepted => 'log/display/organization_invitation_accepted.html.twig',
+            AuditLogEventType::OrganizationInvitationDeclined => 'log/display/organization_invitation_declined.html.twig',
+            AuditLogEventType::OrganizationInvitationExpired => 'log/display/organization_invitation_expired.html.twig',
+            default => throw new \LogicException($this->type->value.' is not an invitation event'),
+        };
     }
 }
