@@ -26,6 +26,7 @@ use App\Organization\Domain\Invitation;
 use App\Organization\Domain\Organization;
 use App\Organization\EventStore\Actor;
 use App\Organization\EventStore\EventStore;
+use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -47,6 +48,7 @@ final class InvitationManager
 
     public function __construct(
         private readonly EventStore $eventStore,
+        private readonly Connection $connection,
         private readonly OrganizationInvitationRepository $organizationInvitationRepo,
         private readonly OrganizationTeamRepository $organizationTeamRepo,
         private readonly OrganizationTeamMemberRepository $organizationTeamMemberRepo,
@@ -78,10 +80,6 @@ final class InvitationManager
         // Rate limiting (per-org pending cap, per-user/24h, per-IP) is intentionally not enforced yet;
         // the concrete limits are an open question. See .task/open-questions.md. This is the seam.
 
-        if ($this->organizationInvitationRepo->findActiveForEmail($organization->id, $emailVo->value, $now) !== null) {
-            throw new DuplicatePendingInvitationException(sprintf('There is already a pending invitation for "%s".', $emailVo->value));
-        }
-
         $this->assertTeamsBelongToOrg($organization, $teamIds);
 
         // Every org member belongs to the all-members team, so record it on the invitation itself. The org
@@ -94,7 +92,18 @@ final class InvitationManager
         $expiresAt = $now->add(new \DateInterval('P'.self::INVITATION_EXPIRY_DAYS.'D'));
 
         $invitation = Invitation::send(new Ulid(), $organization->id, $emailVo, $teamIds, $token['hash'], $expiresAt);
-        $this->eventStore->append($invitation, $this->ownerActor($actor, $organization), $ip);
+        $this->connection->transactional(function (Connection $connection) use ($organization, $actor, $emailVo, $now, $invitation, $ip): void {
+            $locked = $connection->fetchOne('SELECT id FROM organization WHERE id = :id FOR UPDATE', ['id' => $organization->id->toBinary()]);
+            if ($locked === false) {
+                throw new \LogicException('Organization disappeared before its invitation could be created.');
+            }
+
+            if ($this->organizationInvitationRepo->findActiveForEmail($organization->id, $emailVo->value, $now) !== null) {
+                throw new DuplicatePendingInvitationException(sprintf('There is already a pending invitation for "%s".', $emailVo->value));
+            }
+
+            $this->eventStore->append($invitation, $this->ownerActor($actor, $organization), $ip);
+        });
 
         $this->sendInvitationEmail($organization, $emailVo, $invitation->id, $token['raw'], $expiresAt);
     }
