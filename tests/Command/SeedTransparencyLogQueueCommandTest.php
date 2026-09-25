@@ -58,9 +58,8 @@ class SeedTransparencyLogQueueCommandTest extends IntegrationTestCase
     }
 
     /**
-     * Account events fan out to whoever maintains the package at projection time, so seeding an old one
-     * would publish it against today's maintainer set, and that cannot be retracted. It must therefore
-     * be skipped wherever it sits relative to what has already been projected.
+     * Seeding an old account event would publish it against today's maintainers, which cannot be
+     * retracted, so it is never seeded.
      */
     public function testAccountEventsAreNeverSeeded(): void
     {

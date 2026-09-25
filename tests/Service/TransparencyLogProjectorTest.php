@@ -15,7 +15,6 @@ namespace App\Tests\Service;
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
-use App\Entity\PackageRepository;
 use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
@@ -83,6 +82,75 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         self::assertSame(['svc/one', 'svc/two'], $conn->fetchFirstColumn(
             "SELECT packageName FROM package_transparency_log WHERE type = 'two_fa_deactivated' ORDER BY packageName",
         ));
+    }
+
+    /**
+     * An account takeover: the owner is replaced before the projector runs.
+     */
+    public function testAccountEventGoesToThePackagesMaintainedWhenItWasRecorded(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $owner = self::createUser('owner', 'owner@example.org');
+        $attacker = self::createUser('attacker', 'attacker@example.org');
+        $em->persist($owner);
+        $em->persist($attacker);
+        $em->flush();
+
+        $package = self::createPackage('svc/taken-over', 'https://github.com/svc/taken-over', null, [$owner]);
+        $em->persist($package);
+        $em->flush();
+
+        $em->getRepository(AuditRecord::class)->insert(AuditRecord::emailChanged($owner, $owner, 'owner@example.org'));
+
+        $package->addMaintainer($attacker);
+        $package->getMaintainers()->removeElement($owner);
+        $later = self::createPackage('svc/later', 'https://github.com/svc/later', null, [$owner]);
+        $em->persist($later);
+        $em->flush();
+
+        self::getService(TransparencyLogProjector::class)->project(0);
+
+        self::assertSame(['svc/taken-over'], $conn->fetchFirstColumn(
+            "SELECT packageName FROM package_transparency_log WHERE type = 'email_changed'",
+        ));
+    }
+
+    /**
+     * A lookup at projection time would find no targets here.
+     */
+    public function testAccountEventIsProjectedAfterItsUserAndPackageAreDeleted(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $user = self::createUser('deleted', 'deleted@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $kept = self::createPackage('svc/kept', 'https://github.com/svc/kept', null, [$user]);
+        $removed = self::createPackage('svc/removed', 'https://github.com/svc/removed', null, [$user]);
+        $em->persist($kept);
+        $em->persist($removed);
+        $em->flush();
+        $removedId = $removed->getId();
+
+        $em->getRepository(AuditRecord::class)->insert(AuditRecord::passwordChanged($user, $user));
+
+        $em->remove($removed);
+        $em->remove($user);
+        $em->flush();
+
+        self::getService(TransparencyLogProjector::class)->project(0);
+
+        self::assertSame(
+            [['packageId' => $kept->getId(), 'vendor' => 'svc', 'packageName' => 'svc/kept'], ['packageId' => $removedId, 'vendor' => 'svc', 'packageName' => 'svc/removed']],
+            array_map(
+                static fn (array $row): array => ['packageId' => (int) $row['packageId'], 'vendor' => $row['vendor'], 'packageName' => $row['packageName']],
+                $conn->fetchAllAssociative("SELECT packageId, vendor, packageName FROM package_transparency_log WHERE type = 'password_changed' ORDER BY packageId"),
+            ),
+        );
     }
 
     /**
@@ -439,7 +507,6 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
             self::getService(AuditRecordRepository::class),
             self::getService(PackageTransparencyLogRepository::class),
             self::getService(PackageTransparencyLogQueueRepository::class),
-            self::getService(PackageRepository::class),
             $logger,
         );
     }

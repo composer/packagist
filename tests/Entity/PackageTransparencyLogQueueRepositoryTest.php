@@ -59,6 +59,45 @@ class PackageTransparencyLogQueueRepositoryTest extends IntegrationTestCase
         self::assertTrue($this->isQueued($record));
     }
 
+    public function testAccountEventStoresTheUsersMaintainedPackages(): void
+    {
+        $em = $this->getEM();
+
+        $user = self::createUser('targets', 'targets@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $package = self::createPackage('queue/targets', 'https://github.com/queue/targets', null, [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        $record = AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x');
+        $em->getRepository(AuditRecord::class)->insert($record);
+
+        // MySQL's JSON type does not keep the key order.
+        self::assertEquals([['id' => $package->getId(), 'vendor' => 'queue', 'name' => 'queue/targets']], $this->queuedTargets($record));
+    }
+
+    public function testPackageNativeEventStoresNoTargets(): void
+    {
+        $em = $this->getEM();
+
+        $user = self::createUser('notargets', 'notargets@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $package = self::createPackage('queue/native', 'https://github.com/queue/native', null, [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        $record = AuditRecord::maintainerAdded($package, $user, $user);
+        $em->persist($record);
+        $em->flush();
+
+        self::assertTrue($this->isQueued($record));
+        self::assertNull($this->queuedTargets($record));
+    }
+
     public function testOutOfScopeAuditRecordIsNotEnqueued(): void
     {
         $em = $this->getEM();
@@ -120,6 +159,19 @@ class PackageTransparencyLogQueueRepositoryTest extends IntegrationTestCase
             'SELECT COUNT(*) FROM audit_log WHERE id = ?',
             [$record->id->toBinary()],
         ));
+    }
+
+    /**
+     * @return list<array{id: int, vendor: string|null, name: string}>|null
+     */
+    private function queuedTargets(AuditRecord $record): ?array
+    {
+        $targets = self::getService(Connection::class)->fetchOne(
+            'SELECT targets FROM package_transparency_log_queue WHERE auditLogId = ?',
+            [$record->id->toBinary()],
+        );
+
+        return $targets === null ? null : json_decode((string) $targets, true, flags: \JSON_THROW_ON_ERROR);
     }
 
     private function isQueued(AuditRecord $record): bool

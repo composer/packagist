@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
@@ -20,6 +21,9 @@ use Symfony\Component\Uid\Ulid;
  * `audit_log` row and deleted in the same transaction as the entries projected from it.
  *
  * Only projectable types are enqueued.
+ *
+ * $targets are set when the event is recorded, because the maintainers can change before the
+ * projector runs, for example in an account takeover.
  *
  * @see \App\Service\TransparencyLogProjector
  */
@@ -31,6 +35,9 @@ class PackageTransparencyLogQueue
         #[ORM\Id]
         #[ORM\Column(type: 'ulid')]
         public readonly Ulid $auditLogId,
+        /** @var list<array{id: int, vendor: string|null, name: string}>|null */
+        #[ORM\Column(type: Types::JSON, nullable: true)]
+        public readonly ?array $targets = null,
     ) {
     }
 }
