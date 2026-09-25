@@ -30,7 +30,9 @@ CREATE TABLE package_transparency_log (
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
 
 -- One row per audit record still waiting to be projected. The projector reads it in auditLogId order
--- and deletes by primary key, so it needs no other columns or indexes.
+-- and deletes by primary key, so it needs no other indexes.
+--
+-- targets: the packages of an account event, taken when it is recorded. NULL for package-native events.
 --
 -- A queue row is written in the same transaction as its audit_log row, and deleted in the same
 -- transaction as the entries projected from it. audit_log.id is a ULID assigned when the record is
@@ -39,5 +41,6 @@ CREATE TABLE package_transparency_log (
 -- committed, so the projector picks it up then.
 CREATE TABLE package_transparency_log_queue (
     auditLogId BINARY(16) NOT NULL,
+    targets JSON DEFAULT NULL,
     PRIMARY KEY (auditLogId)
 ) DEFAULT CHARACTER SET utf8mb4 ENGINE = InnoDB;
