@@ -28,7 +28,7 @@ class AdminController extends Controller
      * ROLE_EDIT_PACKAGES and ROLE_DISABLE_2FA are here because the support queue routes each request
      * type to the role that can action it; without them a delegated package or 2FA moderator could
      * not reach their own queue. Neither exposes anything new on the dashboard: both already grant
-     * their capability outside /admin/, and the moderation feed is the public transparency log.
+     * their capability outside /admin/, and the moderation feed is shown to ROLE_AUDITOR only.
      *
      * @var list<string>
      */
@@ -39,8 +39,13 @@ class AdminController extends Controller
     {
         $this->denyAccessUnlessAdmin();
 
+        // The moderation feed is based on audit_log, so it has the same access rule as /admin/audit-log.
+        $recentModerationActivity = $this->isGranted('ROLE_AUDITOR')
+            ? $displayFactory->build($auditRecordRepository->getRecentAdminModeration(20))
+            : null;
+
         return $this->render('admin/index.html.twig', [
-            'recentModerationActivity' => $displayFactory->build($auditRecordRepository->getRecentAdminModeration(20)),
+            'recentModerationActivity' => $recentModerationActivity,
         ]);
     }
 
