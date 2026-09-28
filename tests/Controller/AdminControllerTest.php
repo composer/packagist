@@ -113,8 +113,9 @@ class AdminControllerTest extends IntegrationTestCase
         static::assertResponseIsSuccessful();
         static::assertStringContainsString('Suspect packages', $crawler->html());
         static::assertStringNotContainsString('Filter lists', $crawler->html());
-        // No support request type is actionable with only ROLE_DISABLE_PACKAGES.
-        static::assertStringNotContainsString('admin/support', $crawler->html());
+        // Package unfreeze requests are actionable with ROLE_DISABLE_PACKAGES, so the queue shows up
+        // -- scoped to that one type, which Admin\SupportControllerTest covers.
+        static::assertStringContainsString('admin/support', $crawler->html());
     }
 
     public function testSupportMenuEntryAppearsForPackageAdminsOnly(): void

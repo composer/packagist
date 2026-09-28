@@ -15,7 +15,10 @@ namespace App\Support;
 use App\Entity\SupportRequest;
 use App\Support\Attributes\AccountDeletionAttributes;
 use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageDeletionAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\PackageUnfreezeAttributes;
+use App\Support\Attributes\PackageUrlChangeAttributes;
 use App\Support\Attributes\SupportRequestAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 
@@ -25,6 +28,9 @@ enum SupportRequestType: string
     case PackageTransfer = 'package_transfer';
     case VendorClaim = 'vendor_claim';
     case AccountDeletion = 'account_deletion';
+    case PackageUnfreeze = 'package_unfreeze';
+    case PackageUrlChange = 'package_url_change';
+    case PackageDeletion = 'package_deletion';
 
     public function label(): string
     {
@@ -33,6 +39,9 @@ enum SupportRequestType: string
             self::PackageTransfer => 'Package transfer',
             self::VendorClaim => 'Vendor name claim',
             self::AccountDeletion => 'Account deletion',
+            self::PackageUnfreeze => 'Package unfreeze',
+            self::PackageUrlChange => 'Repository URL change',
+            self::PackageDeletion => 'Package deletion',
         };
     }
 
@@ -48,6 +57,11 @@ enum SupportRequestType: string
             self::PackageTransfer, self::VendorClaim => 'ROLE_EDIT_PACKAGES',
             // Matches the gate in UserController::deleteUserAction()
             self::AccountDeletion => 'ROLE_ADMIN',
+            // Matches PackageController::unfreezePackageAction(), which is role-gated rather than
+            // voter-gated: there is no PackageActions case for freezing.
+            self::PackageUnfreeze => 'ROLE_DISABLE_PACKAGES',
+            self::PackageUrlChange => 'ROLE_EDIT_PACKAGES',
+            self::PackageDeletion => 'ROLE_DELETE_PACKAGES',
         };
     }
 
@@ -64,6 +78,9 @@ enum SupportRequestType: string
             self::PackageTransfer => PackageTransferAttributes::fromArray($data),
             self::VendorClaim => VendorClaimAttributes::fromArray($data),
             self::AccountDeletion => AccountDeletionAttributes::fromArray($data),
+            self::PackageUnfreeze => PackageUnfreezeAttributes::fromArray($data),
+            self::PackageUrlChange => PackageUrlChangeAttributes::fromArray($data),
+            self::PackageDeletion => PackageDeletionAttributes::fromArray($data),
         };
     }
 
@@ -97,6 +114,8 @@ enum SupportRequestType: string
         // Pulled out ahead of the match so each arm stays a plain heredoc.
         $packageNames = $attributes instanceof PackageTransferAttributes ? implode("\n", $attributes->packageNames) : '';
         $vendorName = $attributes instanceof VendorClaimAttributes ? $attributes->vendorName : '';
+        $unfrozenNames = $attributes instanceof PackageUnfreezeAttributes ? implode("\n", $attributes->packageNames) : '';
+        $deletedNames = $attributes instanceof PackageDeletionAttributes ? implode("\n", $attributes->packageNames) : '';
 
         return match ($this) {
             self::LostTwoFactor => <<<TXT
@@ -139,6 +158,44 @@ enum SupportRequestType: string
                 should happen to the packages you still maintain, since deletion cannot be undone.
 
                 Please confirm the disposition you picked, and we will take care of the rest.
+                TXT,
+            self::PackageUnfreeze => <<<TXT
+                Thanks for getting in touch. We have lifted the freeze on:
+
+                {$unfrozenNames}
+
+                They will be crawled again shortly, so give it a few minutes for the versions to
+                reappear.
+
+                --- or ---
+
+                Before we can lift this we need to confirm you still control the repository these
+                point at. Please push a commit, or create a secret gist from the account that owns
+                the repo and link us to it.
+                TXT,
+            self::PackageUrlChange => <<<TXT
+                Thanks for getting in touch. The repository URL has been updated, and the package
+                will be re-crawled from the new location shortly.
+
+                --- or ---
+
+                Before we move this one we need to confirm you control the new repository, since the
+                package is popular enough that a URL change affects a lot of people. Please link us
+                to something that shows it, such as a commit you just pushed there.
+                TXT,
+            self::PackageDeletion => <<<TXT
+                Thanks for getting in touch. The following packages have been deleted:
+
+                {$deletedNames}
+
+                Note that this cannot be undone.
+
+                --- or ---
+
+                Before we delete these we want to check one thing: some of them still have regular
+                downloads, so removing them will break builds that depend on them. Consider marking
+                them abandoned instead, which leaves them installable while pointing people at a
+                replacement. Let us know how you would like to proceed.
                 TXT,
         };
     }

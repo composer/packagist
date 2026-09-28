@@ -15,11 +15,16 @@ namespace App\Tests\Controller\Admin;
 use App\Log\AuditLogEventType;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\User;
 use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageDeletionAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\PackageUnfreezeAttributes;
+use App\Support\Attributes\PackageUrlChange;
+use App\Support\Attributes\PackageUrlChangeAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\SupportRequestStatus;
 use App\Tests\IntegrationTestCase;
@@ -506,6 +511,280 @@ class SupportControllerTest extends IntegrationTestCase
     /**
      * @return array{User, SupportRequest, User}
      */
+    /**
+     * @return array{User, SupportRequest, User}
+     */
+    private function givenUnfreezeRequest(): array
+    {
+        $admin = self::createUser('pkgmod', 'pkgmod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+
+        foreach (['frosty/one', 'frosty/two'] as $name) {
+            $package = self::createPackage($name, 'https://example.org/'.$name, maintainers: [$requester]);
+            $package->freeze(PackageFreezeReason::Gone);
+            $this->store($package);
+        }
+
+        $request = SupportRequest::create($requester, 'They are back up.', new PackageUnfreezeAttributes(['frosty/one', 'frosty/two']));
+        $this->store($request);
+
+        return [$admin, $request, $requester];
+    }
+
+    /**
+     * @return array{User, SupportRequest, User}
+     */
+    private function givenDeletionRequest(): array
+    {
+        $admin = self::createUser('deleter', 'deleter@example.org', roles: ['ROLE_DELETE_PACKAGES']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+
+        foreach (['owner/one', 'owner/two'] as $name) {
+            $this->store(self::createPackage($name, 'https://example.org/'.$name, maintainers: [$requester]));
+        }
+
+        $request = SupportRequest::create($requester, 'These duplicate another package.', new PackageDeletionAttributes(['owner/one', 'owner/two']));
+        $this->store($request);
+
+        return [$admin, $request, $requester];
+    }
+
+    public function testUnfreezeButtonLiftsTheFreeze(): void
+    {
+        [$admin, $request] = $this->givenUnfreezeRequest();
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        $this->client->submit($crawler->filter('form[action*="unfreeze-package"]')->first()->selectButton('Unfreeze')->form());
+        $this->assertResponseRedirects('/admin/support/'.$request->publicId);
+
+        $em = self::getEM();
+        $em->clear();
+        $one = $em->getRepository(Package::class)->findOneBy(['name' => 'frosty/one']);
+        self::assertNotNull($one);
+        self::assertFalse($one->isFrozen());
+        // The second stays frozen, so this cannot pass by the table simply losing every button.
+        $two = $em->getRepository(Package::class)->findOneBy(['name' => 'frosty/two']);
+        self::assertNotNull($two);
+        self::assertTrue($two->isFrozen());
+
+        $message = $this->firstMessage($request);
+        self::assertNotNull($message);
+        self::assertTrue($message->internal);
+        self::assertSame('Unfroze frosty/one.', $message->contents);
+    }
+
+    /**
+     * A package frozen as spam since the request was filed is a moderation decision, and this queue
+     * must not be the way it gets quietly undone.
+     */
+    public function testUnfreezeRefusesAPackageSuppressedSinceTheRequest(): void
+    {
+        [$admin, $request] = $this->givenUnfreezeRequest();
+        $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+
+        $em = self::getEM();
+        $package = $em->getRepository(Package::class)->findOneBy(['name' => 'frosty/one']);
+        self::assertNotNull($package);
+        $package->freeze(PackageFreezeReason::Spam);
+        $em->flush();
+
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/unfreeze-package', [
+            'token' => $token,
+            'package' => 'frosty/one',
+        ]);
+        $this->assertResponseRedirects('/admin/support/'.$request->publicId);
+
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->findOneBy(['name' => 'frosty/one']);
+        self::assertNotNull($reloaded);
+        self::assertTrue($reloaded->isFrozen());
+    }
+
+    public function testUnfreezeRejectsAPackageTheRequestDoesNotList(): void
+    {
+        [$admin, $request] = $this->givenUnfreezeRequest();
+        $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+        $this->store(self::createPackage('other/thing', 'https://example.org/other/thing'));
+
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/unfreeze-package', [
+            'token' => $token,
+            'package' => 'other/thing',
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testUnfreezeRequiresTheDisablePackagesRole(): void
+    {
+        [, $request] = $this->givenUnfreezeRequest();
+        $intruder = self::createUser('editor', 'editor@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $this->store($intruder);
+
+        $this->client->loginUser($intruder);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/unfreeze-package', ['package' => 'frosty/one']);
+
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    public function testDeleteButtonRemovesThePackage(): void
+    {
+        [$admin, $request] = $this->givenDeletionRequest();
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        $this->client->submit($crawler->filter('form[action*="delete-package"]')->first()->selectButton('Delete')->form());
+        $this->assertResponseRedirects('/admin/support/'.$request->publicId);
+
+        $em = self::getEM();
+        $em->clear();
+        self::assertNull($em->getRepository(Package::class)->findOneBy(['name' => 'owner/one']));
+        self::assertNotNull($em->getRepository(Package::class)->findOneBy(['name' => 'owner/two']));
+
+        $message = $this->firstMessage($request);
+        self::assertNotNull($message);
+        self::assertSame('Deleted owner/one.', $message->contents);
+    }
+
+    /**
+     * The picker made this true at filing time, but maintainership can change before an admin gets
+     * to it, and deletion does not come back.
+     */
+    public function testDeleteRefusesAPackageTheRequesterNoLongerMaintains(): void
+    {
+        [$admin, $request] = $this->givenDeletionRequest();
+        $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+
+        $em = self::getEM();
+        $package = $em->getRepository(Package::class)->findOneBy(['name' => 'owner/one']);
+        self::assertNotNull($package);
+        $newOwner = self::createUser('newowner', 'newowner@example.org');
+        $this->store($newOwner);
+        $package->getMaintainers()->clear();
+        $package->addMaintainer($newOwner);
+        $em->flush();
+
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/delete-package', [
+            'token' => $token,
+            'package' => 'owner/one',
+        ]);
+        $this->assertResponseRedirects('/admin/support/'.$request->publicId);
+
+        $em->clear();
+        self::assertNotNull($em->getRepository(Package::class)->findOneBy(['name' => 'owner/one']));
+    }
+
+    public function testDeleteRejectsAPackageTheRequestDoesNotList(): void
+    {
+        [$admin, $request] = $this->givenDeletionRequest();
+        $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+        $this->store(self::createPackage('other/thing', 'https://example.org/other/thing'));
+
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/delete-package', [
+            'token' => $token,
+            'package' => 'other/thing',
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testDeleteQueueIsScopedToTheDeletePackagesRole(): void
+    {
+        [$admin, $deletion] = $this->givenDeletionRequest();
+        $transfer = SupportRequest::create(
+            self::createUser('other', 'other@example.org'),
+            'Move it.',
+            new PackageTransferAttributes(['acme/one']),
+        );
+        $this->store($transfer->user, $transfer);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/');
+
+        $this->assertResponseIsSuccessful();
+        self::assertStringContainsString($deletion->publicId, $crawler->html());
+        self::assertStringNotContainsString($transfer->publicId, $crawler->html());
+
+        // And the one they cannot action is not readable either.
+        $this->client->request('GET', '/admin/support/'.$transfer->publicId);
+        $this->assertResponseStatusCodeSame(403);
+    }
+
+    /**
+     * The URL change workflow deliberately has no mutation route: the admin applies it from the
+     * package's own edit form, which is what re-runs the repository validation.
+     */
+    public function testUrlChangePanelLinksToThePrefilledEditForm(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+        $this->store(self::createPackage('mover/thing', 'https://example.org/mover/thing', maintainers: [$requester]));
+
+        $request = SupportRequest::create($requester, 'The org was renamed.', new PackageUrlChangeAttributes([
+            new PackageUrlChange('mover/thing', 'https://example.org/moved/thing'),
+        ]));
+        $this->store($request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        $this->assertResponseIsSuccessful();
+        // Shown verbatim next to the link, so the admin reads the URL before following it.
+        self::assertStringContainsString('https://example.org/moved/thing', $crawler->filter('table')->html());
+
+        $link = $crawler->filter('table a[href*="/packages/"][href*="/edit"]')->first()->attr('href');
+        // path() leaves : and / unencoded in a query value, which is legal, so compare after decoding
+        self::assertStringContainsString('repository=https://example.org/moved/thing', urldecode((string) $link));
+        self::assertStringContainsString('supportRequest='.$request->publicId, (string) $link);
+    }
+
+    public function testUrlChangePanelReadsTheHostOfAnScpUrl(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+        $this->store(self::createPackage('mover/thing', 'https://git.example.org/mover/thing', maintainers: [$requester]));
+
+        $request = SupportRequest::create($requester, 'Switching to ssh.', new PackageUrlChangeAttributes([
+            new PackageUrlChange('mover/thing', 'git@git.example.org:mover/thing.git'),
+        ]));
+        $this->store($request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        $this->assertResponseIsSuccessful();
+        self::assertStringNotContainsString('different host', $crawler->filter('table')->text());
+    }
+
+    public function testUrlChangePanelShowsAppliedOnceTheRepositoryMatches(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+        $this->store(self::createPackage('mover/thing', 'https://github.com/moved/thing', maintainers: [$requester]));
+
+        $request = SupportRequest::create($requester, 'The org was renamed.', new PackageUrlChangeAttributes([
+            new PackageUrlChange('mover/thing', 'https://github.com/moved/thing'),
+        ]));
+        $this->store($request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        $this->assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('table .badge.bg-success'));
+    }
+
     private function givenTransferRequest(): array
     {
         $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);

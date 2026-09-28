@@ -32,7 +32,7 @@ class AdminController extends Controller
      *
      * @var list<string>
      */
-    public const ADMIN_ROLES = ['ROLE_ADMIN', 'ROLE_FILTER_LIST_ADMIN', 'ROLE_DISABLE_PACKAGES', 'ROLE_DISABLE_USERS', 'ROLE_ADMIN_ORGS', 'ROLE_AUDITOR', 'ROLE_EDIT_PACKAGES', 'ROLE_DISABLE_2FA'];
+    public const ADMIN_ROLES = ['ROLE_ADMIN', 'ROLE_FILTER_LIST_ADMIN', 'ROLE_DISABLE_PACKAGES', 'ROLE_DISABLE_USERS', 'ROLE_ADMIN_ORGS', 'ROLE_AUDITOR', 'ROLE_EDIT_PACKAGES', 'ROLE_DISABLE_2FA', 'ROLE_DELETE_PACKAGES'];
 
     #[Route(path: '/admin/', name: 'admin_index', methods: ['GET'])]
     public function index(AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $displayFactory): Response

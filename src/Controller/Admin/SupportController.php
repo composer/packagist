@@ -15,6 +15,7 @@ namespace App\Controller\Admin;
 use App\Log\Display\AuditLogDisplayFactory;
 use App\Controller\Controller;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\SupportRequestRepository;
@@ -25,7 +26,11 @@ use App\Model\PackageManager;
 use App\Security\TwoFactorAuthManager;
 use App\Security\Voter\PackageActions;
 use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageDeletionAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\PackageUnfreezeAttributes;
+use App\Support\Attributes\PackageUrlChange;
+use App\Support\Attributes\PackageUrlChangeAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\SupportNotifier;
 use App\Support\SupportQueueAccess;
@@ -132,8 +137,47 @@ class SupportController extends Controller
         ];
 
         if ($request->type === SupportRequestType::PackageTransfer) {
-            $context['resolvedPackages'] = $this->resolvePackages($request, $favMgr, $dlMgr);
-            $context['vendors'] = $this->resolveRequestVendors($request, $favMgr, $dlMgr);
+            $names = $request->attributesOf(PackageTransferAttributes::class)->packageNames;
+            $context['resolvedPackages'] = $this->resolvePackages($names, $request->user, $favMgr, $dlMgr);
+            $context['vendors'] = $this->resolveRequestVendors($names, $favMgr, $dlMgr);
+        }
+
+        if ($request->type === SupportRequestType::PackageUnfreeze) {
+            $context['resolvedPackages'] = $this->resolvePackages(
+                $request->attributesOf(PackageUnfreezeAttributes::class)->packageNames,
+                $request->user,
+                $favMgr,
+                $dlMgr,
+            );
+        }
+
+        if ($request->type === SupportRequestType::PackageDeletion) {
+            $context['resolvedPackages'] = $this->resolvePackages(
+                $request->attributesOf(PackageDeletionAttributes::class)->packageNames,
+                $request->user,
+                $favMgr,
+                $dlMgr,
+            );
+        }
+
+        if ($request->type === SupportRequestType::PackageUrlChange) {
+            $attributes = $request->attributesOf(PackageUrlChangeAttributes::class);
+            $resolved = $this->resolvePackages($attributes->names(), $request->user, $favMgr, $dlMgr);
+            $rows = [];
+            foreach ($attributes->changes as $i => $change) {
+                $row = $resolved[$i];
+                $package = $row['package'];
+                $rows[] = [...$row,
+                    'requestedUrl' => $change->repository,
+                    'currentUrl' => $package?->getRepository(),
+                    // Shown side by side so a move to another host reads as the unusual thing it is.
+                    'requestedHost' => PackageUrlChange::hostOf($change->repository),
+                    'currentHost' => $package !== null ? PackageUrlChange::hostOf($package->getRepository()) : null,
+                    'remoteId' => $package?->getRemoteId(),
+                    'applied' => $package !== null && $package->getRepository() === $change->repository,
+                ];
+            }
+            $context['urlChanges'] = $rows;
         }
 
         if ($request->type === SupportRequestType::LostTwoFactor) {
@@ -296,6 +340,128 @@ class SupportController extends Controller
     }
 
     /**
+     * Lifts the freeze on one of the packages the request names.
+     *
+     * Role-gated rather than voter-gated because there is no PackageActions case for freezing -- the
+     * package page's own unfreeze route is #[IsGranted('ROLE_DISABLE_PACKAGES')] too.
+     */
+    #[Route(path: '/admin/support/{publicId}/unfreeze-package', name: 'admin_support_request_unfreeze_package', methods: ['POST'])]
+    public function unfreezePackage(Request $req, string $publicId, #[CurrentUser] User $actor, PackageManager $packageManager): RedirectResponse
+    {
+        $this->denyAccessUnlessGranted('ROLE_DISABLE_PACKAGES');
+        $this->assertCsrf($req);
+
+        $request = $this->findRequest($publicId);
+        $redirect = $this->redirectToRoute('admin_support_request', ['publicId' => $publicId]);
+
+        if ($request->type !== SupportRequestType::PackageUnfreeze) {
+            throw new BadRequestHttpException('Not a package unfreeze request');
+        }
+
+        if (!$request->isOpen()) {
+            $this->addFlash('warning', 'This request has already been dealt with.');
+
+            return $redirect;
+        }
+
+        $name = $req->request->getString('package');
+        if (!in_array($name, $request->attributesOf(PackageUnfreezeAttributes::class)->packageNames, true)) {
+            throw new BadRequestHttpException('Package is not part of this request');
+        }
+
+        $package = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $name]);
+        if ($package === null) {
+            $this->addFlash('error', $name.' no longer exists.');
+
+            return $redirect;
+        }
+
+        if (!$package->isFrozen()) {
+            $this->addFlash('warning', $name.' is not frozen any more.');
+
+            return $redirect;
+        }
+
+        // Re-read rather than trusted from filing time: a package frozen as spam or malware since
+        // the request was filed is a moderation decision this queue must not quietly undo.
+        if ($package->getFreezeReason()?->suppressesPackage()) {
+            $this->addFlash('error', $name.' has since been frozen as '.$package->getFreezeReason()->value.'. Unfreeze it from the package page if that is really what you want.');
+
+            return $redirect;
+        }
+
+        $packageManager->unfreeze($package, 'support request '.$request->publicId);
+
+        $em = $this->getEM();
+        $em->persist(SupportRequestMessage::internalNote($request, 'Unfroze '.$name.'.', $actor));
+        $request->touch(new \DateTimeImmutable());
+        $em->flush();
+
+        $this->addFlash('success', $name.' was unfrozen.');
+
+        return $redirect;
+    }
+
+    /**
+     * Deletes one of the packages the request names. Irreversible, so everything is re-checked here
+     * rather than trusted from the picker the requester filled in.
+     */
+    #[Route(path: '/admin/support/{publicId}/delete-package', name: 'admin_support_request_delete_package', methods: ['POST'])]
+    public function deletePackage(Request $req, string $publicId, #[CurrentUser] User $actor, PackageManager $packageManager): RedirectResponse
+    {
+        $this->assertCsrf($req);
+
+        $request = $this->findRequest($publicId);
+        $redirect = $this->redirectToRoute('admin_support_request', ['publicId' => $publicId]);
+
+        if ($request->type !== SupportRequestType::PackageDeletion) {
+            throw new BadRequestHttpException('Not a package deletion request');
+        }
+
+        if (!$request->isOpen()) {
+            $this->addFlash('warning', 'This request has already been dealt with.');
+
+            return $redirect;
+        }
+
+        $name = $req->request->getString('package');
+        if (!in_array($name, $request->attributesOf(PackageDeletionAttributes::class)->packageNames, true)) {
+            throw new BadRequestHttpException('Package is not part of this request');
+        }
+
+        $package = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $name]);
+        if ($package === null) {
+            $this->addFlash('error', $name.' no longer exists.');
+
+            return $redirect;
+        }
+
+        // The picker made this true when the request was filed, but maintainership can change in
+        // between and this path does not come back.
+        if (!$package->isMaintainer($request->user)) {
+            $this->addFlash('error', $request->user->getUsername().' does not maintain '.$name.' any more, so this request is no longer theirs to make.');
+
+            return $redirect;
+        }
+
+        // The same gate the package page's delete form uses, asked of this admin and this package.
+        $this->denyAccessUnlessGranted(PackageActions::Delete->value, $package);
+
+        // Built before the call: deletePackage() removes the entity and flushes.
+        $note = SupportRequestMessage::internalNote($request, 'Deleted '.$name.'.', $actor);
+        $packageManager->deletePackage($package, null, 'Support request '.$request->publicId);
+
+        $em = $this->getEM();
+        $em->persist($note);
+        $request->touch(new \DateTimeImmutable());
+        $em->flush();
+
+        $this->addFlash('success', $name.' was deleted.');
+
+        return $redirect;
+    }
+
+    /**
      * Disables two-factor authentication, tells the requester it was granted, and closes the task in
      * one POST.
      */
@@ -413,14 +579,18 @@ class SupportController extends Controller
     }
 
     /**
-     * Resolves the names the requester typed against real packages, so the admin can judge the claim
-     * against the authoritative maintainer list rather than against a string somebody typed.
+     * Resolves the names on a request against real packages, so the admin can judge it against the
+     * authoritative maintainer list and current state rather than against a stored string.
      *
-     * @return list<array{name: string, package: Package|null, downloads: int, transferred: bool}>
+     * Takes the names rather than the request because four types carry a package list in different
+     * shapes; show() picks them out per type and this stays shape-agnostic.
+     *
+     * @param list<string> $names
+     *
+     * @return list<array{name: string, package: Package|null, downloads: int, maintainedByRequester: bool, freezeReason: PackageFreezeReason|null}>
      */
-    private function resolvePackages(SupportRequest $request, FavoriteManager $favMgr, DownloadManager $dlMgr): array
+    private function resolvePackages(array $names, User $requester, FavoriteManager $favMgr, DownloadManager $dlMgr): array
     {
-        $names = $request->attributesOf(PackageTransferAttributes::class)->packageNames;
         if ($names === []) {
             return [];
         }
@@ -448,7 +618,8 @@ class SupportController extends Controller
                 'name' => $name,
                 'package' => $package,
                 'downloads' => $package !== null ? ($metadata['downloads'][$package->getId()] ?? 0) : 0,
-                'transferred' => $package !== null && $package->isMaintainer($request->user),
+                'maintainedByRequester' => $package !== null && $package->isMaintainer($requester),
+                'freezeReason' => $package?->getFreezeReason(),
             ];
         }
 
@@ -461,12 +632,14 @@ class SupportController extends Controller
      * derived from the names as typed: a package that does not exist yet still tells us which
      * namespace the requester is reaching into.
      *
+     * @param list<string> $names
+     *
      * @return array<string, array{packages: list<array{package: Package, downloads: int}>, total: int, maintainers: list<User>}>
      */
-    private function resolveRequestVendors(SupportRequest $request, FavoriteManager $favMgr, DownloadManager $dlMgr): array
+    private function resolveRequestVendors(array $names, FavoriteManager $favMgr, DownloadManager $dlMgr): array
     {
         $vendors = [];
-        foreach ($request->attributesOf(PackageTransferAttributes::class)->packageNames as $name) {
+        foreach ($names as $name) {
             $slash = strpos($name, '/');
             if ($slash === false || $slash === 0) {
                 continue;

@@ -8,6 +8,31 @@
 <h2 class="title">{{ 'edit.title'|trans({ '%name%':package.name }) }}</h2>
 
 <section class="row">
+    <div class="col-lg-6">
+        {% if prefilled %}
+            {# the value is requester-supplied text arriving through a link, so never let it be saved unnoticed #}
+            <div class="alert alert-warning">
+                The repository URL below was filled in from
+                {% if supportRequestId %}support request <code>{{ supportRequestId }}</code>{% else %}a link{% endif %},
+                not from what we have on file. Check it before saving.
+            </div>
+        {% endif %}
+
+        {% if urlChangeBlocked %}
+            <div class="alert alert-info">
+                <p>
+                    This package is too widely used to let its URL be edited here. Ask us to make the
+                    change and we will check it over with you.
+                </p>
+                <a class="btn btn-primary" href="{{ path('support_package_url_change', {package: package.name, repository: urlChangeBlocked}) }}">
+                    Request a URL change
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="row">
     {{ form_start(form, { attr: { class: 'col-lg-6' } }) }}
         {{ form_widget(form) }}
 
