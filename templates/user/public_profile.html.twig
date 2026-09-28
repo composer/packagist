@@ -119,7 +119,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label">Public reason <small class="text-muted">(optional — shown in the transparency log)</small></label>
-                            {{ form_widget(unfreezeForm.reasonText, {'attr': {'class': 'form-control', 'rows': 2}}) }}
+                            {{ form_widget(unfreezeForm.reasonText, {'attr': {'class': 'form-control', 'rows': 2, 'autofocus': true}}) }}
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
@@ -148,7 +148,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Public reason <small class="text-muted">(optional — shown in the transparency log)</small></label>
-                            {{ form_widget(freezeForm.reasonText, {'attr': {'class': 'form-control', 'rows': 2}}) }}
+                            {{ form_widget(freezeForm.reasonText, {'attr': {'class': 'form-control', 'rows': 2, 'autofocus': true}}) }}
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
