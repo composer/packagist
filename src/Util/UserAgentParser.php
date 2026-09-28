@@ -22,12 +22,13 @@ class UserAgentParser
     private ?string $os = null;
     private ?string $httpVersion = null;
     private ?bool $ci = null;
+    private ?bool $agent = null;
     private ?string $command = null;
     private ?string $runningOperation = null;
 
     public function __construct(?string $userAgent)
     {
-        if ($userAgent && Preg::isMatch('#^Composer/(?P<composer>[a-z0-9.+-]+) \((?P<os>[^\s;]+)[^;]*?; (?P<osversion>[^;]*?); (?P<engine>HHVM|PHP) (?P<php>[0-9.]+)[^;]*(?:; (?P<http>streams|curl \d+\.\d+)[^;)]*)?(?:; Platform-PHP (?P<platform_php>[0-9.]+)[^;]*)?(?P<ci>; CI)?(?:; cmd:(?P<cmd>[a-z0-9:_,-]+))?#i', $userAgent, $matches)) {
+        if ($userAgent && Preg::isMatch('#^Composer/(?P<composer>[a-z0-9.+-]+) \((?P<os>[^\s;]+)[^;]*?; (?P<osversion>[^;]*?); (?P<engine>HHVM|PHP) (?P<php>[0-9.]+)[^;]*(?:; (?P<http>streams|curl \d+\.\d+)[^;)]*)?(?:; Platform-PHP (?P<platform_php>[0-9.]+)[^;]*)?(?P<ci>; CI)?(?P<agent>; agent)?(?:; cmd:(?P<cmd>[a-z0-9:_,-]+))?#i', $userAgent, $matches)) {
             if ($matches['composer'] === 'source' || Preg::isMatch('{^[a-f0-9]{40}$}', $matches['composer'])) {
                 $matches['composer'] = 'pre-1.8.5';
             }
@@ -42,6 +43,7 @@ class UserAgentParser
             }
             $this->httpVersion = null !== $matches['http'] ? strtolower($matches['http']) : null;
             $this->ci = (bool) ($matches['ci'] ?? null);
+            $this->agent = (bool) ($matches['agent'] ?? null);
             // cmd:<command>[,<operation>] (composer/composer#12952). The operation is appended only
             // when it differs from the command, so it collapses for `composer update`/`install`.
             if (null !== $matches['cmd']) {
@@ -137,6 +139,11 @@ class UserAgentParser
     public function getCI(): ?bool
     {
         return $this->ci;
+    }
+
+    public function getAgent(): ?bool
+    {
+        return $this->agent;
     }
 
     /** Running command from the UA cmd: field (composer/composer#12952); null if not reported. */
