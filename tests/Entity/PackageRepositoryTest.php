@@ -671,6 +671,124 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertNotContains($parked->getId(), $this->staleForDumpingSince(null));
     }
 
+    public function testStaleForUpdatingStaggersTheMonthlyCrawlPerPackage(): void
+    {
+        // A quiet package is only ever crawled by the monthly clause, so an exact anniversary re-crawled
+        // every package that had been crawled together, together, every month. The due time now carries
+        // a per-package offset: two weeks plus up to 31 days depending on the id.
+        $package = $this->hookedPackage('acme/quiet');
+        $offset = $package->getId() % PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS;
+
+        $package->setCrawledAt(new \DateTimeImmutable('-2 weeks -'.$offset.' hours +1 hour'));
+        $this->store($package);
+        self::assertNotContains($package->getId(), $this->staleForUpdating(), 'not due an hour before its own boundary');
+
+        $package->setCrawledAt(new \DateTimeImmutable('-2 weeks -'.$offset.' hours -1 hour'));
+        $this->store($package);
+        self::assertContains($package->getId(), $this->staleForUpdating(), 'due an hour past its own boundary');
+    }
+
+    public function testStaleForUpdatingNeverRecrawlsAHookedPackageWithinTwoWeeks(): void
+    {
+        $package = $this->hookedPackage('acme/fresh-hooked');
+        $package->setCrawledAt(new \DateTimeImmutable('-13 days'));
+        $this->store($package);
+
+        self::assertNotContains($package->getId(), $this->staleForUpdating());
+    }
+
+    public function testStaleForUpdatingSpreadsPackagesCrawledTogether(): void
+    {
+        $a = $this->hookedPackage('acme/twin-a');
+        $b = $this->hookedPackage('acme/twin-b');
+        $offsetA = $a->getId() % PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS;
+        $offsetB = $b->getId() % PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS;
+        self::assertNotSame($offsetA, $offsetB);
+        [$early, $late] = $offsetA < $offsetB ? [$a, $b] : [$b, $a];
+
+        // crawled at the same instant, just past the earlier of the two boundaries
+        $crawledAt = new \DateTimeImmutable('-2 weeks -'.min($offsetA, $offsetB).' hours -30 minutes');
+        $a->setCrawledAt($crawledAt);
+        $b->setCrawledAt($crawledAt);
+        $this->store($a, $b);
+
+        $stale = $this->staleForUpdating();
+        self::assertContains($early->getId(), $stale);
+        self::assertNotContains($late->getId(), $stale);
+    }
+
+    public function testStaleForUpdatingStillRecrawlsHooklessPackagesEveryTwoWeeks(): void
+    {
+        $package = self::createPackage('acme/hookless', 'https://github.com/acme/hookless');
+        $package->setCrawledAt(new \DateTimeImmutable('-15 days'));
+        $this->store($package);
+
+        self::assertContains($package->getId(), $this->staleForUpdating());
+    }
+
+    public function testStaleForUpdatingCapsTheRampBacklogOldestCrawlFirst(): void
+    {
+        $newer = $this->hookedPackageWithOffset('acme/backlog-newer', offsetHours: 24, crawledAtHoursAgo: 14 * 24 + 25);
+        $older = $this->hookedPackageWithOffset('acme/backlog-older', offsetHours: 48, crawledAtHoursAgo: 14 * 24 + 60);
+
+        $stale = $this->staleForUpdating(new \DateTimeImmutable('+1 day'), rampCap: 1);
+        self::assertContains($older, $stale);
+        self::assertNotContains($newer, $stale);
+    }
+
+    public function testStaleForUpdatingNeverCapsPackagesTheOldMonthlyRuleAlreadyDue(): void
+    {
+        $backlog = $this->hookedPackageWithOffset('acme/backlog', offsetHours: 24, crawledAtHoursAgo: 20 * 24);
+        $overdue = $this->hookedPackageWithOffset('acme/overdue', offsetHours: 24, crawledAtHoursAgo: 32 * 24);
+
+        $stale = $this->staleForUpdating(new \DateTimeImmutable('+1 day'), rampCap: 1);
+        self::assertContains($backlog, $stale);
+        self::assertContains($overdue, $stale);
+    }
+
+    public function testStaleForUpdatingDropsTheRampCapOnceExpired(): void
+    {
+        $a = $this->hookedPackageWithOffset('acme/backlog-a', offsetHours: 24, crawledAtHoursAgo: 20 * 24);
+        $b = $this->hookedPackageWithOffset('acme/backlog-b', offsetHours: 48, crawledAtHoursAgo: 20 * 24);
+
+        $stale = $this->staleForUpdating(new \DateTimeImmutable('-1 day'), rampCap: 1);
+        self::assertContains($a, $stale);
+        self::assertContains($b, $stale);
+    }
+
+    /**
+     * Rewrites the id so the stagger offset is known; auto-increment ids give arbitrary ones.
+     */
+    private function hookedPackageWithOffset(string $name, int $offsetHours, int $crawledAtHoursAgo): int
+    {
+        $package = $this->hookedPackage($name);
+        $package->setCrawledAt(new \DateTimeImmutable('-'.$crawledAtHoursAgo.' hours'));
+        $this->store($package);
+
+        $id = (intdiv($package->getId(), PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS) + 1000) * PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS + $offsetHours;
+        self::getEM()->getConnection()->executeStatement('UPDATE package SET id = :new WHERE id = :old', ['new' => $id, 'old' => $package->getId()]);
+
+        return $id;
+    }
+
+    private function hookedPackage(string $name): Package
+    {
+        $package = self::createPackage($name, 'https://github.com/'.$name);
+        $package->setAutoUpdated(Package::AUTO_GITHUB_HOOK);
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $this->store($package);
+
+        return $package;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function staleForUpdating(?\DateTimeImmutable $rampUntil = null, int $rampCap = PackageRepository::MONTHLY_CRAWL_RAMP_CAP): array
+    {
+        return array_map(static fn (array $row): int => (int) $row['id'], $this->packageRepository->getStalePackagesForUpdating($rampUntil, $rampCap));
+    }
+
     public function testDumpRequestedAtIsIndexed(): void
     {
         // The bounded select ranges on dumpRequestedAt, which dumped2_requested_crawled_frozen_idx
