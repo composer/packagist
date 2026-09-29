@@ -660,6 +660,17 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertContains($crawled->getId(), $this->staleForDumpingSince('-1 hour'));
     }
 
+    public function testStaleForDumpingV2SkipsPackagesCrawledInTheFuture(): void
+    {
+        // UpdaterWorker parks unreachable packages at crawledAt = +7 days. The guard against selecting
+        // them used SQL NOW(), which runs on MySQL's session timezone while the column is PHP UTC, so
+        // for the width of that offset the row was re-selected every pass. The bound is the PHP clock now.
+        $parked = $this->dumpablePackage('acme/parked', dumpedAtV2: '-2 hours', dumpRequestedAt: null, crawledAt: '+1 hour');
+
+        self::assertNotContains($parked->getId(), $this->staleForDumpingSince('-1 hour'));
+        self::assertNotContains($parked->getId(), $this->staleForDumpingSince(null));
+    }
+
     public function testDumpRequestedAtIsIndexed(): void
     {
         // The bounded select ranges on dumpRequestedAt, which dumped2_requested_crawled_frozen_idx

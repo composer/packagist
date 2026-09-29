@@ -350,11 +350,14 @@ class PackageRepository extends ServiceEntityRepository
         // bound that can be, since a package only goes stale by being marked or crawled. Unbounded
         // this scanned the index instead, 468,848 rows a call, every two seconds per worker.
         // dumpedAtV2 IS NULL stays outside the window: a forceDump() must be found however stale.
+        // :now is the PHP clock dumpedAtV2 is written with; SQL NOW() runs on MySQL's session timezone,
+        // which re-selected the updater's +7 days crawledAt rows every pass for the width of the offset.
         // Oldest first so that the caller's backlog cap drops the rows with the most window left.
-        $sql = 'SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpRequestedAt > :since AND p.dumpRequestedAt >= p.dumpedAtV2) OR (p.crawledAt > :since AND p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
+        $sql = 'SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpRequestedAt > :since AND p.dumpRequestedAt >= p.dumpedAtV2) OR (p.crawledAt > :since AND p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < :now)) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
         $params = [
             'suppressed' => PackageFreezeReason::suppressingValues(),
             'since' => ($since ?? new \DateTimeImmutable(self::DUMP_SWEEP_EPOCH))->format('Y-m-d H:i:s'),
+            'now' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
         ];
         $types = ['suppressed' => ArrayParameterType::STRING];
 
