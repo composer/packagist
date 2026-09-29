@@ -170,9 +170,10 @@ class ApiController extends Controller
 
     /**
      * The GitHub events that can move a tag or a branch, or rename the repository. Everything else a
-     * hook can subscribe to (workflow runs, checks, comments, stars, ...) has nothing to crawl.
+     * hook can subscribe to (workflow runs, checks, comments, stars, ...) has nothing to crawl. ping is
+     * kept as it is what marks a newly set up hook's package as auto-updated.
      */
-    private const GITHUB_HOOK_EVENTS = ['push', 'create', 'delete', 'release', 'repository'];
+    private const GITHUB_HOOK_EVENTS = ['push', 'create', 'delete', 'release', 'repository', 'ping'];
 
     #[Route(path: '/api/update-package', name: 'generic_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
     #[Route(path: '/api/github', name: 'github_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
@@ -181,8 +182,7 @@ class ApiController extends Controller
     {
         // a user hook set to "send me everything" turned every workflow run and comment into a crawl
         $event = $request->headers->get('X-GitHub-Event');
-        $isPing = 'ping' === $event;
-        if (null !== $event && !$isPing && !\in_array($event, self::GITHUB_HOOK_EVENTS, true)) {
+        if (null !== $event && !\in_array($event, self::GITHUB_HOOK_EVENTS, true)) {
             $statsd->increment('update_pkg_api.ignored', tags: ['reason' => 'github_event']);
 
             return new JsonResponse(['status' => 'success', 'message' => 'Ignored '.$event.' event, only '.implode(', ', self::GITHUB_HOOK_EVENTS).' events trigger an update'], 200);
@@ -195,7 +195,7 @@ class ApiController extends Controller
         }
 
         // an org-level ping carries no repository
-        if ($isPing && !isset($payload['repository']['url'])) {
+        if ('ping' === $event && !isset($payload['repository']['url'])) {
             return new JsonResponse(['status' => 'success', 'message' => 'Ignored ping event without a repository'], 200);
         }
 
@@ -231,7 +231,7 @@ class ApiController extends Controller
 
         $url = str_replace('https://api.github.com/repos', 'https://github.com', $url);
 
-        return $this->receiveUpdateRequest($request, $url, $urlRegex, $remoteId, $githubWebhookSecret, $statsd, scheduleUpdate: !$isPing);
+        return $this->receiveUpdateRequest($request, $url, $urlRegex, $remoteId, $githubWebhookSecret, $statsd);
     }
 
     #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'json'], methods: ['PUT'])]
@@ -451,7 +451,7 @@ class ApiController extends Controller
      * @param string                  $url      the repository's URL (deducted from the request)
      * @param value-of<self::REGEXES> $urlRegex the regex used to split the user packages into domain and path
      */
-    protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret, StatsDClient $statsd, bool $scheduleUpdate = true): JsonResponse
+    protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret, StatsDClient $statsd): JsonResponse
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!Preg::isMatchStrictGroups($urlRegex, $url, $match)) {
@@ -553,9 +553,6 @@ class ApiController extends Controller
             }
 
             $package->setAutoUpdated($autoUpdated);
-            if (!$scheduleUpdate) {
-                continue;
-            }
 
             $job = $this->scheduler->scheduleUpdate($package, $source);
             $jobs[] = $job->getId();
@@ -564,16 +561,13 @@ class ApiController extends Controller
         $this->getEM()->flush();
 
         $response = ['status' => 'success', 'jobs' => $jobs, 'type' => $receiveType];
-        if (!$scheduleUpdate) {
-            $response['message'] = 'Hook received, the next push will trigger an update';
-        }
         if ($skipped) {
             $statsd->increment('update_pkg_api.skipped', \count($skipped), tags: ['reason' => 'frozen']);
             $response['skipped'] = $skipped;
             $response['message'] = 'Frozen packages are not updated: '.implode(', ', $skipped);
         }
 
-        return new JsonResponse($response, $scheduleUpdate ? 202 : 200);
+        return new JsonResponse($response, 202);
     }
 
     /**
