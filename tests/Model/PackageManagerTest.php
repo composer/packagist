@@ -65,6 +65,23 @@ class PackageManagerTest extends IntegrationTestCase
         $this->assertEquals(202, $client->getResponse()->getStatusCode());
     }
 
+    public function testRecordFailedCrawlStampsCrawledAtUnlessItIsParkedInTheFuture(): void
+    {
+        // Without the stamp packagist:update re-selects a failing package on every tick, so a repo
+        // that 403s loops through the crawl workers every ten minutes for as long as it is broken.
+        $failing = self::createPackage('acme/failing', 'https://github.com/acme/failing');
+        $failing->setCrawledAt(new \DateTimeImmutable('-3 days'));
+        $parked = self::createPackage('acme/parked', 'https://github.com/acme/parked');
+        $parked->setCrawledAt(new \DateTimeImmutable('+7 days'));
+        $this->store($failing, $parked);
+
+        $this->packageManager->recordFailedCrawl($failing);
+        $this->packageManager->recordFailedCrawl($parked);
+
+        self::assertGreaterThan(new \DateTimeImmutable('-1 minute'), $failing->getCrawledAt());
+        self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $parked->getCrawledAt(), 'an unreachable host parked for a week must not be pulled back to now');
+    }
+
     #[TestWith([false, 0])]
     #[TestWith([true, 1])]
     public function testTransferPackageReplacesAllMaintainers(bool $notifyNewMaintainers, int $expectedEmailCount): void

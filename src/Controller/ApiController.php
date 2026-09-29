@@ -168,11 +168,25 @@ class ApiController extends Controller
         return new JsonResponse(['status' => 'success'], 202);
     }
 
+    /**
+     * The GitHub events that can move a tag or a branch, or rename the repository. Everything else a
+     * hook can subscribe to (workflow runs, checks, comments, stars, ...) has nothing to crawl.
+     */
+    private const GITHUB_HOOK_EVENTS = ['push', 'create', 'delete', 'repository'];
+
     #[Route(path: '/api/update-package', name: 'generic_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
     #[Route(path: '/api/github', name: 'github_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
     #[Route(path: '/api/bitbucket', name: 'bitbucket_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
     public function updatePackageAction(Request $request, string $githubWebhookSecret, StatsDClient $statsd): JsonResponse
     {
+        // a user hook set to "send me everything" turned every workflow run and comment into a crawl
+        $event = $request->headers->get('X-GitHub-Event');
+        if (null !== $event && !\in_array($event, self::GITHUB_HOOK_EVENTS, true)) {
+            $statsd->increment('update_pkg_api.ignored', tags: ['reason' => 'github_event']);
+
+            return new JsonResponse(['status' => 'success', 'message' => 'Ignored '.$event.' event, only pushes trigger an update'], 200);
+        }
+
         // parse the payload
         $payload = json_decode((string) $request->request->get('payload'), true);
         if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
@@ -521,9 +535,17 @@ class ApiController extends Controller
         }
 
         $jobs = [];
+        $skipped = [];
 
         /** @var Package $package */
         foreach ($packages as $package) {
+            // the updater bails on a frozen package, but only after getDriver() has hit the GitHub
+            // API, and a spam package with a hook can push every minute
+            if ($package->isFrozen()) {
+                $skipped[] = $package->getName();
+                continue;
+            }
+
             $package->setAutoUpdated($autoUpdated);
 
             $job = $this->scheduler->scheduleUpdate($package, $source);
@@ -532,7 +554,14 @@ class ApiController extends Controller
 
         $this->getEM()->flush();
 
-        return new JsonResponse(['status' => 'success', 'jobs' => $jobs, 'type' => $receiveType], 202);
+        $response = ['status' => 'success', 'jobs' => $jobs, 'type' => $receiveType];
+        if ($skipped) {
+            $statsd->increment('update_pkg_api.skipped', \count($skipped), tags: ['reason' => 'frozen']);
+            $response['skipped'] = $skipped;
+            $response['message'] = 'Frozen packages are not updated: '.implode(', ', $skipped);
+        }
+
+        return new JsonResponse($response, 202);
     }
 
     /**
@@ -678,7 +707,7 @@ class ApiController extends Controller
             foreach ($packages as $package) {
                 $previousUrl = $package->getRepository();
                 $package->setRepository($url);
-                if ($url !== $previousUrl) {
+                if ($url !== $previousUrl && !$package->isFrozen()) {
                     // ensure we do a full update of all versions to update the repo URL
                     $this->scheduler->scheduleUpdate($package, $source, updateSourceDistUrl: true, forceDump: true);
                 }
