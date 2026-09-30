@@ -57,6 +57,17 @@ class PackageRepository extends ServiceEntityRepository
 
     /** Predates every row, so an unbounded sweep needs no second query. */
     private const DUMP_SWEEP_EPOCH = '2000-01-01 00:00:00';
+
+    /**
+     * Spread of the per-package offset on the monthly crawl, in hours (31 days). A quiet package is
+     * only ever crawled by that clause, so an exact anniversary kept packages crawled together due
+     * together, forever; the offset makes each package's period its own.
+     */
+    public const MONTHLY_CRAWL_STAGGER_HOURS = 744;
+
+    /** Temporary: caps crawls the stagger pulls ahead of the old -1 month rule. Delete after this date. */
+    public const MONTHLY_CRAWL_RAMP_UNTIL = '2026-11-01';
+    public const MONTHLY_CRAWL_RAMP_CAP = 100;
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
@@ -284,11 +295,15 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return list<array{id: int}>
      */
-    public function getStalePackagesForUpdating(): array
+    public function getStalePackagesForUpdating(?\DateTimeImmutable $rampUntil = null, int $rampCap = self::MONTHLY_CRAWL_RAMP_CAP): array
     {
         $conn = $this->getEntityManager()->getConnection();
+        $rampUntil ??= new \DateTimeImmutable(self::MONTHLY_CRAWL_RAMP_UNTIL);
+        $ramping = new \DateTimeImmutable() < $rampUntil;
+        $staggered = 'DATE_SUB(CAST(:autocrawled AS DATETIME), INTERVAL (p.id % '.self::MONTHLY_CRAWL_STAGGER_HOURS.') HOUR)';
+        $monthAgo = date('Y-m-d H:i:s', strtotime('-1month'));
 
-        return $conn->fetchAllAssociative(
+        $packages = $conn->fetchAllAssociative(
             'SELECT p.id FROM package p
             WHERE p.abandoned = false
             AND p.frozen IS NULL
@@ -296,7 +311,7 @@ class PackageRepository extends ServiceEntityRepository
                 p.crawledAt IS NULL
                 OR (p.autoUpdated = 0 AND p.crawledAt < :recent AND p.createdAt >= :yesterday)
                 OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
-                OR (p.crawledAt < :autocrawled)
+                OR (p.crawledAt < '.$staggered.' AND p.crawledAt < :uncappedBefore)
             )
             ORDER BY p.id ASC',
             [
@@ -305,10 +320,37 @@ class PackageRepository extends ServiceEntityRepository
                 'yesterday' => date('Y-m-d H:i:s', strtotime('-1day')),
                 // crawl packages without auto-update once every 2week
                 'crawled' => date('Y-m-d H:i:s', strtotime('-2week')),
-                // crawl all packages including auto-updated once a month just in case
-                'autocrawled' => date('Y-m-d H:i:s', strtotime('-1month')),
+                // crawl all packages including auto-updated about once a month just in case: two weeks
+                // plus up to 31 days depending on the id, so packages crawled together do not come due
+                // together again (an exact -1 month did, and its month-end overflow merged the cohorts)
+                'autocrawled' => date('Y-m-d H:i:s', strtotime('-2week')),
+                'uncappedBefore' => $ramping ? $monthAgo : '9999-12-31 00:00:00',
             ]
         );
+
+        if (!$ramping) {
+            return $packages;
+        }
+
+        $backlog = $conn->fetchAllAssociative(
+            'SELECT p.id FROM package p
+            WHERE p.abandoned = false
+            AND p.frozen IS NULL
+            AND p.autoUpdated != 0
+            AND p.crawledAt >= :monthAgo
+            AND p.crawledAt < '.$staggered.'
+            ORDER BY p.crawledAt ASC
+            LIMIT '.$rampCap,
+            [
+                'monthAgo' => $monthAgo,
+                'autocrawled' => date('Y-m-d H:i:s', strtotime('-2week')),
+            ]
+        );
+
+        $ids = array_unique(array_map(static fn (array $row): int => (int) $row['id'], array_merge($packages, $backlog)));
+        sort($ids);
+
+        return array_map(static fn (int $id): array => ['id' => $id], $ids);
     }
 
     /**
@@ -350,11 +392,14 @@ class PackageRepository extends ServiceEntityRepository
         // bound that can be, since a package only goes stale by being marked or crawled. Unbounded
         // this scanned the index instead, 468,848 rows a call, every two seconds per worker.
         // dumpedAtV2 IS NULL stays outside the window: a forceDump() must be found however stale.
+        // :now is the PHP clock dumpedAtV2 is written with; SQL NOW() runs on MySQL's session timezone,
+        // which re-selected the updater's +7 days crawledAt rows every pass for the width of the offset.
         // Oldest first so that the caller's backlog cap drops the rows with the most window left.
-        $sql = 'SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpRequestedAt > :since AND p.dumpRequestedAt >= p.dumpedAtV2) OR (p.crawledAt > :since AND p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
+        $sql = 'SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpRequestedAt > :since AND p.dumpRequestedAt >= p.dumpedAtV2) OR (p.crawledAt > :since AND p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < :now)) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
         $params = [
             'suppressed' => PackageFreezeReason::suppressingValues(),
             'since' => ($since ?? new \DateTimeImmutable(self::DUMP_SWEEP_EPOCH))->format('Y-m-d H:i:s'),
+            'now' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
         ];
         $types = ['suppressed' => ArrayParameterType::STRING];
 

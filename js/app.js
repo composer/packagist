@@ -41,6 +41,11 @@ import { Tooltip } from 'bootstrap';
         }
     });
 
+    // Bootstrap focuses the modal itself on show and ignores [autofocus]
+    $(document).on('shown.bs.modal', '.modal', function () {
+        $(this).find('[autofocus]').first().trigger('focus');
+    });
+
     /**
      * API Token visibility toggling
      */

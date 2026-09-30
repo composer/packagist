@@ -11,7 +11,9 @@
  */
 
 namespace App\Tests\Controller;
+
 use App\Audit\VersionDeletionReason;
+use App\Entity\PackageFreezeReason;
 use App\Service\Scheduler;
 use App\Entity\Package;
 use App\Entity\SecurityAdvisory;
@@ -24,6 +26,7 @@ use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
@@ -85,6 +88,76 @@ class ApiControllerTest extends IntegrationTestCase
             $payload
         );
         $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
+
+    public function testGithubHookIgnoresEventsThatCannotMoveARef(): void
+    {
+        // A user webhook set to "send me everything" turns every workflow run, check and comment into
+        // a crawl: one package saw 196 of them in seven hours without a ref moving. Only a push can.
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/composer/composer', maintainers: [$user]);
+        $this->store($user, $package);
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->never())->method('scheduleUpdate');
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
+        $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload], [], ['HTTP_X-GitHub-Event' => 'check_run']);
+        $this->assertEquals(200, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
+
+    #[TestWith(['push'])]
+    #[TestWith(['release'])]
+    #[TestWith(['ping'])]
+    public function testGithubHookSchedulesOnRefEvents(string $event): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/composer/composer', maintainers: [$user]);
+        $this->store($user, $package);
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->once())->method('scheduleUpdate')->with($package);
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
+        $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload], [], ['HTTP_X-GitHub-Event' => $event]);
+        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
+
+    public function testGithubHookAcceptsOrgPingWithoutRepository(): void
+    {
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->never())->method('scheduleUpdate');
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $payload = json_encode(['zen' => 'Keep it logically awesome.', 'organization' => ['login' => 'acme']]);
+        $this->client->request('POST', '/api/github', ['payload' => $payload], [], ['HTTP_X-GitHub-Event' => 'ping']);
+        $this->assertEquals(200, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+    }
+
+    public function testGithubHookSkipsFrozenPackages(): void
+    {
+        // The updater bails on a frozen package, but only after getDriver() has hit the GitHub API,
+        // and a spam package with a hook can push every minute. Nothing in the job is worth paying for.
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/composer/composer', maintainers: [$user]);
+        $package->freeze(PackageFreezeReason::Spam);
+        $this->store($user, $package);
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->never())->method('scheduleUpdate');
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
+        $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload]);
+        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertSame([], $body['jobs']);
+        $this->assertSame([$package->getName()], $body['skipped']);
     }
 
     public function testUnsafeApiRejectsSafeApiToken(): void
