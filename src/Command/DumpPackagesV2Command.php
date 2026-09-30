@@ -33,6 +33,14 @@ class DumpPackagesV2Command extends Command
 {
     use \App\Util\DoctrineTrait;
 
+    /**
+     * How far back the staleness select looks. A rolling offset rather than a remembered position,
+     * so every pass re-covers the whole window: a mark that committed late, a clock a few seconds
+     * out, or an id dropped by the backlog cap below is found again next time instead of stranded.
+     * Wide enough that the cap can drain a burst well before its rows age out.
+     */
+    private const DUMP_WINDOW = '-1 hour';
+
     public function __construct(
         private V2Dumper $dumper,
         private Locker $locker,
@@ -139,10 +147,12 @@ class DumpPackagesV2Command extends Command
                 } else {
                     // instrumentation only: time the stale-select query to rule it out as a bottleneck during a buildup
                     $selectStart = microtime(true);
-                    $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers);
+                    $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers, new \DateTimeImmutable(self::DUMP_WINDOW));
                     $this->statsd->timing('packagist.metadata_dump.select_time', round((microtime(true) - $selectStart) * 1000, 4), ['worker' => (string) $workerId]);
                     if (\count($ids) > 2000) {
                         $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids), 'worker' => (string) $workerId]);
+                        // the select orders oldest first, so what is dropped here is what has the most
+                        // window left to be picked up again
                         $ids = \array_slice($ids, 0, 2000);
                     }
                 }

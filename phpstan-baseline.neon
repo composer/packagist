@@ -55,12 +55,6 @@ parameters:
 			path: src/Entity/AuditRecordRepository.php
 
 		-
-			message: '#^Query error\: Unknown column ''d\.total'' in ''order clause'' \(1054\)\.$#'
-			identifier: dba.syntaxError
-			count: 1
-			path: src/Entity/PackageRepository.php
-
-		-
 			message: '#^Method App\\Entity\\PhpStatRepository\:\:getStatVersions\(\) should return list\<array\{version\: string, depth\: 0\|1\|2\|3\}\> but returns array\<mixed\>\.$#'
 			identifier: return.type
 			count: 1

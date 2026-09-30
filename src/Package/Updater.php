@@ -315,6 +315,11 @@ class Updater
         $processedVersions = [];
         $idsToMarkUpdated = [];
 
+        // Track whether this crawl changed dumpable content, so the package is marked for re-dump on
+        // real changes instead of on every crawl. Version removals mark themselves in
+        // VersionRepository::remove(); this covers the create/mutate and raw-SQL recover/delete paths.
+        $dumpableChanged = false;
+
         /** @var int|null $dependentSuggesterSource Version id to use as dependent/suggester source */
         $dependentSuggesterSource = null;
         foreach ($versions as $version) {
@@ -348,6 +353,10 @@ class Updater
             // entity and returns a VersionUpdatedResult so it is flushed + detached here rather than
             // leaning on the catch-all flush at the end of update(). Such rewrites carry no events.
             if ($result instanceof VersionUpdatedResult) {
+                // a version row was created or mutated (incl. default-branch toggle, source/dist rewrite
+                // and the abandoned-state change, which all route through this result) => dumpable change
+                $dumpableChanged = true;
+
                 foreach ($result->events as $event) {
                     $this->eventDispatcher->dispatch($event);
                 }
@@ -395,7 +404,7 @@ class Updater
 
         // auto-recover versions still present upstream that had been auto-soft-deleted as missing.
         // Admin/maintainer-pulled rows (deletionReason in (admin, maintainer)) stay soft-deleted.
-        $em->getConnection()->executeStatement(
+        $recovered = (int) $em->getConnection()->executeStatement(
             'UPDATE package_version
                 SET updatedAt = :now, softDeletedAt = NULL, deletionReason = NULL, deletionReasonText = NULL, internalDeletionReasonText = NULL
                 WHERE id IN (:ids)
@@ -404,6 +413,10 @@ class Updater
             ['now' => date('Y-m-d H:i:s'), 'autoReason' => VersionDeletionReason::AutoDeletedMissing->value, 'ids' => $idsToMarkUpdated],
             ['ids' => ArrayParameterType::INTEGER]
         );
+        if ($recovered > 0) {
+            // a soft-deleted version reappeared upstream and is back in the dump => dumpable change
+            $dumpableChanged = true;
+        }
 
         // remove or soft-mark versions that disappeared from upstream
         foreach ($existingVersions as $version) {
@@ -440,8 +453,28 @@ class Updater
                     'UPDATE package_version SET softDeletedAt = :now, deletionReason = :reason WHERE id = :id',
                     ['now' => date('Y-m-d H:i:s'), 'reason' => VersionDeletionReason::AutoDeletedMissing->value, 'id' => $version['id']]
                 );
+                // a version disappeared upstream and is now excluded from the dump => dumpable change
+                $dumpableChanged = true;
             }
         }
+
+        // Mark the package as ready for dump, pinned between two constraints. Late enough: marking is
+        // what tells a concurrent dumper the package is ready, so marking per version instead would let
+        // it dump a half-written package and stamp dumpedAtV2 past the mark. Early enough: update() is
+        // not transactional, so a mark left until after the network-bound tail below is lost whenever
+        // that throws while the change it describes stays committed. Nothing below changes dumpable
+        // content.
+        //
+        // FORCE_DUMP (manual update button, unfreeze, repo URL rewrite) escalates to a full re-write
+        // even when nothing changed, busting the CDN cache. The flush is unconditional as it also
+        // commits the marks VersionRepository::remove() set while pruning above.
+        if ($flags & self::FORCE_DUMP) {
+            $package->forceDump();
+        } elseif ($dumpableChanged) {
+            $package->markForDump();
+        }
+
+        $em->flush();
 
         if (null !== ($match = $package->getGitHubComponents())) {
             $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver);
@@ -468,11 +501,6 @@ class Updater
 
         $package->setUpdatedAt(new \DateTimeImmutable());
         $package->setCrawledAt(new \DateTimeImmutable());
-
-        if ($flags & self::FORCE_DUMP) {
-            $package->setDumpedAt(null);
-            $package->setDumpedAtV2(null);
-        }
 
         $em->flush();
         if ($repository->hadInvalidBranches()) {
@@ -714,12 +742,21 @@ class Updater
         }
 
         if ($existingVersion) {
+            // The abandoned conditions only exist to route into the package-level reconciliation below,
+            // which runs for the default branch and stores the *normalized* replacement. Scope and
+            // normalize identically or this stays true and rebuilds the version on every crawl, bumping
+            // published-time. Version rows carry no abandoned state of their own — Version::toV2Array()
+            // reads it off the package at dump time.
+            $abandonedNeedsReconciling = $data->isAbandoned() && $data->isDefaultBranch() && (
+                !$package->isAbandoned()
+                || $this->normalizeReplacementPackage($data->getReplacementPackage()) !== $package->getReplacementPackage()
+            );
+
             // Dev-version flow (existing version). Update on reference change, or abandoned flags & default-branch status changes.
             if (
                 ($existingVersion['source']['reference'] ?? null) !== $newSourceRef
                 || ($flags & self::UPDATE_SOURCE_DIST_URL)
-                || ($data->isAbandoned() && !$package->isAbandoned())
-                || ($data->isAbandoned() && $data->getReplacementPackage() !== $package->getReplacementPackage())
+                || $abandonedNeedsReconciling
             ) {
                 $version = $versionRepo->find($existingVersion['id']);
                 if (null === $version) {
@@ -769,13 +806,18 @@ class Updater
         if ($data->isDefaultBranch()) {
             $package->setDescription($descr);
             $package->setType($this->sanitize($data->getType()));
-            if ($data->isAbandoned() && !$package->isAbandoned()) {
-                $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
-                $package->setAbandoned(true);
-                $postUpdateEvents[] = new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier));
-                if ($data->getReplacementPackage()) {
-                    $package->setReplacementPackage($this->sanitize($data->getReplacementPackage()));
+            if ($data->isAbandoned()) {
+                if (!$package->isAbandoned()) {
+                    $io->write('Marking package abandoned as per composer metadata from '.$version->getVersion());
+                    $package->setAbandoned(true);
+                    $postUpdateEvents[] = new PackageAbandonedEvent($package, $this->detectAbandonmentReason($driver, $rootIdentifier));
                 }
+                // Reconcile the replacement even when already abandoned: the rebuild condition above
+                // keys off this exact comparison, so writing it only on the transition leaves a standing
+                // mismatch that rebuilds the version on every crawl. composer.json wins, but only while
+                // it declares abandonment — the branch is skipped otherwise, so removing "abandoned"
+                // never un-abandons, and a UI-only abandon is never overwritten.
+                $package->setReplacementPackage($this->normalizeReplacementPackage($data->getReplacementPackage()));
             }
         }
 
@@ -1211,6 +1253,23 @@ class Updater
         }
 
         return ConsoleIO::sanitize($str, false);
+    }
+
+    /**
+     * Normalizes an upstream "abandoned" replacement exactly as Package::setReplacementPackage() stores
+     * it. updateInformation() compares the declared value against the stored one, so every
+     * transformation storage applies — stripped control chars, '' to null, the column's 255 char limit —
+     * has to be applied here too or the two never agree and the version is rebuilt on every crawl. The
+     * cap also stops an over-long value from failing the flush under MySQL's strict mode.
+     */
+    private function normalizeReplacementPackage(?string $replacement): ?string
+    {
+        $replacement = $this->sanitize($replacement);
+        if ($replacement === null || $replacement === '') {
+            return null;
+        }
+
+        return mb_substr($replacement, 0, 255);
     }
 
     /**

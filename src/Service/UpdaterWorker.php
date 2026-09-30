@@ -404,6 +404,8 @@ class UpdaterWorker
 
             // Catch request timeouts e.g. gitlab.com
             if ($e instanceof TransportException && strpos($e->getMessage(), 'file could not be downloaded: failed to open stream: HTTP request failed!')) {
+                $this->packageManager->recordFailedCrawl($package);
+
                 return [
                     'status' => Job::STATUS_FAILED,
                     'message' => 'Package data of '.$packageName.' could not be downloaded. Could not reach remote VCS server. Please try again later.',
@@ -414,6 +416,8 @@ class UpdaterWorker
 
             // generic transport exception
             if ($e instanceof TransportException) {
+                $this->packageManager->recordFailedCrawl($package);
+
                 return [
                     'status' => Job::STATUS_FAILED,
                     'message' => 'Package data of '.$packageName.' could not be downloaded.',

@@ -39,6 +39,7 @@ class DumpPackageListCommand extends Command
             ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Rebuild even if no package was added or removed since the last run'),
                 new InputOption('rebuild-set', null, InputOption::VALUE_NONE, 'Also rebuild the set:packages Redis set from the DB, to reset any drift'),
+                new InputOption('rebuild-providers', null, InputOption::VALUE_NONE, 'Rebuild the set:providers Redis set from the DB instead of dumping the list'),
             ])
             ->setDescription('Dumps the gzipped /packages/list.json body into Redis')
         ;
@@ -49,6 +50,9 @@ class DumpPackageListCommand extends Command
         $lockName = $this->getName() ?? __CLASS__;
         if ($input->getOption('rebuild-set')) {
             $lockName .= ':rebuild-set';
+        }
+        if ($input->getOption('rebuild-providers')) {
+            $lockName .= ':rebuild-providers';
         }
 
         if (!$this->locker->lockCommand($lockName)) {
@@ -62,6 +66,12 @@ class DumpPackageListCommand extends Command
         try {
             if ($input->getOption('rebuild-set')) {
                 $this->providerManager->rebuildPackageSet($this->repo->getPackageNames());
+
+                return 0;
+            }
+
+            if ($input->getOption('rebuild-providers')) {
+                $this->providerManager->rebuildProviderSet($this->repo->getProvidedNames());
 
                 return 0;
             }

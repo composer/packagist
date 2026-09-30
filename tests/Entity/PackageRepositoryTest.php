@@ -16,8 +16,10 @@ use App\Entity\Dependent;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
+use App\Entity\ProvideLink;
 use App\Entity\Suggester;
 use App\Entity\Vendor;
+use App\Entity\Version;
 use App\Tests\IntegrationTestCase;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
@@ -334,6 +336,27 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(['test/beta'], array_column($secondPage, 'name'));
     }
 
+    public function testGetDependentsCanSkipTheSort(): void
+    {
+        // The unsorted variant drops the download join with the ORDER BY, so it has to still return
+        // the same rows - only their order is given up.
+        $alpha = self::createPackage('test/alpha', 'https://example.org/alpha');
+        $beta = self::createPackage('test/beta', 'https://example.org/beta');
+        $spam = self::createPackage('test/spam', 'https://example.org/spam');
+        $spam->freeze(PackageFreezeReason::Spam);
+        $this->store($alpha, $beta, $spam);
+        $this->store(
+            new Dependent($alpha, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($beta, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($spam, 'test/required', Dependent::TYPE_REQUIRE),
+        );
+
+        $unsorted = array_column($this->packageRepository->getDependents('test/required', orderBy: null), 'name');
+        sort($unsorted);
+
+        self::assertSame(['test/alpha', 'test/beta'], $unsorted, 'same rows as the sorted call, suppressed ones still hidden');
+    }
+
     public function testGetDependentCountDedupesByPackage(): void
     {
         // A package requiring the same name in both require and require-dev has two dependent rows
@@ -368,11 +391,18 @@ class PackageRepositoryTest extends IntegrationTestCase
             new Suggester($ok, 'test/suggested'),
         );
 
-        $dependents = array_column($this->packageRepository->getDependents('test/required'), 'name');
-        self::assertSame(['test/gone', 'test/ok'], $dependents, 'only spam/malware are suppressed, not every frozen reason');
+        $dependentRows = $this->packageRepository->getDependents('test/required');
+        self::assertSame(['test/gone', 'test/ok'], array_column($dependentRows, 'name'), 'only spam/malware are suppressed, not every frozen reason');
+        // frozen is selected to drive the filter above, never to be published
+        self::assertArrayNotHasKey('frozen', $dependentRows[0]);
+        // listPackages() reads type for the PIE badge, and a missing SELECT column is invisible to
+        // PHPStan while the docblock still promises it
+        self::assertArrayHasKey('type', $dependentRows[0]);
 
-        $suggesters = array_column($this->packageRepository->getSuggests('test/suggested'), 'name');
-        self::assertSame(['test/ok'], $suggesters);
+        $suggesterRows = $this->packageRepository->getSuggests('test/suggested');
+        self::assertSame(['test/ok'], array_column($suggesterRows, 'name'));
+        self::assertArrayNotHasKey('frozen', $suggesterRows[0]);
+        self::assertArrayHasKey('type', $suggesterRows[0]);
     }
 
     public function testGetSuggestsListsTheSuggestingPackages(): void
@@ -386,6 +416,67 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertSame(['test/alpha', 'test/beta'], $names);
     }
 
+    public function testGetDependentsUnsortedWalksByPackageIdAndCollapsesBothRequireTypes(): void
+    {
+        $aaa = self::createPackage('test/aaa', 'https://example.org/aaa');
+        $bbb = self::createPackage('test/bbb', 'https://example.org/bbb');
+        $this->store($aaa, $bbb);
+        $this->store(
+            new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE),
+            // the same package on both types is two rows but one dependent
+            new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE_DEV),
+            new Dependent($bbb, 'test/required', Dependent::TYPE_REQUIRE),
+        );
+
+        $all = $this->packageRepository->getDependentsUnsorted('test/required');
+        self::assertSame(['test/aaa', 'test/bbb'], array_column($all['packages'], 'name'));
+        self::assertNull($all['cursor'], 'a page shorter than the limit ends the walk');
+
+        $devOnly = $this->packageRepository->getDependentsUnsorted('test/required', type: Dependent::TYPE_REQUIRE_DEV);
+        self::assertSame(['test/aaa'], array_column($devOnly['packages'], 'name'));
+    }
+
+    public function testGetDependentsUnsortedSeeksPastSuppressedPackages(): void
+    {
+        $aaa = self::createPackage('test/aaa', 'https://example.org/aaa');
+        $bbb = self::createPackage('test/bbb', 'https://example.org/bbb');
+        $bbb->freeze(PackageFreezeReason::Spam);
+        $ccc = self::createPackage('test/ccc', 'https://example.org/ccc');
+        $this->store($aaa, $bbb, $ccc);
+        $this->store(
+            new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($bbb, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($ccc, 'test/required', Dependent::TYPE_REQUIRE),
+        );
+
+        $first = $this->packageRepository->getDependentsUnsorted('test/required', limit: 1);
+        self::assertSame(['test/aaa'], array_column($first['packages'], 'name'));
+        self::assertSame($aaa->getId(), $first['cursor']);
+
+        // the suppressed row yields no package, but the cursor still has to move or a client
+        // following next asks for this same page forever
+        $second = $this->packageRepository->getDependentsUnsorted('test/required', $first['cursor'], limit: 1);
+        self::assertSame([], $second['packages']);
+        self::assertSame($bbb->getId(), $second['cursor']);
+
+        $third = $this->packageRepository->getDependentsUnsorted('test/required', $second['cursor'], limit: 1);
+        self::assertSame(['test/ccc'], array_column($third['packages'], 'name'));
+    }
+
+    public function testGetDependentsUnsortedPagesByOffsetForTheNumberedPager(): void
+    {
+        $aaa = self::createPackage('test/aaa', 'https://example.org/aaa');
+        $bbb = self::createPackage('test/bbb', 'https://example.org/bbb');
+        $this->store($aaa, $bbb);
+        $this->store(
+            new Dependent($aaa, 'test/required', Dependent::TYPE_REQUIRE),
+            new Dependent($bbb, 'test/required', Dependent::TYPE_REQUIRE),
+        );
+
+        $secondPage = $this->packageRepository->getDependentsUnsorted('test/required', offset: 1, limit: 1);
+        self::assertSame(['test/bbb'], array_column($secondPage['packages'], 'name'));
+    }
+
     public function testListingQueriesCarryAnAcceptedExecutionTimeHint(): void
     {
         // MySQL answers a malformed, mis-positioned or inapplicable optimizer hint with a warning
@@ -394,8 +485,345 @@ class PackageRepositoryTest extends IntegrationTestCase
         $this->packageRepository->getDependents('test/required');
         self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the dependents query');
 
+        // the download sort carries its own, larger budget, and adds a join between the hint and
+        // the ORDER BY it applies to
+        $this->packageRepository->getDependents('test/required', orderBy: 'downloads');
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the download-sorted dependents query');
+
         $this->packageRepository->getSuggests('test/suggested');
         self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the suggesters query');
+
+        $this->packageRepository->getDependentsUnsorted('test/required', 1);
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the unsorted query');
+
+        $this->packageRepository->getDefaultBranchRequireFor(['test/requirer'], 'test/required');
+        self::assertSame([], $this->lastStatementWarnings(), 'MAX_EXECUTION_TIME was not accepted on the requirement query');
+    }
+
+    public function testStalePackagesForIndexingFindsPackagesCrawledInsideTheWindow(): void
+    {
+        $stale = self::createPackage('vendor/stale', 'https://example.org/stale');
+        $stale->setIndexedAt(new \DateTimeImmutable('-20 minutes'));
+        $stale->setCrawledAt(new \DateTimeImmutable('-10 minutes'));
+        $this->store($stale);
+
+        self::assertContains($stale->getId(), $this->staleForIndexingSince('-1 hour'));
+    }
+
+    public function testStalePackagesForIndexingSkipsPackagesAlreadyIndexedSinceTheirCrawl(): void
+    {
+        $fresh = self::createPackage('vendor/fresh', 'https://example.org/fresh');
+        $fresh->setCrawledAt(new \DateTimeImmutable('-10 minutes'));
+        $fresh->setIndexedAt(new \DateTimeImmutable('-5 minutes'));
+        $this->store($fresh);
+
+        self::assertNotContains($fresh->getId(), $this->staleForIndexingSince('-1 hour'));
+    }
+
+    public function testStalePackagesForIndexingLeavesOlderStragglersToTheNightlyPass(): void
+    {
+        // The cost of bounding the scan: a package that went stale before the window is not picked
+        // up by the incremental run at all. packagist:index --all is what catches it.
+        $straggler = self::createPackage('vendor/straggler', 'https://example.org/straggler');
+        $straggler->setIndexedAt(new \DateTimeImmutable('-4 hours'));
+        $straggler->setCrawledAt(new \DateTimeImmutable('-3 hours'));
+        $this->store($straggler);
+
+        self::assertNotContains($straggler->getId(), $this->staleForIndexingSince('-1 hour'));
+        self::assertContains($straggler->getId(), $this->staleForIndexingSince('-1 day'));
+    }
+
+    public function testStalePackagesForIndexingAlwaysFindsNeverIndexedPackages(): void
+    {
+        // The IS NULL branch is deliberately outside the window, so a package that has never been
+        // indexed cannot be stranded by one however old its last crawl is.
+        $neverIndexed = self::createPackage('vendor/never-indexed', 'https://example.org/never-indexed');
+        $neverIndexed->setCrawledAt(new \DateTimeImmutable('-3 hours'));
+        $this->store($neverIndexed);
+
+        self::assertContains($neverIndexed->getId(), $this->staleForIndexingSince('-1 hour'));
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function staleForIndexingSince(string $modifier): array
+    {
+        $rows = $this->packageRepository->getStalePackagesForIndexing(new \DateTimeImmutable($modifier));
+
+        return array_map(static fn (array $row): int => $row['id'], $rows);
+    }
+
+    public function testFindProvidersMatchesOnlyDefaultBranchProvides(): void
+    {
+        $provider = $this->packageProviding('acme/logger', 'psr/log-implementation');
+        $tagged = $this->packageProviding('acme/tagged-logger', 'psr/log-implementation', development: false);
+        $unrelated = $this->packageProviding('acme/client', 'psr/http-client-implementation');
+
+        $names = array_map(static fn (Package $p): string => $p->getName(), $this->packageRepository->findProviders('psr/log-implementation'));
+
+        self::assertContains($provider->getName(), $names);
+        self::assertNotContains($tagged->getName(), $names, 'only the default branch counts as providing a name');
+        self::assertNotContains($unrelated->getName(), $names);
+    }
+
+    public function testProvidedPackageNameIsIndexed(): void
+    {
+        // findProviders() filters link_provide on packageName and had no index to use, so it scanned
+        // all ~78k rows on every /providers/{name} request. This guards the mapping; putting it on
+        // prod is migrations/2026_09_link_provide_name_idx.sql, which this cannot see.
+        $indexes = self::getEM()->getConnection()->createSchemaManager()->listTableIndexes('link_provide');
+
+        $indexedColumns = array_map(static fn ($index): array => $index->getColumns(), array_values($indexes));
+
+        self::assertContains(['packageName'], $indexedColumns, 'link_provide needs an index on packageName');
+    }
+
+    private function packageProviding(string $name, string $provided, bool $development = true): Package
+    {
+        $package = self::createPackage($name, 'https://github.com/'.$name);
+
+        $version = new Version();
+        $version->setPackage($package);
+        $version->setName($name);
+        $version->setVersion('dev-main');
+        $version->setNormalizedVersion('dev-main');
+        $version->setDevelopment($development);
+        $version->setLicense([]);
+        $version->setAutoload([]);
+        $package->getVersions()->add($version);
+
+        $link = new ProvideLink();
+        $link->setVersion($version);
+        $link->setPackageName($provided);
+        $link->setPackageVersion('*');
+
+        $this->store($package, $version, $link);
+
+        return $package;
+    }
+
+    public function testStaleForDumpingV2FindsPackagesMarkedInsideTheWindow(): void
+    {
+        $marked = $this->dumpablePackage('acme/marked', dumpedAtV2: '-2 hours', dumpRequestedAt: '-10 minutes');
+
+        self::assertContains($marked->getId(), $this->staleForDumpingSince('-1 hour'));
+    }
+
+    public function testStaleForDumpingV2SkipsPackagesMarkedBeforeTheWindow(): void
+    {
+        // The cost of bounding the select. Every pass re-covers the whole window, so this only bites
+        // a package that stayed undumped for longer than the window; forceDump() is the way back.
+        $stranded = $this->dumpablePackage('acme/stranded', dumpedAtV2: '-5 hours', dumpRequestedAt: '-4 hours');
+
+        self::assertNotContains($stranded->getId(), $this->staleForDumpingSince('-1 hour'));
+        self::assertContains($stranded->getId(), $this->staleForDumpingSince(null), 'an unbounded select still finds it');
+    }
+
+    public function testStaleForDumpingV2ReturnsOldestFirst(): void
+    {
+        // Load-bearing for the caller's 2000-id backlog cap: truncating the tail has to sacrifice the
+        // rows with the most window left, not an arbitrary subset the optimizer happened to order.
+        $newest = $this->dumpablePackage('acme/newest', dumpedAtV2: '-2 hours', dumpRequestedAt: '-2 minutes');
+        $oldest = $this->dumpablePackage('acme/oldest', dumpedAtV2: '-2 hours', dumpRequestedAt: '-50 minutes');
+        $middle = $this->dumpablePackage('acme/middle', dumpedAtV2: '-2 hours', dumpRequestedAt: '-20 minutes');
+
+        $ids = $this->staleForDumpingSince('-1 hour');
+        $ours = array_values(array_intersect($ids, [$newest->getId(), $oldest->getId(), $middle->getId()]));
+
+        self::assertSame([$oldest->getId(), $middle->getId(), $newest->getId()], $ours);
+    }
+
+    public function testStaleForDumpingV2SkipsPackagesAlreadyDumpedSinceTheirRequest(): void
+    {
+        $fresh = $this->dumpablePackage('acme/fresh', dumpedAtV2: '-1 minute', dumpRequestedAt: '-10 minutes');
+
+        self::assertNotContains($fresh->getId(), $this->staleForDumpingSince('-1 hour'));
+        self::assertNotContains($fresh->getId(), $this->staleForDumpingSince(null));
+    }
+
+    public function testStaleForDumpingV2AlwaysFindsNeverDumpedPackages(): void
+    {
+        // dumpedAtV2 IS NULL sits outside the window on purpose — a package that has never been
+        // dumped must not be reachable only via the sweep, however old its other timestamps are.
+        $neverDumped = $this->dumpablePackage('acme/never-dumped', dumpedAtV2: null, dumpRequestedAt: '-4 hours');
+
+        self::assertContains($neverDumped->getId(), $this->staleForDumpingSince('-1 hour'));
+    }
+
+    public function testStaleForDumpingV2StillFollowsCrawledAtInsideTheWindow(): void
+    {
+        // The crawledAt clause is the transitional fallback for content changes that never got an
+        // explicit mark; bounding the select must not quietly drop it.
+        $crawled = $this->dumpablePackage('acme/crawled', dumpedAtV2: '-2 hours', dumpRequestedAt: null, crawledAt: '-10 minutes');
+
+        self::assertContains($crawled->getId(), $this->staleForDumpingSince('-1 hour'));
+    }
+
+    public function testStaleForDumpingV2SkipsPackagesCrawledInTheFuture(): void
+    {
+        // UpdaterWorker parks unreachable packages at crawledAt = +7 days. The guard against selecting
+        // them used SQL NOW(), which runs on MySQL's session timezone while the column is PHP UTC, so
+        // for the width of that offset the row was re-selected every pass. The bound is the PHP clock now.
+        $parked = $this->dumpablePackage('acme/parked', dumpedAtV2: '-2 hours', dumpRequestedAt: null, crawledAt: '+1 hour');
+
+        self::assertNotContains($parked->getId(), $this->staleForDumpingSince('-1 hour'));
+        self::assertNotContains($parked->getId(), $this->staleForDumpingSince(null));
+    }
+
+    public function testStaleForUpdatingStaggersTheMonthlyCrawlPerPackage(): void
+    {
+        // A quiet package is only ever crawled by the monthly clause, so an exact anniversary re-crawled
+        // every package that had been crawled together, together, every month. The due time now carries
+        // a per-package offset: two weeks plus up to 31 days depending on the id.
+        $package = $this->hookedPackage('acme/quiet');
+        $offset = $package->getId() % PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS;
+
+        $package->setCrawledAt(new \DateTimeImmutable('-2 weeks -'.$offset.' hours +1 hour'));
+        $this->store($package);
+        self::assertNotContains($package->getId(), $this->staleForUpdating(), 'not due an hour before its own boundary');
+
+        $package->setCrawledAt(new \DateTimeImmutable('-2 weeks -'.$offset.' hours -1 hour'));
+        $this->store($package);
+        self::assertContains($package->getId(), $this->staleForUpdating(), 'due an hour past its own boundary');
+    }
+
+    public function testStaleForUpdatingNeverRecrawlsAHookedPackageWithinTwoWeeks(): void
+    {
+        $package = $this->hookedPackage('acme/fresh-hooked');
+        $package->setCrawledAt(new \DateTimeImmutable('-13 days'));
+        $this->store($package);
+
+        self::assertNotContains($package->getId(), $this->staleForUpdating());
+    }
+
+    public function testStaleForUpdatingSpreadsPackagesCrawledTogether(): void
+    {
+        $a = $this->hookedPackage('acme/twin-a');
+        $b = $this->hookedPackage('acme/twin-b');
+        $offsetA = $a->getId() % PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS;
+        $offsetB = $b->getId() % PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS;
+        self::assertNotSame($offsetA, $offsetB);
+        [$early, $late] = $offsetA < $offsetB ? [$a, $b] : [$b, $a];
+
+        // crawled at the same instant, just past the earlier of the two boundaries
+        $crawledAt = new \DateTimeImmutable('-2 weeks -'.min($offsetA, $offsetB).' hours -30 minutes');
+        $a->setCrawledAt($crawledAt);
+        $b->setCrawledAt($crawledAt);
+        $this->store($a, $b);
+
+        $stale = $this->staleForUpdating();
+        self::assertContains($early->getId(), $stale);
+        self::assertNotContains($late->getId(), $stale);
+    }
+
+    public function testStaleForUpdatingStillRecrawlsHooklessPackagesEveryTwoWeeks(): void
+    {
+        $package = self::createPackage('acme/hookless', 'https://github.com/acme/hookless');
+        $package->setCrawledAt(new \DateTimeImmutable('-15 days'));
+        $this->store($package);
+
+        self::assertContains($package->getId(), $this->staleForUpdating());
+    }
+
+    public function testStaleForUpdatingCapsTheRampBacklogOldestCrawlFirst(): void
+    {
+        $newer = $this->hookedPackageWithOffset('acme/backlog-newer', offsetHours: 24, crawledAtHoursAgo: 14 * 24 + 25);
+        $older = $this->hookedPackageWithOffset('acme/backlog-older', offsetHours: 48, crawledAtHoursAgo: 14 * 24 + 60);
+
+        $stale = $this->staleForUpdating(new \DateTimeImmutable('+1 day'), rampCap: 1);
+        self::assertContains($older, $stale);
+        self::assertNotContains($newer, $stale);
+    }
+
+    public function testStaleForUpdatingNeverCapsPackagesTheOldMonthlyRuleAlreadyDue(): void
+    {
+        $backlog = $this->hookedPackageWithOffset('acme/backlog', offsetHours: 24, crawledAtHoursAgo: 20 * 24);
+        $overdue = $this->hookedPackageWithOffset('acme/overdue', offsetHours: 24, crawledAtHoursAgo: 32 * 24);
+
+        $stale = $this->staleForUpdating(new \DateTimeImmutable('+1 day'), rampCap: 1);
+        self::assertContains($backlog, $stale);
+        self::assertContains($overdue, $stale);
+    }
+
+    public function testStaleForUpdatingDropsTheRampCapOnceExpired(): void
+    {
+        $a = $this->hookedPackageWithOffset('acme/backlog-a', offsetHours: 24, crawledAtHoursAgo: 20 * 24);
+        $b = $this->hookedPackageWithOffset('acme/backlog-b', offsetHours: 48, crawledAtHoursAgo: 20 * 24);
+
+        $stale = $this->staleForUpdating(new \DateTimeImmutable('-1 day'), rampCap: 1);
+        self::assertContains($a, $stale);
+        self::assertContains($b, $stale);
+    }
+
+    /**
+     * Rewrites the id so the stagger offset is known; auto-increment ids give arbitrary ones.
+     */
+    private function hookedPackageWithOffset(string $name, int $offsetHours, int $crawledAtHoursAgo): int
+    {
+        $package = $this->hookedPackage($name);
+        $package->setCrawledAt(new \DateTimeImmutable('-'.$crawledAtHoursAgo.' hours'));
+        $this->store($package);
+
+        $id = (intdiv($package->getId(), PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS) + 1000) * PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS + $offsetHours;
+        self::getEM()->getConnection()->executeStatement('UPDATE package SET id = :new WHERE id = :old', ['new' => $id, 'old' => $package->getId()]);
+
+        return $id;
+    }
+
+    private function hookedPackage(string $name): Package
+    {
+        $package = self::createPackage($name, 'https://github.com/'.$name);
+        $package->setAutoUpdated(Package::AUTO_GITHUB_HOOK);
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $this->store($package);
+
+        return $package;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function staleForUpdating(?\DateTimeImmutable $rampUntil = null, int $rampCap = PackageRepository::MONTHLY_CRAWL_RAMP_CAP): array
+    {
+        return array_map(static fn (array $row): int => (int) $row['id'], $this->packageRepository->getStalePackagesForUpdating($rampUntil, $rampCap));
+    }
+
+    public function testDumpRequestedAtIsIndexed(): void
+    {
+        // The bounded select ranges on dumpRequestedAt, which dumped2_requested_crawled_frozen_idx
+        // cannot lead. Guards the mapping; prod gets it from
+        // migrations/2026_09_package_dump_requested_idx.sql, which this cannot see.
+        $indexes = self::getEM()->getConnection()->createSchemaManager()->listTableIndexes('package');
+
+        $indexedColumns = array_map(static fn ($index): array => $index->getColumns(), array_values($indexes));
+
+        self::assertContains(['dumpRequestedAt'], $indexedColumns, 'package needs an index leading on dumpRequestedAt');
+    }
+
+    private function dumpablePackage(string $name, ?string $dumpedAtV2, ?string $dumpRequestedAt, ?string $crawledAt = null): Package
+    {
+        $package = self::createPackage($name, 'https://github.com/'.$name);
+        if (null !== $dumpedAtV2) {
+            $package->setDumpedAtV2(new \DateTimeImmutable($dumpedAtV2));
+        }
+        $package->setCrawledAt(null === $crawledAt ? null : new \DateTimeImmutable($crawledAt));
+        if (null !== $dumpRequestedAt) {
+            new \ReflectionProperty($package, 'dumpRequestedAt')->setValue($package, new \DateTimeImmutable($dumpRequestedAt));
+        }
+        $this->store($package);
+
+        return $package;
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function staleForDumpingSince(?string $modifier): array
+    {
+        return array_map('intval', $this->packageRepository->getStalePackagesForDumpingV2(
+            since: null === $modifier ? null : new \DateTimeImmutable($modifier),
+        ));
     }
 
     /**

@@ -253,13 +253,22 @@ class PackageManager
             $package->setUpdateFailureNotified(true);
         }
 
-        // make sure the package crawl time is updated so we avoid retrying failing packages more often than working ones
+        $this->recordFailedCrawl($package);
+
+        return true;
+    }
+
+    /**
+     * A failed crawl must still move crawledAt, or packagist:update re-selects the package on its next
+     * tick and retries it every ten minutes for as long as upstream is broken. A future-dated crawledAt
+     * (an unreachable host parked for a week) is left alone.
+     */
+    public function recordFailedCrawl(Package $package): void
+    {
         if (!$package->getCrawledAt() || $package->getCrawledAt() < new \DateTimeImmutable()) {
             $package->setCrawledAt(new \DateTimeImmutable());
         }
         $this->doctrine->getManager()->flush();
-
-        return true;
     }
 
     /**

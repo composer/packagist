@@ -40,11 +40,34 @@ class PackageRepository extends ServiceEntityRepository
     private const LISTING_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage';
 
     /**
-     * These listings sort the whole joined set before paginating, which averages ~10ms but has run
-     * for nearly 9 minutes in production on the most widely required packages. Callers degrade on
-     * the DriverException rather than let one request hold a PHP-FPM worker.
+     * The index ranges, counts and annotations on the listing path, none of which sorts anything.
+     * 3s is far above what any of them should need; it is here to stop a bad plan holding a worker,
+     * not as a budget anything is expected to spend.
      */
-    private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
+    private const LISTING_QUERY_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(3000) */';
+
+    /**
+     * The download sort filesorts the whole joined set before paginating however shallow the page,
+     * which averages ~10ms but has run for nearly 9 minutes in production, and ~3s on the largest
+     * packages cold. It gets the larger budget because giving up does not save the work: the cap is
+     * spent in full and then the caller pays for the unsorted listing on top. 5s buys the packages
+     * that sit just past 3s a correct answer for roughly what the timeout already costs them.
+     */
+    private const SORTED_LISTING_TIMEOUT_HINT = '/*+ MAX_EXECUTION_TIME(5000) */';
+
+    /** Predates every row, so an unbounded sweep needs no second query. */
+    private const DUMP_SWEEP_EPOCH = '2000-01-01 00:00:00';
+
+    /**
+     * Spread of the per-package offset on the monthly crawl, in hours (31 days). A quiet package is
+     * only ever crawled by that clause, so an exact anniversary kept packages crawled together due
+     * together, forever; the offset makes each package's period its own.
+     */
+    public const MONTHLY_CRAWL_STAGGER_HOURS = 744;
+
+    /** Temporary: caps crawls the stagger pulls ahead of the old -1 month rule. Delete after this date. */
+    public const MONTHLY_CRAWL_RAMP_UNTIL = '2026-11-01';
+    public const MONTHLY_CRAWL_RAMP_CAP = 100;
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
@@ -93,23 +116,6 @@ class PackageRepository extends ServiceEntityRepository
         }
 
         return $result;
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function getPackageNamesUpdatedSince(\DateTimeInterface $date): array
-    {
-        $query = $this->getEntityManager()
-            ->createQuery('
-                SELECT p.name FROM App\Entity\Package p
-                WHERE p.dumpedAt >= :date AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
-            ')
-            ->setParameters(['date' => $date, 'suppressed' => PackageFreezeReason::suppressingCases()]);
-
-        $names = $this->getPackageNamesForQuery($query);
-
-        return array_map('strtolower', $names);
     }
 
     /**
@@ -289,11 +295,15 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return list<array{id: int}>
      */
-    public function getStalePackagesForUpdating(): array
+    public function getStalePackagesForUpdating(?\DateTimeImmutable $rampUntil = null, int $rampCap = self::MONTHLY_CRAWL_RAMP_CAP): array
     {
         $conn = $this->getEntityManager()->getConnection();
+        $rampUntil ??= new \DateTimeImmutable(self::MONTHLY_CRAWL_RAMP_UNTIL);
+        $ramping = new \DateTimeImmutable() < $rampUntil;
+        $staggered = 'DATE_SUB(CAST(:autocrawled AS DATETIME), INTERVAL (p.id % '.self::MONTHLY_CRAWL_STAGGER_HOURS.') HOUR)';
+        $monthAgo = date('Y-m-d H:i:s', strtotime('-1month'));
 
-        return $conn->fetchAllAssociative(
+        $packages = $conn->fetchAllAssociative(
             'SELECT p.id FROM package p
             WHERE p.abandoned = false
             AND p.frozen IS NULL
@@ -301,7 +311,7 @@ class PackageRepository extends ServiceEntityRepository
                 p.crawledAt IS NULL
                 OR (p.autoUpdated = 0 AND p.crawledAt < :recent AND p.createdAt >= :yesterday)
                 OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
-                OR (p.crawledAt < :autocrawled)
+                OR (p.crawledAt < '.$staggered.' AND p.crawledAt < :uncappedBefore)
             )
             ORDER BY p.id ASC',
             [
@@ -310,49 +320,87 @@ class PackageRepository extends ServiceEntityRepository
                 'yesterday' => date('Y-m-d H:i:s', strtotime('-1day')),
                 // crawl packages without auto-update once every 2week
                 'crawled' => date('Y-m-d H:i:s', strtotime('-2week')),
-                // crawl all packages including auto-updated once a month just in case
-                'autocrawled' => date('Y-m-d H:i:s', strtotime('-1month')),
+                // crawl all packages including auto-updated about once a month just in case: two weeks
+                // plus up to 31 days depending on the id, so packages crawled together do not come due
+                // together again (an exact -1 month did, and its month-end overflow merged the cohorts)
+                'autocrawled' => date('Y-m-d H:i:s', strtotime('-2week')),
+                'uncappedBefore' => $ramping ? $monthAgo : '9999-12-31 00:00:00',
             ]
+        );
+
+        if (!$ramping) {
+            return $packages;
+        }
+
+        $backlog = $conn->fetchAllAssociative(
+            'SELECT p.id FROM package p
+            WHERE p.abandoned = false
+            AND p.frozen IS NULL
+            AND p.autoUpdated != 0
+            AND p.crawledAt >= :monthAgo
+            AND p.crawledAt < '.$staggered.'
+            ORDER BY p.crawledAt ASC
+            LIMIT '.$rampCap,
+            [
+                'monthAgo' => $monthAgo,
+                'autocrawled' => date('Y-m-d H:i:s', strtotime('-2week')),
+            ]
+        );
+
+        $ids = array_unique(array_map(static fn (array $row): int => (int) $row['id'], array_merge($packages, $backlog)));
+        sort($ids);
+
+        return array_map(static fn (int $id): array => ['id' => $id], $ids);
+    }
+
+    /**
+     * Packages whose search index entry is behind their last crawl.
+     *
+     * Bounded by $since because `indexedAt <= crawledAt` compares two columns, which no index can
+     * serve — unbounded it walks the whole table. A package only goes stale by being crawled, so
+     * the window loses nothing while the command keeps up, and the nightly --all pass catches the
+     * rest.
+     *
+     * @return list<array{id: int}>
+     */
+    public function getStalePackagesForIndexing(\DateTimeImmutable $since): array
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        return $conn->fetchAllAssociative(
+            'SELECT p.id FROM package p
+            WHERE p.indexedAt IS NULL
+               OR (p.crawledAt > :since AND p.indexedAt <= p.crawledAt)
+            ORDER BY p.id ASC',
+            ['since' => $since->format('Y-m-d H:i:s')]
         );
     }
 
     /**
-     * @return list<array{id: int}>
-     */
-    public function getStalePackagesForIndexing(): array
-    {
-        $conn = $this->getEntityManager()->getConnection();
-
-        return $conn->fetchAllAssociative('SELECT p.id FROM package p WHERE p.indexedAt IS NULL OR p.indexedAt <= p.crawledAt ORDER BY p.id ASC');
-    }
-
-    /**
      * @return list<int>
      */
-    public function getStalePackagesForDumping(): array
+    public function getStalePackagesForDumpingV2(int $workerId = 0, int $numWorkers = 1, ?\DateTimeImmutable $since = null): array
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        return $conn->fetchFirstColumn('
-            SELECT p.id
-            FROM package p
-            LEFT JOIN download d ON (d.id = p.id AND d.type = 1)
-            WHERE (p.dumpedAt IS NULL OR (p.dumpedAt <= p.crawledAt AND p.crawledAt < NOW()))
-            AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
-            AND (d.total > 1000 OR d.lastUpdated > :date)
-            ORDER BY p.crawledAt ASC
-        ', ['date' => date('Y-m-d H:i:s', strtotime('-4months')), 'suppressed' => PackageFreezeReason::suppressingValues()], ['suppressed' => ArrayParameterType::STRING]);
-    }
-
-    /**
-     * @return list<int>
-     */
-    public function getStalePackagesForDumpingV2(int $workerId = 0, int $numWorkers = 1): array
-    {
-        $conn = $this->getEntityManager()->getConnection();
-
-        $sql = 'SELECT p.id FROM package p USE INDEX (dumped2_crawled_frozen_idx) WHERE (p.dumpedAtV2 IS NULL OR (p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < NOW())) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
-        $params = ['suppressed' => PackageFreezeReason::suppressingValues()];
+        // The >= is deliberate: both columns hold whole seconds, so a request landing in the same second
+        // as the dump is ambiguous and must count as stale — a redundant pass only costs a content
+        // comparison, a missed one is a lost change.
+        // The crawledAt clause is a transitional safety net, droppable once
+        // metadata_dump.file{result:written, requested:false} sits at ~0 outside --force runs.
+        // Both staleness clauses compare column to column, so neither can be seeked; $since is the
+        // bound that can be, since a package only goes stale by being marked or crawled. Unbounded
+        // this scanned the index instead, 468,848 rows a call, every two seconds per worker.
+        // dumpedAtV2 IS NULL stays outside the window: a forceDump() must be found however stale.
+        // :now is the PHP clock dumpedAtV2 is written with; SQL NOW() runs on MySQL's session timezone,
+        // which re-selected the updater's +7 days crawledAt rows every pass for the width of the offset.
+        // Oldest first so that the caller's backlog cap drops the rows with the most window left.
+        $sql = 'SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpRequestedAt > :since AND p.dumpRequestedAt >= p.dumpedAtV2) OR (p.crawledAt > :since AND p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < :now)) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
+        $params = [
+            'suppressed' => PackageFreezeReason::suppressingValues(),
+            'since' => ($since ?? new \DateTimeImmutable(self::DUMP_SWEEP_EPOCH))->format('Y-m-d H:i:s'),
+            'now' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+        ];
         $types = ['suppressed' => ArrayParameterType::STRING];
 
         if ($numWorkers > 1) {
@@ -360,6 +408,8 @@ class PackageRepository extends ServiceEntityRepository
             $params['numWorkers'] = $numWorkers;
             $params['workerId'] = $workerId;
         }
+
+        $sql .= ' ORDER BY COALESCE(p.dumpRequestedAt, p.crawledAt) ASC, p.id ASC';
 
         return $conn->fetchFirstColumn($sql, $params, $types);
     }
@@ -665,40 +715,53 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @param string             $name    Package name to find the dependents of
-     * @param int|null           $type    One of Dependent::TYPE_*
-     * @param 'downloads'|'name' $orderBy
+     * @param string                  $name    Package name to find the dependents of
+     * @param int|null                $type    One of Dependent::TYPE_*
+     * @param 'downloads'|'name'|null $orderBy null skips the sort, for when ordering the whole set
+     *                                         exceeds the statement timeout. The download join goes
+     *                                         with it, as it only exists to sort on.
      *
-     * @return list<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
+     * @return list<array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
      */
-    public function getDependents(string $name, int $offset = 0, int $limit = 15, string $orderBy = 'name', ?int $type = null): array
+    public function getDependents(string $name, int $offset = 0, int $limit = 15, ?string $orderBy = 'name', ?int $type = null): array
     {
-        $orderByField = 'p.name ASC';
         $join = '';
+        $orderByClause = '';
         if ($orderBy === 'downloads') {
-            $orderByField = 'd.total DESC';
             $join = 'LEFT JOIN download d ON d.id = p.id AND d.type = '.Download::TYPE_PACKAGE;
-        } else {
-            $orderBy = 'name';
+            $orderByClause = ' ORDER BY d.total DESC';
+        } elseif (null !== $orderBy) {
+            $orderByClause = ' ORDER BY p.name ASC';
         }
 
-        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
+        $args = ['name' => $name];
         $typeFilter = '';
         if (null !== $type) {
             $typeFilter = ' AND type = :type';
             $args['type'] = $type;
         }
 
-        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::SORTED_LISTING_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$typeFilter.'
             ) x ON x.package_id = p.id '.$join.'
-            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
-            ORDER BY '.$orderByField.' LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+            '.$orderByClause.'
+            LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
+
+        $suppressed = PackageFreezeReason::suppressingValues();
 
         $res = [];
-        /** @var array{id: int, name: string, description: string|null, language: string|null, abandoned: bool, replacementPackage: string|null} $row */
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
+        /** @var array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: bool, replacementPackage: string|null, frozen: string|null} $row */
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
+            // dropped here rather than by a WHERE clause: the OR/NOT IN on a nullable column is not
+            // sargable and cost the optimizer its index-ordered plan, taking this query from 141
+            // rows examined per call to 28k and spilling the sort to disk. The count does not filter
+            // them either, so a page can come back short and the pager run a few entries high.
+            if (\in_array($row['frozen'], $suppressed, true)) {
+                continue;
+            }
+            unset($row['frozen']);
+
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 
@@ -706,21 +769,92 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
+     * The unsorted listing: dependents in package_id order, which is whatever order by_name_package
+     * already holds them in, so nothing has to be sorted at any depth.
+     *
+     * The ordering listings do by p.name or d.total lives on the joined package, so the whole set
+     * has to be materialised and filesorted before a page can be taken off it - 105,878 rows and
+     * ~3s on illuminate/support, and the same work for page 1 as for page 500. Here the limit is
+     * pushed into the index scan instead: the derived table is a range over
+     * (packageName, package_id, type), stops at $limit, and only then joins package by primary key.
+     *
+     * DISTINCT because a package requiring the same name in both require and require-dev has two
+     * rows; the index puts them next to each other so collapsing them costs nothing.
+     *
+     * @param int|null $afterId Seek past this package id, for cursor paging. Mutually exclusive
+     *                          with $offset, which is what the numbered html pager uses.
+     * @param int|null $type    One of Dependent::TYPE_*
+     *
+     * @return array{packages: list<array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>, cursor: int|null}
+     */
+    public function getDependentsUnsorted(string $name, ?int $afterId = null, int $offset = 0, int $limit = 100, ?int $type = null): array
+    {
+        $args = ['name' => $name];
+        $filter = '';
+        if (null !== $type) {
+            $filter .= ' AND type = :type';
+            $args['type'] = $type;
+        }
+        if (null !== $afterId) {
+            $filter .= ' AND package_id > :afterId';
+            $args['afterId'] = $afterId;
+        }
+
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
+            FROM package p INNER JOIN (
+                SELECT DISTINCT package_id FROM dependent WHERE packageName = :name'.$filter.'
+                ORDER BY package_id ASC
+                LIMIT '.((int) $limit).' OFFSET '.((int) $offset).'
+            ) x ON x.package_id = p.id
+            ORDER BY x.package_id ASC';
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args);
+
+        $suppressed = PackageFreezeReason::suppressingValues();
+        $packages = [];
+        $lastFetched = null;
+        /** @var array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: bool, replacementPackage: string|null, frozen: string|null} $row */
+        foreach ($rows as $row) {
+            // the cursor tracks every row fetched, not every row kept: a page made entirely of
+            // suppressed packages still has to advance or a client asks for it forever
+            $lastFetched = (int) $row['id'];
+
+            // see getDependents() for why these are dropped here rather than in SQL
+            if (\in_array($row['frozen'], $suppressed, true)) {
+                continue;
+            }
+            unset($row['frozen']);
+
+            $packages[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
+        }
+
+        return [
+            'packages' => $packages,
+            // a short page is the end of the set, so there is nothing further to ask for
+            'cursor' => \count($rows) === $limit ? $lastFetched : null,
+        ];
+    }
+
+    /**
+     * Bounded like the listing it annotates: it runs once per listing page with one name per row,
+     * so left unbounded it hands back the worker occupancy the listing's own cap buys. The caller
+     * drops the annotation on a timeout rather than failing the page.
+     *
      * @param list<string> $requirers
      *
      * @return array<string, string|null> array keyed by requirer name and the value is requirement or null if not found
      */
     public function getDefaultBranchRequireFor(array $requirers, string $requiree): array
     {
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.name, COALESCE(lr.packageVersion, lrd.packageVersion, NULL) AS requirement
+            FROM package p
+            LEFT JOIN package_version pv ON pv.package_id = p.id AND pv.defaultBranch = 1
+            LEFT JOIN link_require lr ON lr.version_id = pv.id AND lr.packageName = :requiree
+            LEFT JOIN link_require_dev lrd ON lrd.version_id = pv.id AND lrd.packageName = :requiree
+            WHERE p.name IN (:requirers)';
+
         $requires = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            <<<'SQL'
-                SELECT p.name, COALESCE(lr.packageVersion, lrd.packageVersion, NULL) AS requirement
-                FROM package p
-                LEFT JOIN package_version pv ON pv.package_id = p.id AND pv.defaultBranch = 1
-                LEFT JOIN link_require lr ON lr.version_id = pv.id AND lr.packageName = :requiree
-                LEFT JOIN link_require_dev lrd ON lrd.version_id = pv.id AND lrd.packageName = :requiree
-                WHERE p.name IN (:requirers)
-                SQL,
+            $sql,
             ['requiree' => $requiree, 'requirers' => $requirers],
             ['requirers' => ArrayParameterType::STRING],
         );
@@ -790,21 +924,28 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<array{id: int, name: string, description: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
+     * @return array<array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: int, replacementPackage: string|null}>
      */
     public function getSuggests(string $name, int $offset = 0, int $limit = 15): array
     {
-        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.language, p.abandoned, p.replacementPackage
+        $sql = 'SELECT '.self::LISTING_QUERY_TIMEOUT_HINT.' p.id, p.name, p.description, p.type, p.language, p.abandoned, p.replacementPackage, p.frozen
             FROM package p INNER JOIN (
                 SELECT DISTINCT package_id FROM suggester WHERE packageName = :name
             ) x ON x.package_id = p.id
-            WHERE (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))
             ORDER BY p.name ASC LIMIT '.((int) $limit).' OFFSET '.((int) $offset);
 
-        $args = ['name' => $name, 'suppressed' => PackageFreezeReason::suppressingValues()];
+        $args = ['name' => $name];
+        $suppressed = PackageFreezeReason::suppressingValues();
 
         $res = [];
-        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args, ['suppressed' => ArrayParameterType::STRING]) as $row) {
+        /** @var array{id: int, name: string, description: string|null, type: string|null, language: string|null, abandoned: bool, replacementPackage: string|null, frozen: string|null} $row */
+        foreach ($this->getEntityManager()->getConnection()->fetchAllAssociative($sql, $args) as $row) {
+            // suppressed rows are dropped here rather than in SQL, see getDependents()
+            if (\in_array($row['frozen'], $suppressed, true)) {
+                continue;
+            }
+            unset($row['frozen']);
+
             $res[] = ['id' => (int) $row['id'], 'abandoned' => (int) $row['abandoned']] + $row;
         }
 

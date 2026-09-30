@@ -19,8 +19,6 @@ use Predis\Client;
 
 class ProviderManager
 {
-    protected bool $initializedProviders = false;
-
     public function __construct(private Client $redis, private PackageRepository $repo, private PackageListCache $listCache)
     {
     }
@@ -57,13 +55,6 @@ class ProviderManager
 
     public function packageIsProvided(string $name): bool
     {
-        if (false === $this->initializedProviders) {
-            if (!$this->redis->scard('set:providers')) {
-                $this->populateProviders();
-            }
-            $this->initializedProviders = true;
-        }
-
         return (bool) $this->redis->sismember('set:providers', strtolower($name));
     }
 
@@ -99,50 +90,59 @@ class ProviderManager
     }
 
     /**
-     * Swaps in a set rebuilt from the DB, to reset any drift accumulated by writes that bypassed
-     * insertPackage()/deletePackage(). Swapped atomically so packageExists() never observes a
-     * partial set, and so getPackageNames()'s scard() guard cannot be tripped into a full DB
-     * repopulate by a momentarily missing key.
+     * Resets the drift accumulated by writes that bypassed insertPackage()/deletePackage().
      *
      * @param string[] $names
      */
     public function rebuildPackageSet(array $names): void
     {
-        // never let a failed query wipe the set every packageExists() check reads
+        $this->swapSet('set:packages', $names);
+    }
+
+    /**
+     * Rebuilt by cron rather than lazily behind a TTL: getProvidedNames() runs long enough that
+     * every request arriving while it ran started its own copy, 533k executions over five months
+     * where 24 a day would have done. Nothing on a page render can reach the query now.
+     *
+     * @param string[] $names
+     */
+    public function rebuildProviderSet(array $names): void
+    {
+        $this->swapSet('set:providers', $names);
+    }
+
+    /**
+     * Swapped rather than written in place so no reader observes a partial set, and so the scard()
+     * guards that fall back to the DB cannot be tripped by a momentarily missing key.
+     *
+     * @param string[] $names
+     */
+    private function swapSet(string $key, array $names): void
+    {
+        // never let a failed query wipe the set every lookup reads
         if (\count($names) === 0) {
-            throw new \RuntimeException('Refusing to rebuild set:packages from an empty name list');
+            throw new \RuntimeException('Refusing to rebuild '.$key.' from an empty name list');
         }
 
-        $this->redis->del('set:packages:new');
+        $this->redis->del($key.':new');
         while ($names) {
             $nameSlice = array_splice($names, 0, 1000);
-            $this->redis->sadd('set:packages:new', $nameSlice);
+            $this->redis->sadd($key.':new', $nameSlice);
         }
 
-        if (!(bool) $this->redis->exists('set:packages')) {
-            $this->redis->rename('set:packages:new', 'set:packages');
+        if (!(bool) $this->redis->exists($key)) {
+            $this->redis->rename($key.':new', $key);
 
             return;
         }
 
-        $this->redis->transaction(static function ($tx): void {
-            $tx->rename('set:packages', 'set:packages:old');
-            $tx->rename('set:packages:new', 'set:packages');
+        $this->redis->transaction(static function ($tx) use ($key): void {
+            $tx->rename($key, $key.':old');
+            $tx->rename($key.':new', $key);
         });
 
         // UNLINK frees the old members on a background thread; DEL, or RENAME's implicit
         // overwrite, would free them inline and stall the event loop
-        $this->redis->unlink('set:packages:old');
-    }
-
-    private function populateProviders(): void
-    {
-        $names = $this->repo->getProvidedNames();
-        while ($names) {
-            $nameSlice = array_splice($names, 0, 1000);
-            $this->redis->sadd('set:providers', $nameSlice);
-        }
-
-        $this->redis->expire('set:providers', 3600);
+        $this->redis->unlink($key.':old');
     }
 }

@@ -19,6 +19,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'link_provide')]
+#[ORM\Index(name: 'link_provide_name_idx', columns: ['packageName'])]
 class ProvideLink extends PackageLink
 {
     #[ORM\ManyToOne(targetEntity: 'App\Entity\Version', inversedBy: 'provide')]

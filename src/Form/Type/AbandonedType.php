@@ -15,6 +15,7 @@ namespace App\Form\Type;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Validator\Constraints\Length;
 
 /**
  * Class AbandonedType
@@ -34,6 +35,9 @@ class AbandonedType extends AbstractType
                 'required' => false,
                 'label' => 'Replacement package',
                 'attr' => ['placeholder' => 'optional package name'],
+                // Package::$replacementPackage is a 255 char column, so anything longer would fail the
+                // flush with a 500 instead of showing the user what is wrong
+                'constraints' => [new Length(max: 255)],
             ]
         );
     }

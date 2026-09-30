@@ -14,11 +14,11 @@ namespace App\Support;
 
 use App\Log\AuditLogEventType;
 use App\Entity\AuditRecord;
+use App\Entity\AuditRecordRepository;
 use App\Entity\OrganizationMemberRepository;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Model\DownloadManager;
-use Doctrine\ORM\EntityManagerInterface;
 use Predis\PredisException;
 
 /**
@@ -41,9 +41,14 @@ class SupportRiskAssessor
     /** A password or email change this recently means an attacker may already hold the account. */
     public const int RECENT_CREDENTIAL_CHANGE_DAYS = 7;
 
+    /** How far back the account history shown next to the approve button reaches. */
+    public const int SECURITY_EVENT_WINDOW_DAYS = 90;
+
+    public const int MAX_SECURITY_EVENTS = 25;
+
     public function __construct(
         private readonly DownloadManager $downloadManager,
-        private readonly EntityManagerInterface $em,
+        private readonly AuditRecordRepository $auditRecords,
         private readonly OrganizationMemberRepository $orgMembers,
     ) {
     }
@@ -126,16 +131,14 @@ class SupportRiskAssessor
 
     /**
      * When 2FA was last switched on. An authenticator "lost" days after it was set up is a very
-     * different story from one lost after two years.
+     * different story from one lost after two years. Unknown if it was enabled under a previous
+     * username, see {@see AuditRecordRepository::findForUser()}.
      */
     private function twoFactorEnabledAt(User $user): ?\DateTimeImmutable
     {
-        $record = $this->em->getRepository(AuditRecord::class)->findOneBy(
-            ['type' => AuditLogEventType::TwoFaAuthenticationActivated->value, 'userId' => $user->getId()],
-            ['datetime' => 'DESC'],
-        );
+        $records = $this->auditRecords->findForUser($user, [AuditLogEventType::TwoFaAuthenticationActivated], limit: 1);
 
-        return $record?->datetime;
+        return $records[0]->datetime ?? null;
     }
 
     /**
@@ -143,20 +146,12 @@ class SupportRiskAssessor
      */
     private function recentSecurityEvents(User $user): array
     {
-        /** @var list<AuditRecord> $records */
-        $records = $this->em->getRepository(AuditRecord::class)->createQueryBuilder('a')
-            ->where('a.userId = :userId')
-            ->andWhere('a.type IN (:types)')
-            ->andWhere('a.datetime > :since')
-            ->setParameter('userId', $user->getId())
-            ->setParameter('types', array_map(static fn (AuditLogEventType $t): string => $t->value, self::securityEventTypes()))
-            ->setParameter('since', new \DateTimeImmutable('-90 days'))
-            ->orderBy('a.datetime', 'DESC')
-            ->setMaxResults(25)
-            ->getQuery()
-            ->getResult();
-
-        return $records;
+        return $this->auditRecords->findForUser(
+            $user,
+            self::securityEventTypes(),
+            new \DateTimeImmutable('-'.self::SECURITY_EVENT_WINDOW_DAYS.' days'),
+            self::MAX_SECURITY_EVENTS,
+        );
     }
 
     /**

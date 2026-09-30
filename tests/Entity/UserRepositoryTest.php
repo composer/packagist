@@ -28,6 +28,18 @@ class UserRepositoryTest extends IntegrationTestCase
         $this->userRepository = self::getEM()->getRepository(User::class);
     }
 
+    public function testGitHubIdIsIndexed(): void
+    {
+        // findOneBy(['githubId' => ...]) runs on every GitHub login and had no index to use, so it
+        // read all 875,663 rows of fos_user every time. This guards the mapping; putting it on prod
+        // is migrations/2026_09_user_github_id_idx.sql, which this cannot see.
+        $indexes = self::getEM()->getConnection()->createSchemaManager()->listTableIndexes('fos_user');
+
+        $indexedColumns = array_map(static fn ($index): array => $index->getColumns(), array_values($indexes));
+
+        self::assertContains(['githubId'], $indexedColumns, 'fos_user needs an index on githubId');
+    }
+
     public function testGetUsersQueryBuilderIncludesPackageCount(): void
     {
         $maintainer = self::createUser('withpkgs', 'withpkgs@example.org');
