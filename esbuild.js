@@ -18,7 +18,7 @@
             '.woff':'file',
             '.woff2':'file',
         },
-        target: ['chrome58', 'firefox57', 'safari11', 'edge95'],
+        target: ['chrome63', 'firefox57', 'safari12', 'edge95'],
         plugins: [sassPlugin()],
     })
 
