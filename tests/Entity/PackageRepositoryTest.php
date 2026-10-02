@@ -726,51 +726,6 @@ class PackageRepositoryTest extends IntegrationTestCase
         self::assertContains($package->getId(), $this->staleForUpdating());
     }
 
-    public function testStaleForUpdatingCapsTheRampBacklogOldestCrawlFirst(): void
-    {
-        $newer = $this->hookedPackageWithOffset('acme/backlog-newer', offsetHours: 24, crawledAtHoursAgo: 14 * 24 + 25);
-        $older = $this->hookedPackageWithOffset('acme/backlog-older', offsetHours: 48, crawledAtHoursAgo: 14 * 24 + 60);
-
-        $stale = $this->staleForUpdating(new \DateTimeImmutable('+1 day'), rampCap: 1);
-        self::assertContains($older, $stale);
-        self::assertNotContains($newer, $stale);
-    }
-
-    public function testStaleForUpdatingNeverCapsPackagesTheOldMonthlyRuleAlreadyDue(): void
-    {
-        $backlog = $this->hookedPackageWithOffset('acme/backlog', offsetHours: 24, crawledAtHoursAgo: 20 * 24);
-        $overdue = $this->hookedPackageWithOffset('acme/overdue', offsetHours: 24, crawledAtHoursAgo: 32 * 24);
-
-        $stale = $this->staleForUpdating(new \DateTimeImmutable('+1 day'), rampCap: 1);
-        self::assertContains($backlog, $stale);
-        self::assertContains($overdue, $stale);
-    }
-
-    public function testStaleForUpdatingDropsTheRampCapOnceExpired(): void
-    {
-        $a = $this->hookedPackageWithOffset('acme/backlog-a', offsetHours: 24, crawledAtHoursAgo: 20 * 24);
-        $b = $this->hookedPackageWithOffset('acme/backlog-b', offsetHours: 48, crawledAtHoursAgo: 20 * 24);
-
-        $stale = $this->staleForUpdating(new \DateTimeImmutable('-1 day'), rampCap: 1);
-        self::assertContains($a, $stale);
-        self::assertContains($b, $stale);
-    }
-
-    /**
-     * Rewrites the id so the stagger offset is known; auto-increment ids give arbitrary ones.
-     */
-    private function hookedPackageWithOffset(string $name, int $offsetHours, int $crawledAtHoursAgo): int
-    {
-        $package = $this->hookedPackage($name);
-        $package->setCrawledAt(new \DateTimeImmutable('-'.$crawledAtHoursAgo.' hours'));
-        $this->store($package);
-
-        $id = (intdiv($package->getId(), PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS) + 1000) * PackageRepository::MONTHLY_CRAWL_STAGGER_HOURS + $offsetHours;
-        self::getEM()->getConnection()->executeStatement('UPDATE package SET id = :new WHERE id = :old', ['new' => $id, 'old' => $package->getId()]);
-
-        return $id;
-    }
-
     private function hookedPackage(string $name): Package
     {
         $package = self::createPackage($name, 'https://github.com/'.$name);
@@ -784,9 +739,9 @@ class PackageRepositoryTest extends IntegrationTestCase
     /**
      * @return list<int>
      */
-    private function staleForUpdating(?\DateTimeImmutable $rampUntil = null, int $rampCap = PackageRepository::MONTHLY_CRAWL_RAMP_CAP): array
+    private function staleForUpdating(): array
     {
-        return array_map(static fn (array $row): int => (int) $row['id'], $this->packageRepository->getStalePackagesForUpdating($rampUntil, $rampCap));
+        return array_map(static fn (array $row): int => (int) $row['id'], $this->packageRepository->getStalePackagesForUpdating());
     }
 
     public function testDumpRequestedAtIsIndexed(): void
