@@ -18,53 +18,9 @@ use App\Entity\User;
 use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
 use App\Log\AuditLogEventType;
-use App\Log\Display\Event\CanonicalUrlChangedDisplay;
-use App\Log\Display\Event\EmailChangedDisplay;
-use App\Log\Display\Event\FilterListEntryAddedDisplay;
-use App\Log\Display\Event\FilterListEntryDeletedDisplay;
-use App\Log\Display\Event\FilterListEntryDisabledDisplay;
-use App\Log\Display\Event\FilterListEntryEditedDisplay;
-use App\Log\Display\Event\FilterListEntryEnabledDisplay;
-use App\Log\Display\Event\GenericUserDisplay;
-use App\Log\Display\Event\GitHubLinkedWithUserDisplay;
-use App\Log\Display\Event\MaintainerAddedDisplay;
-use App\Log\Display\Event\MaintainerRemovedDisplay;
-use App\Log\Display\Event\OrganizationCreatedDisplay;
-use App\Log\Display\Event\OrganizationInvitationDisplay;
-use App\Log\Display\Event\OrganizationMemberJoinedDisplay;
-use App\Log\Display\Event\OrganizationMemberLeftDisplay;
-use App\Log\Display\Event\OrganizationMemberRemovedDisplay;
-use App\Log\Display\Event\OrganizationNameChangedDisplay;
-use App\Log\Display\Event\OrganizationSlugChangedDisplay;
-use App\Log\Display\Event\OrganizationTeamCreatedDisplay;
-use App\Log\Display\Event\OrganizationTeamDeletedDisplay;
-use App\Log\Display\Event\OrganizationTeamMemberAddedDisplay;
-use App\Log\Display\Event\OrganizationTeamMemberRemovedDisplay;
-use App\Log\Display\Event\OrganizationTeamRenamedDisplay;
-use App\Log\Display\Event\PackageAbandonedDisplay;
-use App\Log\Display\Event\PackageCreatedDisplay;
-use App\Log\Display\Event\PackageDeletedDisplay;
-use App\Log\Display\Event\PackageFrozenDisplay;
-use App\Log\Display\Event\PackageTransferredDisplay;
-use App\Log\Display\Event\PackageUnabandonedDisplay;
-use App\Log\Display\Event\PackageUnfrozenDisplay;
-use App\Log\Display\Event\SecurityAdvisoryCreatedDisplay;
-use App\Log\Display\Event\SecurityAdvisoryEditedDisplay;
-use App\Log\Display\Event\SecurityAdvisoryWithdrawnDisplay;
-use App\Log\Display\Event\TwoFaDeactivatedDisplay;
-use App\Log\Display\Event\UserCreatedDisplay;
-use App\Log\Display\Event\UserDeletedDisplay;
-use App\Log\Display\Event\UserFreezeDisplay;
-use App\Log\Display\Event\UsernameChangedDisplay;
-use App\Log\Display\Event\UserVerifiedDisplay;
-use App\Log\Display\Event\VersionCreatedDisplay;
-use App\Log\Display\Event\VersionDeletedDisplay;
-use App\Log\Display\Event\VersionRecoveredDisplay;
-use App\Log\Display\Event\VersionReferenceChangeBlockedDisplay;
-use App\Log\Display\Event\VersionSoftDeletedDisplay;
 use Symfony\Bundle\SecurityBundle\Security;
 
-class AuditLogDisplayFactory
+class AuditLogDisplayFactory extends AbstractLogDisplayFactory
 {
     public function __construct(
         private readonly Security $security,
@@ -93,21 +49,16 @@ class AuditLogDisplayFactory
     public function buildSingle(AuditRecord $record, bool $revealEmails = false): LogDisplayInterface
     {
         return match ($record->type) {
-            AuditLogEventType::MaintainerAdded => new MaintainerAddedDisplay(
+            AuditLogEventType::MaintainerAdded, AuditLogEventType::MaintainerRemoved => new Event\MaintainerChangeDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $this->buildActor($record->attributes['user']),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::MaintainerRemoved => new MaintainerRemovedDisplay(
-                $record->datetime,
-                $record->attributes['name'],
-                $this->buildActor($record->attributes['user']),
-                $this->buildActor($record->attributes['actor']),
-                $record->ip,
-            ),
-            AuditLogEventType::PackageTransferred => new PackageTransferredDisplay(
+            AuditLogEventType::PackageTransferred => new Event\PackageTransferredDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['previous_maintainers'],
@@ -115,7 +66,8 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::PackageCreated => new PackageCreatedDisplay(
+            AuditLogEventType::PackageCreated, AuditLogEventType::PackageUnabandoned, AuditLogEventType::PackageUnfrozen => new Event\PackageWithRepositoryDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['repository'],
@@ -124,16 +76,18 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::PackageDeleted => new PackageDeletedDisplay(
+            AuditLogEventType::PackageDeleted => new Event\PackageDeletedDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['repository'],
                 $record->attributes['reason'] ?? null,
-                $this->internalReason($record->attributes['internalReason'] ?? null),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
+                $this->internalReason($record->attributes['internalReason'] ?? null),
             ),
-            AuditLogEventType::CanonicalUrlChanged => new CanonicalUrlChangedDisplay(
+            AuditLogEventType::CanonicalUrlChanged => new Event\CanonicalUrlChangedDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['repository_from'],
@@ -141,7 +95,8 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::VersionCreated => new VersionCreatedDisplay(
+            AuditLogEventType::VersionCreated => new Event\VersionCreatedDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['version'],
@@ -149,8 +104,10 @@ class AuditLogDisplayFactory
                 $record->attributes['metadata']['dist']['reference'] ?? null,
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
+                $record->attributes['metadata']['dist']['shasum'] ?? null,
             ),
-            AuditLogEventType::PackageAbandoned => new PackageAbandonedDisplay(
+            AuditLogEventType::PackageAbandoned => new Event\PackageAbandonedDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['repository'],
@@ -159,14 +116,8 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::PackageUnabandoned => new PackageUnabandonedDisplay(
-                $record->datetime,
-                $record->attributes['name'],
-                $record->attributes['repository'],
-                $this->buildActor($record->attributes['actor']),
-                $record->ip,
-            ),
-            AuditLogEventType::PackageFrozen => new PackageFrozenDisplay(
+            AuditLogEventType::PackageFrozen => new Event\PackageFrozenDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['repository'],
@@ -174,21 +125,15 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::PackageUnfrozen => new PackageUnfrozenDisplay(
-                $record->datetime,
-                $record->attributes['name'],
-                $record->attributes['repository'],
-                $this->buildActor($record->attributes['actor']),
-                $record->ip,
-            ),
-            AuditLogEventType::VersionDeleted => new VersionDeletedDisplay(
+            AuditLogEventType::VersionDeleted => new Event\VersionDeletedDisplay(
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['version'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::VersionReferenceChangeBlocked => new VersionReferenceChangeBlockedDisplay(
+            AuditLogEventType::VersionReferenceChangeBlocked => new Event\VersionReferenceChangeBlockedDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['version'],
@@ -197,17 +142,19 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip,
             ),
-            AuditLogEventType::VersionSoftDeleted => new VersionSoftDeletedDisplay(
+            AuditLogEventType::VersionSoftDeleted => new Event\VersionSoftDeletedDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['version'],
                 $record->attributes['reason'],
                 $record->attributes['reasonText'] ?? null,
-                $this->internalReason($record->attributes['internalReasonText'] ?? null),
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip,
+                $this->internalReason($record->attributes['internalReasonText'] ?? null),
             ),
-            AuditLogEventType::VersionRecovered => new VersionRecoveredDisplay(
+            AuditLogEventType::VersionRecovered => new Event\VersionRecoveredDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['version'],
@@ -215,48 +162,48 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip,
             ),
-            AuditLogEventType::UserCreated => new UserCreatedDisplay(
+            AuditLogEventType::UserCreated => new Event\UserCreatedDisplay(
                 $record->datetime,
                 $record->attributes['user']['username'],
                 UserRegistrationMethod::from($record->attributes['method']),
                 $this->buildActor('self'),
                 $record->ip,
             ),
-            AuditLogEventType::TwoFaAuthenticationActivated => new GenericUserDisplay(
+            AuditLogEventType::TwoFactorAuthenticationActivated => new Event\GenericUserDisplay(
                 $record->type,
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::TwoFaAuthenticationDeactivated => new TwoFaDeactivatedDisplay(
+            AuditLogEventType::TwoFactorAuthenticationDeactivated => new Event\TwoFaDeactivatedDisplay(
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $record->attributes['reason'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::PasswordResetRequested, AuditLogEventType::PasswordReset, AuditLogEventType::PasswordChanged => new GenericUserDisplay(
+            AuditLogEventType::PasswordResetRequested, AuditLogEventType::PasswordReset, AuditLogEventType::PasswordChanged => new Event\GenericUserDisplay(
                 $record->type,
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::UserVerified => new UserVerifiedDisplay(
+            AuditLogEventType::UserVerified => new Event\UserVerifiedDisplay(
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $this->obfuscateEmail($record->attributes['email'], $record->attributes['user']['id']),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::UserDeleted => new UserDeletedDisplay(
+            AuditLogEventType::UserDeleted => new Event\UserDeletedDisplay(
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::UserFrozen => new UserFreezeDisplay(
+            AuditLogEventType::UserFrozen => new Event\UserFreezeDisplay(
                 $record->type,
                 $record->datetime,
                 $record->attributes['user']['username'],
@@ -266,7 +213,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::UserUnfrozen => new UserFreezeDisplay(
+            AuditLogEventType::UserUnfrozen => new Event\UserFreezeDisplay(
                 $record->type,
                 $record->datetime,
                 $record->attributes['user']['username'],
@@ -276,14 +223,14 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::UsernameChanged => new UsernameChangedDisplay(
+            AuditLogEventType::UsernameChanged => new Event\UsernameChangedDisplay(
                 $record->datetime,
                 $record->attributes['username_from'],
                 $record->attributes['username_to'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::EmailChanged => new EmailChangedDisplay(
+            AuditLogEventType::EmailChanged => new Event\EmailChangedDisplay(
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $this->obfuscateEmail($record->attributes['email_from'], $record->attributes['user']['id'] ?? null),
@@ -291,7 +238,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::GitHubLinkedWithUser => new GitHubLinkedWithUserDisplay(
+            AuditLogEventType::GitHubLinkedWithUser => new Event\GitHubLinkedWithUserDisplay(
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $record->attributes['github_username'],
@@ -299,14 +246,14 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::GitHubDisconnectedFromUser => new GenericUserDisplay(
+            AuditLogEventType::GitHubDisconnectedFromUser => new Event\GenericUserDisplay(
                 $record->type,
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::FilterListEntryAdded => new FilterListEntryAddedDisplay(
+            AuditLogEventType::FilterListEntryAdded => new Event\FilterListEntryAddedDisplay(
                 $record->datetime,
                 $record->attributes['entry']['package_name'],
                 $record->attributes['entry']['version'],
@@ -316,7 +263,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
-            AuditLogEventType::FilterListEntryDeleted => new FilterListEntryDeletedDisplay(
+            AuditLogEventType::FilterListEntryDeleted => new Event\FilterListEntryDeletedDisplay(
                 $record->datetime,
                 $record->attributes['entry']['package_name'],
                 $record->attributes['entry']['version'],
@@ -326,7 +273,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
-            AuditLogEventType::SecurityAdvisoryCreated => new SecurityAdvisoryCreatedDisplay(
+            AuditLogEventType::SecurityAdvisoryCreated => new Event\SecurityAdvisoryCreatedDisplay(
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['advisoryId'],
@@ -336,7 +283,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip,
             ),
-            AuditLogEventType::SecurityAdvisoryEdited => new SecurityAdvisoryEditedDisplay(
+            AuditLogEventType::SecurityAdvisoryEdited => new Event\SecurityAdvisoryEditedDisplay(
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['advisoryId'],
@@ -347,7 +294,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip,
             ),
-            AuditLogEventType::SecurityAdvisoryWithdrawn => new SecurityAdvisoryWithdrawnDisplay(
+            AuditLogEventType::SecurityAdvisoryWithdrawn => new Event\SecurityAdvisoryWithdrawnDisplay(
                 $record->datetime,
                 $record->attributes['name'],
                 $record->attributes['advisoryId'],
@@ -357,13 +304,13 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip,
             ),
-            AuditLogEventType::OrganizationCreated => new OrganizationCreatedDisplay(
+            AuditLogEventType::OrganizationCreated => new Event\OrganizationCreatedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::FilterListEntryDisabled => new FilterListEntryDisabledDisplay(
+            AuditLogEventType::FilterListEntryDisabled => new Event\FilterListEntryDisabledDisplay(
                 $record->datetime,
                 $record->attributes['entry']['package_name'],
                 $record->attributes['entry']['version'],
@@ -373,7 +320,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
-            AuditLogEventType::FilterListEntryEnabled => new FilterListEntryEnabledDisplay(
+            AuditLogEventType::FilterListEntryEnabled => new Event\FilterListEntryEnabledDisplay(
                 $record->datetime,
                 $record->attributes['entry']['package_name'],
                 $record->attributes['entry']['version'],
@@ -383,7 +330,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
-            AuditLogEventType::FilterListEntryEdited => new FilterListEntryEditedDisplay(
+            AuditLogEventType::FilterListEntryEdited => new Event\FilterListEntryEditedDisplay(
                 $record->datetime,
                 $record->attributes['entry']['package_name'],
                 $record->attributes['entry']['version'],
@@ -400,7 +347,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor'] ?? null),
                 $record->ip
             ),
-            AuditLogEventType::OrganizationNameChanged => new OrganizationNameChangedDisplay(
+            AuditLogEventType::OrganizationNameChanged => new Event\OrganizationNameChangedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $record->attributes['org_name_from'],
@@ -408,7 +355,7 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::OrganizationSlugChanged => new OrganizationSlugChangedDisplay(
+            AuditLogEventType::OrganizationSlugChanged => new Event\OrganizationSlugChangedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $record->attributes['org_slug_from'],
@@ -416,14 +363,14 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::OrganizationTeamCreated => new OrganizationTeamCreatedDisplay(
+            AuditLogEventType::OrganizationTeamCreated => new Event\OrganizationTeamCreatedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $record->attributes['team_name'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::OrganizationTeamRenamed => new OrganizationTeamRenamedDisplay(
+            AuditLogEventType::OrganizationTeamRenamed => new Event\OrganizationTeamRenamedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $record->attributes['team_name_from'],
@@ -431,22 +378,14 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::OrganizationTeamDeleted => new OrganizationTeamDeletedDisplay(
+            AuditLogEventType::OrganizationTeamDeleted => new Event\OrganizationTeamDeletedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $record->attributes['team_name'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::OrganizationTeamMemberAdded => new OrganizationTeamMemberAddedDisplay(
-                $record->datetime,
-                OrganizationDisplay::fromRecord($record->attributes['organization']),
-                $record->attributes['team_name'],
-                $this->buildActor($record->attributes['user']),
-                $this->buildActor($record->attributes['actor']),
-                $record->ip,
-            ),
-            AuditLogEventType::OrganizationTeamMemberRemoved => new OrganizationTeamMemberRemovedDisplay(
+            AuditLogEventType::OrganizationTeamMemberAdded => new Event\OrganizationTeamMemberAddedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $record->attributes['team_name'],
@@ -454,21 +393,29 @@ class AuditLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::OrganizationMemberJoined => new OrganizationMemberJoinedDisplay(
+            AuditLogEventType::OrganizationTeamMemberRemoved => new Event\OrganizationTeamMemberRemovedDisplay(
+                $record->datetime,
+                OrganizationDisplay::fromRecord($record->attributes['organization']),
+                $record->attributes['team_name'],
+                $this->buildActor($record->attributes['user']),
+                $this->buildActor($record->attributes['actor']),
+                $record->ip,
+            ),
+            AuditLogEventType::OrganizationMemberJoined => new Event\OrganizationMemberJoinedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $this->buildActor($record->attributes['user']),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::OrganizationMemberRemoved => new OrganizationMemberRemovedDisplay(
+            AuditLogEventType::OrganizationMemberRemoved => new Event\OrganizationMemberRemovedDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $this->buildActor($record->attributes['user']),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::OrganizationMemberLeft => new OrganizationMemberLeftDisplay(
+            AuditLogEventType::OrganizationMemberLeft => new Event\OrganizationMemberLeftDisplay(
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
                 $this->buildActor($record->attributes['user']),
@@ -480,7 +427,7 @@ class AuditLogDisplayFactory
             AuditLogEventType::OrganizationInvitationRevoked,
             AuditLogEventType::OrganizationInvitationDeclined,
             AuditLogEventType::OrganizationInvitationAccepted,
-            AuditLogEventType::OrganizationInvitationExpired => new OrganizationInvitationDisplay(
+            AuditLogEventType::OrganizationInvitationExpired => new Event\OrganizationInvitationDisplay(
                 $record->type,
                 $record->datetime,
                 OrganizationDisplay::fromRecord($record->attributes['organization']),
@@ -489,22 +436,6 @@ class AuditLogDisplayFactory
                 $record->ip,
             ),
         };
-    }
-
-    /**
-     * @param array{id: int, username: string}|string|null $actor
-     */
-    private function buildActor(array|string|null $actor): ActorDisplay
-    {
-        if ($actor === null) {
-            return new ActorDisplay(null, 'unknown');
-        }
-
-        if (\is_string($actor)) {
-            return new ActorDisplay(null, $actor);
-        }
-
-        return new ActorDisplay($actor['id'], $actor['username']);
     }
 
     /**

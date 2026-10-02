@@ -1,0 +1,513 @@
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Tests\Service;
+
+use App\Audit\UserRegistrationMethod;
+use App\Entity\AuditRecord;
+use App\Entity\AuditRecordRepository;
+use App\Entity\PackageTransparencyLog;
+use App\Entity\PackageTransparencyLogQueueRepository;
+use App\Entity\PackageTransparencyLogRepository;
+use App\Log\TransparencyLogEventType;
+use App\Log\TransparencyLogScrubber;
+use App\Service\TransparencyLogProjector;
+use App\Tests\IntegrationTestCase;
+use Doctrine\DBAL\Connection;
+use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\AbstractLogger;
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
+use Symfony\Component\Uid\Ulid;
+
+class TransparencyLogProjectorTest extends IntegrationTestCase
+{
+    public function testProjectsPackageNativeEventAndReturnsCreatedCount(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $package = self::createPackage('svc/one', 'https://github.com/svc/one');
+        $em->persist($package);
+        $em->flush();
+        $packageId = $package->getId();
+
+        $created = self::getService(TransparencyLogProjector::class)->project(0);
+
+        // The return value equals the number of rows actually written this run.
+        $total = (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log');
+        self::assertSame($total, $created);
+        self::assertSame(1, (int) $conn->fetchOne(
+            "SELECT COUNT(*) FROM package_transparency_log WHERE type = 'package_created' AND packageId = ?",
+            [$packageId],
+        ));
+        self::assertSame('svc/one', $conn->fetchOne(
+            "SELECT packageName FROM package_transparency_log WHERE type = 'package_created' AND packageId = ?",
+            [$packageId],
+        ));
+    }
+
+    public function testFansOutAccountEventToMaintainedPackages(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $user = self::createUser('svcmaint', 'svcmaint@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $p1 = self::createPackage('svc/one', 'https://github.com/svc/one', null, [$user]);
+        $p2 = self::createPackage('svc/two', 'https://github.com/svc/two', null, [$user]);
+        $em->persist($p1);
+        $em->persist($p2);
+        $em->flush();
+
+        $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x'));
+
+        $created = self::getService(TransparencyLogProjector::class)->project(0);
+
+        self::assertSame(2, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'two_fa_deactivated'"));
+        // return value accounts for every row written (the two package_created rows plus the fan-out)
+        self::assertSame((int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'), $created);
+
+        self::assertSame(['svc/one', 'svc/two'], $conn->fetchFirstColumn(
+            "SELECT packageName FROM package_transparency_log WHERE type = 'two_fa_deactivated' ORDER BY packageName",
+        ));
+    }
+
+    /**
+     * An account takeover: the owner is replaced before the projector runs.
+     */
+    public function testAccountEventGoesToThePackagesMaintainedWhenItWasRecorded(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $owner = self::createUser('owner', 'owner@example.org');
+        $attacker = self::createUser('attacker', 'attacker@example.org');
+        $em->persist($owner);
+        $em->persist($attacker);
+        $em->flush();
+
+        $package = self::createPackage('svc/taken-over', 'https://github.com/svc/taken-over', null, [$owner]);
+        $em->persist($package);
+        $em->flush();
+
+        $em->getRepository(AuditRecord::class)->insert(AuditRecord::emailChanged($owner, $owner, 'owner@example.org'));
+
+        $package->addMaintainer($attacker);
+        $package->getMaintainers()->removeElement($owner);
+        $later = self::createPackage('svc/later', 'https://github.com/svc/later', null, [$owner]);
+        $em->persist($later);
+        $em->flush();
+
+        self::getService(TransparencyLogProjector::class)->project(0);
+
+        self::assertSame(['svc/taken-over'], $conn->fetchFirstColumn(
+            "SELECT packageName FROM package_transparency_log WHERE type = 'email_changed'",
+        ));
+    }
+
+    /**
+     * A lookup at projection time would find no targets here.
+     */
+    public function testAccountEventIsProjectedAfterItsUserAndPackageAreDeleted(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $user = self::createUser('deleted', 'deleted@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $kept = self::createPackage('svc/kept', 'https://github.com/svc/kept', null, [$user]);
+        $removed = self::createPackage('svc/removed', 'https://github.com/svc/removed', null, [$user]);
+        $em->persist($kept);
+        $em->persist($removed);
+        $em->flush();
+        $removedId = $removed->getId();
+
+        $em->getRepository(AuditRecord::class)->insert(AuditRecord::passwordChanged($user, $user));
+
+        $em->remove($removed);
+        $em->remove($user);
+        $em->flush();
+
+        self::getService(TransparencyLogProjector::class)->project(0);
+
+        self::assertSame(
+            [['packageId' => $kept->getId(), 'vendor' => 'svc', 'packageName' => 'svc/kept'], ['packageId' => $removedId, 'vendor' => 'svc', 'packageName' => 'svc/removed']],
+            array_map(
+                static fn (array $row): array => ['packageId' => (int) $row['packageId'], 'vendor' => $row['vendor'], 'packageName' => $row['packageName']],
+                $conn->fetchAllAssociative("SELECT packageId, vendor, packageName FROM package_transparency_log WHERE type = 'password_changed' ORDER BY packageId"),
+            ),
+        );
+    }
+
+    /**
+     * A record should never be projected twice, so if one target of a fan-out already has an entry,
+     * the whole record fails instead of skipping that target. It is rolled back, stays in the queue
+     * and is logged as an error. The rest of the run carries on, and the leaf indices the record
+     * would have used go to the next one.
+     */
+    public function testFanOutOntoAnAlreadyProjectedTargetFailsTheWholeRecord(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+        $logRepository = self::getService(PackageTransparencyLogRepository::class);
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+
+        $user = self::createUser('svcdupe', 'svcdupe@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $p1 = self::createPackage('svc/dupe-one', 'https://github.com/svc/dupe-one', null, [$user]);
+        $p2 = self::createPackage('svc/dupe-two', 'https://github.com/svc/dupe-two', null, [$user]);
+        $p3 = self::createPackage('svc/dupe-three', 'https://github.com/svc/dupe-three', null, [$user]);
+        $em->persist($p1);
+        $em->persist($p2);
+        $em->persist($p3);
+        $em->flush();
+
+        $record = AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x');
+        $em->getRepository(AuditRecord::class)->insert($record);
+
+        // The middle target is already published, as a re-queued record would find it.
+        $logRepository->appendProjectedEntries([PackageTransparencyLog::project(
+            $record,
+            TransparencyLogEventType::TwoFactorAuthenticationDeactivated,
+            $logRepository->getMaxLeafIndex() + 1,
+            [],
+            $p2->getId(),
+            $p2->getVendor(),
+            $p2->getName(),
+        )]);
+
+        $created = $this->createProjectorLoggingTo($logger)->project(0);
+
+        // The fan-out is written in one flush, which fails on the seeded target, so none of the
+        // record's own entries survive: only the entry seeded above is left.
+        self::assertSame(['svc/dupe-two'], $conn->fetchFirstColumn(
+            "SELECT packageName FROM package_transparency_log WHERE type = 'two_fa_deactivated' ORDER BY packageName",
+        ));
+
+        // Still pending, so the next run retries it rather than losing the event.
+        self::assertSame(1, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+        self::assertSame(1, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM package_transparency_log_queue WHERE auditLogId = ?',
+            [$record->id->toBinary()],
+        ));
+
+        $errors = array_values(array_filter(
+            $logger->records,
+            static fn (array $logged): bool => $logged['level'] === LogLevel::ERROR,
+        ));
+        self::assertCount(1, $errors);
+        self::assertSame((string) $record->id, $errors[0]['context']['auditLogId']);
+
+        // The three package_created records of this run still projected, and the abandoned record
+        // consumed nothing, so the sequence has no hole where its entries would have been.
+        self::assertSame(3, $created);
+        $leafIndices = array_map(intval(...), $conn->fetchFirstColumn('SELECT leafIndex FROM package_transparency_log ORDER BY leafIndex'));
+        self::assertSame(range(0, \count($leafIndices) - 1), $leafIndices);
+    }
+
+    /**
+     * The failure the projection queue exists to fix. A record's ULID and datetime are both minted
+     * when the AuditRecord is constructed, but the row is only committed at the end of its
+     * transaction, so a record constructed early can land after a newer one was already projected.
+     * It must still be projected, appended at the end of package_transparency_log.
+     */
+    public function testLateArrivingRecordIsProjectedAtTheTipOfTheLog(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+        $projector = self::getService(TransparencyLogProjector::class);
+
+        $user = self::createUser('latecomer', 'latecomer@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $late = self::createPackage('svc/late', 'https://github.com/svc/late', null, [$user]);
+        $em->persist($late);
+        $em->flush();
+
+        // Constructed now, so its ULID and datetime are early, but not yet committed: this stands in
+        // for a record persisted inside a transaction that has not been flushed yet.
+        $lateRecord = AuditRecord::maintainerAdded($late, $user, $user);
+
+        // Meanwhile a newer event happens and is projected, moving the highest projected audit_log id
+        // past it.
+        $newer = self::createPackage('svc/newer', 'https://github.com/svc/newer');
+        $em->persist($newer);
+        $em->flush();
+        $projector->project(0);
+
+        $tipBefore = (int) $conn->fetchOne('SELECT MAX(leafIndex) FROM package_transparency_log');
+
+        // Only now is the early record committed.
+        $em->getRepository(AuditRecord::class)->insert($lateRecord);
+        self::assertSame(1, $projector->project(0));
+
+        $rows = $conn->fetchAllAssociative(
+            "SELECT leafIndex, datetime FROM package_transparency_log WHERE type = 'maintainer_added'",
+        );
+
+        self::assertCount(1, $rows, 'the late record must be published, not skipped');
+        // Appended at the end, because an append-only log cannot take an insertion...
+        self::assertSame($tipBefore + 1, (int) $rows[0]['leafIndex']);
+        // ...so it necessarily carries a datetime older than the leaf below it.
+        $below = $conn->fetchOne('SELECT datetime FROM package_transparency_log WHERE leafIndex = ?', [$tipBefore]);
+        self::assertLessThanOrEqual((string) $below, (string) $rows[0]['datetime']);
+        self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+    }
+
+    /**
+     * The late-arrival diagnostic: it reports how far back a late entry lands, which is the only real
+     * evidence for whether the configured safety lag is the right size.
+     */
+    public function testLateArrivalIsLoggedWithHowFarBehindItLands(): void
+    {
+        $em = $this->getEM();
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+
+        $projector = $this->createProjectorLoggingTo($logger);
+
+        $user = self::createUser('logged', 'logged@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $package = self::createPackage('svc/logged', 'https://github.com/svc/logged', null, [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        $lateRecord = AuditRecord::maintainerAdded($package, $user, $user);
+
+        // A ULID's timestamp has millisecond resolution, so without a gap here the two records can be
+        // constructed inside the same millisecond and the reported delta is a legitimate 0.
+        usleep(2000);
+
+        $newer = self::createPackage('svc/logged-newer', 'https://github.com/svc/logged-newer');
+        $em->persist($newer);
+        $em->flush();
+        $projector->project(0);
+
+        $em->getRepository(AuditRecord::class)->insert($lateRecord);
+        $projector->project(0);
+
+        $warnings = array_values(array_filter(
+            $logger->records,
+            static fn (array $record): bool => $record['level'] === LogLevel::WARNING,
+        ));
+
+        self::assertCount(1, $warnings);
+        self::assertStringContainsString('Late-arriving audit record', (string) $warnings[0]['message']);
+        self::assertSame((string) $lateRecord->id, $warnings[0]['context']['auditLogId']);
+        self::assertGreaterThan(0, $warnings[0]['context']['behindNewestProjectedSeconds']);
+        self::assertSame(0, $warnings[0]['context']['safetyLagSeconds']);
+    }
+
+    /**
+     * The run that drains a seeded backfill appends history behind the tip on purpose, so it would
+     * warn once per seeded record. That run passes --suppress-out-of-order-logging, and the record
+     * is still projected: only the diagnostic goes away.
+     */
+    public function testBackfillRunCanSuppressTheOutOfOrderDiagnostic(): void
+    {
+        $em = $this->getEM();
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+
+        $projector = $this->createProjectorLoggingTo($logger);
+
+        $user = self::createUser('suppressed', 'suppressed@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $package = self::createPackage('svc/suppressed', 'https://github.com/svc/suppressed', null, [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        // Built now, committed after the run below: exactly the shape a seeded record has.
+        $lateRecord = AuditRecord::maintainerAdded($package, $user, $user);
+
+        // A ULID's timestamp has millisecond resolution, so without a gap the two records can share one.
+        usleep(2000);
+
+        $newer = self::createPackage('svc/suppressed-newer', 'https://github.com/svc/suppressed-newer');
+        $em->persist($newer);
+        $em->flush();
+        $projector->project(0);
+
+        $em->getRepository(AuditRecord::class)->insert($lateRecord);
+
+        self::assertSame(1, $projector->project(0, suppressOutOfOrderLogging: true), 'the record is still projected');
+
+        $warnings = array_values(array_filter(
+            $logger->records,
+            static fn (array $record): bool => $record['level'] === LogLevel::WARNING,
+        ));
+
+        self::assertSame([], $warnings);
+    }
+
+    /**
+     * A record that projects nothing takes no leaf, so it was not appended anywhere and the
+     * diagnostic has to stay silent: the index it would have named goes to the next record.
+     */
+    public function testLateRecordThatProjectsNothingIsNotReportedAsAppended(): void
+    {
+        $em = $this->getEM();
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+
+        $projector = $this->createProjectorLoggingTo($logger);
+
+        $user = self::createUser('silent', 'silent@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        // Built before the package below, so its ULID lands behind the leaf projected from it.
+        $unprojectable = AuditRecord::userCreated($user, UserRegistrationMethod::REGISTRATION_FORM);
+
+        // A ULID's timestamp has millisecond resolution, so without a gap the two can share one.
+        usleep(2000);
+
+        $package = self::createPackage('acme/test', 'https://github.com/acme/test');
+        $em->persist($package);
+        $em->flush();
+        // The premise of the test: this run gives the log a tip for the late record to land behind.
+        self::assertGreaterThan(0, $projector->project(0));
+
+        $em->getRepository(AuditRecord::class)->insert($unprojectable);
+        // A seed naming a type we do not project is the only way to get such a record queued.
+        self::getService(Connection::class)->executeStatement(
+            'INSERT IGNORE INTO package_transparency_log_queue (auditLogId) VALUES (?)',
+            [$unprojectable->id->toBinary()],
+        );
+
+        self::assertSame(0, $projector->project(0));
+
+        $warnings = array_values(array_filter(
+            $logger->records,
+            static fn (array $record): bool => $record['level'] === LogLevel::WARNING,
+        ));
+
+        self::assertSame([], $warnings);
+    }
+
+    public function testOutOfScopeQueuedRecordIsDequeuedWithoutProjecting(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $user = self::createUser('seeded', 'seeded@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        // A seed naming a type we do not project is the only way to get here.
+        $record = AuditRecord::userCreated($user, UserRegistrationMethod::REGISTRATION_FORM);
+        $em->getRepository(AuditRecord::class)->insert($record);
+        $conn->executeStatement('INSERT IGNORE INTO package_transparency_log_queue (auditLogId) VALUES (?)', [$record->id->toBinary()]);
+
+        self::assertSame(0, self::getService(TransparencyLogProjector::class)->project(0));
+
+        self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'));
+        self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+    }
+
+    public function testQueuedIdWithNoAuditRowIsDropped(): void
+    {
+        $conn = self::getService(Connection::class);
+
+        $conn->executeStatement('INSERT INTO package_transparency_log_queue (auditLogId) VALUES (?)', [(new Ulid())->toBinary()]);
+
+        self::assertSame(0, self::getService(TransparencyLogProjector::class)->project(0));
+
+        // Dropped rather than left pending: it can never become projectable, and it would otherwise
+        // pin the queue-age signal used to detect a stuck projection.
+        self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+    }
+
+    public function testPassThatProjectsNothingStillTerminates(): void
+    {
+        $conn = self::getService(Connection::class);
+
+        // More than one batch of records, all too fresh to project. Progress has to come from paging
+        // the queue, because nothing is dequeued: a loop driven by rows disappearing would spin here.
+        $ids = [];
+        for ($i = 0; $i < 501; $i++) {
+            $ids[] = (new Ulid())->toBinary();
+        }
+
+        $conn->executeStatement(
+            'INSERT INTO audit_log (id, datetime, type, attributes) VALUES '
+                .implode(', ', array_fill(0, \count($ids), "(?, NOW(), 'package_created', '{}')")),
+            $ids,
+        );
+        $conn->executeStatement(
+            'INSERT INTO package_transparency_log_queue (auditLogId) VALUES '
+                .implode(', ', array_fill(0, \count($ids), '(?)')),
+            $ids,
+        );
+
+        self::assertSame(0, self::getService(TransparencyLogProjector::class)->project(3600));
+
+        self::assertSame(501, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+    }
+
+    /**
+     * The container-wired projector logs where the test cannot see it, so the log assertions build
+     * their own around a collecting logger.
+     */
+    private function createProjectorLoggingTo(LoggerInterface $logger): TransparencyLogProjector
+    {
+        return new TransparencyLogProjector(
+            self::getService(ManagerRegistry::class),
+            self::getService(TransparencyLogScrubber::class),
+            self::getService(AuditRecordRepository::class),
+            self::getService(PackageTransparencyLogRepository::class),
+            self::getService(PackageTransparencyLogQueueRepository::class),
+            $logger,
+        );
+    }
+}

@@ -42,7 +42,7 @@ use App\Organization\EventStore\RecordedEvent;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * Projects organization events into the public transparency log (`audit_log`). Membership and team
+ * Projects organization events into the audit log (`audit_log`). Membership and team
  * lifecycle changes are identified by username; invitation events additionally carry the invited email
  * (obfuscated at display time from anyone who is neither an auditor nor a member of the organization).
  */

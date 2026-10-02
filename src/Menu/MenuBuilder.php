@@ -126,11 +126,13 @@ class MenuBuilder
                 ],
             ]);
         }
-        $menu->addChild('Transparency log', [
-            'label' => '<span class="icon-back-in-time"></span>Transparency log',
-            'route' => 'view_transparency_log',
-            'extras' => ['safe_label' => true, 'translation_domain' => false],
-        ]);
+        if ($this->security->isGranted('ROLE_AUDITOR')) {
+            $menu->addChild('Audit log', [
+                'label' => '<span class="icon-back-in-time"></span>Audit log',
+                'route' => 'admin_audit_log',
+                'extras' => ['safe_label' => true, 'translation_domain' => false],
+            ]);
+        }
 
         return $menu;
     }
