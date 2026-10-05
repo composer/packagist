@@ -189,7 +189,7 @@ class UpdaterWorker
             }
         }
 
-        $httpDownloader = new LoggingHttpDownloader($io, $config, $this->statsd, $usesPackagistToken, $packageVendor);
+        $httpDownloader = new LoggingHttpDownloader($io, $config, $this->statsd, $usesPackagistToken, $packageVendor, $this->fallbackGitHubAuthProvider->getAuthToken(...));
         if ($this->loadMinimalVersions) {
             $httpDownloader->loadMinimalVersions();
         }

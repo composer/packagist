@@ -26,12 +26,16 @@ class LoggingHttpDownloader extends HttpDownloader
     /** For use in fixtures loading only */
     private bool $loadMinimalVersions = false;
 
+    /**
+     * @param (\Closure(): ?string)|null $packagistTokenProvider used to retry repo data requests a maintainer's token is refused for
+     */
     public function __construct(
         private IOInterface $io,
         Config $config,
         private StatsDClient $statsd,
         private bool $usesPackagistToken,
         private string $vendor,
+        private ?\Closure $packagistTokenProvider = null,
     ) {
         parent::__construct($io, $config, HttpDownloaderOptionsFactory::getOptions());
     }
@@ -44,8 +48,11 @@ class LoggingHttpDownloader extends HttpDownloader
             $result = $this->doGet($url, $options);
         } catch (TransportException $e) {
             $this->reportGitHubApiFailure($url, $e);
+            if (!$this->switchToPackagistToken($url, $e)) {
+                throw $e;
+            }
 
-            throw $e;
+            return $this->get($url, $options);
         }
 
         if ($this->loadMinimalVersions && Preg::isMatch('{/(tags|git/refs/heads)(\?|$)}', $url)) {
@@ -151,5 +158,34 @@ class LoggingHttpDownloader extends HttpDownloader
             'reason' => $reason ?? 'unknown',
             'uses_packagist_token' => $this->usesPackagistToken ? '1' : '0',
         ]);
+    }
+
+    /**
+     * A failed repo data request makes Composer's GitHubDriver fall back to a git clone, which skips
+     * the README and GitHub metadata, so retry it with our token when the maintainer's is refused
+     * (org IP allow list, SAML SSO, revoked, rate limited).
+     */
+    private function switchToPackagistToken(string $url, TransportException $e): bool
+    {
+        if ($this->usesPackagistToken || null === $this->packagistTokenProvider) {
+            return false;
+        }
+        if (!\in_array($e->getStatusCode() ?? $e->getCode(), [401, 403, 404], true)) {
+            return false;
+        }
+        if (!Preg::isMatch('{^https://api\.github\.com/repos/[^/]+/[^/?]+$}', $url)) {
+            return false;
+        }
+
+        $token = ($this->packagistTokenProvider)();
+        if (null === $token) {
+            return false;
+        }
+
+        $this->io->writeError('<warning>Retrying with the Packagist token</warning>');
+        $this->io->setAuthentication('github.com', $token, 'x-oauth-basic');
+        $this->usesPackagistToken = true;
+
+        return true;
     }
 }

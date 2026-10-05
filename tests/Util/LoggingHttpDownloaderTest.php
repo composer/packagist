@@ -19,6 +19,7 @@ use Composer\IO\BufferIO;
 use Composer\Util\Http\Response;
 use Graze\DogStatsD\Client as StatsDClient;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 
 class LoggingHttpDownloaderTest extends TestCase
@@ -44,7 +45,7 @@ class LoggingHttpDownloaderTest extends TestCase
     public function testReportsGitHubApiFailureWithoutLeakingResponse(int $status, array $headers, string $body, string $expected): void
     {
         $io = new BufferIO();
-        $downloader = $this->createDownloader($io, $this->createException($status, $headers, $body));
+        $downloader = $this->createDownloader($io, false, static fn () => null, [self::createException($status, $headers, $body)]);
 
         try {
             $downloader->get(self::REPO_URL);
@@ -60,24 +61,10 @@ class LoggingHttpDownloaderTest extends TestCase
         $this->assertStringNotContainsString('SECRET', $output);
     }
 
-    public function testIgnoresExpected404sOutsideRepoData(): void
-    {
-        $io = new BufferIO();
-        $downloader = $this->createDownloader($io, $this->createException(404, [], ''));
-
-        try {
-            $downloader->get(self::REPO_URL.'/contents/composer.json?ref=abc');
-            $this->fail('Expected the TransportException to be rethrown');
-        } catch (TransportException) {
-        }
-
-        $this->assertSame('', $io->getOutput());
-    }
-
     public function testStripsQueryString(): void
     {
         $io = new BufferIO();
-        $downloader = $this->createDownloader($io, $this->createException(403, ['x-ratelimit-remaining: 0'], ''));
+        $downloader = $this->createDownloader($io, false, static fn () => null, [self::createException(403, ['x-ratelimit-remaining: 0'])]);
 
         try {
             $downloader->get(self::REPO_URL.'/git/refs/heads?per_page=100&page=2');
@@ -89,10 +76,76 @@ class LoggingHttpDownloaderTest extends TestCase
         $this->assertStringNotContainsString('per_page', $io->getOutput());
     }
 
+    #[TestWith([401])]
+    #[TestWith([403])]
+    #[TestWith([404])]
+    public function testRetriesRefusedRepoDataWithPackagistToken(int $status): void
+    {
+        $io = new BufferIO();
+        $io->setAuthentication('github.com', 'maintainer-token', 'x-oauth-basic');
+        $downloader = $this->createDownloader($io, false, static fn () => 'packagist-token', [
+            self::createException($status),
+            new Response(['url' => self::REPO_URL], 200, [], '{"name":"lib"}'),
+        ]);
+
+        $this->assertSame('{"name":"lib"}', $downloader->get(self::REPO_URL)->getBody());
+        $this->assertSame([self::REPO_URL, self::REPO_URL], $downloader->requested);
+        $this->assertSame('packagist-token', $io->getAuthentication('github.com')['username']);
+        $this->assertMatchesRegularExpression('{failed with HTTP '.$status.'.*using a maintainer\'s token.*\n.*Retrying with the Packagist token}', $io->getOutput());
+    }
+
+    public function testRetriesOnlyOnce(): void
+    {
+        $io = new BufferIO();
+        $downloader = $this->createDownloader($io, false, static fn () => 'packagist-token', [
+            self::createException(404),
+            self::createException(404),
+        ]);
+
+        try {
+            $downloader->get(self::REPO_URL);
+            $this->fail('Expected the TransportException to be rethrown');
+        } catch (TransportException) {
+        }
+
+        $this->assertCount(2, $downloader->requested);
+        $this->assertStringContainsString('failed with HTTP 404 using the Packagist token', $io->getOutput());
+    }
+
+    public function testDoesNotRetryWhenAlreadyUsingPackagistToken(): void
+    {
+        $downloader = $this->createDownloader(new BufferIO(), true, static fn () => 'packagist-token', [self::createException(403)]);
+
+        $this->expectException(TransportException::class);
+        $downloader->get(self::REPO_URL);
+    }
+
+    #[TestWith([self::REPO_URL.'/contents/composer.json?ref=abc', 404])]
+    #[TestWith([self::REPO_URL, 500])]
+    #[TestWith(['https://gitlab.com/api/v4/projects/acme%2Flib', 403])]
+    public function testIgnoresOtherFailures(string $url, int $status): void
+    {
+        $io = new BufferIO();
+        $downloader = $this->createDownloader($io, false, static fn () => 'packagist-token', [self::createException($status)]);
+
+        try {
+            $downloader->get($url);
+            $this->fail('Expected the TransportException to be rethrown');
+        } catch (TransportException) {
+        }
+
+        $this->assertCount(1, $downloader->requested);
+        if (500 === $status) {
+            $this->assertStringContainsString('failed with HTTP 500', $io->getOutput());
+        } else {
+            $this->assertSame('', $io->getOutput());
+        }
+    }
+
     /**
      * @param list<string> $headers
      */
-    private function createException(int $status, array $headers, string $body): TransportException
+    private static function createException(int $status, array $headers = [], string $body = ''): TransportException
     {
         $e = new TransportException('HTTP/2 '.$status, $status);
         $e->setStatusCode($status);
@@ -102,18 +155,36 @@ class LoggingHttpDownloaderTest extends TestCase
         return $e;
     }
 
-    private function createDownloader(BufferIO $io, TransportException $failure): LoggingHttpDownloader
+    /**
+     * @param list<Response|TransportException> $responses
+     */
+    private function createDownloader(BufferIO $io, bool $usesPackagistToken, \Closure $tokenProvider, array $responses): FakeResponsesHttpDownloader
     {
-        return new class($io, new Config(false), $this->createStub(StatsDClient::class), false, 'acme', $failure) extends LoggingHttpDownloader {
-            public function __construct(BufferIO $io, Config $config, StatsDClient $statsd, bool $usesPackagistToken, string $vendor, private TransportException $failure)
-            {
-                parent::__construct($io, $config, $statsd, $usesPackagistToken, $vendor);
-            }
+        return new FakeResponsesHttpDownloader($io, new Config(false), $this->createStub(StatsDClient::class), $usesPackagistToken, 'acme', $tokenProvider, $responses);
+    }
+}
 
-            protected function doGet(string $url, array $options): Response
-            {
-                throw $this->failure;
-            }
-        };
+class FakeResponsesHttpDownloader extends LoggingHttpDownloader
+{
+    /** @var list<string> */
+    public array $requested = [];
+
+    /**
+     * @param list<Response|TransportException> $responses
+     */
+    public function __construct(BufferIO $io, Config $config, StatsDClient $statsd, bool $usesPackagistToken, string $vendor, \Closure $tokenProvider, private array $responses)
+    {
+        parent::__construct($io, $config, $statsd, $usesPackagistToken, $vendor, $tokenProvider);
+    }
+
+    protected function doGet(string $url, array $options): Response
+    {
+        $this->requested[] = $url;
+        $response = array_shift($this->responses) ?? throw new \LogicException('Unexpected request to '.$url);
+        if ($response instanceof TransportException) {
+            throw $response;
+        }
+
+        return $response;
     }
 }
