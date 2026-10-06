@@ -90,15 +90,16 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
-     * All entries, most recently inserted first. Leaf index is the order rows were inserted, not the
-     * order the events happened, so a late row shows up at the top with a datetime older than the
-     * rows below it. The datetime filters still use the time of the event.
+     * All entries, newest event first. Ordered by event time rather than leafIndex, so a late or
+     * backfilled entry shows up where it happened instead of at the top.
      * {@see TransparencyLogEventType::temporarilyHiddenTypes()} are projected but only shown when
      * $includeHiddenTypes is set.
      */
     public function getQueryBuilderForPublicView(bool $includeHiddenTypes = false): QueryBuilder
     {
-        $qb = $this->createQueryBuilder('t')->orderBy('t.leafIndex', 'DESC');
+        $qb = $this->createQueryBuilder('t')
+            ->orderBy('t.datetime', 'DESC')
+            ->addOrderBy('t.leafIndex', 'DESC');
 
         if ($includeHiddenTypes) {
             return $qb;
