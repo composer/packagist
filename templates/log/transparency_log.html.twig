@@ -54,4 +54,10 @@
     {% if transparencyLogDisplays|length and paginator.haveToPaginate() %}
         {{ pagerfanta(paginator, 'twitter_bootstrap5', {'proximity': 2}) }}
     {% endif %}
+
+    {% if hasMoreEntriesThanPages %}
+        <p class="text-muted" data-test="page-limit-note">
+            Only the first {{ maxPages }} pages are shown. To see older entries, narrow the results with the filters above, for example by package, vendor, maintainer or time range.
+        </p>
+    {% endif %}
 {% endblock %}

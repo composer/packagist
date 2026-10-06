@@ -193,6 +193,67 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertSame(['Package deleted', 'Package created'], $types);
     }
 
+    /**
+     * A late arrival: the unfreeze is the newest leaf but has the oldest event time.
+     */
+    public function testEntriesAreOrderedByEventTime(): void
+    {
+        $admin = self::createUser('late', 'late@example.org', roles: ['ROLE_ADMIN']);
+        $this->store($admin);
+        $package = self::createPackage('acme/late-log', 'https://github.com/acme/late-log');
+        $this->store($package);
+
+        $records = $this->getEM()->getRepository(AuditRecord::class);
+        $records->insert(AuditRecord::packageFrozen($package, $admin, PackageFreezeReason::Spam));
+        $records->insert(AuditRecord::packageUnfrozen($package, $admin));
+        $this->runProjector();
+
+        $conn = $this->getEM()->getConnection();
+        foreach (['package_created' => '2026-01-01 09:00:00', 'package_frozen' => '2026-01-01 10:00:05', 'package_unfrozen' => '2026-01-01 10:00:01'] as $type => $datetime) {
+            $conn->executeStatement('UPDATE package_transparency_log SET datetime = ? WHERE packageName = ? AND type = ?', [$datetime, 'acme/late-log', $type]);
+        }
+
+        $this->givenLoggedInVisitor();
+
+        foreach ([['package' => 'acme/late-log'], ['package' => 'acme/late-log', 'datetime_from' => '2026-01-01T00:00:00']] as $query) {
+            $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query($query));
+            $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+            static::assertSame(['Package frozen', 'Package unfrozen', 'Package created'], $types);
+        }
+    }
+
+    public function testPageFarPastTheEndShowsTheLastPage(): void
+    {
+        $this->givenProjectedLog();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?page=999999999');
+
+        static::assertResponseIsSuccessful();
+        static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
+        static::assertCount(0, $crawler->filter('[data-test="page-limit-note"]'));
+    }
+
+    public function testPageLimitNoteIsShownWhenThereAreMoreEntriesThanPages(): void
+    {
+        $conn = $this->getEM()->getConnection();
+        $conn->executeStatement('SET SESSION cte_max_recursion_depth = 20000');
+        $conn->executeStatement(<<<'SQL'
+            INSERT INTO package_transparency_log (id, sourceAuditLogId, leafIndex, type, attributes, datetime, packageId, packageName, vendor)
+            WITH RECURSIVE seq (n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 10001)
+            SELECT UNHEX(MD5(CONCAT('id', n))), UNHEX(MD5(CONCAT('source', n))), n, 'package_created',
+                JSON_OBJECT('name', 'acme/many', 'repository', 'https://github.com/acme/many', 'actor', 'automation'),
+                NOW(), 1, 'acme/many', 'acme'
+            FROM seq
+            SQL);
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?page=999999999');
+
+        static::assertResponseIsSuccessful();
+        static::assertStringContainsString('Only the first 500 pages are shown', $crawler->filter('[data-test="page-limit-note"]')->text());
+    }
+
     private function givenProjectedLog(): void
     {
         $user = self::createUser('projected', 'projected@example.com');
