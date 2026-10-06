@@ -105,6 +105,11 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
                 $record->attributes['metadata']['dist']['shasum'] ?? null,
+                $record->attributes['metadata']['version_normalized'] ?? null,
+                $record->attributes['metadata']['source']['type'] ?? null,
+                $record->attributes['metadata']['source']['url'] ?? null,
+                $record->attributes['metadata']['dist']['type'] ?? null,
+                $record->attributes['metadata']['dist']['url'] ?? null,
             ),
             AuditLogEventType::PackageAbandoned => new Event\PackageAbandonedDisplay(
                 $record->type,

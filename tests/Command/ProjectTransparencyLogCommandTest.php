@@ -161,7 +161,7 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         self::assertSame(['dist', 'source', 'version_normalized'], $publishedKeys);
     }
 
-    public function testAccountEventKeepsItsReason(): void
+    public function testTwoFactorDeactivatedReasonIsWithheld(): void
     {
         $em = $this->getEM();
         $conn = self::getService(Connection::class);
@@ -174,14 +174,14 @@ class ProjectTransparencyLogCommandTest extends IntegrationTestCase
         $em->persist($pkg);
         $em->flush();
 
-        $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'Backup code used'));
+        $em->getRepository(AuditRecord::class)->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'Reset by support, request abc123'));
 
         $this->runProjector('0');
 
         /** @var string|false $attributesJson */
         $attributesJson = $conn->fetchOne("SELECT attributes FROM package_transparency_log WHERE type = 'two_fa_deactivated'");
         self::assertIsString($attributesJson);
-        self::assertSame('Backup code used', json_decode($attributesJson, true)['reason']);
+        self::assertArrayNotHasKey('reason', json_decode($attributesJson, true));
     }
 
     public function testNonNumericMinAgeIsRejected(): void

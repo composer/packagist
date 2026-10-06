@@ -6,4 +6,4 @@
 {% elseif display.reasonText %}Reason: {{ display.reasonText }}<br>{% endif %}
 {## transparency log never has an internal reason ##}
 {% if display.internalReasonText %}Internal reason: {{ display.internalReasonText }}<br>{% endif %}
-By: {{ display.actor.username }}
+By: {{ log.user(display.actor) }}
