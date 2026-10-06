@@ -12,38 +12,14 @@
 
 namespace App\Log;
 
+use App\Log\TransparencyLogAttribute as Attribute;
+
 /**
- * Strips private data out of an audit record's attributes before they are projected into the public
- * package transparency log.
- *
- * The log is immutable and meant to be published, so PII and admin-only data is removed at
- * projection time rather than masked at display time.
+ * The log is immutable, so publishing is an allow-list per type ({@see self::publishedAttributesFor()}):
+ * a new audit record attribute stays out until it is added there.
  */
 class TransparencyLogScrubber
 {
-    /**
-     * Keys removed anywhere in the attribute tree: email addresses and admin-only moderation notes.
-     */
-    private const SCRUB_AT_ANY_DEPTH = [
-        'email',
-        'email_from',
-        'email_to',
-        'internalReason',
-        'internalReasonText',
-        'internal_note',
-    ];
-
-    /**
-     * Record types whose `metadata` attribute is a version metadata blob
-     * ({@see \App\Entity\Version::toArray()}) and is therefore reduced to the published subset below.
-     *
-     * Any other type's `metadata` is dropped, so a new type carrying a different blob needs its own
-     * reduction rather than an entry here.
-     */
-    private const VERSION_METADATA_TYPES = [
-        AuditLogEventType::VersionCreated,
-    ];
-
     /**
      * Scalar keys published out of a version metadata blob.
      */
@@ -66,37 +42,219 @@ class TransparencyLogScrubber
     ];
 
     /**
+     * Drop keys not on the allow-list. Throw exception when an allowed key has the wrong shape, so the change is
+     * noticed: the projector will keep the record queued.
+     *
      * @param array<string, mixed> $attributes
      *
      * @return array<string, mixed>
+     *
+     * @throws \UnexpectedValueException
      */
     public function scrub(AuditLogEventType $type, array $attributes): array
     {
-        $attributes = \in_array($type, self::VERSION_METADATA_TYPES, true)
-            ? $this->reduceVersionMetadata($attributes)
-            : $this->removeMetadata($attributes);
+        $transparencyLogType = TransparencyLogEventType::fromAuditLogEventType($type);
+        if ($transparencyLogType === null) {
+            return [];
+        }
 
-        return $this->scrubAtAnyDepth($attributes);
+        $publishedAttributes = $this->publishedAttributesFor($transparencyLogType);
+
+        $published = [];
+        foreach ($attributes as $key => $value) {
+            $attribute = $publishedAttributes[$key] ?? null;
+            if ($attribute === null) {
+                continue;
+            }
+
+            if ($value === null) {
+                $published[$key] = null;
+                continue;
+            }
+
+            $reduced = match ($attribute) {
+                Attribute::Scalar => \is_scalar($value) ? $value : null,
+                Attribute::User => $this->reduceUser($value),
+                Attribute::UserList => $this->reduceUserList($value),
+                Attribute::VersionMetadata => $this->reduceVersionMetadata($value),
+            };
+            if ($reduced !== null) {
+                $published[$key] = $reduced;
+                continue;
+            }
+
+            // publisher content: nothing publishable in it is normal
+            if ($attribute === Attribute::VersionMetadata) {
+                continue;
+            }
+
+            // no value in the message, it is logged
+            throw new \UnexpectedValueException(\sprintf('The "%s" attribute of a %s audit record does not have the %s shape, so it cannot be published', $key, $type->value, $attribute->name));
+        }
+
+        return $published;
     }
 
     /**
-     * Reduces the `metadata` blob to {@see self::PUBLISHED_METADATA_KEYS} and
-     * {@see self::PUBLISHED_METADATA_SECTIONS}, dropping the key when nothing is left.
+     * No default: each new type must be added here.
      *
-     * An allow-list instead of a deny-list, because the metadata blob is from the publisher's
-     * composer.json: we do not control its shape.
+     * Not projected: `internalReason`, `internalReasonText` (admin-only), `email_from`, `email_to` (PII),
+     * 2FA `reason` (undecided).
+     *
+     * @return array<string, Attribute>
+     */
+    private function publishedAttributesFor(TransparencyLogEventType $type): array
+    {
+        return match ($type) {
+            TransparencyLogEventType::MaintainerAdded, TransparencyLogEventType::MaintainerRemoved => [
+                'name' => Attribute::Scalar,
+                'user' => Attribute::User,
+                'actor' => Attribute::User,
+            ],
+            TransparencyLogEventType::PackageTransferred => [
+                'name' => Attribute::Scalar,
+                'actor' => Attribute::User,
+                'previous_maintainers' => Attribute::UserList,
+                'current_maintainers' => Attribute::UserList,
+            ],
+            TransparencyLogEventType::PackageCreated => [
+                'name' => Attribute::Scalar,
+                'repository' => Attribute::Scalar,
+                'actor' => Attribute::User,
+                // only on moderator submissions
+                'user' => Attribute::User,
+            ],
+            TransparencyLogEventType::CanonicalUrlChanged => [
+                'name' => Attribute::Scalar,
+                'repository_from' => Attribute::Scalar,
+                'repository_to' => Attribute::Scalar,
+                'actor' => Attribute::User,
+            ],
+            TransparencyLogEventType::PackageAbandoned => [
+                'name' => Attribute::Scalar,
+                'repository' => Attribute::Scalar,
+                'replacement_package' => Attribute::Scalar,
+                'reason' => Attribute::Scalar,
+                'actor' => Attribute::User,
+            ],
+            TransparencyLogEventType::PackageUnabandoned, TransparencyLogEventType::PackageUnfrozen => [
+                'name' => Attribute::Scalar,
+                'repository' => Attribute::Scalar,
+                'actor' => Attribute::User,
+            ],
+            TransparencyLogEventType::PackageFrozen, TransparencyLogEventType::PackageDeleted => [
+                'name' => Attribute::Scalar,
+                'repository' => Attribute::Scalar,
+                'reason' => Attribute::Scalar,
+                'actor' => Attribute::User,
+            ],
+            TransparencyLogEventType::VersionCreated => [
+                'name' => Attribute::Scalar,
+                'version' => Attribute::Scalar,
+                'actor' => Attribute::User,
+                'metadata' => Attribute::VersionMetadata,
+            ],
+            TransparencyLogEventType::VersionReferenceChangeBlocked => [
+                'name' => Attribute::Scalar,
+                'version' => Attribute::Scalar,
+                'ref_from' => Attribute::Scalar,
+                'ref_to' => Attribute::Scalar,
+            ],
+            TransparencyLogEventType::VersionDeleted => [
+                'name' => Attribute::Scalar,
+                'version' => Attribute::Scalar,
+                'actor' => Attribute::User,
+            ],
+            TransparencyLogEventType::VersionSoftDeleted => [
+                'name' => Attribute::Scalar,
+                'version' => Attribute::Scalar,
+                'reason' => Attribute::Scalar,
+                'reasonText' => Attribute::Scalar,
+                'actor' => Attribute::User,
+            ],
+            TransparencyLogEventType::VersionRecovered => [
+                'name' => Attribute::Scalar,
+                'version' => Attribute::Scalar,
+                'previousReason' => Attribute::Scalar,
+                'actor' => Attribute::User,
+            ],
+            TransparencyLogEventType::TwoFactorAuthenticationActivated, TransparencyLogEventType::TwoFactorAuthenticationDeactivated,
+            TransparencyLogEventType::PasswordReset, TransparencyLogEventType::PasswordChanged,
+            TransparencyLogEventType::EmailChanged, TransparencyLogEventType::GitHubDisconnectedFromUser => [
+                'user' => Attribute::User,
+                'actor' => Attribute::User,
+            ],
+            TransparencyLogEventType::GitHubLinkedWithUser => [
+                'user' => Attribute::User,
+                'github_username' => Attribute::Scalar,
+                'github_id' => Attribute::Scalar,
+                'actor' => Attribute::User,
+            ],
+        };
+    }
+
+    /**
+     * Keeps `id` and `username`, or a fallback string such as 'automation'. Null when invalid.
+     *
+     * @return array{id?: int|null, username: string}|string|null
+     */
+    private function reduceUser(mixed $value): array|string|null
+    {
+        if (\is_string($value)) {
+            return $value;
+        }
+
+        if (!\is_array($value) || !\is_string($value['username'] ?? null)) {
+            return null;
+        }
+
+        $user = [];
+        if (\array_key_exists('id', $value)) {
+            if (!\is_int($value['id']) && $value['id'] !== null) {
+                return null;
+            }
+            $user['id'] = $value['id'];
+        }
+        $user['username'] = $value['username'];
+
+        return $user;
+    }
+
+    /**
+     * Null when any item is invalid.
+     *
+     * @return list<array{id?: int|null, username: string}|string>|null
+     */
+    private function reduceUserList(mixed $value): ?array
+    {
+        if (!\is_array($value) || !array_is_list($value)) {
+            return null;
+        }
+
+        $users = [];
+        foreach ($value as $item) {
+            $user = $this->reduceUser($item);
+            if ($user === null) {
+                return null;
+            }
+            $users[] = $user;
+        }
+
+        return $users;
+    }
+
+    /**
+     * Reduces the blob to {@see self::PUBLISHED_METADATA_KEYS} and
+     * {@see self::PUBLISHED_METADATA_SECTIONS}, or null when nothing is left.
      *
      * Only non-empty strings are kept, so nothing nested can slip through a published section.
      *
-     * @param array<string, mixed> $attributes
-     *
-     * @return array<string, mixed>
+     * @return array<string, string|array<string, string>>|null
      */
-    private function reduceVersionMetadata(array $attributes): array
+    private function reduceVersionMetadata(mixed $metadata): ?array
     {
-        $metadata = $attributes['metadata'] ?? null;
         if (!\is_array($metadata)) {
-            return $this->removeMetadata($attributes);
+            return null;
         }
 
         $published = [];
@@ -121,43 +279,6 @@ class TransparencyLogScrubber
             }
         }
 
-        if ($published === []) {
-            return $this->removeMetadata($attributes);
-        }
-
-        $attributes['metadata'] = $published;
-
-        return $attributes;
-    }
-
-    /**
-     * @param array<string, mixed> $attributes
-     *
-     * @return array<string, mixed>
-     */
-    private function removeMetadata(array $attributes): array
-    {
-        unset($attributes['metadata']);
-
-        return $attributes;
-    }
-
-    /**
-     * @param array<array-key, mixed> $value
-     *
-     * @return array<array-key, mixed>
-     */
-    private function scrubAtAnyDepth(array $value): array
-    {
-        $result = [];
-        foreach ($value as $key => $item) {
-            if (\is_string($key) && \in_array($key, self::SCRUB_AT_ANY_DEPTH, true)) {
-                continue;
-            }
-
-            $result[$key] = \is_array($item) ? $this->scrubAtAnyDepth($item) : $item;
-        }
-
-        return $result;
+        return $published === [] ? null : $published;
     }
 }

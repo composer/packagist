@@ -16,6 +16,7 @@ use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageTransparencyLog;
 use App\Log\Display\Event\MaintainerAccountEventDisplay;
+use App\Log\Display\Event\PackageWithRepositoryDisplay;
 use App\Log\Display\Event\VersionCreatedDisplay;
 use App\Log\Display\TransparencyLogDisplayFactory;
 use App\Log\TransparencyLogEventType;
@@ -99,6 +100,7 @@ class TransparencyLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(MaintainerAccountEventDisplay::class, $display);
         self::assertSame('acme/fanned-out', $display->packageName);
         self::assertSame('maintainer', $display->maintainerUsername);
+        self::assertSame(1, $display->maintainerId);
     }
 
     /**
@@ -132,6 +134,36 @@ class TransparencyLogDisplayFactoryTest extends TestCase
         self::assertNull($display->sourceReference);
         self::assertNull($display->distReference);
         self::assertNull($display->distShasum);
+    }
+
+    public function testGitHubLinkedExposesTheGitHubAccount(): void
+    {
+        $attributes = [...self::ATTRIBUTES, 'github_username' => 'octo-maintainer', 'github_id' => 4242];
+
+        $display = new TransparencyLogDisplayFactory()->buildSingle($this->entry(TransparencyLogEventType::GitHubLinkedWithUser, attributes: $attributes));
+
+        self::assertInstanceOf(MaintainerAccountEventDisplay::class, $display);
+        self::assertSame('octo-maintainer', $display->githubUsername);
+        self::assertSame(4242, $display->githubId);
+    }
+
+    public function testPackageCreatedByAModeratorExposesTheMaintainer(): void
+    {
+        $display = new TransparencyLogDisplayFactory()->buildSingle($this->entry(TransparencyLogEventType::PackageCreated));
+
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $display);
+        self::assertSame('maintainer', $display->maintainer?->username);
+    }
+
+    public function testPackageCreatedWithoutAMaintainerStillBuilds(): void
+    {
+        $attributes = self::ATTRIBUTES;
+        unset($attributes['user']);
+
+        $display = new TransparencyLogDisplayFactory()->buildSingle($this->entry(TransparencyLogEventType::PackageCreated, attributes: $attributes));
+
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $display);
+        self::assertNull($display->maintainer);
     }
 
     /**

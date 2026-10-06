@@ -2,5 +2,5 @@
 
 <strong>{{ log.packageLink(display.packageName) }}</strong><br>
 Repository: {{ display.repository }}<br>
-{% if display.maintainer %}Maintainer: {{ display.maintainer.username }}<br>{% endif %}
-By: {{ display.actor.username }}
+{% if display.maintainer %}Maintainer: {{ log.user(display.maintainer) }}<br>{% endif %}
+By: {{ log.user(display.actor) }}

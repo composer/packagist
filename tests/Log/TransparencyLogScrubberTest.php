@@ -61,6 +61,7 @@ class TransparencyLogScrubberTest extends TestCase
         'package_deleted' => ['internalReason'],
         'version_soft_deleted' => ['internalReasonText'],
         'email_changed' => ['email_from', 'email_to'],
+        'two_fa_deactivated' => ['reason'],
     ];
 
     private const PACKAGE_NAME = 'acme/widget';
@@ -72,42 +73,109 @@ class TransparencyLogScrubberTest extends TestCase
     private const ADMIN = ['id' => 22, 'username' => 'admin'];
     private const NEW_OWNER = ['id' => 33, 'username' => 'newowner'];
 
-    public function testRemovesEmailsAndInternalNotesButKeepsPublicData(): void
+    public function testAttributesNotOnTheAllowListAreDropped(): void
     {
-        $scrubber = new TransparencyLogScrubber();
-
-        $scrubbed = $scrubber->scrub(AuditLogEventType::PackageDeleted, [
-            'name' => 'acme/widget',
-            'repository' => 'https://github.com/acme/widget',
+        $scrubbed = new TransparencyLogScrubber()->scrub(AuditLogEventType::PackageDeleted, [
+            'name' => self::PACKAGE_NAME,
+            'repository' => self::REPOSITORY,
             'reason' => 'public takedown notice',
-            'reasonText' => 'visible to everyone',
             'internalReason' => 'reporter jane@example.com, ticket #42',
-            'internalReasonText' => 'internal moderation note',
-            'internal_note' => 'private',
-            'email' => 'user@example.com',
-            'email_from' => 'old@example.com',
-            'email_to' => 'new@example.com',
-            'actor' => ['id' => 7, 'username' => 'bob'],
-            'nested' => ['internalReason' => 'deep secret', 'keep' => 'ok'],
+            'some_new_attribute' => self::PRIVATE_MARKER,
+            'actor' => ['id' => 7, 'username' => 'bob', 'email' => 'bob@example.com'],
         ]);
 
-        // dropped
-        self::assertArrayNotHasKey('internalReason', $scrubbed);
-        self::assertArrayNotHasKey('internalReasonText', $scrubbed);
-        self::assertArrayNotHasKey('internal_note', $scrubbed);
-        self::assertArrayNotHasKey('email', $scrubbed);
-        self::assertArrayNotHasKey('email_from', $scrubbed);
-        self::assertArrayNotHasKey('email_to', $scrubbed);
+        self::assertSame([
+            'name' => self::PACKAGE_NAME,
+            'repository' => self::REPOSITORY,
+            'reason' => 'public takedown notice',
+            'actor' => ['id' => 7, 'username' => 'bob'],
+        ], $scrubbed);
+    }
 
-        // kept
-        self::assertSame('acme/widget', $scrubbed['name']);
-        self::assertSame('public takedown notice', $scrubbed['reason']);
-        self::assertSame('visible to everyone', $scrubbed['reasonText']);
-        self::assertSame(['id' => 7, 'username' => 'bob'], $scrubbed['actor']);
+    /**
+     * Not rejected: an extra key is a new attribute, not a shape change.
+     */
+    public function testExtraKeysInsideAUserAreDropped(): void
+    {
+        $scrubbed = new TransparencyLogScrubber()->scrub(AuditLogEventType::PackageTransferred, [
+            'name' => self::PACKAGE_NAME,
+            'actor' => ['username' => 'admin', 'profile' => ['email' => self::PRIVATE_MARKER]],
+            'previous_maintainers' => [['id' => 1, 'username' => 'old', 'email' => self::PRIVATE_MARKER]],
+            'current_maintainers' => [],
+        ]);
 
-        // denylisted keys are removed recursively, siblings preserved
-        self::assertArrayNotHasKey('internalReason', $scrubbed['nested']);
-        self::assertSame('ok', $scrubbed['nested']['keep']);
+        self::assertSame([
+            'name' => self::PACKAGE_NAME,
+            'actor' => ['username' => 'admin'],
+            'previous_maintainers' => [['id' => 1, 'username' => 'old']],
+            'current_maintainers' => [],
+        ], $scrubbed);
+    }
+
+    /**
+     * For ref_from, null means there was no previous reference.
+     */
+    public function testNullIsPublishedAsNull(): void
+    {
+        $scrubbed = new TransparencyLogScrubber()->scrub(AuditLogEventType::VersionReferenceChangeBlocked, [
+            'name' => self::PACKAGE_NAME,
+            'version' => self::VERSION,
+            'ref_from' => null,
+            'ref_to' => 'bbbbbbb',
+        ]);
+
+        self::assertSame(['name' => self::PACKAGE_NAME, 'version' => self::VERSION, 'ref_from' => null, 'ref_to' => 'bbbbbbb'], $scrubbed);
+    }
+
+    /**
+     * @return iterable<string, array{AuditLogEventType, string, mixed}>
+     */
+    public static function wronglyShapedAttributes(): iterable
+    {
+        yield 'nested scalar' => [AuditLogEventType::GitHubLinkedWithUser, 'github_username', ['login' => 'octo', 'token' => self::PRIVATE_MARKER]];
+        yield 'user without username' => [AuditLogEventType::PasswordChanged, 'actor', ['id' => 7, 'email' => self::PRIVATE_MARKER]];
+        yield 'user with a non-int id' => [AuditLogEventType::PasswordChanged, 'user', ['id' => self::PRIVATE_MARKER, 'username' => 'bob']];
+        yield 'user that is an int' => [AuditLogEventType::PasswordChanged, 'actor', 42];
+        yield 'user list that is a string' => [AuditLogEventType::PackageTransferred, 'current_maintainers', self::PRIVATE_MARKER];
+        yield 'user list that is a map' => [AuditLogEventType::PackageTransferred, 'current_maintainers', ['owner' => ['id' => 1, 'username' => 'bob']]];
+        yield 'user list with one invalid item' => [AuditLogEventType::PackageTransferred, 'previous_maintainers', [['id' => 1, 'username' => 'old'], ['id' => 2, 'email' => self::PRIVATE_MARKER]]];
+    }
+
+    /**
+     * Dropping the value instead would go unnoticed.
+     */
+    #[DataProvider('wronglyShapedAttributes')]
+    public function testWronglyShapedPublishedAttributeIsRejected(AuditLogEventType $type, string $key, mixed $value): void
+    {
+        try {
+            new TransparencyLogScrubber()->scrub($type, [$key => $value]);
+            self::fail('a wrongly shaped '.$key.' must be rejected');
+        } catch (\UnexpectedValueException $e) {
+            self::assertStringContainsString('"'.$key.'"', $e->getMessage());
+            self::assertStringContainsString($type->value, $e->getMessage());
+            // the message is logged
+            self::assertStringNotContainsString(self::PRIVATE_MARKER, $e->getMessage());
+        }
+    }
+
+    /**
+     * Publisher content: nothing publishable in it is normal.
+     */
+    public function testMetadataThatIsNotABlobIsDroppedRatherThanRejected(): void
+    {
+        $scrubbed = new TransparencyLogScrubber()->scrub(AuditLogEventType::VersionCreated, [
+            'name' => self::PACKAGE_NAME,
+            'metadata' => 'not a blob',
+        ]);
+
+        self::assertSame(['name' => self::PACKAGE_NAME], $scrubbed);
+    }
+
+    public function testRecordTypesOutOfScopePublishNothing(): void
+    {
+        self::assertNull(TransparencyLogEventType::fromAuditLogEventType(AuditLogEventType::UserCreated));
+
+        self::assertSame([], new TransparencyLogScrubber()->scrub(AuditLogEventType::UserCreated, ['user' => self::MAINTAINER, 'actor' => 'self']));
     }
 
     /**
@@ -247,6 +315,8 @@ class TransparencyLogScrubberTest extends TestCase
             'email_changed',
             // admin-only internalReason
             'package_deleted',
+            // the reason can name a support request
+            'two_fa_deactivated',
             // the version metadata blob, which carries author emails among other things
             'version_created',
             // admin-only internalReasonText
@@ -294,8 +364,9 @@ class TransparencyLogScrubberTest extends TestCase
         // package management
         yield 'package_created' => [
             AuditLogEventType::PackageCreated,
-            AuditRecord::packageCreated($package, $maintainer),
-            ['name' => self::PACKAGE_NAME, 'repository' => self::REPOSITORY, 'actor' => self::MAINTAINER],
+            // covers the optional maintainer
+            AuditRecord::packageCreated($package, $admin, $maintainer),
+            ['name' => self::PACKAGE_NAME, 'repository' => self::REPOSITORY, 'actor' => self::ADMIN, 'user' => self::MAINTAINER],
         ];
 
         yield 'canonical_url_changed' => [
@@ -411,8 +482,8 @@ class TransparencyLogScrubberTest extends TestCase
 
         yield 'two_fa_deactivated' => [
             AuditLogEventType::TwoFactorAuthenticationDeactivated,
-            AuditRecord::twoFactorAuthenticationDeactivated($maintainer, $admin, 'Disabled on request from user'),
-            ['user' => self::MAINTAINER, 'actor' => self::ADMIN, 'reason' => 'Disabled on request from user'],
+            AuditRecord::twoFactorAuthenticationDeactivated($maintainer, $admin, 'Reset by support, request '.self::PRIVATE_MARKER),
+            ['user' => self::MAINTAINER, 'actor' => self::ADMIN],
         ];
 
         yield 'password_reset' => [

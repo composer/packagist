@@ -2,4 +2,4 @@
 
 <strong>{{ log.packageLink(display.packageName) }}</strong><br>
 Repository: {{ display.repositoryFrom }} → {{ display.repositoryTo }}<br>
-Changed by: {{ display.actor.username }}
+Changed by: {{ log.user(display.actor) }}
