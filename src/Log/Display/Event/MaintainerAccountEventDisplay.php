@@ -26,8 +26,12 @@ readonly class MaintainerAccountEventDisplay extends AbstractLogDisplay
         private TransparencyLogEventType $type,
         \DateTimeImmutable $datetime,
         public string $maintainerUsername,
+        public ?int $maintainerId,
         public string $packageName,
         ActorDisplay $actor,
+        // only set on github_linked_with_user
+        public ?string $githubUsername = null,
+        public ?int $githubId = null,
     ) {
         parent::__construct($datetime, $actor);
     }

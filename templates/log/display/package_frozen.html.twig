@@ -2,7 +2,9 @@
 
 <strong>{{ log.packageLink(display.packageName) }}</strong><br>
 {% if display.repository %}Repository: {{ display.repository }}<br>{% endif %}
-{% if display.reasonTranslationKey %}Reason: {{ display.reasonTranslationKey|trans }}<br>{% endif %}
-{# the public log never has this: the projection scrubs internal moderation notes at write time #}
+{# raw value when it has no label #}
+{% if display.reasonTranslationKey %}Reason: {{ display.reasonTranslationKey|trans }}<br>
+{% elseif display.reason %}Reason: {{ display.reason }}<br>{% endif %}
+{## transparency log never has an internal reason ##}
 {% if display.internalReason %}Internal reason: {{ display.internalReason }}<br>{% endif %}
-Frozen by: {{ display.actor.username }}
+Frozen by: {{ log.user(display.actor) }}

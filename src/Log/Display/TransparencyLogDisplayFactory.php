@@ -63,7 +63,8 @@ class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
                 $entry->datetime,
                 $attributes['name'],
                 $attributes['repository'],
-                null,
+                // only on moderator submissions
+                isset($attributes['user']) ? $this->buildActor($attributes['user']) : null,
                 $this->buildActor($attributes['actor'] ?? null),
             ),
             TransparencyLogEventType::CanonicalUrlChanged => new Event\CanonicalUrlChangedDisplay(
@@ -108,6 +109,11 @@ class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
                 $attributes['metadata']['dist']['reference'] ?? null,
                 $this->buildActor($attributes['actor'] ?? null),
                 distShasum: $attributes['metadata']['dist']['shasum'] ?? null,
+                versionNormalized: $attributes['metadata']['version_normalized'] ?? null,
+                sourceType: $attributes['metadata']['source']['type'] ?? null,
+                sourceUrl: $attributes['metadata']['source']['url'] ?? null,
+                distType: $attributes['metadata']['dist']['type'] ?? null,
+                distUrl: $attributes['metadata']['dist']['url'] ?? null,
             ),
             TransparencyLogEventType::VersionDeleted => new Event\VersionDisplay(
                 $entry->type,
@@ -148,8 +154,11 @@ class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
                 $entry->type,
                 $entry->datetime,
                 $attributes['user']['username'],
+                $attributes['user']['id'] ?? null,
                 $entry->packageName,
                 $this->buildActor($attributes['actor'] ?? null),
+                $attributes['github_username'] ?? null,
+                $attributes['github_id'] ?? null,
             ),
         };
     }

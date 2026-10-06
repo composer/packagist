@@ -17,9 +17,7 @@ use App\Log\Display\ActorDisplay;
 use App\Log\LogEventType;
 
 /**
- * Shared by both logs. The transparency log publishes the same source/dist references the audit log
- * shows; the rest of the version metadata blob is not published
- * ({@see \App\Log\TransparencyLogScrubber}).
+ * Shared by both logs. Shows only the metadata the transparency log publishes.
  */
 readonly class VersionCreatedDisplay extends AbstractLogDisplay
 {
@@ -34,6 +32,11 @@ readonly class VersionCreatedDisplay extends AbstractLogDisplay
         // audit_log only: package_transparency_log has no IP column
         ?string $ip = null,
         public ?string $distShasum = null,
+        public ?string $versionNormalized = null,
+        public ?string $sourceType = null,
+        public ?string $sourceUrl = null,
+        public ?string $distType = null,
+        public ?string $distUrl = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }

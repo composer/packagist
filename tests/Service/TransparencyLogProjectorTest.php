@@ -15,6 +15,7 @@ namespace App\Tests\Service;
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
+use App\Entity\PackageFreezeReason;
 use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
@@ -433,6 +434,55 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         ));
 
         self::assertSame([], $warnings);
+    }
+
+    /**
+     * For example an old row from before an attribute changed type.
+     */
+    public function testRecordWithAWronglyShapedAttributeStaysQueued(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+
+        $package = self::createPackage('svc/frozen', 'https://github.com/svc/frozen');
+        $em->persist($package);
+        $em->flush();
+
+        $record = AuditRecord::packageFrozen($package, null, PackageFreezeReason::Malware);
+        $em->getRepository(AuditRecord::class)->insert($record);
+        $conn->executeStatement(
+            "UPDATE audit_log SET attributes = JSON_SET(attributes, '$.reason', JSON_OBJECT('note', 'must-not-be-logged')) WHERE id = ?",
+            [$record->id->toBinary()],
+        );
+
+        $created = $this->createProjectorLoggingTo($logger)->project(0);
+
+        // the package_created record still projected
+        self::assertSame(1, $created);
+        self::assertSame(0, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'package_frozen'"));
+        self::assertSame(1, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM package_transparency_log_queue WHERE auditLogId = ?',
+            [$record->id->toBinary()],
+        ));
+
+        $errors = array_values(array_filter(
+            $logger->records,
+            static fn (array $logged): bool => $logged['level'] === LogLevel::ERROR,
+        ));
+        self::assertCount(1, $errors);
+        self::assertSame((string) $record->id, $errors[0]['context']['auditLogId']);
+        self::assertInstanceOf(\UnexpectedValueException::class, $errors[0]['context']['exception']);
+        self::assertStringContainsString('"reason"', $errors[0]['context']['exception']->getMessage());
+        self::assertStringNotContainsString('must-not-be-logged', $errors[0]['context']['exception']->getMessage());
     }
 
     public function testOutOfScopeQueuedRecordIsDequeuedWithoutProjecting(): void
