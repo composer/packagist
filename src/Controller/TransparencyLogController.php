@@ -22,7 +22,7 @@ use App\QueryFilter\TransparencyLog\PackageNameFilter;
 use App\QueryFilter\TransparencyLog\EventTypeFilter;
 use App\QueryFilter\TransparencyLog\UserFilter;
 use App\QueryFilter\TransparencyLog\VendorFilter;
-use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use App\Model\CappedCountQueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,6 +31,9 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class TransparencyLogController extends Controller
 {
+    private const PER_PAGE = 20;
+    private const MAX_PAGES = 500;
+
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/transparency-log', name: 'view_transparency_log', methods: ['GET'])]
     public function viewTransparencyLog(Request $request, PackageTransparencyLogRepository $repository, TransparencyLogDisplayFactory $displayFactory): Response
@@ -59,14 +62,21 @@ class TransparencyLogController extends Controller
             $selectedFilters[$filter->getKey()] = $filter->getSelectedValue();
         }
 
-        $paginator = new Pagerfanta(new QueryAdapter($qb, false, false));
+        // Counting and offsetting through the whole log costs seconds once it holds millions of rows.
+        // Older entries stay reachable by narrowing the filters. The one extra row counted tells
+        // whether there are more entries than the pages show.
+        $shownEntries = self::MAX_PAGES * self::PER_PAGE;
+        $paginator = new Pagerfanta(new CappedCountQueryAdapter($qb, $shownEntries + 1));
+        $paginator->setMaxNbPages(self::MAX_PAGES);
         $paginator->setNormalizeOutOfRangePages(true);
-        $paginator->setMaxPerPage(20);
+        $paginator->setMaxPerPage(self::PER_PAGE);
         $paginator->setCurrentPage(max(1, $request->query->getInt('page', 1)));
 
         return $this->render('log/transparency_log.html.twig', [
             'transparencyLogDisplays' => $displayFactory->build($paginator),
             'paginator' => $paginator,
+            'maxPages' => self::MAX_PAGES,
+            'hasMoreEntriesThanPages' => $paginator->getNbResults() > $shownEntries,
             'selectableTypes' => $this->selectableTypes($includeHiddenTypes),
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,

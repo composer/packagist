@@ -29,13 +29,14 @@ use Symfony\Component\Uid\Ulid;
 #[ORM\Table(name: 'package_transparency_log')]
 #[ORM\UniqueConstraint(name: 'source_package_uniq', columns: ['sourceAuditLogId', 'packageId'])]
 #[ORM\UniqueConstraint(name: 'leaf_index_uniq', columns: ['leafIndex'])]
-// Every public read filters on one of these columns and then sorts by leafIndex, so the sort column
-// is part of each index, otherwise MySQL filesorts every matching row.
-#[ORM\Index(name: 'package_name_leaf_idx', columns: ['packageName', 'leafIndex'])]
-#[ORM\Index(name: 'vendor_leaf_idx', columns: ['vendor', 'leafIndex'])]
-#[ORM\Index(name: 'user_leaf_idx', columns: ['userId', 'leafIndex'])]
-#[ORM\Index(name: 'type_leaf_idx', columns: ['type', 'leafIndex'])]
-#[ORM\Index(name: 'datetime_idx', columns: ['datetime'])]
+// Every public read filters on one of these columns and sorts by (datetime, leafIndex)
+// ({@see PackageTransparencyLogRepository::getQueryBuilderForPublicView()}), so the sort columns are
+// part of each index, otherwise MySQL filesorts every matching row.
+#[ORM\Index(name: 'package_name_datetime_idx', columns: ['packageName', 'datetime', 'leafIndex'])]
+#[ORM\Index(name: 'vendor_datetime_idx', columns: ['vendor', 'datetime', 'leafIndex'])]
+#[ORM\Index(name: 'user_datetime_idx', columns: ['userId', 'datetime', 'leafIndex'])]
+#[ORM\Index(name: 'type_datetime_idx', columns: ['type', 'datetime', 'leafIndex'])]
+#[ORM\Index(name: 'datetime_leaf_idx', columns: ['datetime', 'leafIndex'])]
 class PackageTransparencyLog
 {
     #[ORM\Id]
