@@ -83,7 +83,7 @@ class TransparencyLogProjector
         $after = null;
 
         do {
-            $pending = $this->queueRepository->fetchPending($after, self::BATCH_SIZE);
+            $pending = $this->queueRepository->fetchPending($after, $cutoff, self::BATCH_SIZE);
             $records = $this->auditRecordRepository->getRecordsByIds(array_map(static fn (PackageTransparencyLogQueue $queued): Ulid => $queued->auditLogId, $pending));
 
             foreach ($pending as $queued) {
@@ -98,7 +98,8 @@ class TransparencyLogProjector
                     continue;
                 }
 
-                // Too fresh: stays queued for a later run, it is never dropped.
+                // Too fresh: stays queued for a later run, it is never dropped. fetchPending() only
+                // bounds by millisecond, this is the exact check.
                 if ($record->datetime > $cutoff) {
                     continue;
                 }
