@@ -187,12 +187,12 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         $em->persist($p3);
         $em->flush();
 
-        $record = AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x');
-        $em->getRepository(AuditRecord::class)->insert($record);
+        $failingRecord = AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x');
+        $em->getRepository(AuditRecord::class)->insert($failingRecord);
 
         // The middle target is already published, as a re-queued record would find it.
         $logRepository->appendProjectedEntries([PackageTransparencyLog::project(
-            $record,
+            $failingRecord,
             TransparencyLogEventType::TwoFactorAuthenticationDeactivated,
             $logRepository->getMaxLeafIndex() + 1,
             [],
@@ -200,6 +200,11 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
             $p2->getVendor(),
             $p2->getName(),
         )]);
+
+        // Newer than the failing record, so it is projected after the failed flush reset the
+        // EntityManager, in the same run.
+        $recordAfterFailure = AuditRecord::maintainerRemoved($p1, $user, $user);
+        $em->getRepository(AuditRecord::class)->insert($recordAfterFailure);
 
         $created = $this->createProjectorLoggingTo($logger)->project(0);
 
@@ -213,7 +218,7 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         self::assertSame(1, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
         self::assertSame(1, (int) $conn->fetchOne(
             'SELECT COUNT(*) FROM package_transparency_log_queue WHERE auditLogId = ?',
-            [$record->id->toBinary()],
+            [$failingRecord->id->toBinary()],
         ));
 
         $errors = array_values(array_filter(
@@ -221,11 +226,17 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
             static fn (array $logged): bool => $logged['level'] === LogLevel::ERROR,
         ));
         self::assertCount(1, $errors);
-        self::assertSame((string) $record->id, $errors[0]['context']['auditLogId']);
+        self::assertSame((string) $failingRecord->id, $errors[0]['context']['auditLogId']);
 
-        // The three package_created records of this run still projected, and the abandoned record
-        // consumed nothing, so the sequence has no hole where its entries would have been.
-        self::assertSame(3, $created);
+        // The record after the failure is still projected and dequeued.
+        self::assertSame(1, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM package_transparency_log WHERE sourceAuditLogId = ?',
+            [$recordAfterFailure->id->toBinary()],
+        ));
+
+        // The three package_created records and the record after the failure are projected, and the
+        // failed record consumed nothing, so the sequence has no hole where its entries would have been.
+        self::assertSame(4, $created);
         $leafIndices = array_map(intval(...), $conn->fetchFirstColumn('SELECT leafIndex FROM package_transparency_log ORDER BY leafIndex'));
         self::assertSame(range(0, \count($leafIndices) - 1), $leafIndices);
     }
