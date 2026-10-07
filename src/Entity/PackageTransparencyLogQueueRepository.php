@@ -69,20 +69,30 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
     }
 
     /**
-     * The oldest pending queue rows after $after, in ULID order so leaf assignment is deterministic.
+     * The oldest pending queue rows after $after and created no later than $cutoff, in ULID order so
+     * leaf assignment is deterministic.
      *
      * $after is only a cursor within one run and is never stored. Without it a record that stays
-     * pending (too fresh for the safety lag, or one that threw) would come first in every batch.
+     * pending (one that threw) would come first in every batch.
+     *
+     * A ULID starts with its creation time, so the newest records, which are too fresh to project,
+     * are never fetched. The bound has millisecond precision and includes all of $cutoff's
+     * millisecond, so the caller must still compare the record's datetime with $cutoff.
      *
      * @return list<PackageTransparencyLogQueue>
      */
-    public function fetchPending(?Ulid $after, int $limit): array
+    public function fetchPending(?Ulid $after, \DateTimeImmutable $cutoff, int $limit): array
     {
+        // the 48-bit millisecond timestamp, then the highest possible random part
+        $createdUpTo = Ulid::fromBinary(substr(pack('J', (int) $cutoff->format('Uv')), 2).str_repeat("\xFF", 10));
+
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('q')
             ->from(PackageTransparencyLogQueue::class, 'q')
             ->where('q.auditLogId > :after')
+            ->andWhere('q.auditLogId <= :createdUpTo')
             ->setParameter('after', $after ?? new NilUlid(), UlidType::NAME)
+            ->setParameter('createdUpTo', $createdUpTo, UlidType::NAME)
             ->orderBy('q.auditLogId', 'ASC')
             ->setMaxResults($limit);
 

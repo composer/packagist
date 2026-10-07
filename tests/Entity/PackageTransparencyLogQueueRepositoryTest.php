@@ -133,6 +133,29 @@ class PackageTransparencyLogQueueRepositoryTest extends IntegrationTestCase
     }
 
     /**
+     * Records created after the cutoff are not fetched. The bound includes all of the cutoff's
+     * millisecond, because the projector does the exact check against the record's datetime.
+     */
+    public function testFetchPendingSkipsRecordsCreatedAfterTheCutoff(): void
+    {
+        $em = $this->getEM();
+        $queue = self::getService(PackageTransparencyLogQueueRepository::class);
+
+        $user = self::createUser('fresh', 'fresh@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $record = AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'x');
+        $em->getRepository(AuditRecord::class)->insert($record);
+
+        // the ULID's own timestamp, so the record is in the cutoff's millisecond
+        $createdAt = \DateTimeImmutable::createFromInterface($record->id->getDateTime());
+
+        self::assertSame([], $queue->fetchPending(null, $createdAt->modify('-1 millisecond'), 10));
+        self::assertEquals([$record->id], array_map(static fn ($queued) => $queued->auditLogId, $queue->fetchPending(null, $createdAt, 10)));
+    }
+
+    /**
      * The property that makes the queue an outbox rather than a second copy: the queue row and the
      * audit row share a transaction, so a record can never become visible without being pending.
      */
