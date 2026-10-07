@@ -17,6 +17,7 @@ use App\Command\SeedTransparencyLogQueueCommand;
 use App\Entity\AuditRecord;
 use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 class SeedTransparencyLogQueueCommandTest extends IntegrationTestCase
@@ -164,6 +165,43 @@ class SeedTransparencyLogQueueCommandTest extends IntegrationTestCase
         $tester = $this->seed(['--dry-run' => true]);
 
         self::assertStringContainsString('1 record(s) would be enqueued', $tester->getDisplay());
+        self::assertSame(0, (int) $conn->fetchOne(
+            'SELECT COUNT(*) FROM package_transparency_log_queue WHERE auditLogId = ?',
+            [$historical->id->toBinary()],
+        ));
+    }
+
+    /**
+     * A record the scrubber rejects stays queued on every projector run, so the dry run reports it
+     * before it is seeded.
+     */
+    public function testDryRunReportsRecordsThatWouldFailProjection(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $user = self::createUser('invalid', 'invalid@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $package = self::createPackage('seed/invalid', 'https://github.com/seed/invalid', null, [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        $historical = AuditRecord::maintainerAdded($package, $user, $user);
+        $em->getRepository(AuditRecord::class)->insert($historical);
+        $conn->executeStatement('DELETE FROM package_transparency_log_queue WHERE auditLogId = ?', [$historical->id->toBinary()]);
+        $conn->executeStatement("UPDATE audit_log SET attributes = JSON_SET(attributes, '$.actor', 5) WHERE id = ?", [$historical->id->toBinary()]);
+
+        $tester = new CommandTester(self::getService(SeedTransparencyLogQueueCommand::class));
+        $tester->execute(['--dry-run' => true]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('1 record(s) would be enqueued', $display);
+        self::assertStringContainsString('1 record(s) would fail projection', $display);
+        self::assertStringContainsString('maintainer_added: The "actor" attribute', $display);
+        self::assertStringContainsString((string) $historical->id, $display);
         self::assertSame(0, (int) $conn->fetchOne(
             'SELECT COUNT(*) FROM package_transparency_log_queue WHERE auditLogId = ?',
             [$historical->id->toBinary()],

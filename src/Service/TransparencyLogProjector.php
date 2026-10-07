@@ -206,29 +206,68 @@ class TransparencyLogProjector
             return $queuedTargets ?? [];
         }
 
-        if ($record->packageId === null) {
-            // packageId must not be null: MySQL treats NULLs as distinct, so (sourceAuditLogId, NULL)
-            // would not clash in source_package_uniq and a retry could append a second leaf for the
-            // same event.
-            $this->logger->error('Refusing to project a package-native audit record with no package', [
+        $missingPackageData = $this->findMissingPackageData($record);
+        if ($missingPackageData !== null) {
+            $this->logger->error('Refusing to project a package-native audit record with '.$missingPackageData, [
                 'auditLogId' => (string) $record->id,
                 'type' => $record->type->value,
             ]);
 
             return [];
+        }
+
+        \assert($record->packageId !== null && \is_string($record->attributes['name']));
+
+        return [['id' => $record->packageId, 'vendor' => $record->vendor, 'name' => $record->attributes['name']]];
+    }
+
+    /**
+     * A package-native record is written to its own package, so it needs the package id and name.
+     * Returns which one is missing, or null when the record has both.
+     */
+    private function findMissingPackageData(AuditRecord $record): ?string
+    {
+        // packageId must not be null: MySQL treats NULLs as distinct, so (sourceAuditLogId, NULL)
+        // would not clash in source_package_uniq and a retry could append a second leaf for the
+        // same event.
+        if ($record->packageId === null) {
+            return 'no package';
         }
 
         $name = $record->attributes['name'] ?? null;
         if (!\is_string($name) || $name === '') {
-            $this->logger->error('Refusing to project a package-native audit record with no package name', [
-                'auditLogId' => (string) $record->id,
-                'type' => $record->type->value,
-            ]);
-
-            return [];
+            return 'no package name';
         }
 
-        return [['id' => $record->packageId, 'vendor' => $record->vendor, 'name' => $name]];
+        return null;
+    }
+
+    /**
+     * Why a record cannot be projected, or null when it can. Runs the checks of
+     * {@see self::projectRecord()} without writing anything, so the seed dry run reports the records
+     * that would fail before they are queued.
+     */
+    public function validate(AuditRecord $record): ?string
+    {
+        $type = TransparencyLogEventType::fromAuditLogEventType($record->type);
+        if ($type === null) {
+            return 'type is not projected';
+        }
+
+        if (!$type->fansOutToMaintainedPackages()) {
+            $missing = $this->findMissingPackageData($record);
+            if ($missing !== null) {
+                return $missing;
+            }
+        }
+
+        try {
+            $this->scrubber->scrub($record->type, $record->attributes);
+        } catch (\UnexpectedValueException $e) {
+            return $e->getMessage();
+        }
+
+        return null;
     }
 
     /**
