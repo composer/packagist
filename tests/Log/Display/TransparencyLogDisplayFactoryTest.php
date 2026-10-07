@@ -166,6 +166,17 @@ class TransparencyLogDisplayFactoryTest extends TestCase
         self::assertNull($display->maintainer);
     }
 
+    public function testPackageCreatedWithoutARepositoryStillBuilds(): void
+    {
+        $attributes = self::ATTRIBUTES;
+        unset($attributes['repository']);
+
+        $display = new TransparencyLogDisplayFactory()->buildSingle($this->entry(TransparencyLogEventType::PackageCreated, attributes: $attributes));
+
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $display);
+        self::assertNull($display->repository);
+    }
+
     /**
      * @param array<string, mixed>|null $attributes
      */

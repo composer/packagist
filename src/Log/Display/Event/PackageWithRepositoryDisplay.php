@@ -25,7 +25,7 @@ readonly class PackageWithRepositoryDisplay extends AbstractLogDisplay
         private LogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
-        public string $repository,
+        public ?string $repository,
         // null unless the package ended up with someone other than the actor
         public ?ActorDisplay $maintainer,
         ActorDisplay $actor,
