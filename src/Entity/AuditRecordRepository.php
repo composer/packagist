@@ -162,6 +162,10 @@ class AuditRecordRepository extends ServiceEntityRepository
      * The queue row must be written in the same transaction as the audit_log row, or the record can
      * never be projected. Some callers, like {@see \App\Security\TwoFactorAuthManager}, are not in a
      * transaction, so start one here.
+     *
+     * When this is called from a Doctrine listener (postPersist, postUpdate) during a flush, the
+     * flush's transaction is already open, so beginTransaction() creates a savepoint. On failure,
+     * we roll back to the savepoint and rethrow, and Doctrine then rolls back the whole flush.
      */
     public function insert(AuditRecord $record): void
     {
