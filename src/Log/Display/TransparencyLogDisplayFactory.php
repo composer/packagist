@@ -62,7 +62,7 @@ class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
                 $entry->type,
                 $entry->datetime,
                 $attributes['name'],
-                $attributes['repository'],
+                $attributes['repository'] ?? null,
                 // only on moderator submissions
                 isset($attributes['user']) ? $this->buildActor($attributes['user']) : null,
                 $this->buildActor($attributes['actor'] ?? null),
