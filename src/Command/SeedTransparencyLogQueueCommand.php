@@ -25,8 +25,9 @@ use Symfony\Component\Uid\NilUlid;
  * Backfills the transparency-log projection queue from audit_log history.
  *
  * A queue row is written at the same time as the audit record, so records older than the queue table
- * have none and are never projected on their own. This command backfilly the queue. Safe to re-run: it
- * only enqueues records with neither a package_transparency_log entry nor a queue row.
+ * have none and are never projected on their own. This command backfills the queue. Safe to re-run: it
+ * only enqueues records with a packageId and with neither a package_transparency_log entry nor a
+ * queue row.
  *
  * Only package-native types ({@see TransparencyLogEventType::packageNativeAuditLogEventTypes()}) are
  * seeded.

@@ -86,6 +86,33 @@ class SeedTransparencyLogQueueCommandTest extends IntegrationTestCase
         ));
     }
 
+    /**
+     * The projector dequeues a package-native record with no packageId without writing an entry, so
+     * seeding it would add it back on every run.
+     */
+    public function testRecordsWithoutPackageIdAreNotSeeded(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $user = self::createUser('nopackage', 'nopackage@example.org');
+        $em->persist($user);
+        $em->flush();
+
+        $package = self::createPackage('seed/nopackage', 'https://github.com/seed/nopackage', null, [$user]);
+        $em->persist($package);
+        $em->flush();
+
+        $historical = AuditRecord::maintainerAdded($package, $user, $user);
+        $em->getRepository(AuditRecord::class)->insert($historical);
+        $conn->executeStatement('DELETE FROM package_transparency_log_queue WHERE auditLogId = ?', [$historical->id->toBinary()]);
+        $conn->executeStatement('UPDATE audit_log SET packageId = NULL WHERE id = ?', [$historical->id->toBinary()]);
+
+        $tester = $this->seed(['--dry-run' => true]);
+
+        self::assertStringContainsString('0 record(s) would be enqueued', $tester->getDisplay());
+    }
+
     public function testAlreadyProjectedRecordsAreNotSeededAgain(): void
     {
         $em = $this->getEM();

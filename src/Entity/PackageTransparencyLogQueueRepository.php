@@ -94,6 +94,9 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
      * Audit ids of the given types after $after with neither a package_transparency_log entry nor a
      * queue row, for the backfill seed. Paged so seeding does not keep one long transaction open.
      *
+     * Skips records with no packageId: the projector dequeues them without writing an entry, so
+     * they would otherwise be seeded again by every run.
+     *
      * @param list<string> $types
      *
      * @return list<Ulid>
@@ -109,6 +112,7 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
             ->from(AuditRecord::class, 'a')
             ->where('a.type IN (:types)')
             ->andWhere('a.id > :after')
+            ->andWhere('a.packageId IS NOT NULL')
             ->andWhere('NOT EXISTS (SELECT p.id FROM '.PackageTransparencyLog::class.' p WHERE p.sourceAuditLogId = a.id)')
             ->andWhere('NOT EXISTS (SELECT q.auditLogId FROM '.PackageTransparencyLogQueue::class.' q WHERE q.auditLogId = a.id)')
             ->setParameter('types', $types)
