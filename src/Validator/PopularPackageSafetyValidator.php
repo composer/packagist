@@ -90,6 +90,7 @@ class PopularPackageSafetyValidator extends ConstraintValidator
 
             $this->context->buildViolation($countIsKnown ? $constraint->message : $constraint->unknownMessage)
                 ->atPath('repository')
+                ->setCode($countIsKnown ? PopularPackageSafety::POPULAR_PACKAGE_ERROR : PopularPackageSafety::UNKNOWN_POPULARITY_ERROR)
                 ->addViolation()
             ;
         }
