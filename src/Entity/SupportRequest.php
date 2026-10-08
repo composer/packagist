@@ -152,6 +152,17 @@ class SupportRequest
         return $attributes;
     }
 
+    /** For the one workflow that lets a requester add to an open request. */
+    public function replaceAttributes(SupportRequestAttributes $attributes): void
+    {
+        if ($attributes->type() !== $this->type) {
+            throw new \LogicException('Request '.$this->publicId.' is a '.$this->type->value.', so it cannot take a '.$attributes->type()->value.' payload');
+        }
+
+        $this->attributeData = $attributes->toArray();
+        $this->hydrated = $attributes;
+    }
+
     public function isOpen(): bool
     {
         return $this->status === SupportRequestStatus::Open;

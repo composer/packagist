@@ -23,7 +23,7 @@
                 </ul>
             {% endif %}
 
-            {{ form_start(form) }}
+            {{ form_start(form, pickerId is defined ? {attr: {id: pickerId}} : {}) }}
                 {{ form_errors(form) }}
                 {{ form_widget(form) }}
                 <input class="btn btn-success" type="submit" value="{{ submitLabel }}" />

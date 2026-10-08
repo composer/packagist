@@ -17,7 +17,15 @@ use Symfony\Component\Validator\Constraint;
 #[\Attribute(\Attribute::TARGET_CLASS)]
 class PopularPackageSafety extends Constraint
 {
-    public string $message = 'This package is very popular and URL editing has been disabled for security reasons. Please add a note on the old repo pointing to the new one if possible then get in touch at contact@packagist.org so we can get it sorted.';
+    public const POPULAR_PACKAGE_ERROR = 'popular-package';
+    public const UNKNOWN_POPULARITY_ERROR = 'unknown-popularity';
+
+    // Plain text: the edit page, submitPackage.js and the API escape it differently, so the support
+    // link is rendered by package/edit.html.twig instead.
+    public string $message = 'This package is very popular, so URL editing is disabled for security reasons: repointing a widely used package is how one gets hijacked. Please add a note on the old repo pointing at the new one if you can, then ask us to make the change.';
+
+    /** Shown instead when the popularity check could not run, so the two cases are told apart. */
+    public string $unknownMessage = 'We could not check how popular this package is right now, so URL editing is blocked as a precaution. Please try again in a few minutes.';
 
     public function getTargets(): string
     {

@@ -100,7 +100,14 @@
                     <p class="description">{{ package.description|u.truncate(300) }}</p>
 
                     {% if package.isFrozen() %}
-                        <p class="alert alert-danger">{{ package.getFreezeReason().translationKey()|trans }}</p>
+                        <p class="alert alert-danger">
+                            {{ package.getFreezeReason().translationKey()|trans }}
+                            {# maintainers only: a moderator has the real unfreeze button above and should not be sent to the appeal form #}
+                            {% if app.user and package.isMaintainer(app.user) and not package.getFreezeReason().suppressesPackage() %}
+                                <br/>
+                                <a href="{{ path('support_unfreeze_package', {package: package.name}) }}">Ask us to unfreeze this package</a>
+                            {% endif %}
+                        </p>
                     {% endif %}
                 </div>
 

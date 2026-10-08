@@ -21,6 +21,7 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
+use App\Entity\SupportRequest;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
@@ -29,6 +30,9 @@ use App\Model\ProviderManager;
 use App\Package\PackageListCache;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
+use App\Support\Attributes\PackageUrlChange;
+use App\Support\Attributes\PackageUrlChangeAttributes;
+use App\Support\SupportRequestStatus;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -166,6 +170,141 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertCount(0, $crawler->filter('.package form.force-update'));
         self::assertCount(0, $crawler->filter('.package[data-force-crawl]'));
+    }
+
+    /**
+     * The constraint message stays plain text because three consumers render it with three different
+     * escaping rules, so the support workflow has to be offered by the template instead.
+     */
+    public function testBlockedUrlEditOffersTheSupportWorkflow(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $package = self::createPackage('mover/popular', 'https://example.com/mover/popular', maintainers: [$user]);
+        $this->store($package);
+
+        $redis = $this->redis();
+        $redis->set('dl:'.$package->getId(), '500000');
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/packages/mover/popular/edit');
+        $form = $crawler->selectButton('Update')->form();
+        $form->setValues(['form[repository]' => 'https://example.com/mover/moved']);
+
+        $crawler = $this->client->submit($form);
+
+        $redis->del(['dl:'.$package->getId()]);
+
+        self::assertCount(1, $crawler->filter('a[href*="/contact/package-url-change"]'));
+        // and the constraint message itself carries no markup to be escaped into view
+        self::assertStringNotContainsString('&lt;a href', $crawler->filter('body')->html());
+    }
+
+    /**
+     * The prefill goes through the form field's data option rather than Package::setRepository(),
+     * which probes the URL over the network. A GET that merely renders the form must not touch the
+     * package or reach out to the host somebody put in the query string.
+     */
+    public function testPrefilledEditFormChangesNothingUntilItIsSaved(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $this->store($admin);
+        $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$admin]);
+        $this->store($package);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository=https://example.com/mover/moved&supportRequest=PKSR-test');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('https://example.com/mover/moved', $crawler->filter('#form_repository')->attr('value'));
+        // the admin is told where the value came from, so it cannot be saved unnoticed
+        self::assertStringContainsString('PKSR-test', $crawler->filter('.alert-warning')->html());
+
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->findOneBy(['name' => 'mover/thing']);
+        self::assertNotNull($reloaded);
+        self::assertSame('https://example.com/mover/thing', $reloaded->getRepository());
+    }
+
+    /**
+     * The reference has to survive the POST: the form's action is generated without a query string,
+     * so once the admin hits save there is nothing left on the URL to read it back off. Asserted on
+     * the rendered field rather than by saving, because a successful save runs the real VCS probe
+     * in ValidPackageRepositoryValidator and there is no driver stub in the test kernel.
+     */
+    public function testPrefilledEditCarriesTheSupportReferenceThroughThePost(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $this->store($admin);
+        $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$admin]);
+        $this->store($package);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository=https://example.com/mover/moved&supportRequest=PKSR-1111-2222-3333');
+
+        self::assertResponseIsSuccessful();
+        $hidden = $crawler->filter('input[name="form[supportRequest]"]');
+        self::assertCount(1, $hidden);
+        self::assertSame('PKSR-1111-2222-3333', $hidden->attr('value'));
+
+        // and the form posts back to a URL that carries nothing, which is why the field has to exist
+        self::assertSame('/packages/mover/thing/edit', $crawler->filter('form[action*="/edit"]')->first()->attr('action'));
+    }
+
+    public function testSavingTheLastRequestedUrlResolvesTheRequestAndTellsTheRequester(): void
+    {
+        // A local git repo, so the save's VCS probe passes without the network
+        $repoDir = sys_get_temp_dir().'/packagist-url-change-'.bin2hex(random_bytes(4));
+        mkdir($repoDir);
+        file_put_contents($repoDir.'/composer.json', '{"name": "mover/thing"}');
+        $git = 'git -C '.escapeshellarg($repoDir).' -c user.name=t -c user.email=t@example.org ';
+        exec($git.'init -q -b main && '.$git.'add composer.json && '.$git.'commit -q -m init', result_code: $code);
+        self::assertSame(0, $code);
+        $newUrl = 'file://'.$repoDir;
+
+        try {
+            $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+            $requester = self::createUser('mover', 'mover@example.org', githubId: '23456');
+            $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$requester]);
+            $request = SupportRequest::create($requester, 'It moved.', new PackageUrlChangeAttributes([new PackageUrlChange('mover/thing', $newUrl)]));
+            $this->store($admin, $requester, $package, $request);
+
+            $this->client->loginUser($admin);
+            $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository='.urlencode($newUrl).'&supportRequest='.$request->publicId);
+            $this->client->submit($crawler->selectButton('Update')->form());
+
+            self::assertResponseRedirects();
+            $em = self::getEM();
+            $em->clear();
+            $reloaded = $em->getRepository(SupportRequest::class)->findOneBy(['publicId' => $request->publicId]);
+            self::assertNotNull($reloaded);
+            self::assertSame(SupportRequestStatus::Resolved, $reloaded->status);
+
+            $this->assertEmailCount(1);
+            $mail = $this->getMailerMessage();
+            self::assertNotNull($mail);
+            $this->assertEmailAddressContains($mail, 'To', 'mover@example.org');
+            $this->assertEmailTextBodyContains($mail, 'mover/thing: '.$newUrl);
+        } finally {
+            exec('rm -rf '.escapeshellarg($repoDir));
+        }
+    }
+
+    public function testPrefillAndReferenceAreIgnoredForPlainMaintainers(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$user]);
+        $this->store($package);
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository=https://evil.example/mover/thing&supportRequest=Approved-by-staff');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('https://example.com/mover/thing', $crawler->filter('#form_repository')->attr('value'));
+        self::assertCount(0, $crawler->filter('.alert-warning'));
+        self::assertCount(0, $crawler->filter('input[name="form[supportRequest]"]'));
     }
 
     public function testPackagePageOnlyCountsViewsWhileTheSpamHeuristicCanUseThem(): void

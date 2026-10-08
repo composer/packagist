@@ -63,7 +63,7 @@ security:
         # /contact itself and the token-authenticated 2FA cancel link stay public, so only the
         # workflow forms are listed. There is no catch-all deny below, so this is a real second
         # layer rather than a restatement of the controllers' #[IsGranted].
-        - { path: ^/contact/(package-transfer|vendor-claim|delete-account)$, role: ROLE_USER }
+        - { path: ^/contact/(package-transfer|vendor-claim|delete-account|unfreeze-package|package-url-change|delete-packages)$, role: ROLE_USER }
         - { path: ^/packages/submit$, role: ROLE_USER }
         - { path: ^/users/[^/]+/(2fa|delete)(/|$), role: ROLE_USER }
         - { path: ^/packages/fetch-info$, role: ROLE_USER }
