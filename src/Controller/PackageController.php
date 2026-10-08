@@ -1350,10 +1350,9 @@ class PackageController extends Controller
     /**
      * The URL the popularity guard rejected, or null if that is not why the form failed.
      *
-     * Matched on the constraint type rather than on the message, the way
-     * FormInvalidPasswordSubscriber does. The unknownMessage variant is deliberately excluded: it
-     * means the download count could not be read, so every package on the site looks popular, and
-     * pointing all of them at the support queue would be the wrong answer.
+     * The UNKNOWN_POPULARITY_ERROR variant is deliberately excluded: it means the download count
+     * could not be read, so every package on the site looks popular, and pointing all of them at the
+     * support queue would be the wrong answer.
      *
      * @param FormInterface<Package> $form
      */
@@ -1361,12 +1360,7 @@ class PackageController extends Controller
     {
         foreach ($form->getErrors(true) as $error) {
             $cause = $error->getCause();
-            if (!$cause instanceof ConstraintViolation) {
-                continue;
-            }
-
-            $constraint = $cause->getConstraint();
-            if ($constraint instanceof PopularPackageSafety && $cause->getMessageTemplate() === $constraint->message) {
+            if ($cause instanceof ConstraintViolation && $cause->getCode() === PopularPackageSafety::POPULAR_PACKAGE_ERROR) {
                 $data = $form->get('repository')->getViewData();
 
                 return is_string($data) && $data !== '' ? $data : null;

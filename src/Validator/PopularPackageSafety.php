@@ -17,6 +17,9 @@ use Symfony\Component\Validator\Constraint;
 #[\Attribute(\Attribute::TARGET_CLASS)]
 class PopularPackageSafety extends Constraint
 {
+    public const POPULAR_PACKAGE_ERROR = 'popular-package';
+    public const UNKNOWN_POPULARITY_ERROR = 'unknown-popularity';
+
     // Plain text on purpose. Three consumers render this with three different escaping rules -- the
     // edit page escapes it, js/submitPackage.js injects it as HTML, and api_edit_package returns it
     // as a JSON string -- so markup cannot be correct in all of them. The link to the support
