@@ -31,6 +31,7 @@
   <li><a href="#create-package">{{ 'api_doc.api_create_package'|trans }}</a></li>
   <li><a href="#edit-package">Edit a package</a></li>
   <li><a href="#update-package">Update a package</a></li>
+  <li><a href="#malware-feed">Malware feed format for third-party providers</a></li>
 </ul>
 
 
@@ -576,6 +577,31 @@ POST https://{{ packagist_host }}/api/update-package {"repository":"[url]"}
         <code>curl -X POST -H'Content-Type:application/json' -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/update-package' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code><br/>
         <code>curl -X POST -H'Content-Type:application/json' -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/update-package' -d '{"repository":"https://packagist.org/monolog/monolog"}'</code>
     </p>
+
+</section>
+
+<section class="col-md-12">
+    <h3 id="malware-feed">Malware feed format for third-party providers</h3>
+
+    <p>This is not an endpoint of Packagist. It describes the format a third party can use to provide a feed of package versions reported as malware, for Packagist to ingest. The feed is a JSON array with one object per affected package, described by the <a href="https://{{ packagist_host }}/schema/malware-feed.json">malware feed JSON schema</a>.</p>
+
+    <ul>
+      <li><code>package_name</code> (required): the package name, including the vendor, matched case-insensitively.</li>
+      <li><code>version</code> (required): a Composer version constraint matching the affected versions, e.g. <code>1.2.3</code> or <code>&gt;=1.0,&lt;1.4</code>.</li>
+      <li><code>reason</code>: why the versions are reported, shown to users as free text.</li>
+      <li><code>url</code>: a link to the report with more details.</li>
+    </ul>
+
+    <pre><code>
+[
+  {
+    "package_name": "[vendor]/[package]",
+    "version": "[affected versions in form of a composer constraint]",
+    "reason": "[free text explaining why it is reported]",
+    "url": "[url to the report]"
+  }
+]
+</code></pre>
 
 </section>
 
