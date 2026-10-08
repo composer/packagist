@@ -14,6 +14,7 @@ namespace App\Command;
 
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
+use App\SecurityAdvisory\WordPressSecurityAdvisoriesSource;
 use App\Service\Locker;
 use App\Service\Scheduler;
 use Symfony\Component\Console\Command\Command;
@@ -44,7 +45,11 @@ class UpdateSecurityAdvisoriesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $source = $input->getArgument('source');
-        $sources = [GitHubSecurityAdvisoriesSource::SOURCE_NAME, FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME];
+        $sources = [
+            GitHubSecurityAdvisoriesSource::SOURCE_NAME,
+            WordPressSecurityAdvisoriesSource::SOURCE_NAME,
+            FriendsOfPhpSecurityAdvisoriesSource::SOURCE_NAME,
+        ];
         if (!\in_array($source, $sources, true)) {
             $output->writeln('source must be one of '.implode(', ', $sources));
 

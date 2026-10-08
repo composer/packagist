@@ -152,6 +152,7 @@ services:
         $sources:
             'FriendsOfPHP/security-advisories': '@App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource'
             'GitHub': '@App\SecurityAdvisory\GitHubSecurityAdvisoriesSource'
+            'WordPress': '@App\SecurityAdvisory\WordPressSecurityAdvisoriesSource'
 
     App\Service\FilterListWorker:
         $filterLists:

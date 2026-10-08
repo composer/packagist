@@ -1,0 +1,197 @@
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\SecurityAdvisory;
+
+use App\Entity\SecurityAdvisory;
+use App\Entity\User;
+use App\Model\ProviderManager;
+use Composer\IO\ConsoleIO;
+use Composer\Pcre\Preg;
+use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\Service\ResetInterface;
+
+/**
+ * @author Léo Colombaro <git@colombaro.fr>
+ */
+class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterface
+{
+    public const SOURCE_NAME = 'WordPress';
+
+    private const IGNORE_CVES = [];
+
+    /**
+     * @param list<string> $fallbackGhTokens
+     */
+    public function __construct(
+        #[Autowire(service: 'http_client')]
+        private readonly HttpClientInterface&ResetInterface $httpClient,
+        private LoggerInterface $logger,
+        private ProviderManager $providerManager,
+        private array $fallbackGhTokens,
+        private ManagerRegistry $doctrine,
+    ) {
+    }
+
+    public function getAdvisories(ConsoleIO $io): ?RemoteSecurityAdvisoryCollection
+    {
+        /** @var array<string, array<string, RemoteSecurityAdvisory>> $advisoryMap */
+        $advisoryMap = [];
+        /** @var array<string, array<string, true>> $foundPackageCves */
+        $foundPackageCves = [];
+        /** @var array<string, array<string, true>> $withdrawnAdvisories */
+        $withdrawnAdvisories = [];
+        /** @var string $nextPage */
+        $nextPage = 'https://api.github.com/repos/WordPress/wordpress-develop/security-advisories?per_page=100';
+
+        while ($nextPage !== '') {
+            $headers = [];
+            if (\count($this->fallbackGhTokens) > 0) {
+                $fallbackUser = $this->doctrine->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, \count($this->fallbackGhTokens) - 1)]]);
+                if (null !== $fallbackUser?->getGithubToken()) {
+                    $headers = ['Authorization' => 'token '.$fallbackUser->getGithubToken()];
+                }
+            }
+
+            $retries = 3;
+            do {
+                try {
+                    $response = $this->httpClient->request('GET', $nextPage, [
+                        'headers' => $headers,
+                    ]);
+                    $data = json_decode($response->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+                    $responseHeaders = $response->getHeaders();
+                    break;
+                } catch (\RuntimeException $e) {
+                    if ($retries === 0) {
+                        $this->logger->error('Failed to fetch GitHub advisories, aborting.', [
+                            'exception' => $e,
+                        ]);
+
+                        return null;
+                    }
+
+                    $this->logger->debug('Failed to fetch GitHub advisories, retrying', [
+                        'exception' => $e,
+                    ]);
+                    sleep(1);
+                    $this->httpClient->reset();
+                }
+            } while ($retries-- > 0);
+
+            \assert(isset($data));
+
+            foreach ($data as $node) {
+                $remoteId = null;
+                $cve = null;
+
+                foreach ($node['identifiers'] as $identifier) {
+                    if ('GHSA' === $identifier['type']) {
+                        $remoteId = $identifier['value'];
+                        continue;
+                    }
+                    if ('CVE' === $identifier['type']) {
+                        $cve = $identifier['value'];
+                    }
+                }
+                if (null === $remoteId) {
+                    continue;
+                }
+
+                if (\in_array($cve, self::IGNORE_CVES, true)) {
+                    continue;
+                }
+
+                // WordPress Core Implementation provider name.
+                $packageName = WordPressRemoteSecurityAdvisoryCollection::WORDPRESS_CORE_PROVIDER;
+
+                // Record advisories withdrawn at the source so existing DB entries can be removed.
+                // These are kept out of $advisoryMap and $foundPackageCves so a live advisory for
+                // the same CVE is not suppressed by a withdrawn one.
+                if (isset($node['withdrawn_at'])) {
+                    $withdrawnAdvisories[$packageName][$remoteId] = true;
+                    continue;
+                }
+
+                $versionRange = '';
+                foreach ($node['vulnerabilities'] as $vulnerability) {
+                    if ($vulnerability['package'] === 'wordpress' || $vulnerability['package']['name'] === 'WordPress') {
+                        $versionRange = implode('|', [$versionRange, $vulnerability['vulnerable_version_range']]);
+                    }
+                }
+                // GitHub adds spaces everywhere e.g. > 1.0, adjust to be able to match other advisories
+                $versionRange = Preg::replace('#\s#', '', $versionRange);
+                if (isset($advisoryMap[$packageName][$remoteId])) {
+                    $advisoryMap[$packageName][$remoteId] = $advisoryMap[$packageName][$remoteId]->withAddedAffectedVersion($versionRange);
+                    continue;
+                }
+
+                // GitHub can have multiple advisories per CVE and package
+                if ($cve !== null) {
+                    if (isset($foundPackageCves[$packageName][$cve])) {
+                        continue;
+                    }
+
+                    $foundPackageCves[$packageName][$cve] = true;
+                }
+
+                $references = [$node['html_url']];
+
+                $date = \DateTimeImmutable::createFromFormat(\DateTimeInterface::ISO8601, $node['published_at']);
+                if ($date === false) {
+                    throw new \InvalidArgumentException('Invalid date format returned from GitHub');
+                }
+
+                $advisoryMap[$packageName][$remoteId] = new RemoteSecurityAdvisory(
+                    $remoteId,
+                    $node['summary'],
+                    $packageName,
+                    $versionRange,
+                    $node['html_url'],
+                    $cve,
+                    $date,
+                    $this->providerManager->packageExists($packageName) ? SecurityAdvisory::PACKAGIST_ORG : null,
+                    $references,
+                    self::SOURCE_NAME,
+                    Severity::fromGitHub($node['severity']),
+                );
+            }
+
+            $nextPage = $responseHeaders['link'] ?? '';
+        }
+
+        $advisories = [];
+        foreach ($advisoryMap as $packageAdvisories) {
+            foreach ($packageAdvisories as $packageAdvisory) {
+                $advisories[] = $packageAdvisory;
+            }
+        }
+
+        // A remote id that is both withdrawn and live in the same run (e.g. withdrawn on one node
+        // but present on another) must be treated as live, so do not flag it for removal.
+        foreach ($withdrawnAdvisories as $packageName => $remoteIds) {
+            foreach (array_keys($remoteIds) as $remoteId) {
+                if (isset($advisoryMap[$packageName][$remoteId])) {
+                    unset($withdrawnAdvisories[$packageName][$remoteId]);
+                }
+            }
+            if (\count($withdrawnAdvisories[$packageName]) === 0) {
+                unset($withdrawnAdvisories[$packageName]);
+            }
+        }
+
+        return new WordPressRemoteSecurityAdvisoryCollection($advisories, $withdrawnAdvisories);
+    }
+}
