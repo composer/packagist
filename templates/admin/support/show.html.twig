@@ -142,7 +142,7 @@
                                 <td>
                                     {% if row.package %}
                                         <a href="{{ path('view_package', {name: row.package.name}) }}">{{ row.package.name }}</a>
-                                        {% if not row.maintainedByRequester %}<span class="badge bg-warning text-dark">not theirs</span>{% endif %}
+                                        {% if not row.maintainedByRequester %}<span class="badge bg-danger">requester is NOT a maintainer</span>{% endif %}
                                     {% else %}
                                         {{ row.name }} <span class="badge bg-secondary">not found</span>
                                     {% endif %}
@@ -160,7 +160,7 @@
                                 </td>
                                 <td>{% if row.package %}<code>{{ row.package.repository }}</code>{% endif %}</td>
                                 <td class="text-end">
-                                    {% if row.package and row.freezeReason and supportRequest.status.value == 'open' %}
+                                    {% if row.package and row.freezeReason and row.maintainedByRequester and supportRequest.status.value == 'open' %}
                                         <form method="post" action="{{ path('admin_support_request_unfreeze_package', {publicId: supportRequest.publicId}) }}"
                                               onsubmit="return confirm('Unfreeze {{ row.package.name|e('js') }}? It will be crawled again from {{ row.package.repository|e('js') }}.')">
                                             <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
@@ -221,8 +221,9 @@
                     </tbody>
                 </table>
                 <p class="text-muted">
-                    The change itself is made on the package's own edit form, not from here. The task
-                    resolves itself once every package above has moved, unless one is still frozen.
+                    The change itself is made on the package's own edit form, not from here. Once every
+                    package above has moved and none is still frozen, the requester is emailed a
+                    confirmation and the task resolves itself.
                 </p>
             {% endif %}
 

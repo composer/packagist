@@ -339,12 +339,7 @@ class SupportController extends Controller
         return $redirect;
     }
 
-    /**
-     * Lifts the freeze on one of the packages the request names.
-     *
-     * Role-gated rather than voter-gated because there is no PackageActions case for freezing -- the
-     * package page's own unfreeze route is #[IsGranted('ROLE_DISABLE_PACKAGES')] too.
-     */
+    /** Role-gated like the package page's unfreeze route, as there is no PackageActions case for it. */
     #[Route(path: '/admin/support/{publicId}/unfreeze-package', name: 'admin_support_request_unfreeze_package', methods: ['POST'])]
     public function unfreezePackage(Request $req, string $publicId, #[CurrentUser] User $actor, PackageManager $packageManager): RedirectResponse
     {
@@ -382,6 +377,13 @@ class SupportController extends Controller
             return $redirect;
         }
 
+        // Approving a remote_id appeal hands over the repo identity, so only to a current maintainer.
+        if (!$package->isMaintainer($request->user)) {
+            $this->addFlash('error', $request->user->getUsername().' does not maintain '.$name.' any more, so this request is no longer theirs to make.');
+
+            return $redirect;
+        }
+
         // Re-read rather than trusted from filing time: a package frozen as spam or malware since
         // the request was filed is a moderation decision this queue must not quietly undo.
         if ($package->getFreezeReason()?->suppressesPackage()) {
@@ -402,10 +404,7 @@ class SupportController extends Controller
         return $redirect;
     }
 
-    /**
-     * Deletes one of the packages the request names. Irreversible, so everything is re-checked here
-     * rather than trusted from the picker the requester filled in.
-     */
+    /** Irreversible, so everything is re-checked here rather than trusted from filing time. */
     #[Route(path: '/admin/support/{publicId}/delete-package', name: 'admin_support_request_delete_package', methods: ['POST'])]
     public function deletePackage(Request $req, string $publicId, #[CurrentUser] User $actor, PackageManager $packageManager): RedirectResponse
     {
@@ -579,11 +578,7 @@ class SupportController extends Controller
     }
 
     /**
-     * Resolves the names on a request against real packages, so the admin can judge it against the
-     * authoritative maintainer list and current state rather than against a stored string.
-     *
-     * Takes the names rather than the request because four types carry a package list in different
-     * shapes; show() picks them out per type and this stays shape-agnostic.
+     * Resolves requested names against current package state for the admin to judge.
      *
      * @param list<string> $names
      *

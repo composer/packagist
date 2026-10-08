@@ -14,10 +14,7 @@ namespace App\Support\Attributes;
 
 use App\Support\SupportRequestType;
 
-/**
- * Uses the same packageNames key as {@see PackageTransferAttributes}, which is what makes these
- * requests turn up in the queue's JSON_EXTRACT search without a second clause for them.
- */
+/** Same packageNames key as {@see PackageTransferAttributes}, so queue search finds these too. */
 final readonly class PackageDeletionAttributes implements SupportRequestAttributes
 {
     /** @param list<string> $packageNames picked from the requester's own packages, never typed */

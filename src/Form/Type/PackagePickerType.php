@@ -17,17 +17,8 @@ use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Checkbox list of package names the requester already holds, shared by the unfreeze and deletion
- * workflows.
- *
- * The caller passes only the names it is willing to accept, which makes the choice list the
- * authorization check: a hand-crafted POST naming somebody else's package fails Symfony's own choice
- * validation, so there is no second membership check to keep in sync.
- *
- * The data attributes are what js/packagePicker.js hangs the select-all and per-vendor toggles off.
- * Those toggles are injected at runtime rather than rendered here, so the shared
- * templates/support/request.html.twig shell -- which renders form_widget() wholesale -- needs no
- * per-field layout, and the form still works without JavaScript.
+ * The choice list is the authorization check: the caller passes only names the requester may pick,
+ * so a POST naming somebody else's package fails choice validation.
  *
  * @extends AbstractType<mixed>
  */

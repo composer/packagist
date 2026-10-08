@@ -62,6 +62,9 @@ class PackageUrlChangeAttributesTest extends TestCase
         self::assertSame('git.example.org', PackageUrlChange::hostOf('git@git.example.org:acme/one.git'));
         self::assertSame('git.example.org', PackageUrlChange::hostOf('https://git.example.org/acme/one'));
         self::assertNull(PackageUrlChange::hostOf('not a url'));
+        // lowercased, so a case-only difference does not raise the admin panel's different-host warning
+        self::assertSame('git.example.org', PackageUrlChange::hostOf('git@Git.Example.org:acme/one.git'));
+        self::assertSame('git.example.org', PackageUrlChange::hostOf('https://GIT.example.org/acme/one'));
     }
 
     private function attributes(): PackageUrlChangeAttributes

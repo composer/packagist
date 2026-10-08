@@ -18,6 +18,7 @@ use App\Support\Attributes\LostTwoFactorAttributes;
 use App\Support\Attributes\PackageDeletionAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\PackageUnfreezeAttributes;
+use App\Support\Attributes\PackageUrlChange;
 use App\Support\Attributes\PackageUrlChangeAttributes;
 use App\Support\Attributes\SupportRequestAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
@@ -101,12 +102,29 @@ enum SupportRequestType: string
             TXT;
     }
 
+    /** Sent verbatim when the last package of a URL change request has been moved. */
+    public static function urlChangeAppliedReply(PackageUrlChangeAttributes $attributes): string
+    {
+        $changes = implode("\n", array_map(
+            static fn (PackageUrlChange $change): string => $change->packageName.': '.$change->repository,
+            $attributes->changes,
+        ));
+
+        return <<<TXT
+            Thanks for getting in touch. The repository URL has been updated:
+
+            {$changes}
+
+            The packages will be re-crawled from their new location shortly.
+            TXT;
+    }
+
     /**
      * Starting point for the admin's reply, not a canned response. Each type offers the two likely
      * branches so the admin deletes one and edits the rest.
      *
-     * Only ever used to prefill the reply textarea. The one message the system sends on its own is
-     * {@see twoFactorGrantedReply()}.
+     * Only ever used to prefill the reply textarea. The messages the system sends on its own are
+     * {@see twoFactorGrantedReply()} and {@see urlChangeAppliedReply()}.
      */
     public function suggestedReply(SupportRequest $request): string
     {
@@ -173,12 +191,8 @@ enum SupportRequestType: string
                 point at. Please push a commit, or create a secret gist from the account that owns
                 the repo and link us to it.
                 TXT,
+            // No "done" branch: applying the change sends urlChangeAppliedReply() on its own.
             self::PackageUrlChange => <<<TXT
-                Thanks for getting in touch. The repository URL has been updated, and the package
-                will be re-crawled from the new location shortly.
-
-                --- or ---
-
                 Before we move this one we need to confirm you control the new repository, since the
                 package is popular enough that a URL change affects a lot of people. Please link us
                 to something that shows it, such as a commit you just pushed there.

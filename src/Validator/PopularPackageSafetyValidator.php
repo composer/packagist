@@ -59,11 +59,7 @@ class PopularPackageSafetyValidator extends ConstraintValidator
             return;
         }
 
-        // Fails closed: without a count we cannot tell a popular package from a new one, and the
-        // safe answer is to block. Tracked separately from a real count because it means EVERY
-        // package on the site looks popular, so the block must not then advertise the support
-        // workflow -- that would funnel the whole site into the queue during a Redis outage, and
-        // SupportRequestRateLimiter fails open on the same exception.
+        // Fails closed, but flagged so the block does not send every package to the support queue.
         $countIsKnown = true;
         try {
             $downloads = $this->downloadManager->getTotalDownloads($value);

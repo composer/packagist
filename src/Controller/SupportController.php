@@ -389,19 +389,16 @@ class SupportController extends Controller
             } else {
                 $change = new PackageUrlChange($data->packageName, $url);
 
-                // Appended rather than turned away: one open request per type is a database
-                // invariant, and a GitHub org rename breaks every package under it at once, so the
-                // second one would otherwise be dropped on the floor. Has to happen here, before the
-                // insert -- storeRequest()'s UniqueConstraintViolationException branch cannot, since
-                // the failed flush has closed the entity manager.
+                // Before the insert: once the unique index trips, the entity manager is closed.
                 $existing = $this->supportRequests->findOpen($user, SupportRequestType::PackageUrlChange);
                 if ($existing !== null) {
-                    return $this->appendUrlChange($existing, $change, $data->description);
+                    $response = $this->appendUrlChange($req, $user, $existing, $change, $data->description);
+                } else {
+                    $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUrlChangeAttributes([$change]));
+                    $response = $this->storeRequest($req, $user, SupportRequestType::PackageUrlChange, $create);
                 }
 
-                $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUrlChangeAttributes([$change]));
-
-                if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageUrlChange, $create)) {
+                if ($response !== null) {
                     return $response;
                 }
             }
@@ -445,17 +442,24 @@ class SupportController extends Controller
     }
 
     /**
-     * Appends a package to an open URL change request and notes it on the thread, so a second filing
-     * adds to the admin's task rather than bouncing off the one-open-per-type invariant.
+     * Adds a package to the open URL change request, or corrects its URL, since only one request per
+     * type may be open. Returns null when the form should be re-rendered with an error flash.
      */
-    private function appendUrlChange(SupportRequest $request, PackageUrlChange $change, string $description): Response
+    private function appendUrlChange(Request $req, User $user, SupportRequest $request, PackageUrlChange $change, string $description): ?Response
     {
         $attributes = $request->attributesOf(PackageUrlChangeAttributes::class);
+        $previous = $attributes->changeFor($change->packageName);
 
-        if (in_array($change->packageName, $attributes->names(), true)) {
+        if ($previous?->repository === $change->repository) {
             $this->addFlash('info', $change->packageName.' is already part of your open request ('.$request->publicId.'). We will get back to you by email.');
 
             return $this->redirectToRoute('support_contact');
+        }
+
+        if ($this->rateLimiter->isLimited($user, SupportRequestType::PackageUrlChange, $req->getClientIp())) {
+            $this->addFlash('error', 'You have submitted this request too many times recently. Please email contact@packagist.org instead.');
+
+            return null;
         }
 
         $request->replaceAttributes($attributes->withChange($change));
@@ -463,13 +467,18 @@ class SupportController extends Controller
         $em = $this->getEM();
         $em->persist(SupportRequestMessage::internalNote(
             $request,
-            'The requester added '.$change->packageName.' to this request, asking for '.$change->repository.":\n\n".$description,
+            ($previous !== null
+                ? 'The requester changed the URL for '.$change->packageName.' from '.$previous->repository.' to '.$change->repository
+                : 'The requester added '.$change->packageName.' to this request, asking for '.$change->repository).":\n\n".$description,
             null,
         ));
         $request->touch(new \DateTimeImmutable());
         $em->flush();
 
-        $this->addFlash('success', $change->packageName.' was added to your open request ('.$request->publicId.'). We will get back to you by email.');
+        $this->rateLimiter->recordSubmission($user, SupportRequestType::PackageUrlChange, $req->getClientIp());
+        $this->notifier->notifyAdmins($request, updated: true);
+
+        $this->addFlash('success', $change->packageName.($previous !== null ? ' was updated on' : ' was added to').' your open request ('.$request->publicId.'). We will get back to you by email.');
 
         return $this->redirectToRoute('support_contact');
     }

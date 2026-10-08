@@ -21,6 +21,7 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
+use App\Entity\SupportRequest;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
@@ -29,6 +30,9 @@ use App\Model\ProviderManager;
 use App\Package\PackageListCache;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
+use App\Support\Attributes\PackageUrlChange;
+use App\Support\Attributes\PackageUrlChangeAttributes;
+use App\Support\SupportRequestStatus;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -246,6 +250,45 @@ class PackageControllerTest extends IntegrationTestCase
 
         // and the form posts back to a URL that carries nothing, which is why the field has to exist
         self::assertSame('/packages/mover/thing/edit', $crawler->filter('form[action*="/edit"]')->first()->attr('action'));
+    }
+
+    public function testSavingTheLastRequestedUrlResolvesTheRequestAndTellsTheRequester(): void
+    {
+        // A local git repo, so the save's VCS probe passes without the network
+        $repoDir = sys_get_temp_dir().'/packagist-url-change-'.bin2hex(random_bytes(4));
+        mkdir($repoDir);
+        file_put_contents($repoDir.'/composer.json', '{"name": "mover/thing"}');
+        $git = 'git -C '.escapeshellarg($repoDir).' -c user.name=t -c user.email=t@example.org ';
+        exec($git.'init -q -b main && '.$git.'add composer.json && '.$git.'commit -q -m init', result_code: $code);
+        self::assertSame(0, $code);
+        $newUrl = 'file://'.$repoDir;
+
+        try {
+            $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+            $requester = self::createUser('mover', 'mover@example.org', githubId: '23456');
+            $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$requester]);
+            $request = SupportRequest::create($requester, 'It moved.', new PackageUrlChangeAttributes([new PackageUrlChange('mover/thing', $newUrl)]));
+            $this->store($admin, $requester, $package, $request);
+
+            $this->client->loginUser($admin);
+            $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository='.urlencode($newUrl).'&supportRequest='.$request->publicId);
+            $this->client->submit($crawler->selectButton('Update')->form());
+
+            self::assertResponseRedirects();
+            $em = self::getEM();
+            $em->clear();
+            $reloaded = $em->getRepository(SupportRequest::class)->findOneBy(['publicId' => $request->publicId]);
+            self::assertNotNull($reloaded);
+            self::assertSame(SupportRequestStatus::Resolved, $reloaded->status);
+
+            $this->assertEmailCount(1);
+            $mail = $this->getMailerMessage();
+            self::assertNotNull($mail);
+            $this->assertEmailAddressContains($mail, 'To', 'mover@example.org');
+            $this->assertEmailTextBodyContains($mail, 'mover/thing: '.$newUrl);
+        } finally {
+            exec('rm -rf '.escapeshellarg($repoDir));
+        }
     }
 
     public function testPrefillAndReferenceAreIgnoredForPlainMaintainers(): void

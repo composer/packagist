@@ -78,9 +78,7 @@ enum PackageFreezeReason: string
     }
 
     /**
-     * The freeze reasons a maintainer may appeal, derived as the complement of the suppressing ones
-     * rather than listed by hand: a suppressed package 404s for its own maintainer, so offering it
-     * in the appeal form would both be useless and confirm the package exists.
+     * The complement of the suppressing reasons: a suppressed package 404s even for its maintainer.
      *
      * @return list<self>
      */

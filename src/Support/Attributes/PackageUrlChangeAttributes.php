@@ -15,11 +15,7 @@ namespace App\Support\Attributes;
 use App\Entity\Package;
 use App\Support\SupportRequestType;
 
-/**
- * A list rather than a single pair: one GitHub org rename breaks every package under it at once, and
- * support_request_open_uniq allows the requester only one open request per type, so a second filing
- * appends here instead of being turned away.
- */
+/** A list, as an org rename breaks many packages at once and only one request per type may be open. */
 final readonly class PackageUrlChangeAttributes implements SupportRequestAttributes
 {
     /** @param list<PackageUrlChange> $changes */
@@ -60,14 +56,35 @@ final readonly class PackageUrlChangeAttributes implements SupportRequestAttribu
         )];
     }
 
+    /** Replaces the package's existing entry, if any, so a refiled URL corrects the earlier one. */
     public function withChange(PackageUrlChange $change): self
     {
-        return new self([...$this->changes, $change]);
+        $changes = [];
+        $replaced = false;
+        foreach ($this->changes as $existing) {
+            if ($existing->packageName === $change->packageName) {
+                $existing = $change;
+                $replaced = true;
+            }
+            $changes[] = $existing;
+        }
+
+        return new self($replaced ? $changes : [...$changes, $change]);
+    }
+
+    public function changeFor(string $packageName): ?PackageUrlChange
+    {
+        foreach ($this->changes as $change) {
+            if ($change->packageName === $packageName) {
+                return $change;
+            }
+        }
+
+        return null;
     }
 
     /**
-     * Frozen targets count as not done: a remote id mismatch freeze survives the URL change, so the
-     * package would still not update.
+     * Frozen targets count as not done: a remote id freeze survives the URL change.
      *
      * @param callable(string): ?Package $find
      */

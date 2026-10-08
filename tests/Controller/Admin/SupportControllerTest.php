@@ -605,6 +605,37 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertTrue($reloaded->isFrozen());
     }
 
+    /** Unfreezing a remote_id freeze hands over the repo identity, so only to a current maintainer. */
+    public function testUnfreezeRefusesAPackageTheRequesterNoLongerMaintains(): void
+    {
+        [$admin, $request] = $this->givenUnfreezeRequest();
+        $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+
+        $em = self::getEM();
+        $package = $em->getRepository(Package::class)->findOneBy(['name' => 'frosty/one']);
+        self::assertNotNull($package);
+        $newOwner = self::createUser('newowner', 'newowner@example.org');
+        $this->store($newOwner);
+        $package->getMaintainers()->clear();
+        $package->addMaintainer($newOwner);
+        $em->flush();
+
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+        self::assertCount(1, $crawler->filter('form[action*="unfreeze-package"]'), 'only frosty/two keeps its button');
+
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/unfreeze-package', [
+            'token' => $token,
+            'package' => 'frosty/one',
+        ]);
+        $this->assertResponseRedirects('/admin/support/'.$request->publicId);
+
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->findOneBy(['name' => 'frosty/one']);
+        self::assertNotNull($reloaded);
+        self::assertTrue($reloaded->isFrozen());
+    }
+
     public function testUnfreezeRejectsAPackageTheRequestDoesNotList(): void
     {
         [$admin, $request] = $this->givenUnfreezeRequest();

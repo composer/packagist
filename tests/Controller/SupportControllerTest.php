@@ -20,11 +20,13 @@ use App\Support\Attributes\AccountDeletionAttributes;
 use App\Support\Attributes\PackageDeletionAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\PackageUnfreezeAttributes;
+use App\Support\Attributes\PackageUrlChange;
 use App\Support\Attributes\PackageUrlChangeAttributes;
 use App\Support\PackageDisposition;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
 use App\Tests\IntegrationTestCase;
+use Predis\Client;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class SupportControllerTest extends IntegrationTestCase
@@ -841,6 +843,69 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertSame(['mover/one', 'mover/two'], $request->attributesOf(PackageUrlChangeAttributes::class)->names());
         // the proof for the added package reaches the admin too
         self::assertStringContainsString('see commit two.', $request->messages->last()->contents);
+        // and the admins hear about the addition as they did about the original
+        $this->assertEmailCount(1);
+    }
+
+    public function testPackageUrlChangeRefilingCorrectsTheRequestedUrl(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('mover/one', 'https://example.org/mover/one', maintainers: [$user]));
+
+        $this->client->loginUser($user);
+        foreach (['https://example.org/moved/oen', 'https://example.org/moved/one'] as $url) {
+            $crawler = $this->client->request('GET', '/contact/package-url-change');
+            $form = $crawler->selectButton('Send request')->form();
+            $form->setValues([
+                'package_url_change_request[packageName]' => 'mover/one',
+                'package_url_change_request[repository]' => $url,
+                'package_url_change_request[description]' => 'The org was renamed.',
+            ]);
+            $this->client->submit($form);
+            $this->assertResponseRedirects('/contact');
+        }
+
+        $request = $this->findRequest($user, SupportRequestType::PackageUrlChange);
+        self::assertNotNull($request);
+        $changes = $request->attributesOf(PackageUrlChangeAttributes::class)->changes;
+        self::assertCount(1, $changes);
+        self::assertSame('https://example.org/moved/one', $changes[0]->repository);
+    }
+
+    public function testPackageUrlChangeAppendIsRateLimited(): void
+    {
+        $user = self::createUser('mover', 'mover@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('mover/one', 'https://example.org/mover/one', maintainers: [$user]));
+        $this->store(self::createPackage('mover/two', 'https://example.org/mover/two', maintainers: [$user]));
+        $this->store(SupportRequest::create($user, 'Moved.', new PackageUrlChangeAttributes([new PackageUrlChange('mover/one', 'https://example.org/moved/one')])));
+
+        $redis = static::getContainer()->get('snc_redis.cache');
+        self::assertInstanceOf(Client::class, $redis);
+        $key = 'support:'.SupportRequestType::PackageUrlChange->value.':user:'.$user->getId();
+        $redis->set($key, '3');
+
+        try {
+            $this->client->loginUser($user);
+            $crawler = $this->client->request('GET', '/contact/package-url-change');
+            $form = $crawler->selectButton('Send request')->form();
+            $form->setValues([
+                'package_url_change_request[packageName]' => 'mover/two',
+                'package_url_change_request[repository]' => 'https://example.org/moved/two',
+                'package_url_change_request[description]' => 'This one too.',
+            ]);
+            $crawler = $this->client->submit($form);
+            $this->assertResponseIsSuccessful();
+            self::assertStringContainsString('too many times', $crawler->filter('.alert-danger, .alert-error')->text());
+        } finally {
+            $redis->del([$key]);
+        }
+
+        $request = $this->findRequest($user, SupportRequestType::PackageUrlChange);
+        self::assertNotNull($request);
+        self::assertSame(['mover/one'], $request->attributesOf(PackageUrlChangeAttributes::class)->names());
+        $this->assertEmailCount(0);
     }
 
     public function testDeletePackagesOnlyOffersTheUsersOwnPackages(): void

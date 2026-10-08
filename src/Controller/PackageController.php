@@ -59,6 +59,7 @@ use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use App\Support\Attributes\PackageUrlChangeAttributes;
+use App\Support\SupportNotifier;
 use App\Support\SupportRequestType;
 use App\Validator\PopularPackageSafety;
 use Composer\Semver\Constraint\Constraint;
@@ -1287,7 +1288,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name:package}/edit', name: 'edit_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
-    public function editAction(Request $req, #[MapEntity] Package $package, SupportRequestRepository $supportRequests, #[CurrentUser] ?User $user = null): Response
+    public function editAction(Request $req, #[MapEntity] Package $package, SupportRequestRepository $supportRequests, SupportNotifier $supportNotifier, #[CurrentUser] ?User $user = null): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::Edit->value, $package);
 
@@ -1296,9 +1297,7 @@ class PackageController extends Controller
         $isSupportAdmin = $this->isGranted('ROLE_EDIT_PACKAGES');
         $fromSupport = $isSupportAdmin && $req->isMethod('GET');
 
-        // Seeded through the field's data option, never through $package->setRepository(): that
-        // setter probes the URL over the network and dirties the managed entity, so prefilling
-        // through it would make a plain GET reach out to a host somebody else chose.
+        // Never via setRepository(): it probes the URL, so a GET would reach a host the requester chose.
         $prefill = $fromSupport ? trim($req->query->getString('repository')) : '';
         $previousUrl = $package->getRepository();
 
@@ -1329,7 +1328,7 @@ class PackageController extends Controller
             $em->persist($package);
             $em->flush();
 
-            $this->noteUrlChangeOnSupportRequest($supportRequests, $package, $previousUrl, $supportRequestId, $user);
+            $this->noteUrlChangeOnSupportRequest($supportRequests, $supportNotifier, $package, $previousUrl, $supportRequestId, $user);
 
             $this->addFlash('success', 'Changes saved.');
 
@@ -1348,11 +1347,8 @@ class PackageController extends Controller
     }
 
     /**
-     * The URL the popularity guard rejected, or null if that is not why the form failed.
-     *
-     * The UNKNOWN_POPULARITY_ERROR variant is deliberately excluded: it means the download count
-     * could not be read, so every package on the site looks popular, and pointing all of them at the
-     * support queue would be the wrong answer.
+     * The URL the popularity guard rejected. UNKNOWN_POPULARITY_ERROR is excluded: during a Redis
+     * outage every package looks popular, and they should not all be sent to the support queue.
      *
      * @param FormInterface<Package> $form
      */
@@ -1371,15 +1367,10 @@ class PackageController extends Controller
     }
 
     /**
-     * Records an applied URL change on the support request it came from, and resolves that request
-     * once every package it names has moved.
-     *
-     * Deliberately here rather than in PackageListener: the listener also fires for webhook-driven
-     * rewrites, where there is no admin and no ticket, and it would have to write from inside a
-     * flush. The reference is only accepted from ROLE_EDIT_PACKAGES users, and the worst a wrong one
-     * can do is annotate a request that already names this package.
+     * Notes an applied URL change on its support request, then resolves it and emails the requester
+     * once every package has moved. Not in PackageListener, which also fires for webhook rewrites.
      */
-    private function noteUrlChangeOnSupportRequest(SupportRequestRepository $supportRequests, Package $package, string $previousUrl, string $publicId, ?User $actor): void
+    private function noteUrlChangeOnSupportRequest(SupportRequestRepository $supportRequests, SupportNotifier $supportNotifier, Package $package, string $previousUrl, string $publicId, ?User $actor): void
     {
         if ($publicId === '' || $previousUrl === $package->getRepository()) {
             return;
@@ -1405,12 +1396,19 @@ class PackageController extends Controller
         $now = new \DateTimeImmutable();
         $request->touch($now);
 
+        $reply = null;
         $repo = $this->getEM()->getRepository(Package::class);
         if ($attributes->isFullyApplied(static fn (string $name): ?Package => $repo->findOneBy(['name' => $name]))) {
+            $reply = SupportRequestMessage::reply($request, SupportRequestType::urlChangeAppliedReply($attributes), $actor);
+            $em->persist($reply);
             $request->resolve($now);
         }
 
         $em->flush();
+
+        if ($reply !== null) {
+            $supportNotifier->notifyUserOfReply($request, $reply);
+        }
     }
 
     #[Route(path: '/packages/{name:package}/abandon', name: 'abandon_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]

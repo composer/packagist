@@ -152,11 +152,7 @@ class SupportRequest
         return $attributes;
     }
 
-    /**
-     * Replaces the payload in place, for the one workflow that lets a requester add to a request they
-     * already have open. Rejects a payload of a different type, since $type is readonly and the two
-     * are meant to agree by construction.
-     */
+    /** For the one workflow that lets a requester add to an open request. */
     public function replaceAttributes(SupportRequestAttributes $attributes): void
     {
         if ($attributes->type() !== $this->type) {
