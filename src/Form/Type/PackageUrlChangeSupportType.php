@@ -22,10 +22,8 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * packageName is a choice list over the requester's own packages rather than a text field. That
- * makes "your packages only" structural, and it also guarantees the stored name matches
- * Package::PACKAGE_NAME_REGEX -- which the admin queue relies on, since it generates an edit_package
- * URL from it and that route requires the pattern.
+ * packageName is a choice list of the requester's own packages, which also guarantees it matches
+ * the edit_package route requirement the admin queue builds links with.
  *
  * @extends AbstractType<PackageUrlChangeSupportRequest>
  */

@@ -189,9 +189,6 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * The frozen packages this user maintains whose freeze is open to appeal. `frozen IN (...)`
-     * excludes NULL by itself, so unfrozen packages drop out without a second clause.
-     *
      * @return list<Package>
      */
     public function findAppealableFrozenPackagesByMaintainer(int $userId): array

@@ -18,14 +18,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
- * Everything here is checked as a string. This form never probes the URL, and must not start doing
- * so: it is reachable by anyone logged in, and the value ends up in front of an admin, so a probe
- * here would turn a support form into an outbound request generator aimed at a host the requester
- * chose. The admin's own edit form runs ValidPackageRepository and the real VCS probe on save, which
- * is where a dead or bogus URL is meant to fail.
- *
- * packageName only needs NotBlank (for the placeholder): the form offers it as a choice list built
- * from the requester's own packages, so the shape and the ownership both come from that.
+ * Checked as strings only: probing the URL here would let any user aim outbound requests at a host
+ * of their choosing. The admin's edit form does the real VCS probe on save.
  */
 class PackageUrlChangeSupportRequest
 {

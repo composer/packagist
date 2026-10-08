@@ -14,17 +14,9 @@ namespace App\Form\Model;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * As with the unfreeze request, the names come from a checkbox list of the requester's own packages
- * rather than from typed input, so ownership is a property of the form rather than a check.
- */
 class PackageDeletionSupportRequest
 {
-    /**
-     * An admin works through these one row at a time, so the cap is about what is reviewable, not
-     * about payload size. Somebody wanting to clear more than this wants the account deletion
-     * workflow, which the controller points them at.
-     */
+    /** What an admin can review row by row; beyond that, account deletion is the answer. */
     public const int MAX_PACKAGES = 50;
 
     /**

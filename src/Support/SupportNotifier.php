@@ -44,12 +44,13 @@ class SupportNotifier
      * shared mailbox from becoming a spam target, and makes the admin open the authenticated queue
      * page — where the risk panel is — rather than judging from an email.
      */
-    public function notifyAdmins(SupportRequest $request): void
+    public function notifyAdmins(SupportRequest $request, bool $updated = false): void
     {
         $url = $this->urlGenerator->generate('admin_support_request', ['publicId' => $request->publicId], UrlGeneratorInterface::ABSOLUTE_URL);
+        $what = $updated ? 'An open support request was updated by its requester.' : 'A new support request is waiting.';
 
         $body = <<<TXT
-            A new support request is waiting.
+            {$what}
 
             Type:      {$request->type->label()}
             Requester: {$request->user->getUsername()}
@@ -59,7 +60,7 @@ class SupportNotifier
             TXT;
 
         $message = new Email()
-            ->subject('[Support] '.$request->type->label().' request from '.$request->user->getUsername().' ('.$request->publicId.')')
+            ->subject('[Support] '.($updated ? 'Updated ' : '').$request->type->label().' request from '.$request->user->getUsername().' ('.$request->publicId.')')
             ->from(new Address($this->mailFromEmail, $this->mailFromName))
             ->to($this->mailFromEmail)
             ->text($body)

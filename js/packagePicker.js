@@ -1,14 +1,8 @@
 import jQuery from "jquery";
 
 /**
- * Select-all and per-vendor toggles for the support package pickers.
- *
- * The toggles are built here rather than rendered in Twig so the pickers can keep using the shared
- * templates/support/request.html.twig shell, which renders form_widget() wholesale. Without
- * JavaScript the plain checkboxes still work, which is the whole feature minus the shortcut.
- *
- * The checkboxes carry data-bulk-select and data-bulk-select-group from PackagePickerType, the same
- * vocabulary filterListAdmin.js uses.
+ * Select-all and per-vendor toggles for the support package pickers (PackagePickerType).
+ * Built here so the shared request.html.twig shell can keep rendering form_widget() wholesale.
  */
 const init = function ($, form) {
     "use strict";
@@ -30,7 +24,7 @@ const init = function ($, form) {
     const toggles = [];
 
     const addToggle = function (label, group) {
-        const id = 'bulk-select-' + (group === null ? 'all' : group).replace(/[^a-zA-Z0-9-]/g, '-');
+        const id = form.attr('id') + '-toggle-' + toggles.length;
         const wrapper = $('<div class="form-check form-check-inline"></div>');
         const box = $('<input type="checkbox" class="form-check-input" data-bulk-select-all />').attr('id', id);
         wrapper.append(box).append($('<label class="form-check-label"></label>').attr('for', id).text(label));
@@ -41,7 +35,8 @@ const init = function ($, form) {
         });
 
         box.on('change', function () {
-            members.prop('checked', box.prop('checked')).trigger('change.packagePicker');
+            members.prop('checked', box.prop('checked'));
+            refresh();
         });
 
         toggles.push({ box: box, members: members });
@@ -64,7 +59,7 @@ const init = function ($, form) {
     };
 
     checkboxes.first().closest('.mb-3, fieldset, div').first().before(bar);
-    checkboxes.on('change change.packagePicker', refresh);
+    checkboxes.on('change', refresh);
     refresh();
 };
 

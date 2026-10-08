@@ -27,11 +27,11 @@ final readonly class PackageUrlChange
     public static function hostOf(string $url): ?string
     {
         if (Preg::isMatch('{^[a-z0-9._-]+@([a-z0-9.-]+):[^/]}i', $url, $match)) {
-            return $match[1];
+            return strtolower($match[1]);
         }
 
         $host = parse_url($url, \PHP_URL_HOST);
 
-        return is_string($host) && $host !== '' ? $host : null;
+        return is_string($host) && $host !== '' ? strtolower($host) : null;
     }
 }
