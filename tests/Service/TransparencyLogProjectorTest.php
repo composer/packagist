@@ -15,6 +15,7 @@ namespace App\Tests\Service;
 use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
+use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogQueueRepository;
@@ -23,11 +24,13 @@ use App\Log\TransparencyLogEventType;
 use App\Log\TransparencyLogScrubber;
 use App\Service\TransparencyLogProjector;
 use App\Tests\IntegrationTestCase;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Psr\Log\NullLogger;
 use Symfony\Component\Uid\Ulid;
 
 class TransparencyLogProjectorTest extends IntegrationTestCase
@@ -494,6 +497,94 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         self::assertInstanceOf(\UnexpectedValueException::class, $errors[0]['context']['exception']);
         self::assertStringContainsString('"reason"', $errors[0]['context']['exception']->getMessage());
         self::assertStringNotContainsString('must-not-be-logged', $errors[0]['context']['exception']->getMessage());
+    }
+
+    /**
+     * Many failures in a row mean something bigger is broken, so the run
+     * stops and the cron fails instead of logging an error for every queued record.
+     */
+    public function testRunStopsAfterTenConsecutiveFailures(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+
+        $package = self::createPackage('svc/broken', 'https://github.com/svc/broken');
+        $em->persist($package);
+        $em->flush();
+
+        $this->insertUnprojectableRecords($package, 10);
+
+        $newer = self::createPackage('svc/after-broken', 'https://github.com/svc/after-broken');
+        $em->persist($newer);
+        $em->flush();
+
+        try {
+            $this->createProjectorLoggingTo($logger)->project(0);
+            self::fail('Expected the run to stop after 10 consecutive failures');
+        } catch (\UnexpectedValueException) {
+        }
+
+        $errors = array_values(array_filter(
+            $logger->records,
+            static fn (array $logged): bool => $logged['level'] === LogLevel::ERROR,
+        ));
+        self::assertCount(10, $errors);
+
+        // the record before the failures is projected, the one after them is not reached
+        self::assertSame(['svc/broken'], $conn->fetchFirstColumn('SELECT packageName FROM package_transparency_log'));
+        self::assertSame(11, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+    }
+
+    public function testSuccessResetsTheConsecutiveFailureCount(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $first = self::createPackage('svc/first', 'https://github.com/svc/first');
+        $em->persist($first);
+        $em->flush();
+
+        $this->insertUnprojectableRecords($first, 9);
+
+        $second = self::createPackage('svc/second', 'https://github.com/svc/second');
+        $em->persist($second);
+        $em->flush();
+
+        $this->insertUnprojectableRecords($second, 9);
+
+        self::assertSame(2, $this->createProjectorLoggingTo(new NullLogger())->project(0));
+
+        self::assertSame(18, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue'));
+    }
+
+    /**
+     * Queues package_frozen records with a reason the scrubber rejects.
+     */
+    private function insertUnprojectableRecords(Package $package, int $count): void
+    {
+        $conn = self::getService(Connection::class);
+
+        $ids = [];
+        for ($i = 0; $i < $count; $i++) {
+            $record = AuditRecord::packageFrozen($package, null, PackageFreezeReason::Malware);
+            $this->getEM()->getRepository(AuditRecord::class)->insert($record);
+            $ids[] = $record->id->toBinary();
+        }
+
+        $conn->executeStatement(
+            "UPDATE audit_log SET attributes = JSON_SET(attributes, '$.reason', JSON_OBJECT('note', 'x')) WHERE id IN (?)",
+            [$ids],
+            [ArrayParameterType::BINARY],
+        );
     }
 
     public function testOutOfScopeQueuedRecordIsDequeuedWithoutProjecting(): void
