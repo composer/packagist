@@ -14,10 +14,10 @@ namespace App\Entity;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\AuditLogSearchType;
-use App\Audit\UserRegistrationMethod;
-use App\Audit\VersionDeletionReason;
 use App\Log\AuditLogEventType;
 use App\Log\Display\OrganizationDisplay;
+use App\Audit\UserRegistrationMethod;
+use App\Audit\VersionDeletionReason;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -543,7 +543,7 @@ class AuditRecord
     public static function twoFactorAuthenticationActivated(User $user, User $actor): self
     {
         return new self(
-            AuditLogEventType::TwoFaAuthenticationActivated,
+            AuditLogEventType::TwoFactorAuthenticationActivated,
             [
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor),
@@ -556,7 +556,7 @@ class AuditRecord
     public static function twoFactorAuthenticationDeactivated(User $user, User $actor, string $reason): self
     {
         return new self(
-            AuditLogEventType::TwoFaAuthenticationDeactivated,
+            AuditLogEventType::TwoFactorAuthenticationDeactivated,
             [
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor),

@@ -5,3 +5,4 @@ User-agent: *
 Disallow: /p/
 Disallow: /p2/
 Disallow: /search/
+Disallow: /transparency-log

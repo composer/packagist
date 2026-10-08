@@ -3,16 +3,19 @@
 {% block title %}Administration - {{ parent() }}{% endblock %}
 
 {% block admin_content %}
-    <div class="row">
-        <div class="col-12 package">
-            <div class="package-header">
-                <h2 class="title">Recent moderation activity</h2>
+    {% if recentModerationActivity is not null %}
+        <div class="row">
+            <div class="col-12 package">
+                <div class="package-header">
+                    <h2 class="title">Recent moderation activity</h2>
+                </div>
+                {% include 'log/_table.html.twig' with {
+                    displays: recentModerationActivity,
+                    emptyMessage: 'No recent moderation activity.',
+                    showIp: true,
+                    surroundingLogsRoute: 'admin_audit_log',
+                } only %}
             </div>
-            {% include 'log/_table.html.twig' with {
-                displays: recentModerationActivity,
-                linkSurroundingLogs: true,
-                emptyMessage: 'No recent moderation activity.'
-            } only %}
         </div>
-    </div>
+    {% endif %}
 {% endblock %}

@@ -1,15 +1,8 @@
 {% import 'log/macros.html.twig' as log %}
 
 <strong>{{ log.packageLink(display.packageName) }}</strong><br>
-Repository: {{ display.repository }}<br>
-Reason:
-{% if display.reason == 'spam' -%}
-    Spam
-{% elseif display.reason == 'remote_id' -%}
-    Remote ID mismatch
-{% elseif display.reason == 'gone' -%}
-    Repository gone
-{% else -%}
-    {{ display.reason|capitalize }}
-{% endif -%}<br>
-Frozen by: {{ display.actor.username }}
+{% if display.repository %}Repository: {{ display.repository }}<br>{% endif %}
+{# raw value when it has no label #}
+{% if display.reasonTranslationKey %}Reason: {{ display.reasonTranslationKey|trans }}<br>
+{% elseif display.reason %}Reason: {{ display.reason }}<br>{% endif %}
+Frozen by: {{ log.user(display.actor) }}

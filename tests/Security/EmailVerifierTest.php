@@ -12,8 +12,8 @@
 
 namespace App\Tests\Security;
 
-use App\Entity\AuditRecord;
 use App\Log\AuditLogEventType;
+use App\Entity\AuditRecord;
 use App\Security\EmailVerifier;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\HttpFoundation\Request;

@@ -73,6 +73,26 @@ class AdminControllerTest extends IntegrationTestCase
         static::assertStringContainsString('victim', $crawler->filter('.audit-log-table')->text());
     }
 
+    public function testIndexHidesModerationActivityFromNonAuditors(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.com', roles: ['ROLE_ADMIN']);
+        $mod = self::createUser('usermod', 'usermod@example.com', roles: ['ROLE_DISABLE_USERS']);
+        $victim = self::createUser('victim', 'victim@example.org');
+        $this->store($admin, $mod, $victim);
+
+        self::getEM()->getRepository(AuditRecord::class)->insert(
+            AuditRecord::userFrozen($victim, $admin, UserFreezeReason::Temporary, 'pending review')
+        );
+
+        $this->client->loginUser($mod);
+        $crawler = $this->client->request('GET', '/admin/');
+
+        static::assertResponseIsSuccessful();
+        static::assertStringNotContainsString('Recent moderation activity', $crawler->html());
+        static::assertCount(0, $crawler->filter('.audit-log-table'));
+        static::assertStringNotContainsString('admin/audit-log', $crawler->html());
+    }
+
     public function testIndexDeniedForRegularUser(): void
     {
         $user = self::createUser('plain', 'plain@example.com', roles: ['ROLE_USER']);
@@ -97,7 +117,7 @@ class AdminControllerTest extends IntegrationTestCase
         static::assertStringContainsString('Suspect packages', $crawler->html());
         static::assertStringContainsString('Organizations', $crawler->html());
         static::assertStringContainsString('Support', $crawler->html());
-        static::assertStringContainsString('Transparency log', $crawler->html());
+        static::assertStringContainsString('Audit log', $crawler->html());
     }
 
     public function testIndexAccessibleToDelegatedCapabilityShowsOnlyPermittedTools(): void

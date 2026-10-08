@@ -12,27 +12,21 @@
 
 namespace App\Tests\Log\Display;
 
-use App\Entity\AuditRecord;
-use App\Entity\User;
-use App\FilterList\FilterLists;
-use App\FilterList\FilterSources;
 use App\Log\AuditLogEventType;
 use App\Log\Display\AuditLogDisplayFactory;
 use App\Log\Display\Event\CanonicalUrlChangedDisplay;
 use App\Log\Display\Event\FilterListEntryAddedDisplay;
 use App\Log\Display\Event\FilterListEntryDeletedDisplay;
 use App\Log\Display\Event\FilterListEntryDisabledDisplay;
-use App\Log\Display\Event\FilterListEntryEditedDisplay;
 use App\Log\Display\Event\FilterListEntryEnabledDisplay;
+use App\Log\Display\Event\FilterListEntryEditedDisplay;
 use App\Log\Display\Event\GenericUserDisplay;
 use App\Log\Display\Event\GitHubLinkedWithUserDisplay;
 use App\Log\Display\Event\OrganizationInvitationDisplay;
 use App\Log\Display\Event\PackageAbandonedDisplay;
-use App\Log\Display\Event\PackageCreatedDisplay;
 use App\Log\Display\Event\PackageDeletedDisplay;
+use App\Log\Display\Event\PackageWithRepositoryDisplay;
 use App\Log\Display\Event\PackageFrozenDisplay;
-use App\Log\Display\Event\PackageUnabandonedDisplay;
-use App\Log\Display\Event\PackageUnfrozenDisplay;
 use App\Log\Display\Event\SecurityAdvisoryCreatedDisplay;
 use App\Log\Display\Event\SecurityAdvisoryEditedDisplay;
 use App\Log\Display\Event\SecurityAdvisoryWithdrawnDisplay;
@@ -40,6 +34,10 @@ use App\Log\Display\Event\TwoFaDeactivatedDisplay;
 use App\Log\Display\Event\UserFreezeDisplay;
 use App\Log\Display\Event\UserVerifiedDisplay;
 use App\Log\Display\Event\VersionDeletedDisplay;
+use App\Entity\AuditRecord;
+use App\Entity\User;
+use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
@@ -70,7 +68,7 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $display = $this->factory->buildSingle($auditRecord);
 
-        self::assertInstanceOf(PackageCreatedDisplay::class, $display);
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $display);
         self::assertSame('vendor/package', $display->packageName);
         self::assertSame('https://github.com/vendor/package', $display->repository);
         self::assertSame(123, $display->actor->id);
@@ -78,8 +76,8 @@ class AuditLogDisplayFactoryTest extends TestCase
         // records predating moderator submissions carry no 'user' attribute
         self::assertNull($display->maintainer);
         self::assertSame(AuditLogEventType::PackageCreated, $display->getType());
-        self::assertSame('log/display/package_created.html.twig', $display->getTemplateName());
-        self::assertSame('audit_log.type.package_created', $display->getTypeTranslationKey());
+        self::assertSame('log/display/package_with_repository.html.twig', $display->getTemplateName());
+        self::assertSame('log.type.package_created', $display->getTypeTranslationKey());
     }
 
     public function testBuildPackageCreatedWithSystemActor(): void
@@ -95,7 +93,7 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $display = $this->factory->buildSingle($auditRecord);
 
-        self::assertInstanceOf(PackageCreatedDisplay::class, $display);
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $display);
         self::assertNull($display->actor->id);
         self::assertSame('automation', $display->actor->username);
     }
@@ -114,7 +112,7 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $display = $this->factory->buildSingle($auditRecord);
 
-        self::assertInstanceOf(PackageCreatedDisplay::class, $display);
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $display);
         self::assertSame(456, $display->maintainer->id);
         self::assertSame('newowner', $display->maintainer->username);
         self::assertSame('moderator', $display->actor->username);
@@ -252,13 +250,13 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $display = $this->factory->buildSingle($auditRecord);
 
-        self::assertInstanceOf(PackageUnabandonedDisplay::class, $display);
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $display);
         self::assertSame('vendor/restored-package', $display->packageName);
         self::assertSame('https://github.com/vendor/restored-package', $display->repository);
         self::assertSame(234, $display->actor->id);
         self::assertSame('maintainer', $display->actor->username);
         self::assertSame(AuditLogEventType::PackageUnabandoned, $display->getType());
-        self::assertSame('log/display/package_unabandoned.html.twig', $display->getTemplateName());
+        self::assertSame('log/display/package_with_repository.html.twig', $display->getTemplateName());
     }
 
     public function testBuildPackageUnabandonedWithoutPreviousReplacement(): void
@@ -275,7 +273,7 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $display = $this->factory->buildSingle($auditRecord);
 
-        self::assertInstanceOf(PackageUnabandonedDisplay::class, $display);
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $display);
         self::assertSame(777, $display->actor->id);
         self::assertSame('maintainer', $display->actor->username);
     }
@@ -317,13 +315,13 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $display = $this->factory->buildSingle($auditRecord);
 
-        self::assertInstanceOf(PackageUnfrozenDisplay::class, $display);
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $display);
         self::assertSame('vendor/restored-package', $display->packageName);
         self::assertSame('https://github.com/vendor/restored-package', $display->repository);
         self::assertSame(234, $display->actor->id);
         self::assertSame('maintainer', $display->actor->username);
         self::assertSame(AuditLogEventType::PackageUnfrozen, $display->getType());
-        self::assertSame('log/display/package_unfrozen.html.twig', $display->getTemplateName());
+        self::assertSame('log/display/package_with_repository.html.twig', $display->getTemplateName());
     }
 
     #[TestWith([false, 999, '**@**.**'])]
@@ -397,7 +395,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         $displays = $this->factory->build($records);
 
         self::assertCount(3, $displays);
-        self::assertInstanceOf(PackageCreatedDisplay::class, $displays[0]);
+        self::assertInstanceOf(PackageWithRepositoryDisplay::class, $displays[0]);
         self::assertInstanceOf(PackageDeletedDisplay::class, $displays[1]);
         self::assertInstanceOf(VersionDeletedDisplay::class, $displays[2]);
         self::assertSame('vendor/package1', $displays[0]->packageName);
@@ -491,7 +489,7 @@ class AuditLogDisplayFactoryTest extends TestCase
     public function testBuildTwoFaActivated(): void
     {
         $auditRecord = $this->createAuditRecord(
-            AuditLogEventType::TwoFaAuthenticationActivated,
+            AuditLogEventType::TwoFactorAuthenticationActivated,
             [
                 'user' => ['id' => 1234, 'username' => 'testuser1234'],
                 'actor' => ['id' => 123, 'username' => 'testuser'],
@@ -504,13 +502,13 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('testuser1234', $display->username);
         self::assertSame(123, $display->actor->id);
         self::assertSame('testuser', $display->actor->username);
-        self::assertSame(AuditLogEventType::TwoFaAuthenticationActivated, $display->getType());
+        self::assertSame(AuditLogEventType::TwoFactorAuthenticationActivated, $display->getType());
     }
 
     public function testBuildTwoFaDeactivated(): void
     {
         $auditRecord = $this->createAuditRecord(
-            AuditLogEventType::TwoFaAuthenticationDeactivated,
+            AuditLogEventType::TwoFactorAuthenticationDeactivated,
             [
                 'user' => ['id' => 1234, 'username' => 'testuser1234'],
                 'reason' => 'Manually disabled',
@@ -525,7 +523,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('Manually disabled', $display->reason);
         self::assertSame(123, $display->actor->id);
         self::assertSame('testuser', $display->actor->username);
-        self::assertSame(AuditLogEventType::TwoFaAuthenticationDeactivated, $display->getType());
+        self::assertSame(AuditLogEventType::TwoFactorAuthenticationDeactivated, $display->getType());
         self::assertSame('log/display/two_fa_deactivated.html.twig', $display->getTemplateName());
     }
 
@@ -691,7 +689,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('automation', $display->actor->username);
         self::assertSame(AuditLogEventType::SecurityAdvisoryCreated, $display->getType());
         self::assertSame('log/display/security_advisory_created.html.twig', $display->getTemplateName());
-        self::assertSame('audit_log.type.security_advisory_created', $display->getTypeTranslationKey());
+        self::assertSame('log.type.security_advisory_created', $display->getTypeTranslationKey());
     }
 
     public function testBuildSecurityAdvisoryEdited(): void
@@ -767,7 +765,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('admin', $display->actor->username);
         self::assertSame(AuditLogEventType::UserFrozen, $display->getType());
         self::assertSame('log/display/user_freeze.html.twig', $display->getTemplateName());
-        self::assertSame('audit_log.type.user_frozen', $display->getTypeTranslationKey());
+        self::assertSame('log.type.user_frozen', $display->getTypeTranslationKey());
     }
 
     public function testBuildUserFrozenShowsInternalReasonForAuditor(): void
@@ -836,7 +834,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(OrganizationInvitationDisplay::class, $display);
         self::assertSame(AuditLogEventType::OrganizationInvitationSent, $display->getType());
         self::assertSame('log/display/organization_invitation_sent.html.twig', $display->getTemplateName());
-        self::assertSame('audit_log.type.organization_invitation_sent', $display->getTypeTranslationKey());
+        self::assertSame('log.type.organization_invitation_sent', $display->getTypeTranslationKey());
         self::assertSame('acme', $display->organization->slug);
         self::assertSame('owner', $display->actor->username);
         // Not an auditor: on the public log the invited email is obfuscated.

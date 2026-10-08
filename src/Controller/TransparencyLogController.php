@@ -12,18 +12,17 @@
 
 namespace App\Controller;
 
-use App\Entity\AuditRecordRepository;
-use App\Log\AuditLogEventType;
-use App\Log\Display\AuditLogDisplayFactory;
-use App\QueryFilter\AuditLog\ActorFilter;
-use App\QueryFilter\AuditLog\DateTimeFromFilter;
-use App\QueryFilter\AuditLog\DateTimeToFilter;
-use App\QueryFilter\AuditLog\EventTypeFilter;
-use App\QueryFilter\AuditLog\PackageNameFilter;
-use App\QueryFilter\AuditLog\UserFilter;
-use App\QueryFilter\AuditLog\VendorFilter;
+use App\Log\Display\TransparencyLogDisplayFactory;
+use App\Log\TransparencyLogEventType;
+use App\Entity\PackageTransparencyLogRepository;
 use App\QueryFilter\QueryFilterInterface;
-use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use App\QueryFilter\TransparencyLog\DateTimeFromFilter;
+use App\QueryFilter\TransparencyLog\DateTimeToFilter;
+use App\QueryFilter\TransparencyLog\PackageNameFilter;
+use App\QueryFilter\TransparencyLog\EventTypeFilter;
+use App\QueryFilter\TransparencyLog\UserFilter;
+use App\QueryFilter\TransparencyLog\VendorFilter;
+use App\Model\CappedCountQueryAdapter;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,76 +31,73 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class TransparencyLogController extends Controller
 {
+    private const PER_PAGE = 20;
+    private const MAX_PAGES = 500;
+
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/transparency-log', name: 'view_transparency_log')]
-    public function viewAuditLogs(Request $request, AuditRecordRepository $auditRecordRepository, AuditLogDisplayFactory $displayFactory): Response
+    #[Route(path: '/transparency-log', name: 'view_transparency_log', methods: ['GET'])]
+    public function viewTransparencyLog(Request $request, PackageTransparencyLogRepository $repository, TransparencyLogDisplayFactory $displayFactory): Response
     {
-        $isAdmin = $this->isGranted('ROLE_ADMIN');
+        // Auditors see everything; the temporarily-hidden types stay hidden for everyone else.
+        $includeHiddenTypes = $this->isGranted('ROLE_AUDITOR');
 
         $dateTimeFromFilter = DateTimeFromFilter::fromQuery($request->query);
         $dateTimeToFilter = DateTimeToFilter::fromQuery($request->query);
 
         /** @var QueryFilterInterface[] $filters */
         $filters = [
-            EventTypeFilter::fromQuery($request->query),
-            ActorFilter::fromQuery($request->query, 'actor', $isAdmin),
-            UserFilter::fromQuery($request->query, 'user', $isAdmin),
-            VendorFilter::fromQuery($request->query, 'vendor', $isAdmin),
-            PackageNameFilter::fromQuery($request->query, 'package', $isAdmin),
+            EventTypeFilter::fromQuery($request->query, $includeHiddenTypes),
+            UserFilter::fromQuery($request->query),
+            VendorFilter::fromQuery($request->query),
+            PackageNameFilter::fromQuery($request->query),
             $dateTimeFromFilter,
             $dateTimeToFilter,
         ];
 
-        $qb = $auditRecordRepository->createQueryBuilder('a')
-            ->orderBy('a.id', 'DESC');
-
-        foreach ($filters as $filter) {
-            $filter->filter($qb);
-        }
-
-        // Don't display 2FA events in the result list initially
-        $qb->andWhere('a.type NOT IN (:hidden_types)')
-            ->setParameter('hidden_types', [
-                AuditLogEventType::TwoFaAuthenticationActivated->value,
-                AuditLogEventType::TwoFaAuthenticationDeactivated->value,
-            ]);
-
-        $auditLogs = new Pagerfanta(new QueryAdapter($qb, false, false));
-        $auditLogs->setNormalizeOutOfRangePages(true);
-        $auditLogs->setMaxPerPage(20);
-        $auditLogs->setCurrentPage(max(1, $request->query->getInt('page', 1)));
+        $qb = $repository->getQueryBuilderForPublicView($includeHiddenTypes);
 
         $selectedFilters = [];
         foreach ($filters as $filter) {
+            $filter->filter($qb);
             $selectedFilters[$filter->getKey()] = $filter->getSelectedValue();
         }
 
-        // Group types by category in desired order
-        $categoryOrder = ['ownership', 'package', 'version', 'user', 'filterlist', 'advisory', 'organization'];
-        $groupedTypes = [];
-        foreach (AuditLogEventType::cases() as $type) {
-            // Don't display 2FA events in the type filter initially
-            if ($type === AuditLogEventType::TwoFaAuthenticationActivated || $type === AuditLogEventType::TwoFaAuthenticationDeactivated) {
-                continue;
-            }
-            $groupedTypes[$type->category()][] = $type;
-        }
+        // Counting and offsetting through the whole log costs seconds once it holds millions of rows.
+        // Older entries stay reachable by narrowing the filters. The one extra row counted tells
+        // whether there are more entries than the pages show.
+        $shownEntries = self::MAX_PAGES * self::PER_PAGE;
+        $paginator = new Pagerfanta(new CappedCountQueryAdapter($qb, $shownEntries + 1));
+        $paginator->setMaxNbPages(self::MAX_PAGES);
+        $paginator->setNormalizeOutOfRangePages(true);
+        $paginator->setMaxPerPage(self::PER_PAGE);
+        $paginator->setCurrentPage(max(1, $request->query->getInt('page', 1)));
 
-        // Reorder groups according to defined order
-        $orderedGroupedTypes = [];
-        foreach ($categoryOrder as $category) {
-            if (isset($groupedTypes[$category])) {
-                $orderedGroupedTypes[$category] = $groupedTypes[$category];
-            }
-        }
-
-        return $this->render('audit_log/view_transparency_log.html.twig', [
-            'auditLogDisplays' => $displayFactory->build($auditLogs),
-            'auditLogPaginator' => $auditLogs,
-            'groupedTypes' => $orderedGroupedTypes,
+        return $this->render('log/transparency_log.html.twig', [
+            'transparencyLogDisplays' => $displayFactory->build($paginator),
+            'paginator' => $paginator,
+            'maxPages' => self::MAX_PAGES,
+            'hasMoreEntriesThanPages' => $paginator->getNbResults() > $shownEntries,
+            'selectableTypes' => $this->selectableTypes($includeHiddenTypes),
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,
             'dateTimeToFilter' => $dateTimeToFilter,
         ]);
+    }
+
+    /**
+     * @return list<TransparencyLogEventType>
+     */
+    private function selectableTypes(bool $includeHiddenTypes): array
+    {
+        if ($includeHiddenTypes) {
+            return TransparencyLogEventType::cases();
+        }
+
+        $hidden = TransparencyLogEventType::temporarilyHiddenTypes();
+
+        return array_values(array_filter(
+            TransparencyLogEventType::cases(),
+            static fn (TransparencyLogEventType $type): bool => !\in_array($type, $hidden, true),
+        ));
     }
 }

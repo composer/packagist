@@ -1,0 +1,117 @@
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Tests\Entity;
+
+use App\Entity\AuditRecord;
+use App\Entity\Package;
+use App\Entity\PackageTransparencyLog;
+use App\Entity\PackageTransparencyLogRepository;
+use App\Log\TransparencyLogEventType;
+use App\Tests\IntegrationTestCase;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\DriverException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+
+/**
+ * appendProjectedEntries() recovers from nothing. Every failure has to surface, because the projector
+ * dequeues a record whose projection reported no problem, so an error swallowed here is an event
+ * that never gets published on a log that cannot be retracted.
+ */
+class PackageTransparencyLogRepositoryTest extends IntegrationTestCase
+{
+    public function testAlreadyProjectedSourceAndPackageIsRejected(): void
+    {
+        $package = $this->storePackage('ptl/dedupe');
+        $repo = self::getService(PackageTransparencyLogRepository::class);
+        $leafIndex = $repo->getMaxLeafIndex() + 1;
+        $source = AuditRecord::packageCreated($package, null);
+
+        $repo->appendProjectedEntries([$this->entry($source, $package, $leafIndex)]);
+
+        try {
+            // A fresh leaf index, so only the (source, package) pair can be what collides.
+            $repo->appendProjectedEntries([$this->entry($source, $package, $leafIndex + 1)]);
+            self::fail('Expected the already-projected pair to be rejected');
+        } catch (UniqueConstraintViolationException $e) {
+            self::assertStringContainsString('source_package_uniq', $e->getMessage());
+        }
+
+        self::assertSame(1, $this->countRowsFor($source));
+    }
+
+    public function testLeafIndexCollisionIsRejected(): void
+    {
+        $package = $this->storePackage('ptl/leafcollision');
+        $repo = self::getService(PackageTransparencyLogRepository::class);
+        $leafIndex = $repo->getMaxLeafIndex() + 1;
+
+        $first = AuditRecord::packageCreated($package, null);
+        $repo->appendProjectedEntries([$this->entry($first, $package, $leafIndex)]);
+
+        // A different source event, so the dedupe does not apply, reusing an occupied leaf index.
+        $second = AuditRecord::packageCreated($package, null);
+        self::assertNotSame($first->id->toRfc4122(), $second->id->toRfc4122());
+
+        $this->expectException(UniqueConstraintViolationException::class);
+        $repo->appendProjectedEntries([$this->entry($second, $package, $leafIndex)]);
+    }
+
+    public function testOversizedValueIsNotSilentlyTruncated(): void
+    {
+        $package = $this->storePackage('ptl/truncation');
+        $repo = self::getService(PackageTransparencyLogRepository::class);
+        $source = AuditRecord::packageCreated($package, null);
+
+        // vendor is VARCHAR(255), and a truncated value would be a permanently immutable entry.
+        $entry = $this->entry($source, $package, $repo->getMaxLeafIndex() + 1, str_repeat('a', 256));
+
+        try {
+            $repo->appendProjectedEntries([$entry]);
+            self::fail('Expected the oversized vendor to be rejected');
+        } catch (DriverException $e) {
+            self::assertNotInstanceOf(UniqueConstraintViolationException::class, $e);
+            self::assertStringContainsStringIgnoringCase('too long', $e->getMessage());
+        }
+
+        self::assertSame(0, $this->countRowsFor($source));
+    }
+
+    private function entry(AuditRecord $source, Package $package, int $leafIndex, ?string $vendor = null): PackageTransparencyLog
+    {
+        return PackageTransparencyLog::project(
+            $source,
+            TransparencyLogEventType::PackageCreated,
+            $leafIndex,
+            ['name' => $package->getName()],
+            $package->getId(),
+            $vendor ?? $package->getVendor(),
+            $package->getName(),
+        );
+    }
+
+    private function countRowsFor(AuditRecord $source): int
+    {
+        return (int) self::getService(Connection::class)->fetchOne(
+            'SELECT COUNT(*) FROM package_transparency_log WHERE sourceAuditLogId = ?',
+            [$source->id->toBinary()],
+        );
+    }
+
+    private function storePackage(string $name): Package
+    {
+        $package = self::createPackage($name, 'https://github.com/'.$name);
+        $this->store($package);
+
+        return $package;
+    }
+}
