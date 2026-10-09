@@ -120,6 +120,7 @@ class IndexPackagesCommand extends Command
             $indexTime = new \DateTime();
             $idsSlice = array_splice($ids, 0, 50);
             $packages = $this->getEM()->getRepository(Package::class)->findBy(['id' => $idsSlice]);
+            $releaseMetadata = $this->getEM()->getRepository(Package::class)->getPackagesLatestReleaseMetadata(array_map(intval(...), $idsSlice));
             $tagsById = $this->getTags($idsSlice);
             $providersById = $this->getProviders($idsSlice);
 
@@ -143,7 +144,7 @@ class IndexPackagesCommand extends Command
                 }
 
                 try {
-                    $records[] = $this->packageToSearchableArray($package, $tagsById[$package->getId()] ?? []);
+                    $records[] = $this->packageToSearchableArray($package, $tagsById[$package->getId()] ?? [], $releaseMetadata[$package->getId()] ?? null);
 
                     $idsToUpdate[] = $package->getId();
                 } catch (\Exception $e) {
@@ -184,10 +185,11 @@ class IndexPackagesCommand extends Command
 
     /**
      * @param list<string> $tags
+     * @param array{releasedAt: \DateTimeImmutable|null, license: list<string>}|null $latestRelease
      *
      * @phpstan-return PackageRecord
      */
-    private function packageToSearchableArray(Package $package, array $tags): array
+    private function packageToSearchableArray(Package $package, array $tags, ?array $latestRelease): array
     {
         $faversCount = $this->favoriteManager->getFaverCount($package);
         $downloads = $this->downloadManager->getDownloads($package);
@@ -217,6 +219,11 @@ class IndexPackagesCommand extends Command
                 'favers_formatted' => number_format($faversCount, 0, ',', ' '),
             ],
         ];
+
+        if ($latestRelease !== null) {
+            $record['meta']['released_ts'] = $latestRelease['releasedAt']?->getTimestamp();
+            $record['meta']['license'] = $latestRelease['license'];
+        }
 
         if ($package->isAbandoned()) {
             $record['abandoned'] = 1;

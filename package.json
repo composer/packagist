@@ -2,13 +2,14 @@
     "name": "packagist.org",
     "dependencies": {
         "@popperjs/core": "^2.11.8",
-        "algoliasearch": "^4.24.0",
+        "algoliasearch": "^5.57.0",
         "bootstrap": "^5.3.8",
         "bootstrap-icons": "^1.13.1",
         "echarts": "^6.1.0",
-        "instantsearch.js": "^4.75.6",
+        "instantsearch.js": "^4.116.0",
         "jquery": "^3.7.1",
-        "plausible-tracker": "^0.3"
+        "plausible-tracker": "^0.3",
+        "preact": "^10.29.8"
     },
     "devDependencies": {
         "esbuild": "^0.15",
