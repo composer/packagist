@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7860ef37135b2d91faed5b4ca93a982d",
+    "content-hash": "edd396c060bd47c34fe1b2cb93666d14",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -489,16 +489,16 @@
         },
         {
             "name": "composer/composer",
-            "version": "dev-main",
+            "version": "dev-feat/feature-system",
             "source": {
                 "type": "git",
-                "url": "https://github.com/composer/composer.git",
-                "reference": "ada25562204b42254adae2404eb0894a718e2bde"
+                "url": "https://github.com/joelwurtz/composer.git",
+                "reference": "c3ed7fd9976da624d3f56d365932d7eb856599b2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/composer/zipball/ada25562204b42254adae2404eb0894a718e2bde",
-                "reference": "ada25562204b42254adae2404eb0894a718e2bde",
+                "url": "https://api.github.com/repos/joelwurtz/composer/zipball/c3ed7fd9976da624d3f56d365932d7eb856599b2",
+                "reference": "c3ed7fd9976da624d3f56d365932d7eb856599b2",
                 "shasum": ""
             },
             "require": {
@@ -529,7 +529,7 @@
                 "symfony/process": "^5.4.47 || ^6.4.25 || ^7.1.10 || ^8.0"
             },
             "require-dev": {
-                "phpstan/phpstan": "^1.11.8",
+                "phpstan/phpstan": "1.12.33",
                 "phpstan/phpstan-deprecation-rules": "^1.2.0",
                 "phpstan/phpstan-phpunit": "^1.4.0",
                 "phpstan/phpstan-strict-rules": "^1.6.0",
@@ -542,19 +542,18 @@
                 "ext-zip": "Allows direct extraction of ZIP archives (unzip/7z binaries will be used instead if available)",
                 "ext-zlib": "Enables gzip for HTTP requests"
             },
-            "default-branch": true,
             "bin": [
                 "bin/composer"
             ],
             "type": "library",
             "extra": {
+                "branch-alias": {
+                    "dev-main": "2.11-dev"
+                },
                 "phpstan": {
                     "includes": [
                         "phpstan/rules.neon"
                     ]
-                },
-                "branch-alias": {
-                    "dev-main": "2.10-dev"
                 }
             },
             "autoload": {
@@ -562,7 +561,28 @@
                     "Composer\\": "src/Composer/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "Composer\\Test\\": "tests/Composer/Test/"
+                },
+                "exclude-from-classmap": [
+                    "tests/Composer/Test/Fixtures/",
+                    "tests/Composer/Test/Autoload/Fixtures",
+                    "tests/Composer/Test/Autoload/MinimumVersionSupport",
+                    "tests/Composer/Test/Plugin/Fixtures"
+                ]
+            },
+            "scripts": {
+                "compile": [
+                    "@php -dphar.readonly=0 bin/compile"
+                ],
+                "test": [
+                    "@php simple-phpunit"
+                ],
+                "phpstan": [
+                    "@php vendor/bin/phpstan analyse --configuration=phpstan/config.neon"
+                ]
+            },
             "license": [
                 "MIT"
             ],
@@ -586,22 +606,12 @@
                 "package"
             ],
             "support": {
-                "irc": "ircs://irc.libera.chat:6697/composer",
                 "issues": "https://github.com/composer/composer/issues",
+                "irc": "ircs://irc.libera.chat:6697/composer",
                 "security": "https://github.com/composer/composer/security/policy",
-                "source": "https://github.com/composer/composer/tree/main"
+                "source": "https://github.com/joelwurtz/composer/tree/feat/feature-system"
             },
-            "funding": [
-                {
-                    "url": "https://packagist.com",
-                    "type": "custom"
-                },
-                {
-                    "url": "https://github.com/composer",
-                    "type": "github"
-                }
-            ],
-            "time": "2026-07-03T09:00:57+00:00"
+            "time": "2026-09-17T14:14:20+00:00"
         },
         {
             "name": "composer/metadata-minifier",
@@ -15070,7 +15080,14 @@
             "time": "2025-12-08T11:19:18+00:00"
         }
     ],
-    "aliases": [],
+    "aliases": [
+        {
+            "package": "composer/composer",
+            "version": "dev-feat/feature-system",
+            "alias": "2.10.x-dev",
+            "alias_normalized": "2.10.9999999.9999999-dev"
+        }
+    ],
     "minimum-stability": "stable",
     "stability-flags": {
         "composer/composer": 20

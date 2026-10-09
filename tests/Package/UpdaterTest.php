@@ -30,6 +30,7 @@ use Composer\Config;
 use Composer\IO\IOInterface;
 use Composer\IO\NullIO;
 use Composer\Package\CompletePackage;
+use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Link;
 use Composer\Repository\RepositoryInterface;
 use Composer\Repository\Vcs\GitDriver;
@@ -290,6 +291,105 @@ class UpdaterTest extends IntegrationTestCase
         $this->getEM()->refresh($this->package);
         self::assertTrue($this->package->isAbandoned());
         self::assertSame('replacement/pkg', $this->package->getReplacementPackage());
+    }
+
+    public function testStoresFeatures(): void
+    {
+        $esc = "\x1B[31m";
+
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://example.com/test/pkg');
+        $upstream->setSourceReference('aabbccddeeff00112233445566778899aabbccdd');
+        $upstream->setFeatures([
+            'logging' => [
+                'description' => 'Log every delivery attempt'.$esc,
+                'require' => [
+                    'psr/log' => new Link('test/pkg', 'psr/log'.$esc, new MatchAllConstraint(), Link::TYPE_REQUIRE, '^3.0'.$esc),
+                ],
+            ],
+            'twig' => [
+                'description' => 'Render mail bodies with Twig templates',
+            ],
+        ]);
+        $upstream->setFeatureRequires(['some/dep' => ['fast-serializer'.$esc]]);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($version);
+
+        $features = [
+            'logging' => [
+                'description' => 'Log every delivery attempt',
+                'require' => ['psr/log' => '^3.0'],
+            ],
+            'twig' => [
+                'description' => 'Render mail bodies with Twig templates',
+            ],
+        ];
+        self::assertEquals($features, $version->getFeatures());
+        self::assertSame(['some/dep' => ['fast-serializer']], $version->getRequireFeatures());
+
+        $metadata = $version->toV2Array([]);
+        self::assertEquals($features, $metadata['features']);
+        self::assertSame(['some/dep' => ['fast-serializer']], $metadata['require-features']);
+    }
+
+    public function testDropsMalformedFeatures(): void
+    {
+        $upstream = new ArrayLoader()->load([
+            'name' => 'test/pkg',
+            'version' => '1.0.0',
+            'source' => ['type' => 'git', 'url' => 'https://example.com/test/pkg', 'reference' => 'aabbccddeeff00112233445566778899aabbccdd'],
+            'features' => [
+                'scalar-feature' => 'nope',
+                'broken-leaves' => ['description' => ['an', 'array'], 'require' => 'not-a-link-list'],
+                'logging' => ['require' => ['psr/log' => '^3.0']],
+            ],
+            'require-features' => ['some/dep' => 'logging', 'Other/Dep' => ['valid', 42]],
+        ], CompletePackage::class);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($version);
+        self::assertEquals([
+            'broken-leaves' => [],
+            'logging' => ['require' => ['psr/log' => '^3.0']],
+        ], $version->getFeatures());
+        self::assertSame(['other/dep' => ['valid']], $version->getRequireFeatures());
+    }
+
+    public function testStoresNoFeaturesWhenNoneAreDeclared(): void
+    {
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://example.com/test/pkg');
+        $upstream->setSourceReference('aabbccddeeff00112233445566778899aabbccdd');
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($version);
+        self::assertNull($version->getFeatures());
+        self::assertNull($version->getRequireFeatures());
+
+        $metadata = $version->toV2Array([]);
+        self::assertArrayNotHasKey('features', $metadata);
+        self::assertArrayNotHasKey('require-features', $metadata);
     }
 
     public function testConvertsMarkdownForReadme(): void
