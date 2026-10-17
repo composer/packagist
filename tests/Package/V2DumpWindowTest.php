@@ -32,13 +32,13 @@ class V2DumpWindowTest extends IntegrationTestCase
         $redis = self::getContainer()->get('snc_redis.default');
         self::assertInstanceOf(Client::class, $redis);
         $this->redis = $redis;
-        $this->redis->del('metadata-dump-v2:complete-pass:'.self::WORKER);
+        $this->redis->del('metadata-dump-v2:oldest-pending:'.self::WORKER);
         $this->window = new V2DumpWindow($this->redis);
     }
 
     protected function tearDown(): void
     {
-        $this->redis->del('metadata-dump-v2:complete-pass:'.self::WORKER);
+        $this->redis->del('metadata-dump-v2:oldest-pending:'.self::WORKER);
 
         parent::tearDown();
     }
@@ -48,35 +48,55 @@ class V2DumpWindowTest extends IntegrationTestCase
      */
     public static function provideAnchors(): iterable
     {
-        yield 'no complete pass recorded yet' => [null, '-1 day'];
-        yield 'a pass just completed' => ['now', '-1 hour'];
-        yield 'the last complete pass was before an outage' => ['-3 hours', '-4 hours'];
-        yield 'an outage longer than the lookback cap' => ['-3 days', '-1 day'];
-        yield 'a pass recorded by a host whose clock runs ahead' => ['+10 minutes', '-1 hour'];
+        yield 'no anchor recorded yet' => [null, '-1 day'];
+        yield 'nothing left pending' => ['now', '-10 minutes'];
+        yield 'a request left pending through an outage' => ['-3 hours', '-190 minutes'];
+        yield 'pending for longer than the lookback cap' => ['-3 days', '-1 day'];
+        yield 'an anchor recorded by a host whose clock runs ahead' => ['+10 minutes', '-10 minutes'];
     }
 
     #[DataProvider('provideAnchors')]
-    public function testTheWindowReachesBackFromTheLastCompletePass(?string $lastCompletePass, string $expectedSince): void
+    public function testTheWindowReachesBackFromTheAnchor(?string $anchor, string $expectedSince): void
     {
-        if ($lastCompletePass !== null) {
-            $this->window->recordCompletePass(self::WORKER, new \DateTimeImmutable($lastCompletePass));
+        if ($anchor !== null) {
+            $this->window->record(self::WORKER, new \DateTimeImmutable($anchor));
         }
 
         self::assertEqualsWithDelta(strtotime($expectedSince), $this->window->since(self::WORKER)->getTimestamp(), 2);
     }
 
-    public function testAPackageThatWentStaleDuringAnOutageIsStillSelected(): void
+    public function testTheAnchorIsTheSelectTimeWhenNothingIsLeftPending(): void
+    {
+        $selectedAt = new \DateTimeImmutable('-5 seconds');
+
+        self::assertEquals($selectedAt, V2DumpWindow::anchorFor([], $selectedAt));
+        self::assertEquals($selectedAt, V2DumpWindow::anchorFor([1 => null], $selectedAt), 'never-dumped packages are found whatever the window');
+    }
+
+    public function testTheAnchorIsTheOldestPendingRequest(): void
+    {
+        $selectedAt = new \DateTimeImmutable();
+
+        $anchor = V2DumpWindow::anchorFor([1 => date('Y-m-d H:i:s', (int) strtotime('-20 minutes')), 2 => date('Y-m-d H:i:s', (int) strtotime('-2 hours')), 3 => null], $selectedAt);
+
+        self::assertEqualsWithDelta(strtotime('-2 hours'), $anchor->getTimestamp(), 2);
+    }
+
+    public function testAPackageLeftPendingThroughAnOutageIsStillSelected(): void
     {
         $package = self::createPackage('acme/outage', 'https://example.com/acme/outage');
         $this->store($package);
+        $requestedAt = date('Y-m-d H:i:s', (int) strtotime('-3 hours'));
         self::getEM()->getConnection()->executeStatement(
-            'UPDATE package SET dumpedAtV2 = :dumped, crawledAt = :crawled WHERE id = :id',
-            ['dumped' => date('Y-m-d H:i:s', (int) strtotime('-1 day')), 'crawled' => date('Y-m-d H:i:s', (int) strtotime('-90 minutes')), 'id' => $package->getId()],
+            'UPDATE package SET dumpedAtV2 = :dumped, dumpRequestedAt = :requested WHERE id = :id',
+            ['dumped' => date('Y-m-d H:i:s', (int) strtotime('-1 day')), 'requested' => $requestedAt, 'id' => $package->getId()],
         );
-        $this->window->recordCompletePass(self::WORKER, new \DateTimeImmutable('-2 hours'));
 
         $repo = self::getEM()->getRepository(Package::class);
-        self::assertNotContains($package->getId(), $repo->getStalePackagesForDumpingV2(since: new \DateTimeImmutable('-1 hour')), 'a window anchored on now has already lost it');
-        self::assertContains($package->getId(), $repo->getStalePackagesForDumpingV2(since: $this->window->since(self::WORKER)));
+        $pending = array_intersect_key($repo->getStalePackagesForDumpingV2(since: new \DateTimeImmutable('-4 hours')), [$package->getId() => true]);
+        $this->window->record(self::WORKER, V2DumpWindow::anchorFor($pending, new \DateTimeImmutable()));
+
+        self::assertNotContains($package->getId(), array_keys($repo->getStalePackagesForDumpingV2(since: new \DateTimeImmutable('-1 hour'))), 'a window anchored on now has already lost it');
+        self::assertArrayHasKey($package->getId(), $repo->getStalePackagesForDumpingV2(since: $this->window->since(self::WORKER)));
     }
 }

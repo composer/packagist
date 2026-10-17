@@ -377,7 +377,7 @@ class PackageRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return list<int>
+     * @return array<int, string|null> id => staleSince, the timestamp that made it stale (null when never dumped)
      */
     public function getStalePackagesForDumpingV2(int $workerId = 0, int $numWorkers = 1, ?\DateTimeImmutable $since = null): array
     {
@@ -394,8 +394,21 @@ class PackageRepository extends ServiceEntityRepository
         // dumpedAtV2 IS NULL stays outside the window: a forceDump() must be found however stale.
         // :now is the PHP clock dumpedAtV2 is written with; SQL NOW() runs on MySQL's session timezone,
         // which re-selected the updater's +7 days crawledAt rows every pass for the width of the offset.
-        // Oldest first so that the caller's backlog cap drops the rows with the most window left.
-        $sql = 'SELECT p.id FROM package p WHERE (p.dumpedAtV2 IS NULL OR (p.dumpRequestedAt > :since AND p.dumpRequestedAt >= p.dumpedAtV2) OR (p.crawledAt > :since AND p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < :now)) AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
+        // staleSince is the column that qualified the row, so an old, already-served dumpRequestedAt does not
+        // pull the caller's window anchor back. Oldest first so that the backlog cap drops the newest.
+        $sql = 'SELECT p.id,
+                CASE
+                    WHEN p.dumpedAtV2 IS NULL THEN NULL
+                    WHEN p.dumpRequestedAt >= p.dumpedAtV2 THEN p.dumpRequestedAt
+                    ELSE p.crawledAt
+                END AS staleSince
+            FROM package p
+            WHERE (
+                p.dumpedAtV2 IS NULL
+                OR (p.dumpRequestedAt > :since AND p.dumpRequestedAt >= p.dumpedAtV2)
+                OR (p.crawledAt > :since AND p.dumpedAtV2 <= p.crawledAt AND p.crawledAt < :now)
+            )
+            AND (p.frozen IS NULL OR p.frozen NOT IN (:suppressed))';
         $params = [
             'suppressed' => PackageFreezeReason::suppressingValues(),
             'since' => ($since ?? new \DateTimeImmutable(self::DUMP_SWEEP_EPOCH))->format('Y-m-d H:i:s'),
@@ -409,9 +422,14 @@ class PackageRepository extends ServiceEntityRepository
             $params['workerId'] = $workerId;
         }
 
-        $sql .= ' ORDER BY COALESCE(p.dumpRequestedAt, p.crawledAt) ASC, p.id ASC';
+        $sql .= ' ORDER BY staleSince ASC, p.id ASC';
 
-        return $conn->fetchFirstColumn($sql, $params, $types);
+        $stale = [];
+        foreach ($conn->fetchAllKeyValue($sql, $params, $types) as $id => $staleSince) {
+            $stale[(int) $id] = $staleSince === null ? null : (string) $staleSince;
+        }
+
+        return $stale;
     }
 
     /**

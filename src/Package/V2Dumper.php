@@ -122,7 +122,7 @@ class V2Dumper
      *
      * @param list<int> $packageIds
      */
-    public function dump(array $packageIds, bool $force = false, bool $verbose = false, int $workerId = 0): V2DumpOutcome
+    public function dump(array $packageIds, bool $force = false, bool $verbose = false, int $workerId = 0): V2DumpResult
     {
         // clear written files tracking for this run
         $this->writtenFiles = [];
@@ -159,6 +159,7 @@ class V2Dumper
             echo 'Build v2 dir is '.$buildDirV2.\PHP_EOL;
         }
 
+        $selectedIds = $packageIds;
         $dumpTimeUpdates = [];
         $outcome = V2DumpOutcome::Complete;
 
@@ -303,7 +304,7 @@ class V2Dumper
         $this->statsd->histogram('packagist.metadata_dump.run_packages', $processedPackages, 1.0, ['worker' => (string) $workerId]);
         $this->statsd->histogram('packagist.metadata_dump.run_forcedump', $forceDumpPackages, 1.0, ['worker' => (string) $workerId]);
 
-        return $outcome;
+        return new V2DumpResult($outcome, array_values(array_diff($selectedIds, array_merge(...array_values($dumpTimeUpdates)))));
     }
 
     public function gc(): void

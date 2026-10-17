@@ -177,7 +177,7 @@ class PackageRepositoryTest extends IntegrationTestCase
         $malware->freeze(PackageFreezeReason::Malware);
         $this->store($active, $temporary, $spam, $malware);
 
-        $ids = $this->packageRepository->getStalePackagesForDumpingV2();
+        $ids = array_keys($this->packageRepository->getStalePackagesForDumpingV2());
 
         self::assertContains($active->getId(), $ids);
         self::assertContains($temporary->getId(), $ids, 'gentle freezes keep their served metadata maintained');
@@ -622,8 +622,7 @@ class PackageRepositoryTest extends IntegrationTestCase
 
     public function testStaleForDumpingV2ReturnsOldestFirst(): void
     {
-        // Load-bearing for the caller's 2000-id backlog cap: truncating the tail has to sacrifice the
-        // rows with the most window left, not an arbitrary subset the optimizer happened to order.
+        // The caller's 2000-id backlog cap truncates the tail, so the backlog drains oldest first.
         $newest = $this->dumpablePackage('acme/newest', dumpedAtV2: '-2 hours', dumpRequestedAt: '-2 minutes');
         $oldest = $this->dumpablePackage('acme/oldest', dumpedAtV2: '-2 hours', dumpRequestedAt: '-50 minutes');
         $middle = $this->dumpablePackage('acme/middle', dumpedAtV2: '-2 hours', dumpRequestedAt: '-20 minutes');
@@ -632,6 +631,23 @@ class PackageRepositoryTest extends IntegrationTestCase
         $ours = array_values(array_intersect($ids, [$newest->getId(), $oldest->getId(), $middle->getId()]));
 
         self::assertSame([$oldest->getId(), $middle->getId(), $newest->getId()], $ours);
+    }
+
+    public function testStaleForDumpingV2ReportsTheTimestampThatMadeEachPackageStale(): void
+    {
+        $requested = $this->dumpablePackage('acme/requested', dumpedAtV2: '-2 hours', dumpRequestedAt: '-20 minutes', crawledAt: '-30 minutes');
+        $crawled = $this->dumpablePackage('acme/crawled', dumpedAtV2: '-2 hours', dumpRequestedAt: null, crawledAt: '-15 minutes');
+        // an old request the last dump already served must not pull the caller's anchor back to it
+        $servedRequest = $this->dumpablePackage('acme/served-request', dumpedAtV2: '-2 hours', dumpRequestedAt: '-3 days', crawledAt: '-5 minutes');
+        $neverDumped = $this->dumpablePackage('acme/never-dumped', dumpedAtV2: null, dumpRequestedAt: '-4 hours');
+
+        $stale = $this->packageRepository->getStalePackagesForDumpingV2(since: new \DateTimeImmutable('-1 hour'));
+
+        self::assertEqualsWithDelta(strtotime('-20 minutes'), strtotime((string) $stale[$requested->getId()]), 2);
+        self::assertEqualsWithDelta(strtotime('-15 minutes'), strtotime((string) $stale[$crawled->getId()]), 2);
+        self::assertEqualsWithDelta(strtotime('-5 minutes'), strtotime((string) $stale[$servedRequest->getId()]), 2);
+        self::assertArrayHasKey($neverDumped->getId(), $stale);
+        self::assertNull($stale[$neverDumped->getId()], 'selected whatever the window, so it has nothing to anchor on');
     }
 
     public function testStaleForDumpingV2SkipsPackagesAlreadyDumpedSinceTheirRequest(): void
@@ -821,7 +837,7 @@ class PackageRepositoryTest extends IntegrationTestCase
      */
     private function staleForDumpingSince(?string $modifier): array
     {
-        return array_map('intval', $this->packageRepository->getStalePackagesForDumpingV2(
+        return array_keys($this->packageRepository->getStalePackagesForDumpingV2(
             since: null === $modifier ? null : new \DateTimeImmutable($modifier),
         ));
     }

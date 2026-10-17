@@ -310,7 +310,9 @@ class V2DumperTest extends IntegrationTestCase
         $this->requestDumpAt($broken->getId(), '-1 minute');
         $this->requestDumpAt($healthy->getId(), '-1 minute');
 
-        self::assertSame(V2DumpOutcome::SomeFailed, $this->dumper->dump([$broken->getId(), $healthy->getId()]));
+        $result = $this->dumper->dump([$broken->getId(), $healthy->getId()]);
+        self::assertSame(V2DumpOutcome::SomeFailed, $result->outcome);
+        self::assertSame([$broken->getId()], $result->leftStale);
 
         $stale = $this->stalePackageIds();
         self::assertContains($broken->getId(), $stale, 'the failed package must be retried next run');
@@ -343,7 +345,9 @@ class V2DumperTest extends IntegrationTestCase
             $ids[] = $package->getId();
         }
 
-        self::assertSame(V2DumpOutcome::Aborted, $this->dumper->dump($ids));
+        $result = $this->dumper->dump($ids);
+        self::assertSame(V2DumpOutcome::Aborted, $result->outcome);
+        self::assertSame([$ids[1], $ids[2]], $result->leftStale, 'the package that aborted and the one never reached');
 
         self::assertCount(2, array_intersect($ids, $this->stalePackageIds()), 'only the package dumped before the failure is recorded');
         self::assertCount(1, array_filter($logs, static fn (string $log): bool => str_starts_with($log, 'CDN unreachable, aborting v2 metadata dump run')));
@@ -535,7 +539,7 @@ class V2DumperTest extends IntegrationTestCase
     {
         self::getEM()->clear();
 
-        return self::getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2();
+        return array_keys(self::getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2());
     }
 
     /**
