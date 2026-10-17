@@ -14,6 +14,9 @@ namespace App\Command;
 
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
+use App\Package\V2DumpOutcome;
+use App\Package\V2DumpResult;
+use App\Package\V2DumpWindow;
 use App\Package\V2Dumper;
 use App\Service\Locker;
 use Doctrine\DBAL\ArrayParameterType;
@@ -33,14 +36,6 @@ class DumpPackagesV2Command extends Command
 {
     use \App\Util\DoctrineTrait;
 
-    /**
-     * How far back the staleness select looks. A rolling offset rather than a remembered position,
-     * so every pass re-covers the whole window: a mark that committed late, a clock a few seconds
-     * out, or an id dropped by the backlog cap below is found again next time instead of stranded.
-     * Wide enough that the cap can drain a burst well before its rows age out.
-     */
-    private const DUMP_WINDOW = '-1 hour';
-
     public function __construct(
         private V2Dumper $dumper,
         private Locker $locker,
@@ -48,6 +43,7 @@ class DumpPackagesV2Command extends Command
         private string $cacheDir,
         private Logger $logger,
         private StatsDClient $statsd,
+        private V2DumpWindow $dumpWindow,
     ) {
         parent::__construct();
     }
@@ -131,6 +127,8 @@ class DumpPackagesV2Command extends Command
             }
 
             while ($iterations--) {
+                $selectedAt = new \DateTimeImmutable();
+                $stale = $dropped = [];
                 if ($force) {
                     // Dump everything publicly served: skip only suppressed (spam/malware) packages,
                     // matching V2Dumper::dump()'s own guard; gentle freezes keep their served files.
@@ -147,26 +145,36 @@ class DumpPackagesV2Command extends Command
                 } else {
                     // instrumentation only: time the stale-select query to rule it out as a bottleneck during a buildup
                     $selectStart = microtime(true);
-                    $ids = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers, new \DateTimeImmutable(self::DUMP_WINDOW));
+                    $stale = $this->getEM()->getRepository(Package::class)->getStalePackagesForDumpingV2($workerId, $numWorkers, $this->dumpWindow->since($workerId));
                     $this->statsd->timing('packagist.metadata_dump.select_time', round((microtime(true) - $selectStart) * 1000, 4), ['worker' => (string) $workerId]);
-                    if (\count($ids) > 2000) {
-                        $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($ids), 'worker' => (string) $workerId]);
-                        // the select orders oldest first, so what is dropped here is what has the most
-                        // window left to be picked up again
-                        $ids = \array_slice($ids, 0, 2000);
+                    if (\count($stale) > 2000) {
+                        $this->logger->emergency('Huge backlog in packages to be dumped is abnormal', ['count' => \count($stale), 'worker' => (string) $workerId]);
+                        $dropped = \array_slice($stale, 2000, null, true);
+                        $stale = \array_slice($stale, 0, 2000, true);
                     }
+                    $ids = array_keys($stale);
                 }
                 $this->statsd->gauge('packagist.metadata_dump_queue', \count($ids), ['worker' => (string) $workerId]);
 
+                $result = new V2DumpResult(V2DumpOutcome::Complete, []);
                 if ($ids || $force) {
                     ini_set('memory_limit', -1);
                     gc_enable();
 
                     $ids = array_map('intval', $ids);
 
-                    $this->dumper->dump($ids, $force, $verbose, $workerId);
+                    $result = $this->dumper->dump($ids, $force, $verbose, $workerId);
 
                     $this->logger->reset();
+                }
+
+                if (!$force) {
+                    $pending = $dropped + array_intersect_key($stale, array_flip($result->leftStale));
+                    $this->dumpWindow->record($workerId, V2DumpWindow::anchorFor($pending, $selectedAt));
+                }
+
+                if ($result->outcome === V2DumpOutcome::Aborted) {
+                    break;
                 }
 
                 if ($signal !== null && $signal->isTriggered()) {

@@ -35,6 +35,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\HttpClient\Exception\TimeoutExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\Service\ResetInterface;
@@ -48,6 +49,8 @@ use Webmozart\Assert\Assert;
 class V2Dumper
 {
     use \App\Util\DoctrineTrait;
+
+    private const CDN_PURGE_SETTLE_SECONDS = 2;
 
     /** @var list<string> */
     private array $writtenFiles = [];
@@ -121,7 +124,7 @@ class V2Dumper
      *
      * @param list<int> $packageIds
      */
-    public function dump(array $packageIds, bool $force = false, bool $verbose = false, int $workerId = 0): void
+    public function dump(array $packageIds, bool $force = false, bool $verbose = false, int $workerId = 0): V2DumpResult
     {
         // clear written files tracking for this run
         $this->writtenFiles = [];
@@ -158,7 +161,9 @@ class V2Dumper
             echo 'Build v2 dir is '.$buildDirV2.\PHP_EOL;
         }
 
+        $selectedIds = $packageIds;
         $dumpTimeUpdates = [];
+        $outcome = V2DumpOutcome::Complete;
 
         $versionRepo = $this->getEM()->getRepository(Version::class);
 
@@ -219,8 +224,19 @@ class V2Dumper
                     $forceDumpPackages++;
                 }
 
-                // dump v2 format
-                $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? [], $filterLists[$package->getName()] ?? null);
+                // dump v2 format; a failed package is left out of $dumpTimeUpdates so it stays stale
+                try {
+                    $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? [], $filterLists[$package->getName()] ?? null);
+                } catch (TransportExceptionInterface $e) {
+                    // the next package would wait out the same timeouts, so stop here but keep what was dumped
+                    $this->logger->warning('CDN unreachable, aborting v2 metadata dump run', ['package' => $package->getName(), 'exception' => $e, 'worker' => $workerId]);
+                    $outcome = V2DumpOutcome::Aborted;
+                    break 2;
+                } catch (\Throwable $e) {
+                    $this->logger->error('Failed dumping v2 metadata, leaving the package stale', ['package' => $package->getName(), 'exception' => $e, 'worker' => $workerId]);
+                    $outcome = V2DumpOutcome::SomeFailed;
+                    continue;
+                }
 
                 $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
             }
@@ -231,7 +247,7 @@ class V2Dumper
         }
 
         // Verify all written files match CDN versions
-        if (!$this->bypassIndividualPurges && !empty($this->writtenFiles) && !$force && \count($this->writtenFiles) < 50) {
+        if ($outcome !== V2DumpOutcome::Aborted && !$this->bypassIndividualPurges && !empty($this->writtenFiles) && !$force && \count($this->writtenFiles) < 50) {
             if ($verbose) {
                 echo 'Verifying '.\count($this->writtenFiles).' written files match CDN versions'.\PHP_EOL;
             }
@@ -244,7 +260,11 @@ class V2Dumper
             $this->bypassIndividualPurges = false;
             if ($this->cdnClient->isConfigured()) {
                 $this->logger->warning('Purging complete CDN metadata cache after dump is complete');
-                $this->cdnClient->purgeMetadataCache('p2/*');
+                try {
+                    $this->cdnClient->purgeMetadataCache('p2/*');
+                } catch (\Throwable $e) {
+                    $this->logger->error('Failed purging the complete CDN metadata cache', ['exception' => $e, 'worker' => $workerId]);
+                }
             }
         }
 
@@ -289,6 +309,8 @@ class V2Dumper
         $this->statsd->timing('packagist.metadata_dump.run_time', round((microtime(true) - $runStart) * 1000, 4), ['worker' => (string) $workerId]);
         $this->statsd->histogram('packagist.metadata_dump.run_packages', $processedPackages, 1.0, ['worker' => (string) $workerId]);
         $this->statsd->histogram('packagist.metadata_dump.run_forcedump', $forceDumpPackages, 1.0, ['worker' => (string) $workerId]);
+
+        return new V2DumpResult($outcome, array_values(array_diff($selectedIds, array_merge(...array_values($dumpTimeUpdates)))));
     }
 
     public function gc(): void
@@ -453,30 +475,22 @@ class V2Dumper
 
             // fetch the file to ensure the region we hit after has a hot cache so we can verify correctly that the purge worked
             if ($fileExists) {
-                $opStart = microtime(true);
-                try {
-                    $this->cdnClient->fetchPublicMetadata($relativePath);
-                } catch (\Exception $e) {
-                    // ignore 404s as if the file is not there yet it means it's unlikely to be cached in a bad state on some other region
-                    if ($e->getCode() !== 404) {
-                        throw $e;
+                $this->cdnOp('prefetch', $opTimings, function () use ($relativePath): void {
+                    try {
+                        $this->cdnClient->fetchPublicMetadata($relativePath);
+                    } catch (\Exception $e) {
+                        // ignore 404s as if the file is not there yet it means it's unlikely to be cached in a bad state on some other region
+                        if ($e->getCode() !== 404) {
+                            throw $e;
+                        }
+                        $this->httpClient->reset();
                     }
-                    $this->httpClient->reset();
-                } finally {
-                    $opTimings['prefetch'] = round((microtime(true) - $opStart) * 1000, 4);
-                    $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['prefetch'], ['op' => 'prefetch'] + $workerTag);
-                }
+                });
             }
 
             $this->filesystem->mkdir(\dirname($path));
 
-            $opStart = microtime(true);
-            try {
-                $filemtime = $this->writeCdn($relativePath, $contents);
-            } finally {
-                $opTimings['upload'] = round((microtime(true) - $opStart) * 1000, 4);
-                $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['upload'], ['op' => 'upload'] + $workerTag);
-            }
+            $filemtime = $this->cdnOp('upload', $opTimings, fn (): int => $this->writeCdn($relativePath, $contents));
 
             // we need to make sure dumps happen always with incrementing times to avoid race conditions when
             // fetching metadata changes in the currently elapsing second (new items dumped after the fetch can then
@@ -499,22 +513,10 @@ class V2Dumper
             $timeUnix = (int) ceil($filemtime / 10000);
             $this->writeFileAtomic($path, $contents, $timeUnix);
 
-            $opStart = microtime(true);
-            try {
-                $this->writeToReplica($relativePath, $contents, $timeUnix);
-            } finally {
-                $opTimings['replica'] = round((microtime(true) - $opStart) * 1000, 4);
-                $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['replica'], ['op' => 'replica'] + $workerTag);
-            }
+            $this->cdnOp('replica', $opTimings, fn () => $this->writeToReplica($relativePath, $contents, $timeUnix));
 
             if (!$this->bypassIndividualPurges) {
-                $opStart = microtime(true);
-                try {
-                    $this->purgeCdn($relativePath);
-                } finally {
-                    $opTimings['purge'] = round((microtime(true) - $opStart) * 1000, 4);
-                    $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['purge'], ['op' => 'purge'] + $workerTag);
-                }
+                $this->cdnOp('purge', $opTimings, fn () => $this->purgeCdn($relativePath));
             }
 
             $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
@@ -556,29 +558,55 @@ class V2Dumper
     }
 
     /**
+     * Times one CDN/replica op and counts its failures. cdn_failure is what tells a CDN outage
+     * apart from a backlog we have to act on, so it is tagged by op and by how the op failed.
+     *
+     * @template T
+     *
+     * @param 'prefetch'|'upload'|'replica'|'purge' $op
+     * @param array<string, float>                  $opTimings
+     * @param callable(): T                         $fn
+     *
+     * @return T
+     */
+    private function cdnOp(string $op, array &$opTimings, callable $fn): mixed
+    {
+        $tags = ['op' => $op, 'worker' => (string) $this->workerId];
+        $opStart = microtime(true);
+        try {
+            return $fn();
+        } catch (\Throwable $e) {
+            $reason = match (true) {
+                $e instanceof TimeoutExceptionInterface => 'timeout',
+                $e instanceof TransportExceptionInterface => 'transport',
+                default => 'http',
+            };
+            $this->statsd->increment('packagist.metadata_dump.cdn_failure', 1, 1, $tags + ['reason' => $reason]);
+
+            throw $e;
+        } finally {
+            $opTimings[$op] = round((microtime(true) - $opStart) * 1000, 4);
+            $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings[$op], $tags);
+        }
+    }
+
+    /**
      * @param non-empty-string $relativePath
      *
      * @throws TransportExceptionInterface
      */
     private function writeCdn(string $relativePath, string $contents): int
     {
-        $retries = 3;
-        do {
-            try {
-                $filemtime = $this->cdnClient->uploadMetadata($relativePath, $contents);
+        try {
+            return $this->cdnClient->uploadMetadata($relativePath, $contents);
+        } catch (TransportExceptionInterface $e) {
+            // the http client already retried this, so only try once more on a fresh connection pool
+            $this->logger->debug('Retrying due to failure', ['exception' => $e]);
+            sleep(1);
+            $this->httpClient->reset();
+        }
 
-                return $filemtime;
-            } catch (TransportExceptionInterface $e) {
-                if ($retries === 0) {
-                    throw $e;
-                }
-                $this->logger->debug('Retrying due to failure', ['exception' => $e]);
-                sleep(1);
-                $this->httpClient->reset();
-            }
-        } while ($retries-- > 0);
-
-        throw $e;
+        return $this->cdnClient->uploadMetadata($relativePath, $contents);
     }
 
     private function writeToReplica(string $relativePath, string $contents, int $timeUnix): void
@@ -626,23 +654,45 @@ class V2Dumper
 
         $this->logger->debug('Verifying CDN files', ['files' => $this->writtenFiles]);
 
-        foreach ($this->writtenFiles as $relativePath) {
+        $repurged = [];
+        foreach ($this->writtenFiles as $index => $relativePath) {
             $localPath = $this->webDir.'/'.$relativePath;
             if (!file_exists($localPath)) {
                 continue; // Skip if local file doesn't exist
             }
 
             $localContent = (string) file_get_contents($localPath);
-            $cdnContent = $this->fetchCdnFile($relativePath);
+            try {
+                $cdnContent = $this->fetchCdnFile($relativePath);
+                if ($localContent === $cdnContent) {
+                    $this->statsd->increment('packagist.metadata_cdn_purge_ok');
+                    continue;
+                }
 
-            if ($localContent !== $cdnContent) {
                 $this->statsd->increment('packagist.metadata_cdn_purge_warn');
                 $this->logger->notice(
                     'Mismatch detected for CDN file: '.$relativePath.', purging again',
                     ['file' => $relativePath, 'local' => base64_encode($localContent), 'cdn' => base64_encode($cdnContent)]
                 );
                 $this->purgeCdn($relativePath);
+                $repurged[$relativePath] = $localContent;
+            } catch (\Throwable $e) {
+                if (!$this->handleVerifyFailure($relativePath, \count($this->writtenFiles) - $index, $e)) {
+                    return;
+                }
+            }
+        }
 
+        if (!$repurged) {
+            return;
+        }
+
+        // the CDN acks a purge before it has processed it, so re-checking right away mostly reads the stale file
+        sleep(self::CDN_PURGE_SETTLE_SECONDS);
+
+        $remaining = \count($repurged);
+        foreach ($repurged as $relativePath => $localContent) {
+            try {
                 $cdnContent = $this->fetchCdnFile($relativePath);
                 if ($localContent !== $cdnContent) {
                     $this->statsd->increment('packagist.metadata_cdn_purge_fail');
@@ -653,10 +703,31 @@ class V2Dumper
                 } else {
                     $this->logger->info('Cache purge worked now for '.$relativePath);
                 }
-            } else {
-                $this->statsd->increment('packagist.metadata_cdn_purge_ok');
+            } catch (\Throwable $e) {
+                if (!$this->handleVerifyFailure($relativePath, $remaining, $e)) {
+                    return;
+                }
             }
+            $remaining--;
         }
+    }
+
+    /**
+     * @return bool whether verifying the remaining files is worth continuing
+     */
+    private function handleVerifyFailure(string $relativePath, int $unverified, \Throwable $e): bool
+    {
+        if ($e instanceof TransportExceptionInterface) {
+            // the next files would wait out the same timeouts
+            $this->logger->warning('CDN unreachable, skipping verification of the remaining files', ['file' => $relativePath, 'unverified' => $unverified, 'exception' => $e]);
+
+            return false;
+        }
+
+        $this->statsd->increment('packagist.metadata_cdn_purge_fail');
+        $this->logger->warning('Failed verifying CDN file: '.$relativePath, ['file' => $relativePath, 'exception' => $e]);
+
+        return true;
     }
 
     /**
