@@ -20,6 +20,9 @@ use Symfony\Contracts\HttpClient\ResponseStreamInterface;
 
 class CdnClient
 {
+    /** Per-request cap for a single-file storage write, well below the client default of 30s: the dumper waits on it synchronously. */
+    private const STORAGE_MAX_DURATION = 10;
+
     public function __construct(
         private NoPrivateNetworkHttpClient $httpClient,
         private ?string $metadataEndpoint,
@@ -43,7 +46,7 @@ class CdnClient
             return (int) (time() * 10000);
         }
 
-        $resp = $this->sendUploadMetadataRequest($path, $contents);
+        $resp = $this->sendUploadMetadataRequest($path, $contents, self::STORAGE_MAX_DURATION);
         if ($resp->getStatusCode() !== 201) {
             throw new \RuntimeException('Unexpected response from the CDN: '.$resp->getStatusCode().' '.$resp->getContent(false));
         }
@@ -53,6 +56,7 @@ class CdnClient
             'headers' => [
                 'AccessKey' => $this->metadataApiKey,
             ],
+            'max_duration' => self::STORAGE_MAX_DURATION,
         ]);
         $time = strtotime($resp->getHeaders()['last-modified'][0]) * 10000;
 
@@ -72,11 +76,13 @@ class CdnClient
         return true;
     }
 
-    public function sendUploadMetadataRequest(string $path, string $contents): ResponseInterface
+    /**
+     * @param float|null $maxDuration null keeps the client default, which bulk uploads streaming many requests at once need
+     */
+    public function sendUploadMetadataRequest(string $path, string $contents, ?float $maxDuration = null): ResponseInterface
     {
         $hash = hash('sha256', $contents);
-
-        return $this->httpClient->request('PUT', $this->metadataEndpoint.$path, [
+        $options = [
             'headers' => [
                 'AccessKey' => $this->metadataApiKey,
                 'Content-Type' => 'application/json',
@@ -84,7 +90,12 @@ class CdnClient
             ],
             'body' => $contents,
             'user_data' => ['path' => $path],
-        ]);
+        ];
+        if ($maxDuration !== null) {
+            $options['max_duration'] = $maxDuration;
+        }
+
+        return $this->httpClient->request('PUT', $this->metadataEndpoint.$path, $options);
     }
 
     public function deleteMetadata(string $path): void

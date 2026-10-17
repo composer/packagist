@@ -590,23 +590,16 @@ class V2Dumper
      */
     private function writeCdn(string $relativePath, string $contents): int
     {
-        $retries = 3;
-        do {
-            try {
-                $filemtime = $this->cdnClient->uploadMetadata($relativePath, $contents);
+        try {
+            return $this->cdnClient->uploadMetadata($relativePath, $contents);
+        } catch (TransportExceptionInterface $e) {
+            // the http client already retried this, so only try once more on a fresh connection pool
+            $this->logger->debug('Retrying due to failure', ['exception' => $e]);
+            sleep(1);
+            $this->httpClient->reset();
+        }
 
-                return $filemtime;
-            } catch (TransportExceptionInterface $e) {
-                if ($retries === 0) {
-                    throw $e;
-                }
-                $this->logger->debug('Retrying due to failure', ['exception' => $e]);
-                sleep(1);
-                $this->httpClient->reset();
-            }
-        } while ($retries-- > 0);
-
-        throw $e;
+        return $this->cdnClient->uploadMetadata($relativePath, $contents);
     }
 
     private function writeToReplica(string $relativePath, string $contents, int $timeUnix): void
