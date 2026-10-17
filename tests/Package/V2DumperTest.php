@@ -37,6 +37,7 @@ use Monolog\LogRecord;
 use Predis\Client as RedisClient;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpClient\Exception\TimeoutException;
+use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -353,6 +354,113 @@ class V2DumperTest extends IntegrationTestCase
         self::assertCount(1, array_filter($logs, static fn (string $log): bool => str_starts_with($log, 'CDN unreachable, aborting v2 metadata dump run')));
     }
 
+    public function testASlowlyAppliedPurgeIsRecheckedOnceAfterSettling(): void
+    {
+        $fetches = [];
+        $logs = [];
+        $this->rebuildDumper($this->verifyingCdnClient(function (string $path) use (&$fetches): string {
+            $fetches[] = $path;
+
+            return \count(array_keys($fetches, $path, true)) === 1 ? 'stale' : $this->localContent($path);
+        }), logger: self::capturingLogger($logs));
+
+        $packageId = $this->storeMarkedPackage('acme/package');
+        $this->dumper->dump([$packageId]);
+
+        self::assertSame(['p2/acme/package.json', 'p2/acme/package~dev.json', 'p2/acme/package.json', 'p2/acme/package~dev.json'], $fetches, 'all re-checks wait for one shared settle delay');
+        self::assertCount(2, self::logsStartingWith($logs, 'Cache purge worked now for '));
+        self::assertSame([], self::logsStartingWith($logs, 'Mismatch still present'));
+    }
+
+    public function testAFileThatStaysStaleOnTheCdnDoesNotHoldBackTheOthers(): void
+    {
+        $fetches = [];
+        $logs = [];
+        $this->rebuildDumper($this->verifyingCdnClient(function (string $path) use (&$fetches): string {
+            $fetches[$path] = ($fetches[$path] ?? 0) + 1;
+
+            return str_starts_with($path, 'p2/acme/broken') ? 'stale' : $this->localContent($path);
+        }), logger: self::capturingLogger($logs));
+
+        $broken = $this->storeMarkedPackage('acme/broken');
+        $healthy = $this->storeMarkedPackage('acme/healthy');
+        $this->dumper->dump([$broken, $healthy]);
+
+        self::assertSame(['p2/acme/broken.json' => 2, 'p2/acme/broken~dev.json' => 2, 'p2/acme/healthy.json' => 1, 'p2/acme/healthy~dev.json' => 1], $fetches);
+        self::assertCount(2, self::logsStartingWith($logs, 'Mismatch still present after another cache purge: p2/acme/broken'));
+        self::assertSame([], array_intersect([$broken, $healthy], $this->stalePackageIds()), 'storage has the right content, so both count as dumped');
+    }
+
+    public function testARejectedPurgeDuringVerificationDoesNotHoldBackTheOthers(): void
+    {
+        $verifying = false;
+        $fetches = [];
+        $logs = [];
+        $this->rebuildDumper($this->verifyingCdnClient(
+            function (string $path) use (&$verifying, &$fetches): string {
+                $verifying = true;
+                $fetches[$path] = ($fetches[$path] ?? 0) + 1;
+
+                return $path === 'p2/acme/broken.json' ? 'stale' : $this->localContent($path);
+            },
+            static function (string $path) use (&$verifying): bool {
+                return !$verifying || $path !== 'p2/acme/broken.json';
+            },
+        ), logger: self::capturingLogger($logs));
+
+        $broken = $this->storeMarkedPackage('acme/broken');
+        $healthy = $this->storeMarkedPackage('acme/healthy');
+        $result = $this->dumper->dump([$broken, $healthy]);
+
+        self::assertSame(V2DumpOutcome::Complete, $result->outcome);
+        self::assertSame(['p2/acme/broken.json' => 1, 'p2/acme/broken~dev.json' => 1, 'p2/acme/healthy.json' => 1, 'p2/acme/healthy~dev.json' => 1], $fetches);
+        self::assertCount(1, self::logsStartingWith($logs, 'Failed verifying CDN file: p2/acme/broken.json'));
+        self::assertSame([], array_intersect([$broken, $healthy], $this->stalePackageIds()));
+    }
+
+    public function testAnUnreachableCdnStopsVerificationButKeepsTheRunsProgress(): void
+    {
+        $fetches = [];
+        $logs = [];
+        $this->rebuildDumper($this->verifyingCdnClient(static function (string $path) use (&$fetches): string {
+            $fetches[] = $path;
+
+            throw new TransportException('Connection refused for "https://cdn.example/'.$path.'".');
+        }), logger: self::capturingLogger($logs));
+
+        $first = $this->storeMarkedPackage('acme/first');
+        $second = $this->storeMarkedPackage('acme/second');
+        $this->dumper->dump([$first, $second]);
+
+        self::assertCount(1, array_unique($fetches), 'the files after the unreachable one are not tried');
+        self::assertCount(1, self::logsStartingWith($logs, 'CDN unreachable, skipping verification of the remaining files'));
+        self::assertSame([], array_intersect([$first, $second], $this->stalePackageIds()));
+    }
+
+    public function testAFailedFullPurgeKeepsTheRunsProgress(): void
+    {
+        $logs = [];
+        $cdnClient = $this->verifyingCdnClient(
+            fn (string $path): string => $this->localContent($path),
+            static function (string $path): bool {
+                if ($path === 'p2/*') {
+                    throw new TransportException('Idle timeout reached for "https://api.bunny.net/purge".');
+                }
+
+                return true;
+            },
+        );
+        $this->rebuildDumper($cdnClient, logger: self::capturingLogger($logs));
+
+        $packageId = $this->storeMarkedPackage('acme/package');
+        // a queue above 150 ids switches to one full purge at the end; ids that no longer exist are skipped
+        $ids = [$packageId, ...range($packageId + 1000, $packageId + 1150)];
+        $this->dumper->dump($ids);
+
+        self::assertCount(1, self::logsStartingWith($logs, 'Failed purging the complete CDN metadata cache'));
+        self::assertNotContains($packageId, $this->stalePackageIds());
+    }
+
     public function testANormalDumpRunClearsStaleness(): void
     {
         $this->primeBuildDir();
@@ -572,6 +680,49 @@ class V2DumperTest extends IntegrationTestCase
         $cdnClient->method('purgeMetadataCache')->willReturn(true);
 
         $this->rebuildDumper($cdnClient, logger: $logger);
+    }
+
+    /**
+     * @param \Closure(string): string    $fetch what the public CDN serves for a path
+     * @param (\Closure(string): bool)|null $purge
+     */
+    private function verifyingCdnClient(\Closure $fetch, ?\Closure $purge = null): CdnClient
+    {
+        $this->primeBuildDir();
+        // verification reads the local files through the web dir, which dump() only symlinks after verifying
+        symlink($this->buildDir.'/p2', $this->webDir.'/p2');
+
+        $cdnClient = $this->createStub(CdnClient::class);
+        $cdnClient->method('isConfigured')->willReturn(true);
+        $cdnClient->method('uploadMetadata')->willReturn(16062106090001);
+        $cdnClient->method('fetchPublicMetadata')->willReturnCallback($fetch);
+        $cdnClient->method('purgeMetadataCache')->willReturnCallback($purge ?? static fn (): bool => true);
+
+        return $cdnClient;
+    }
+
+    private function localContent(string $relativePath): string
+    {
+        return (string) file_get_contents($this->buildDir.'/'.$relativePath);
+    }
+
+    private function storeMarkedPackage(string $name): int
+    {
+        $package = self::createPackage($name, 'https://example.com/'.$name);
+        $this->store($package, $this->createVersion($package, '1.0.0'));
+        $this->requestDumpAt($package->getId(), '-1 minute');
+
+        return $package->getId();
+    }
+
+    /**
+     * @param list<string> $logs
+     *
+     * @return list<string>
+     */
+    private static function logsStartingWith(array $logs, string $prefix): array
+    {
+        return array_values(array_filter($logs, static fn (string $log): bool => str_starts_with($log, $prefix)));
     }
 
     private function primeBuildDir(): void

@@ -50,6 +50,8 @@ class V2Dumper
 {
     use \App\Util\DoctrineTrait;
 
+    private const CDN_PURGE_SETTLE_SECONDS = 2;
+
     /** @var list<string> */
     private array $writtenFiles = [];
 
@@ -258,7 +260,11 @@ class V2Dumper
             $this->bypassIndividualPurges = false;
             if ($this->cdnClient->isConfigured()) {
                 $this->logger->warning('Purging complete CDN metadata cache after dump is complete');
-                $this->cdnClient->purgeMetadataCache('p2/*');
+                try {
+                    $this->cdnClient->purgeMetadataCache('p2/*');
+                } catch (\Throwable $e) {
+                    $this->logger->error('Failed purging the complete CDN metadata cache', ['exception' => $e, 'worker' => $workerId]);
+                }
             }
         }
 
@@ -648,23 +654,45 @@ class V2Dumper
 
         $this->logger->debug('Verifying CDN files', ['files' => $this->writtenFiles]);
 
-        foreach ($this->writtenFiles as $relativePath) {
+        $repurged = [];
+        foreach ($this->writtenFiles as $index => $relativePath) {
             $localPath = $this->webDir.'/'.$relativePath;
             if (!file_exists($localPath)) {
                 continue; // Skip if local file doesn't exist
             }
 
             $localContent = (string) file_get_contents($localPath);
-            $cdnContent = $this->fetchCdnFile($relativePath);
+            try {
+                $cdnContent = $this->fetchCdnFile($relativePath);
+                if ($localContent === $cdnContent) {
+                    $this->statsd->increment('packagist.metadata_cdn_purge_ok');
+                    continue;
+                }
 
-            if ($localContent !== $cdnContent) {
                 $this->statsd->increment('packagist.metadata_cdn_purge_warn');
                 $this->logger->notice(
                     'Mismatch detected for CDN file: '.$relativePath.', purging again',
                     ['file' => $relativePath, 'local' => base64_encode($localContent), 'cdn' => base64_encode($cdnContent)]
                 );
                 $this->purgeCdn($relativePath);
+                $repurged[$relativePath] = $localContent;
+            } catch (\Throwable $e) {
+                if (!$this->handleVerifyFailure($relativePath, \count($this->writtenFiles) - $index, $e)) {
+                    return;
+                }
+            }
+        }
 
+        if (!$repurged) {
+            return;
+        }
+
+        // the CDN acks a purge before it has processed it, so re-checking right away mostly reads the stale file
+        sleep(self::CDN_PURGE_SETTLE_SECONDS);
+
+        $remaining = \count($repurged);
+        foreach ($repurged as $relativePath => $localContent) {
+            try {
                 $cdnContent = $this->fetchCdnFile($relativePath);
                 if ($localContent !== $cdnContent) {
                     $this->statsd->increment('packagist.metadata_cdn_purge_fail');
@@ -675,10 +703,31 @@ class V2Dumper
                 } else {
                     $this->logger->info('Cache purge worked now for '.$relativePath);
                 }
-            } else {
-                $this->statsd->increment('packagist.metadata_cdn_purge_ok');
+            } catch (\Throwable $e) {
+                if (!$this->handleVerifyFailure($relativePath, $remaining, $e)) {
+                    return;
+                }
             }
+            $remaining--;
         }
+    }
+
+    /**
+     * @return bool whether verifying the remaining files is worth continuing
+     */
+    private function handleVerifyFailure(string $relativePath, int $unverified, \Throwable $e): bool
+    {
+        if ($e instanceof TransportExceptionInterface) {
+            // the next files would wait out the same timeouts
+            $this->logger->warning('CDN unreachable, skipping verification of the remaining files', ['file' => $relativePath, 'unverified' => $unverified, 'exception' => $e]);
+
+            return false;
+        }
+
+        $this->statsd->increment('packagist.metadata_cdn_purge_fail');
+        $this->logger->warning('Failed verifying CDN file: '.$relativePath, ['file' => $relativePath, 'exception' => $e]);
+
+        return true;
     }
 
     /**
