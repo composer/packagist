@@ -560,8 +560,8 @@ class V2DumperTest extends IntegrationTestCase
         // Names the packages behind metadata_dump.file{written, requested:false}: content changed but
         // no path marked it, so only the transitional crawledAt clause caught it. That counter is the
         // gate on dropping the clause, and it is not at zero, so the log says which package to chase.
-        $logs = [];
-        $this->rebuildDumperWithLogger(self::capturingLogger($logs));
+        $records = [];
+        $this->rebuildDumperWithLogger(self::recordCapturingLogger($records));
         $this->primeBuildDir();
 
         $package = self::createPackage('acme/package', 'https://example.com/acme/package');
@@ -570,7 +570,7 @@ class V2DumperTest extends IntegrationTestCase
 
         $this->requestDumpAt($packageId, '-1 minute');
         $this->dumper->dump([$packageId]);
-        self::assertSame([], self::gapWarnings($logs), 'a marked package is the normal path and must stay quiet');
+        self::assertSame([], self::gapRecords($records), 'a marked package is the normal path and must stay quiet');
 
         // content changes with nothing marking it, which is exactly the gap being hunted
         $reloaded = self::getEM()->getRepository(Package::class)->find($packageId);
@@ -578,9 +578,86 @@ class V2DumperTest extends IntegrationTestCase
         $this->store($this->createVersion($reloaded, '2.0.0'));
         $this->dumper->dump([$packageId]);
 
-        $gaps = self::gapWarnings($logs);
-        self::assertNotEmpty($gaps);
-        self::assertStringContainsString('acme/package', $gaps[0]);
+        $gaps = self::gapRecords($records);
+        self::assertCount(1, $gaps, 'only the tags file changed');
+        self::assertSame(Logger::ERROR, $gaps[0]->level->value);
+        self::assertSame('acme/package', $gaps[0]->context['package']);
+        self::assertSame('p2/acme/package.json', $gaps[0]->context['file']);
+        self::assertSame(['2.0.0.0'], $gaps[0]->context['changes']['added']);
+        self::assertSame([], $gaps[0]->context['changes']['removed']);
+        self::assertSame([], $gaps[0]->context['changes']['changed']);
+    }
+
+    public function testTheUnmarkedChangeLogNamesTheChangedField(): void
+    {
+        $records = [];
+        $this->rebuildDumperWithLogger(self::recordCapturingLogger($records));
+        $this->primeBuildDir();
+        $packageId = $this->storeMarkedPackage('acme/package');
+        $this->dumper->dump([$packageId]);
+
+        self::getEM()->getConnection()->executeStatement('UPDATE package_version SET description = :d WHERE package_id = :id', ['d' => 'changed', 'id' => $packageId]);
+        self::getEM()->clear();
+        $this->dumper->dump([$packageId]);
+
+        $gaps = self::gapRecords($records);
+        self::assertCount(1, $gaps);
+        self::assertSame(['description' => ['1.0.0.0']], $gaps[0]->context['changes']['changed']);
+    }
+
+    public function testTheUnmarkedChangeLogTellsAReorderingApart(): void
+    {
+        $records = [];
+        $this->rebuildDumperWithLogger(self::recordCapturingLogger($records));
+        $this->primeBuildDir();
+
+        $package = self::createPackage('acme/package', 'https://example.com/acme/package');
+        $version = $this->createVersion($package, '1.0.0');
+        $version->setLicense(['MIT', 'BSD-3-Clause']);
+        $this->store($package, $version);
+        $packageId = $package->getId();
+        $this->requestDumpAt($packageId, '-1 minute');
+        $this->dumper->dump([$packageId]);
+
+        // same data, different order on disk: what a nondeterministic row order would look like
+        $file = $this->buildDir.'/p2/acme/package.json';
+        $metadata = json_decode((string) file_get_contents($file), true, flags: \JSON_THROW_ON_ERROR);
+        $metadata['packages']['acme/package'][0]['license'] = ['BSD-3-Clause', 'MIT'];
+        file_put_contents($file, json_encode($metadata, \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR));
+
+        self::getEM()->clear();
+        $this->dumper->dump([$packageId]);
+
+        $gaps = self::gapRecords($records);
+        self::assertCount(1, $gaps);
+        self::assertSame(['license (order)' => ['1.0.0.0']], $gaps[0]->context['changes']['changed']);
+    }
+
+    /**
+     * @param list<LogRecord> $records
+     *
+     * @return list<LogRecord>
+     */
+    private static function gapRecords(array $records): array
+    {
+        return array_values(array_filter($records, static fn (LogRecord $record): bool => str_contains($record->message, 'nothing had marked')));
+    }
+
+    /**
+     * Same as capturingLogger(), keeping the records whole so level and context can be asserted on.
+     *
+     * @param list<LogRecord> $captured
+     */
+    private static function recordCapturingLogger(array &$captured): Logger
+    {
+        $logger = new Logger('test', [new TestHandler()]);
+        $logger->pushProcessor(static function (LogRecord $record) use (&$captured): LogRecord {
+            $captured[] = $record;
+
+            return $record;
+        });
+
+        return $logger;
     }
 
     /**
