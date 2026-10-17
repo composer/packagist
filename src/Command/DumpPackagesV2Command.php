@@ -14,6 +14,7 @@ namespace App\Command;
 
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
+use App\Package\V2DumpOutcome;
 use App\Package\V2Dumper;
 use App\Service\Locker;
 use Doctrine\DBAL\ArrayParameterType;
@@ -164,9 +165,13 @@ class DumpPackagesV2Command extends Command
 
                     $ids = array_map('intval', $ids);
 
-                    $this->dumper->dump($ids, $force, $verbose, $workerId);
+                    $outcome = $this->dumper->dump($ids, $force, $verbose, $workerId);
 
                     $this->logger->reset();
+
+                    if ($outcome === V2DumpOutcome::Aborted) {
+                        break;
+                    }
                 }
 
                 if ($signal !== null && $signal->isTriggered()) {

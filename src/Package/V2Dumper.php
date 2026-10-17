@@ -122,7 +122,7 @@ class V2Dumper
      *
      * @param list<int> $packageIds
      */
-    public function dump(array $packageIds, bool $force = false, bool $verbose = false, int $workerId = 0): void
+    public function dump(array $packageIds, bool $force = false, bool $verbose = false, int $workerId = 0): V2DumpOutcome
     {
         // clear written files tracking for this run
         $this->writtenFiles = [];
@@ -160,6 +160,7 @@ class V2Dumper
         }
 
         $dumpTimeUpdates = [];
+        $outcome = V2DumpOutcome::Complete;
 
         $versionRepo = $this->getEM()->getRepository(Version::class);
 
@@ -220,8 +221,19 @@ class V2Dumper
                     $forceDumpPackages++;
                 }
 
-                // dump v2 format
-                $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? [], $filterLists[$package->getName()] ?? null);
+                // dump v2 format; a failed package is left out of $dumpTimeUpdates so it stays stale
+                try {
+                    $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? [], $filterLists[$package->getName()] ?? null);
+                } catch (TransportExceptionInterface $e) {
+                    // the next package would wait out the same timeouts, so stop here but keep what was dumped
+                    $this->logger->warning('CDN unreachable, aborting v2 metadata dump run', ['package' => $package->getName(), 'exception' => $e, 'worker' => $workerId]);
+                    $outcome = V2DumpOutcome::Aborted;
+                    break 2;
+                } catch (\Throwable $e) {
+                    $this->logger->error('Failed dumping v2 metadata, leaving the package stale', ['package' => $package->getName(), 'exception' => $e, 'worker' => $workerId]);
+                    $outcome = V2DumpOutcome::SomeFailed;
+                    continue;
+                }
 
                 $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
             }
@@ -232,7 +244,7 @@ class V2Dumper
         }
 
         // Verify all written files match CDN versions
-        if (!$this->bypassIndividualPurges && !empty($this->writtenFiles) && !$force && \count($this->writtenFiles) < 50) {
+        if ($outcome !== V2DumpOutcome::Aborted && !$this->bypassIndividualPurges && !empty($this->writtenFiles) && !$force && \count($this->writtenFiles) < 50) {
             if ($verbose) {
                 echo 'Verifying '.\count($this->writtenFiles).' written files match CDN versions'.\PHP_EOL;
             }
@@ -290,6 +302,8 @@ class V2Dumper
         $this->statsd->timing('packagist.metadata_dump.run_time', round((microtime(true) - $runStart) * 1000, 4), ['worker' => (string) $workerId]);
         $this->statsd->histogram('packagist.metadata_dump.run_packages', $processedPackages, 1.0, ['worker' => (string) $workerId]);
         $this->statsd->histogram('packagist.metadata_dump.run_forcedump', $forceDumpPackages, 1.0, ['worker' => (string) $workerId]);
+
+        return $outcome;
     }
 
     public function gc(): void

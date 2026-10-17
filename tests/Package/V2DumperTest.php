@@ -22,6 +22,7 @@ use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
 use App\Model\ProviderManager;
+use App\Package\V2DumpOutcome;
 use App\Package\V2Dumper;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Service\CdnClient;
@@ -284,12 +285,68 @@ class V2DumperTest extends IntegrationTestCase
         $package = self::createPackage('acme/package', 'https://example.com/acme/package');
         $this->store($package, $this->createVersion($package, '1.0.0'));
 
-        try {
-            $this->dumper->dump([$package->getId()], force: true);
-        } catch (TimeoutException) {
-        }
+        $this->dumper->dump([$package->getId()], force: true);
 
         self::assertSame([['op' => 'upload', 'worker' => '0', 'reason' => 'timeout']], self::tagsOf($increments, 'packagist.metadata_dump.cdn_failure'));
+    }
+
+    public function testAFailingPackageStaysStaleWithoutHoldingBackTheRest(): void
+    {
+        $this->primeBuildDir();
+        $cdnClient = $this->createStub(CdnClient::class);
+        $cdnClient->method('uploadMetadata')->willReturnCallback(static function (string $path): int {
+            if (str_starts_with($path, 'p2/acme/broken')) {
+                throw new \RuntimeException('Unexpected response from the CDN: 500');
+            }
+
+            return 16062106090001;
+        });
+        $cdnClient->method('purgeMetadataCache')->willReturn(true);
+        $this->rebuildDumper($cdnClient);
+
+        $broken = self::createPackage('acme/broken', 'https://example.com/acme/broken');
+        $healthy = self::createPackage('acme/healthy', 'https://example.com/acme/healthy');
+        $this->store($broken, $this->createVersion($broken, '1.0.0'), $healthy, $this->createVersion($healthy, '1.0.0'));
+        $this->requestDumpAt($broken->getId(), '-1 minute');
+        $this->requestDumpAt($healthy->getId(), '-1 minute');
+
+        self::assertSame(V2DumpOutcome::SomeFailed, $this->dumper->dump([$broken->getId(), $healthy->getId()]));
+
+        $stale = $this->stalePackageIds();
+        self::assertContains($broken->getId(), $stale, 'the failed package must be retried next run');
+        self::assertNotContains($healthy->getId(), $stale);
+        self::assertFileExists($this->buildDir.'/p2/acme/healthy.json');
+    }
+
+    public function testAnUnreachableCdnAbortsTheRunButKeepsWhatWasDumped(): void
+    {
+        $this->primeBuildDir();
+        $uploads = 0;
+        $cdnClient = $this->createStub(CdnClient::class);
+        // each package uploads its tags and its ~dev file, so the third upload is the second package's first
+        $cdnClient->method('uploadMetadata')->willReturnCallback(static function () use (&$uploads): int {
+            if (++$uploads > 2) {
+                throw new TimeoutException('Idle timeout reached for "https://storage.example/p2/x.json".');
+            }
+
+            return 16062106090001;
+        });
+        $cdnClient->method('purgeMetadataCache')->willReturn(true);
+        $logs = [];
+        $this->rebuildDumper($cdnClient, logger: self::capturingLogger($logs));
+
+        $ids = [];
+        foreach (['acme/first', 'acme/second', 'acme/third'] as $name) {
+            $package = self::createPackage($name, 'https://example.com/'.$name);
+            $this->store($package, $this->createVersion($package, '1.0.0'));
+            $this->requestDumpAt($package->getId(), '-1 minute');
+            $ids[] = $package->getId();
+        }
+
+        self::assertSame(V2DumpOutcome::Aborted, $this->dumper->dump($ids));
+
+        self::assertCount(2, array_intersect($ids, $this->stalePackageIds()), 'only the package dumped before the failure is recorded');
+        self::assertCount(1, array_filter($logs, static fn (string $log): bool => str_starts_with($log, 'CDN unreachable, aborting v2 metadata dump run')));
     }
 
     public function testANormalDumpRunClearsStaleness(): void
@@ -510,21 +567,7 @@ class V2DumperTest extends IntegrationTestCase
         $cdnClient->method('uploadMetadata')->willReturn(16062106090001);
         $cdnClient->method('purgeMetadataCache')->willReturn(true);
 
-        $this->dumper = new V2Dumper(
-            static::getContainer()->get(ManagerRegistry::class),
-            new Filesystem(),
-            $this->createStub(RedisClient::class),
-            $this->webDir,
-            $this->buildDir,
-            $this->createStub(StatsDClient::class),
-            $this->createStub(ProviderManager::class),
-            $logger,
-            $cdnClient,
-            $this->createStub(ReplicaClient::class),
-            static::getContainer()->get(UrlGeneratorInterface::class),
-            new MockHttpClient(),
-            static::getContainer()->get(FilterListDumperProvider::class),
-        );
+        $this->rebuildDumper($cdnClient, logger: $logger);
     }
 
     private function primeBuildDir(): void
