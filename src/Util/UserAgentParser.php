@@ -43,7 +43,7 @@ class UserAgentParser
             }
             $this->httpVersion = null !== $matches['http'] ? strtolower($matches['http']) : null;
             $this->ci = (bool) ($matches['ci'] ?? null);
-            $this->aiAgent = $matches['agent'] ?? null;
+            $this->aiAgent = ($matches['agent'] ?? '') !== '' ? $matches['agent'] : null;
             // cmd:<command>[,<operation>] (composer/composer#12952). The operation is appended only
             // when it differs from the command, so it collapses for `composer update`/`install`.
             if (null !== $matches['cmd']) {
