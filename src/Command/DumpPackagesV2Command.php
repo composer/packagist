@@ -155,6 +155,8 @@ class DumpPackagesV2Command extends Command
                     $ids = array_keys($stale);
                 }
                 $this->statsd->gauge('packagist.metadata_dump_queue', \count($ids), ['worker' => (string) $workerId]);
+                // a zero count each pass gives the cdn_failure monitor a per-worker series before the first failure
+                $this->statsd->increment('packagist.metadata_dump.cdn_failure', 0, 1, ['worker' => (string) $workerId]);
 
                 $result = new V2DumpResult(V2DumpOutcome::Complete, []);
                 if ($ids || $force) {
