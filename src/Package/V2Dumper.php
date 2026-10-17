@@ -35,6 +35,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\HttpClient\Exception\TimeoutExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\Service\ResetInterface;
@@ -453,30 +454,22 @@ class V2Dumper
 
             // fetch the file to ensure the region we hit after has a hot cache so we can verify correctly that the purge worked
             if ($fileExists) {
-                $opStart = microtime(true);
-                try {
-                    $this->cdnClient->fetchPublicMetadata($relativePath);
-                } catch (\Exception $e) {
-                    // ignore 404s as if the file is not there yet it means it's unlikely to be cached in a bad state on some other region
-                    if ($e->getCode() !== 404) {
-                        throw $e;
+                $this->cdnOp('prefetch', $opTimings, function () use ($relativePath): void {
+                    try {
+                        $this->cdnClient->fetchPublicMetadata($relativePath);
+                    } catch (\Exception $e) {
+                        // ignore 404s as if the file is not there yet it means it's unlikely to be cached in a bad state on some other region
+                        if ($e->getCode() !== 404) {
+                            throw $e;
+                        }
+                        $this->httpClient->reset();
                     }
-                    $this->httpClient->reset();
-                } finally {
-                    $opTimings['prefetch'] = round((microtime(true) - $opStart) * 1000, 4);
-                    $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['prefetch'], ['op' => 'prefetch'] + $workerTag);
-                }
+                });
             }
 
             $this->filesystem->mkdir(\dirname($path));
 
-            $opStart = microtime(true);
-            try {
-                $filemtime = $this->writeCdn($relativePath, $contents);
-            } finally {
-                $opTimings['upload'] = round((microtime(true) - $opStart) * 1000, 4);
-                $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['upload'], ['op' => 'upload'] + $workerTag);
-            }
+            $filemtime = $this->cdnOp('upload', $opTimings, fn (): int => $this->writeCdn($relativePath, $contents));
 
             // we need to make sure dumps happen always with incrementing times to avoid race conditions when
             // fetching metadata changes in the currently elapsing second (new items dumped after the fetch can then
@@ -499,22 +492,10 @@ class V2Dumper
             $timeUnix = (int) ceil($filemtime / 10000);
             $this->writeFileAtomic($path, $contents, $timeUnix);
 
-            $opStart = microtime(true);
-            try {
-                $this->writeToReplica($relativePath, $contents, $timeUnix);
-            } finally {
-                $opTimings['replica'] = round((microtime(true) - $opStart) * 1000, 4);
-                $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['replica'], ['op' => 'replica'] + $workerTag);
-            }
+            $this->cdnOp('replica', $opTimings, fn () => $this->writeToReplica($relativePath, $contents, $timeUnix));
 
             if (!$this->bypassIndividualPurges) {
-                $opStart = microtime(true);
-                try {
-                    $this->purgeCdn($relativePath);
-                } finally {
-                    $opTimings['purge'] = round((microtime(true) - $opStart) * 1000, 4);
-                    $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings['purge'], ['op' => 'purge'] + $workerTag);
-                }
+                $this->cdnOp('purge', $opTimings, fn () => $this->purgeCdn($relativePath));
             }
 
             $this->redis->zadd('metadata-dumps', [$pkgWithDevFlag => $filemtime]);
@@ -552,6 +533,39 @@ class V2Dumper
                     'worker' => $this->workerId,
                 ]);
             }
+        }
+    }
+
+    /**
+     * Times one CDN/replica op and counts its failures. cdn_failure is what tells a CDN outage
+     * apart from a backlog we have to act on, so it is tagged by op and by how the op failed.
+     *
+     * @template T
+     *
+     * @param 'prefetch'|'upload'|'replica'|'purge' $op
+     * @param array<string, float>                  $opTimings
+     * @param callable(): T                         $fn
+     *
+     * @return T
+     */
+    private function cdnOp(string $op, array &$opTimings, callable $fn): mixed
+    {
+        $tags = ['op' => $op, 'worker' => (string) $this->workerId];
+        $opStart = microtime(true);
+        try {
+            return $fn();
+        } catch (\Throwable $e) {
+            $reason = match (true) {
+                $e instanceof TimeoutExceptionInterface => 'timeout',
+                $e instanceof TransportExceptionInterface => 'transport',
+                default => 'http',
+            };
+            $this->statsd->increment('packagist.metadata_dump.cdn_failure', 1, 1, $tags + ['reason' => $reason]);
+
+            throw $e;
+        } finally {
+            $opTimings[$op] = round((microtime(true) - $opStart) * 1000, 4);
+            $this->statsd->timing('packagist.metadata_dump.op_time', $opTimings[$op], $tags);
         }
     }
 

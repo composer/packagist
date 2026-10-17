@@ -35,6 +35,7 @@ use Monolog\Logger;
 use Monolog\LogRecord;
 use Predis\Client as RedisClient;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\HttpClient\Exception\TimeoutException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -271,6 +272,24 @@ class V2DumperTest extends IntegrationTestCase
         $this->assertArrayHasKey('filter', $data);
         $this->assertArrayHasKey('summary-url', $data['filter']);
         $this->assertStringEndsWith('/lists/all/summary.json', $data['filter']['summary-url']);
+    }
+
+    public function testCdnTimeoutsAreCountedByOpAndReason(): void
+    {
+        $cdnClient = $this->createStub(CdnClient::class);
+        $cdnClient->method('uploadMetadata')->willThrowException(new TimeoutException('Idle timeout reached for "https://storage.example/p2/acme/package.json".'));
+        $increments = [];
+        $this->rebuildDumper($cdnClient, $this->recordingStatsd($increments));
+
+        $package = self::createPackage('acme/package', 'https://example.com/acme/package');
+        $this->store($package, $this->createVersion($package, '1.0.0'));
+
+        try {
+            $this->dumper->dump([$package->getId()], force: true);
+        } catch (TimeoutException) {
+        }
+
+        self::assertSame([['op' => 'upload', 'worker' => '0', 'reason' => 'timeout']], self::tagsOf($increments, 'packagist.metadata_dump.cdn_failure'));
     }
 
     public function testANormalDumpRunClearsStaleness(): void
@@ -542,21 +561,51 @@ class V2DumperTest extends IntegrationTestCase
         });
         $cdnClient->method('purgeMetadataCache')->willReturn(true);
 
+        $this->rebuildDumper($cdnClient);
+    }
+
+    private function rebuildDumper(CdnClient $cdnClient, ?StatsDClient $statsd = null, ?Logger $logger = null): void
+    {
         $this->dumper = new V2Dumper(
             static::getContainer()->get(ManagerRegistry::class),
             new Filesystem(),
             $this->createStub(RedisClient::class),
             $this->webDir,
             $this->buildDir,
-            $this->createStub(StatsDClient::class),
+            $statsd ?? $this->createStub(StatsDClient::class),
             $this->createStub(ProviderManager::class),
-            new Logger('test'),
+            $logger ?? new Logger('test'),
             $cdnClient,
             $this->createStub(ReplicaClient::class),
             static::getContainer()->get(UrlGeneratorInterface::class),
             new MockHttpClient(),
             static::getContainer()->get(FilterListDumperProvider::class),
         );
+    }
+
+    /**
+     * @param list<array{string, array<string, string>}> $increments filled with each increment()'s metric and tags
+     */
+    private function recordingStatsd(array &$increments): StatsDClient
+    {
+        $statsd = $this->createStub(StatsDClient::class);
+        $statsd->method('increment')->willReturnCallback(static function (string $metric, int $delta = 1, float $rate = 1.0, array $tags = []) use (&$increments, $statsd): StatsDClient {
+            $increments[] = [$metric, $tags];
+
+            return $statsd;
+        });
+
+        return $statsd;
+    }
+
+    /**
+     * @param list<array{string, array<string, string>}> $increments
+     *
+     * @return list<array<string, string>>
+     */
+    private static function tagsOf(array $increments, string $metric): array
+    {
+        return array_values(array_map(static fn (array $call): array => $call[1], array_filter($increments, static fn (array $call): bool => $call[0] === $metric)));
     }
 
     private function createVersion(Package $package, string $version): Version
