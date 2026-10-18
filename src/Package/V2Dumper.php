@@ -434,6 +434,8 @@ class V2Dumper
         // (skipped early-return / deleted-guard / full written) so we can see where the dump loop spends time
         $fileStart = microtime(true);
         $result = 'written';
+        $previousContents = null;
+        $relativePath = null;
         $opTimings = [];
         $workerTag = ['worker' => (string) $this->workerId];
 
@@ -464,13 +466,16 @@ class V2Dumper
                 // instrumentation only: distinguish a first write from a re-write, so a missing local file
                 // does not land in the result:written bucket that gates dropping the crawledAt clause
                 $result = 'created';
-            } elseif (!$package->isDumpForced() && file_get_contents($path) === $contents) {
+            } elseif (!$package->isDumpForced()) {
+                $previousContents = (string) file_get_contents($path);
                 // Deliberately isDumpForced(), not isDumpRequested(): every package the stale query hands
                 // us is "requested", so honouring that would make this comparison dead code and turn
                 // every dump into a real CDN write.
-                $result = 'skipped';
+                if ($previousContents === $contents) {
+                    $result = 'skipped';
 
-                return;
+                    return;
+                }
             }
 
             // fetch the file to ensure the region we hit after has a hot cache so we can verify correctly that the purge worked
@@ -546,8 +551,10 @@ class V2Dumper
             // without any path marking it — the gap that keeps the crawledAt clause alive. Self-limiting:
             // the write updates dumpedAtV2, so a package can only reappear on its next real change.
             if ($result === 'written' && !$this->forcedRun && !$package->isDumpRequested()) {
-                $this->logger->warning('Dumped a changed v2 file for a package nothing had marked', [
+                $this->logger->error('Dumped a changed v2 file for a package nothing had marked', [
                     'package' => $package->getName(),
+                    'file' => $relativePath ?? $path,
+                    'changes' => self::describeChanges($previousContents ?? '', $contents, $name),
                     'dumpedAtV2' => $package->getDumpedAtV2()?->format('c'),
                     'dumpRequestedAt' => $package->getDumpRequestedAt()?->format('c'),
                     'crawledAt' => $package->getCrawledAt()?->format('c'),
@@ -555,6 +562,109 @@ class V2Dumper
                 ]);
             }
         }
+    }
+
+    /**
+     * Summarises how a re-dumped file differs from the one it replaces, so an unmarked change can be
+     * traced to the field (or the ordering) that moved.
+     *
+     * @return array<string, mixed>
+     */
+    private static function describeChanges(string $previous, string $current, string $packageName): array
+    {
+        try {
+            $old = json_decode($previous, true, flags: \JSON_THROW_ON_ERROR);
+            $new = json_decode($current, true, flags: \JSON_THROW_ON_ERROR);
+            Assert::isArray($old);
+            Assert::isArray($new);
+
+            $changes = ['bytes' => [\strlen($previous), \strlen($current)]];
+
+            foreach (array_unique(array_merge(array_keys($old), array_keys($new))) as $key) {
+                if ($key !== 'packages' && null !== ($diff = self::compareValues($old[$key] ?? null, $new[$key] ?? null))) {
+                    $changes['topLevel'][$key] = $diff;
+                }
+            }
+
+            $oldVersions = self::versionsByNormalizedName($old['packages'][$packageName] ?? []);
+            $newVersions = self::versionsByNormalizedName($new['packages'][$packageName] ?? []);
+
+            $changes['added'] = \array_slice(array_keys(array_diff_key($newVersions, $oldVersions)), 0, 10);
+            $changes['removed'] = \array_slice(array_keys(array_diff_key($oldVersions, $newVersions)), 0, 10);
+
+            $common = array_keys(array_intersect_key($oldVersions, $newVersions));
+            $commonInNewOrder = array_keys(array_intersect_key($newVersions, $oldVersions));
+            if ($common !== $commonInNewOrder) {
+                $changes['versionOrderChanged'] = true;
+            }
+
+            $changed = [];
+            foreach ($common as $version) {
+                $oldVersion = $oldVersions[$version];
+                $newVersion = $newVersions[$version];
+                foreach (array_unique(array_merge(array_keys($oldVersion), array_keys($newVersion))) as $key) {
+                    $diff = self::compareValues($oldVersion[$key] ?? null, $newVersion[$key] ?? null);
+                    if ($diff === null) {
+                        continue;
+                    }
+                    $label = $diff === 'order' ? $key.' (order)' : (string) $key;
+                    if (\count($changed[$label] ?? []) < 5) {
+                        $changed[$label][] = (string) $version;
+                    }
+                }
+            }
+            $changes['changed'] = $changed;
+
+            return $changes;
+        } catch (\Throwable $e) {
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * @param mixed $versions minified version list
+     *
+     * @return array<string, array<mixed>>
+     */
+    private static function versionsByNormalizedName(mixed $versions): array
+    {
+        Assert::isList($versions);
+
+        $result = [];
+        foreach (MetadataMinifier::expand($versions) as $version) {
+            Assert::isArray($version);
+            $result[(string) ($version['version_normalized'] ?? $version['version'] ?? \count($result))] = $version;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return 'order'|'value'|null null when identical, 'order' when only the ordering of keys or list items differs
+     */
+    private static function compareValues(mixed $a, mixed $b): ?string
+    {
+        if ($a === $b) {
+            return null;
+        }
+
+        return self::withoutOrder($a) === self::withoutOrder($b) ? 'order' : 'value';
+    }
+
+    private static function withoutOrder(mixed $value): mixed
+    {
+        if (!\is_array($value)) {
+            return $value;
+        }
+
+        $value = array_map(self::withoutOrder(...), $value);
+        if (array_is_list($value)) {
+            usort($value, static fn (mixed $a, mixed $b): int => serialize($a) <=> serialize($b));
+        } else {
+            ksort($value);
+        }
+
+        return $value;
     }
 
     /**
