@@ -14,9 +14,12 @@ namespace App\Tests\Entity;
 
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
+use App\Entity\DevRequireLink;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
+use App\Entity\RequireLink;
+use App\Entity\Tag;
 use App\Entity\Version;
 use App\Entity\VersionListItem;
 use App\Entity\VersionRepository;
@@ -506,5 +509,46 @@ class VersionRepositoryTest extends IntegrationTestCase
         $this->store($package, $v);
 
         return $v;
+    }
+
+    public function testGetVersionDataReturnsLinksAndTagsInInsertionOrder(): void
+    {
+        $em = self::getEM();
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package');
+        $version = new Version();
+        $version->setPackage($package);
+        $version->setName($package->getName());
+        $version->setVersion('1.0.0');
+        $version->setNormalizedVersion('1.0.0.0');
+        $version->setDevelopment(false);
+        $version->setLicense([]);
+        $version->setAutoload([]);
+        $package->getVersions()->add($version);
+        $this->store($package, $version);
+
+        // deliberately not alphabetical, so a name-ordered index cannot pass for insertion order
+        foreach (['php', 'zeta/z', 'alpha/a'] as $name) {
+            foreach ([new RequireLink(), new DevRequireLink()] as $link) {
+                $link->setVersion($version);
+                $link->setPackageName($name);
+                $link->setPackageVersion('*');
+                $em->persist($link);
+            }
+            $em->flush();
+        }
+        foreach (['zz', 'aa'] as $name) {
+            $tag = new Tag($name);
+            $em->persist($tag);
+            $em->flush();
+            $version->addTag($tag);
+        }
+        $em->flush();
+        $em->clear();
+
+        $data = $this->versionRepository->getVersionData([$version->getId()])[$version->getId()];
+
+        self::assertSame(['php', 'zeta/z', 'alpha/a'], array_column($data['require'], 'name'));
+        self::assertSame(['php', 'zeta/z', 'alpha/a'], array_column($data['devRequire'], 'name'));
+        self::assertSame(['zz', 'aa'], $data['tags']);
     }
 }
