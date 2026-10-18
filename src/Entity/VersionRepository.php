@@ -235,9 +235,10 @@ class VersionRepository extends ServiceEntityRepository
             ];
         }
 
+        // row order becomes the JSON key order of the dumped metadata, so it must not be left to the query plan
         foreach ($links as $link => $table) {
             $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-                'SELECT version_id, packageName name, packageVersion version FROM '.$table.' WHERE version_id IN (:ids)',
+                'SELECT version_id, packageName name, packageVersion version FROM '.$table.' WHERE version_id IN (:ids) ORDER BY id',
                 ['ids' => $versionIds],
                 ['ids' => ArrayParameterType::INTEGER]
             );
@@ -248,7 +249,7 @@ class VersionRepository extends ServiceEntityRepository
         }
 
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT vt.version_id, name FROM tag t JOIN version_tag vt ON vt.tag_id = t.id WHERE vt.version_id IN (:ids)',
+            'SELECT vt.version_id, name FROM tag t JOIN version_tag vt ON vt.tag_id = t.id WHERE vt.version_id IN (:ids) ORDER BY vt.tag_id',
             ['ids' => $versionIds],
             ['ids' => ArrayParameterType::INTEGER]
         );
