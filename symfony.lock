@@ -275,12 +275,12 @@
         "version": "5.0.3"
     },
     "phpunit/phpunit": {
-        "version": "12.5",
+        "version": "13.2",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
             "version": "11.1",
-            "ref": "1117deb12541f35793eec9fff7494d7aa12283fc"
+            "ref": "ca0bc067abfb40a8de1b2561b96cbfc2b833c314"
         },
         "files": [
             ".env.test",
