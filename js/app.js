@@ -1,4 +1,4 @@
-import Plausible from 'plausible-tracker'
+import { init as initPlausible } from '@plausible-analytics/tracker'
 import './jquery';
 import notifier from './notifier';
 import './search';
@@ -99,9 +99,8 @@ if (
     && location.host === 'packagist.org'
     && navigator.userAgent !== "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 ) {
-    const plausible = Plausible({
+    initPlausible({
       domain: 'packagist.org',
-      apiHost: 'https://packagist.org',
+      endpoint: 'https://packagist.org/api/event',
     });
-    plausible.trackPageview();
 }
