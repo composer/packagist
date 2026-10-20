@@ -14,6 +14,8 @@ namespace App\EventListener;
 
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
+use App\Entity\PackageTransparencyLogQueue;
+use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Service\AuditRecordsManager;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Event\PostPersistEventArgs;
@@ -39,5 +41,11 @@ class AuditRecordListener
         $repository = $args->getObjectManager()->getRepository(AuditRecord::class);
         \assert($repository instanceof AuditRecordRepository);
         $repository->indexSearchTerms($record);
+
+        // Same for the transparency-log outbox. postPersist is dispatched inside the flush's
+        // transaction, so the queue row commits with the audit_log row or not at all.
+        $queue = $args->getObjectManager()->getRepository(PackageTransparencyLogQueue::class);
+        \assert($queue instanceof PackageTransparencyLogQueueRepository);
+        $queue->enqueue($record);
     }
 }

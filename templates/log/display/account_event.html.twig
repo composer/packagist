@@ -1,0 +1,7 @@
+{% import 'log/macros.html.twig' as log %}
+
+Package: <strong>{{ log.packageLink(display.packageName) }}</strong><br>
+Maintainer: {{ log.userLink(display.maintainerUsername) }}{{ log.userId(display.maintainerId) }}
+{%- if display.githubUsername is not null %}<br>GitHub account: {{ display.githubUsername }}{% endif %}
+{%- if display.githubId is not null %}<br>GitHub account ID: {{ display.githubId }}{% endif %}
+{%- if display.actor.username != display.maintainerUsername %}<br>By: {{ log.user(display.actor) }}{% endif %}

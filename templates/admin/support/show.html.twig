@@ -238,7 +238,7 @@
                 <h4>Recent account activity</h4>
                 {% include 'log/_table.html.twig' with {
                     displays: riskAuditDisplays,
-                    linkSurroundingLogs: false,
+                    showIp: is_granted('ROLE_AUDITOR'),
                     emptyMessage: 'No recent security events.'
                 } only %}
 

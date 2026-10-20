@@ -1,15 +1,34 @@
-{% set linkSurroundingLogs = linkSurroundingLogs ?? false %}
-{% set emptyMessage = emptyMessage ?? 'No transparency logs found.' %}
+{#
+    One log table for every log we render: the internal audit log (admin, organization, filter list
+    entry) and the public transparency log. The displays only have to implement
+    App\Log\Display\LogDisplayInterface.
+#}
+{% types {
+    ## The log displays to render, one per row.
+    displays: 'iterable',
+    ## Shown instead of the table when there is nothing to list.
+    emptyMessage?: 'string',
+    ## Render the IP column (audit log only, and only for auditors).
+    showIp?: 'boolean',
+    ## When set, the timestamp links to that route filtered to a +/- 2 minute window.
+    surroundingLogsRoute?: 'string|null',
+    ## Extra route params for the link above.
+    surroundingLogsRouteParams?: 'mapping',
+} %}
+{% set emptyMessage = emptyMessage ?? 'No log entries found.' %}
+{% set showIp = showIp ?? false %}
+{% set surroundingLogsRoute = surroundingLogsRoute ?? null %}
+{% set surroundingLogsRouteParams = surroundingLogsRouteParams ?? {} %}
 
 {% if displays|length %}
     <div class="audit-log-table-container">
         <table class="table audit-log-table">
             <thead>
                 <tr>
-                    <th class="audit-log-datetime">Date & Time</th>
+                    <th class="audit-log-datetime">Date &amp; Time</th>
                     <th class="audit-log-type">Type</th>
                     <th class="audit-log-details">Details</th>
-                    {% if is_granted('ROLE_AUDITOR') %}
+                    {% if showIp %}
                         <th class="audit-log-ip">IP</th>
                     {% endif %}
                 </tr>
@@ -18,24 +37,24 @@
                 {% for display in displays %}
                     <tr>
                         <td class="audit-log-datetime">
-                            {% if linkSurroundingLogs %}
+                            {% if surroundingLogsRoute %}
                                 {% set fromDate = display.dateTime|date_modify('-2 minutes')|date('Y-m-d\\TH:i:s') %}
                                 {% set toDate = display.dateTime|date_modify('+2 minutes')|date('Y-m-d\\TH:i:s') %}
-                                <a href="{{ path('view_transparency_log', {'datetime_from': fromDate, 'datetime_to': toDate}) }}" title="Show surrounding logs">
+                                <a href="{{ path(surroundingLogsRoute, surroundingLogsRouteParams|merge({'datetime_from': fromDate, 'datetime_to': toDate})) }}" title="Show surrounding logs">
                                     <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
                                 </a>
                             {% else %}
                                 <span class="bi bi-clock-fill"></span> {{ display.dateTime|date('Y-m-d H:i:s') }} UTC
                             {% endif %}
                         </td>
-                        <td class="audit-log-type" data-test="audit-log-type">{{ display.typeTranslationKey|trans }}</td>
+                        <td class="audit-log-type" data-test="log-type">{{ display.typeTranslationKey|trans }}</td>
                         <td class="audit-log-details">
                             {% include display.templateName with {display} only %}
-                            {% if is_granted('ROLE_AUDITOR') %}
+                            {% if showIp %}
                                 <div class="audit-log-details-ip">IP: {{ display.ip }}</div>
                             {% endif %}
                         </td>
-                        {% if is_granted('ROLE_AUDITOR') %}
+                        {% if showIp %}
                             <td class="audit-log-ip">{{ display.ip }}</td>
                         {% endif %}
                     </tr>
