@@ -116,6 +116,11 @@
         "allow-plugins": {
             "symfony/flex": true,
             "symfony/runtime": true
+        },
+        "policy": {
+            "cooldown": {
+                "period": "7 days"
+            }
         }
     },
     "autoload": {
