@@ -26,9 +26,11 @@ use App\Package\V2DumpOutcome;
 use App\Package\V2Dumper;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Service\CdnClient;
+use App\Service\Locker;
 use App\Service\ReplicaClient;
 use App\Tests\IntegrationTestCase;
 use Composer\Semver\VersionParser;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Handler\TestHandler;
@@ -77,6 +79,7 @@ class V2DumperTest extends IntegrationTestCase
             static::getContainer()->get(UrlGeneratorInterface::class),
             new MockHttpClient(),
             $filterListDumperProvider,
+            static::getContainer()->get(Locker::class),
         );
     }
 
@@ -717,6 +720,53 @@ class V2DumperTest extends IntegrationTestCase
         self::assertSame(4, $uploads, 'a forced dump must re-write byte-identical content');
     }
 
+    public function testAPackageLockedByAnUpdateIsLeftStaleUntilTheLockIsReleased(): void
+    {
+        // an update or deletion in progress would be read half-written, and a deletion's CDN cleanup
+        // could be undone by an upload landing after it
+        $uploads = 0;
+        $this->rebuildDumperWithUploadHook(static function () use (&$uploads): void {
+            $uploads++;
+        });
+        $this->primeBuildDir();
+        $packageId = $this->storeMarkedPackage('acme/package');
+
+        // GET_LOCK is re-entrant within a session, so the update has to hold it from another connection
+        $updater = DriverManager::getConnection(self::getEM()->getConnection()->getParams());
+        self::assertSame(1, (int) $updater->fetchOne('SELECT GET_LOCK(:name, 0)', ['name' => 'package_update_'.$packageId]));
+
+        try {
+            $result = $this->dumper->dump([$packageId]);
+            self::assertSame(V2DumpOutcome::Complete, $result->outcome);
+            self::assertSame([$packageId], $result->leftStale);
+            self::assertSame(0, $uploads);
+            self::assertFileDoesNotExist($this->buildDir.'/p2/acme/package.json');
+        } finally {
+            $updater->fetchOne('SELECT RELEASE_LOCK(:name)', ['name' => 'package_update_'.$packageId]);
+            $updater->close();
+        }
+
+        $result = $this->dumper->dump([$packageId]);
+        self::assertSame([], $result->leftStale);
+        self::assertSame(2, $uploads);
+        self::assertFileExists($this->buildDir.'/p2/acme/package.json');
+    }
+
+    public function testTheDumperReleasesTheUpdateLockOfEachPackageItDumped(): void
+    {
+        $this->primeBuildDir();
+        $packageId = $this->storeMarkedPackage('acme/package');
+
+        $this->dumper->dump([$packageId]);
+
+        $updater = DriverManager::getConnection(self::getEM()->getConnection()->getParams());
+        try {
+            self::assertSame(1, (int) $updater->fetchOne('SELECT GET_LOCK(:name, 0)', ['name' => 'package_update_'.$packageId]), 'an update must be able to run once the package is dumped');
+        } finally {
+            $updater->close();
+        }
+    }
+
     /**
      * @return list<int>
      */
@@ -855,6 +905,7 @@ class V2DumperTest extends IntegrationTestCase
             static::getContainer()->get(UrlGeneratorInterface::class),
             new MockHttpClient(),
             static::getContainer()->get(FilterListDumperProvider::class),
+            static::getContainer()->get(Locker::class),
         );
     }
 
