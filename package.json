@@ -11,8 +11,8 @@
         "jquery": "^4.0.0"
     },
     "devDependencies": {
-        "esbuild": "^0.15",
-        "esbuild-plugin-sass": "^1.0.1"
+        "esbuild": "^0.28.2",
+        "esbuild-sass-plugin": "^3.7.0"
     },
     "engines": {
         "npm": ">=11.10"
@@ -23,6 +23,7 @@
         "analyze": "node esbuild.js --analyze"
     },
     "allowScripts": {
-        "esbuild@0.15.18": true
+        "esbuild@0.28.2": true,
+        "@parcel/watcher": false
     }
 }

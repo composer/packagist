@@ -1,15 +1,15 @@
 (async () => {
     const esbuild = require('esbuild');
-    const sassPlugin = require('esbuild-plugin-sass');
+    const { sassPlugin } = require('esbuild-sass-plugin');
 
-    const result = await esbuild.build({
+    const dev = process.argv.includes('--dev');
+    const options = {
         logLevel: 'info',
         entryPoints: ['js/app.js', 'js/charts.js', 'js/package_downloads.js'],
         bundle: true,
         outdir: 'web/build',
-        sourcemap: process.argv.includes('--dev'),
-        watch: process.argv.includes('--dev'),
-        minify: !process.argv.includes('--dev'),
+        sourcemap: dev,
+        minify: !dev,
         metafile: process.argv.includes('--analyze'),
         loader: {
             '.eot':'file',
@@ -18,9 +18,17 @@
             '.woff':'file',
             '.woff2':'file',
         },
-        target: ['chrome58', 'firefox57', 'safari11', 'edge95'],
+        target: ['chrome60', 'firefox60', 'safari14.1', 'edge95'],
         plugins: [sassPlugin()],
-    })
+    };
+
+    if (dev) {
+        const ctx = await esbuild.context(options);
+        await ctx.watch();
+        return;
+    }
+
+    const result = await esbuild.build(options);
 
     if (process.argv.includes('--analyze')) {
         const text = await esbuild.analyzeMetafile(result.metafile)
