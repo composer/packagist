@@ -115,9 +115,6 @@
     "endroid/qr-code": {
         "version": "3.9.6"
     },
-    "friendsofphp/proxy-manager-lts": {
-        "version": "v1.0.7"
-    },
     "google/recaptcha": {
         "version": "1.2",
         "recipe": {
@@ -162,9 +159,6 @@
         "files": [
             "config/packages/knpu_oauth2_client.yaml"
         ]
-    },
-    "laminas/laminas-code": {
-        "version": "4.5.1"
     },
     "laminas/laminas-diagnostics": {
         "version": "1.6.0"
@@ -625,9 +619,6 @@
     },
     "symfony/property-info": {
         "version": "v4.4.16"
-    },
-    "symfony/proxy-manager-bridge": {
-        "version": "v5.4.6"
     },
     "symfony/routing": {
         "version": "7.4",

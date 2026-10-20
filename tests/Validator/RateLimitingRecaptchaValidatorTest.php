@@ -66,7 +66,7 @@ class RateLimitingRecaptchaValidatorTest extends TestCase
             ->expects($this->once())
             ->method('verify');
 
-        $this->validator->validate(null, new RateLimitingRecaptcha(['onlyShowAfterIncrementTrigger' => true]));
+        $this->validator->validate(null, new RateLimitingRecaptcha(onlyShowAfterIncrementTrigger: true));
     }
 
     #[TestWith([true, RateLimitingRecaptcha::INVALID_RECAPTCHA_MESSAGE])]
@@ -104,7 +104,7 @@ class RateLimitingRecaptchaValidatorTest extends TestCase
 
         $this->validator->initialize($context);
 
-        $this->validator->validate(null, new RateLimitingRecaptcha(['onlyShowAfterIncrementTrigger' => true]));
+        $this->validator->validate(null, new RateLimitingRecaptcha(onlyShowAfterIncrementTrigger: true));
     }
 
     public function testValidateNotRequired(): void
@@ -118,6 +118,6 @@ class RateLimitingRecaptchaValidatorTest extends TestCase
             ->expects($this->never())
             ->method('verify');
 
-        $this->validator->validate(null, new RateLimitingRecaptcha(['onlyShowAfterIncrementTrigger' => true]));
+        $this->validator->validate(null, new RateLimitingRecaptcha(onlyShowAfterIncrementTrigger: true));
     }
 }
