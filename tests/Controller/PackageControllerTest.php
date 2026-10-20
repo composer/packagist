@@ -35,6 +35,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 use PHPUnit\Framework\Attributes\TestWith;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Log\NullLogger;
 use Predis\Client;
 use Doctrine\DBAL\Driver\Exception as DriverExceptionInterface;

@@ -11,7 +11,7 @@
         <div class="col-12 package">
             <div class="package-header">
                 <h2 class="title">
-                    <a href="{{ path("view_package", {name: name}) }}">{{ name }}</a> {{ 'packages.suggesters'|trans }}
+                    {% if name starts with 'ext-' %}{{ name }}{% else %}<a href="{{ path("view_package", {name: name}) }}">{{ name }}</a>{% endif %} {{ 'packages.suggesters'|trans }}
                     <small>({{ count }})</small>
                 </h2>
             </div>
