@@ -23,6 +23,7 @@ use App\FilterList\FilterLists;
 use App\Log\AuditLogEventType;
 use App\Model\ProviderManager;
 use App\Service\CdnClient;
+use App\Service\Locker;
 use App\Service\ReplicaClient;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Pcre\Preg;
@@ -78,6 +79,7 @@ class V2Dumper
         #[Autowire(service: 'http_client')]
         private readonly HttpClientInterface&ResetInterface $httpClient,
         private readonly FilterListDumperProvider $filterListDumperProvider,
+        private readonly Locker $locker,
     ) {
         $webDir = realpath($webDir);
         Assert::string($webDir);
@@ -185,65 +187,86 @@ class V2Dumper
             // silently lost.
             $dumpTime = new \DateTime();
             $idBatch = array_splice($packageIds, 0, $step);
-            $this->logger->debug('Dumping package ids', ['ids' => $idBatch]);
-            $hydrateStart = microtime(true);
-            $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions($idBatch);
-            $this->statsd->timing('packagist.metadata_dump.db_time', round((microtime(true) - $hydrateStart) * 1000, 4), ['op' => 'hydrate', 'worker' => (string) $workerId]);
-            unset($idBatch);
-            $packageNames = array_map(static fn (Package $pkg) => $pkg->getName(), $packages);
-            $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
-            $filterLists = $this->filterListDumperProvider->getEntriesForDump($packageNames);
-
-            if ($verbose) {
-                echo '['.\sprintf('%'.\strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.\PHP_EOL;
+            // an update or deletion holding this lock would be read half-written, so leave those stale for the next run
+            $locked = array_flip(array_filter($idBatch, fn (int $id): bool => $this->locker->lockPackageUpdate($id)));
+            if (\count($locked) !== \count($idBatch)) {
+                $this->logger->debug('Skipping packages locked by an update', ['ids' => array_values(array_diff($idBatch, array_keys($locked)))]);
             }
-
-            $current += $step;
-
-            // prepare packages in memory
-            foreach ($packages as $package) {
-                // skip suppressed (spam/malware) packages in the dumper in case one appears due to a race condition
-                if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage()) {
-                    continue;
-                }
-
-                // write versions in individual files
-                $versionIds = [];
-                foreach ($package->getVersions() as $version) {
-                    $versionIds[] = $version->getId();
-                }
-                $versionDataStart = microtime(true);
-                $versionData = $versionRepo->getVersionData($versionIds);
-                $this->statsd->timing('packagist.metadata_dump.db_time', round((microtime(true) - $versionDataStart) * 1000, 4), ['op' => 'versiondata', 'worker' => (string) $workerId]);
-
-                // instrumentation only: count processed packages and how many need a full (forced) dump vs. a cheap
-                // early-return. isDumpForced() is "dumpedAtV2 IS NULL", which never-dumped packages satisfy too, so
-                // read run_forcedump as "full writes", not "forceDump() calls".
-                $processedPackages++;
-                if ($package->isDumpForced()) {
-                    $forceDumpPackages++;
-                }
-
-                // dump v2 format; a failed package is left out of $dumpTimeUpdates so it stays stale
-                try {
-                    $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? [], $filterLists[$package->getName()] ?? null);
-                } catch (TransportExceptionInterface $e) {
-                    // the next package would wait out the same timeouts, so stop here but keep what was dumped
-                    $this->logger->warning('CDN unreachable, aborting v2 metadata dump run', ['package' => $package->getName(), 'exception' => $e, 'worker' => $workerId]);
-                    $outcome = V2DumpOutcome::Aborted;
-                    break 2;
-                } catch (\Throwable $e) {
-                    $this->logger->error('Failed dumping v2 metadata, leaving the package stale', ['package' => $package->getName(), 'exception' => $e, 'worker' => $workerId]);
-                    $outcome = V2DumpOutcome::SomeFailed;
-                    continue;
-                }
-
-                $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
+            $idBatch = array_keys($locked);
+            if (!$idBatch) {
+                continue;
             }
+            try {
+                $this->logger->debug('Dumping package ids', ['ids' => $idBatch]);
+                $hydrateStart = microtime(true);
+                $packages = $this->getEM()->getRepository(Package::class)->getPackagesWithVersions($idBatch);
+                $this->statsd->timing('packagist.metadata_dump.db_time', round((microtime(true) - $hydrateStart) * 1000, 4), ['op' => 'hydrate', 'worker' => (string) $workerId]);
+                unset($idBatch);
+                $packageNames = array_map(static fn (Package $pkg) => $pkg->getName(), $packages);
+                $advisories = $this->getEM()->getRepository(SecurityAdvisory::class)->getAdvisoryIdsAndVersions($packageNames);
+                $filterLists = $this->filterListDumperProvider->getEntriesForDump($packageNames);
 
-            unset($packages, $package, $version, $advisories, $packageNames);
-            $this->getEM()->clear();
-            $this->logger->reset();
+                if ($verbose) {
+                    echo '['.\sprintf('%'.\strlen((string) $total).'d', $current).'/'.$total.'] Processing '.$step.' packages'.\PHP_EOL;
+                }
+
+                $current += $step;
+
+                // prepare packages in memory
+                foreach ($packages as $package) {
+                    try {
+                        // skip suppressed (spam/malware) packages in the dumper in case one appears due to a race condition
+                        if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage()) {
+                            continue;
+                        }
+
+                        // write versions in individual files
+                        $versionIds = [];
+                        foreach ($package->getVersions() as $version) {
+                            $versionIds[] = $version->getId();
+                        }
+                        $versionDataStart = microtime(true);
+                        $versionData = $versionRepo->getVersionData($versionIds);
+                        $this->statsd->timing('packagist.metadata_dump.db_time', round((microtime(true) - $versionDataStart) * 1000, 4), ['op' => 'versiondata', 'worker' => (string) $workerId]);
+
+                        // instrumentation only: count processed packages and how many need a full (forced) dump vs. a cheap
+                        // early-return. isDumpForced() is "dumpedAtV2 IS NULL", which never-dumped packages satisfy too, so
+                        // read run_forcedump as "full writes", not "forceDump() calls".
+                        $processedPackages++;
+                        if ($package->isDumpForced()) {
+                            $forceDumpPackages++;
+                        }
+
+                        // dump v2 format; a failed package is left out of $dumpTimeUpdates so it stays stale
+                        try {
+                            $this->dumpPackageToV2File($buildDirV2, $package, $versionData, $advisories[$package->getName()] ?? [], $filterLists[$package->getName()] ?? null);
+                        } catch (TransportExceptionInterface $e) {
+                            // the next package would wait out the same timeouts, so stop here but keep what was dumped
+                            $this->logger->warning('CDN unreachable, aborting v2 metadata dump run', ['package' => $package->getName(), 'exception' => $e, 'worker' => $workerId]);
+                            $outcome = V2DumpOutcome::Aborted;
+                            break 2;
+                        } catch (\Throwable $e) {
+                            $this->logger->error('Failed dumping v2 metadata, leaving the package stale', ['package' => $package->getName(), 'exception' => $e, 'worker' => $workerId]);
+                            $outcome = V2DumpOutcome::SomeFailed;
+                            continue;
+                        }
+
+                        $dumpTimeUpdates[$dumpTime->format('Y-m-d H:i:s')][] = $package->getId();
+                    } finally {
+                        $this->locker->unlockPackageUpdate($package->getId());
+                        unset($locked[$package->getId()]);
+                    }
+                }
+
+                unset($packages, $package, $version, $advisories, $packageNames);
+                $this->getEM()->clear();
+                $this->logger->reset();
+            } finally {
+                // packages that were locked but not hydrated, e.g. deleted since they were selected
+                foreach (array_keys($locked) as $id) {
+                    $this->locker->unlockPackageUpdate($id);
+                }
+            }
         }
 
         // Verify all written files match CDN versions
