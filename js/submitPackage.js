@@ -39,7 +39,7 @@ const init = function ($) {
                     '<div class="confirmation">The package name found for your repository is: <strong>'+data.name+'</strong>, press Submit to confirm.</div>'
                 );
                 $('#submit').text('Submit');
-                $('#submit-package-form').unbind('submit');
+                $('#submit-package-form').off('submit');
             }
         };
         $.post($(this).data('check-url'), $(this).serializeArray(), success).fail(function () {
@@ -49,7 +49,7 @@ const init = function ($) {
     };
 
     $('#package_repository').change(function() {
-        $('#submit-package-form').unbind('submit');
+        $('#submit-package-form').off('submit');
         $('#submit-package-form').submit(onSubmit);
         $('#submit').text('Check');
     });
