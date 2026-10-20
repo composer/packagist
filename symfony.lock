@@ -505,15 +505,16 @@
         "version": "v4.4.16"
     },
     "symfony/framework-bundle": {
-        "version": "7.4",
+        "version": "8.1",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
-            "version": "7.4",
-            "ref": "09f6e081c763a206802674ce0cb34a022f0ffc6d"
+            "version": "8.1",
+            "ref": "d3714db4cc12adbfd4c0453cf854be32788ef549"
         },
         "files": [
             ".editorconfig",
+            "AGENTS.md",
             "config/packages/cache.yaml",
             "config/packages/framework.yaml",
             "config/preload.php",
