@@ -68,6 +68,23 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertSame('500', self::redisCache()->get('dep-count:test/required:all'));
     }
 
+    #[DataProvider('extensionListingProvider')]
+    public function testExtensionListingsReachedThroughThePackagePageRoute(string $url): void
+    {
+        $this->client->request('GET', $url);
+
+        self::assertResponseIsSuccessful();
+    }
+
+    /**
+     * @return iterable<array{string}>
+     */
+    public static function extensionListingProvider(): iterable
+    {
+        yield ['/packages/ext-json/dependents'];
+        yield ['/packages/ext-json/suggesters'];
+    }
+
     public function testView(): void
     {
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');

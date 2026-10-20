@@ -566,7 +566,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name}.{_format}', name: 'view_package', requirements: ['name' => Package::LENIENT_PACKAGE_NAME_REGEX, '_format' => '(json)'], defaults: ['_format' => 'html'], methods: ['GET'])]
-    public function viewPackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, #[CurrentUser] ?User $user = null): Response
+    public function viewPackageAction(Request $req, string $name, CsrfTokenManagerInterface $csrfTokenManager, LoggerInterface $logger, #[CurrentUser] ?User $user = null): Response
     {
         if (!Killswitch::isEnabled(Killswitch::PAGES_ENABLED)) {
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
@@ -581,7 +581,7 @@ class PackageController extends Controller
         }
 
         if (Preg::isMatch('{^(?P<pkg>ext-[a-z0-9_.-]+?)/(?P<method>dependents|suggesters)$}i', $name, $match)) {
-            return $this->{$match['method'].'Action'}($req, $match['pkg']);
+            return $this->{$match['method'].'Action'}($req, $logger, $match['pkg']);
         }
 
         $package = $this->getPackageByName($req, $name);

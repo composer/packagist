@@ -55,6 +55,7 @@ class FilterListEntryBulkType extends AbstractType
             ])
             ->add('link', UrlType::class, [
                 'label' => 'External reference URL',
+                'default_protocol' => 'https',
                 'required' => false,
             ])
             ->add('internalNote', TextareaType::class, [
