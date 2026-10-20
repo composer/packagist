@@ -386,6 +386,7 @@ class V2DumperTest extends IntegrationTestCase
         $healthy = $this->storeMarkedPackage('acme/healthy');
         $this->dumper->dump([$broken, $healthy]);
 
+        ksort($fetches);
         self::assertSame(['p2/acme/broken.json' => 2, 'p2/acme/broken~dev.json' => 2, 'p2/acme/healthy.json' => 1, 'p2/acme/healthy~dev.json' => 1], $fetches);
         self::assertCount(2, self::logsStartingWith($logs, 'Mismatch still present after another cache purge: p2/acme/broken'));
         self::assertSame([], array_intersect([$broken, $healthy], $this->stalePackageIds()), 'storage has the right content, so both count as dumped');
@@ -413,6 +414,7 @@ class V2DumperTest extends IntegrationTestCase
         $result = $this->dumper->dump([$broken, $healthy]);
 
         self::assertSame(V2DumpOutcome::Complete, $result->outcome);
+        ksort($fetches);
         self::assertSame(['p2/acme/broken.json' => 1, 'p2/acme/broken~dev.json' => 1, 'p2/acme/healthy.json' => 1, 'p2/acme/healthy~dev.json' => 1], $fetches);
         self::assertCount(1, self::logsStartingWith($logs, 'Failed verifying CDN file: p2/acme/broken.json'));
         self::assertSame([], array_intersect([$broken, $healthy], $this->stalePackageIds()));
