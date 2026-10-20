@@ -1,4 +1,4 @@
-import algoliasearch from 'algoliasearch/lite';
+import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import instantsearch from 'instantsearch.js';
 import historyRouter from 'instantsearch.js/es/lib/routers/history';
 import { connectSearchBox, connectCurrentRefinements } from 'instantsearch.js/es/connectors';
