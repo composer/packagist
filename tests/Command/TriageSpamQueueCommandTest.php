@@ -117,4 +117,16 @@ class TriageSpamQueueCommandTest extends IntegrationTestCase
         $this->assertTrue($this->isSuspect($mixedSpam->getId()));
         $this->assertFalse($this->isVerified('mixedvendor'));
     }
+
+    public function testApplyClearsNumericVendor(): void
+    {
+        $safe = $this->seedSuspect('1994/widget');
+
+        $tester = $this->tester(self::FIXTURE);
+        $tester->execute(['--apply' => true]);
+
+        $tester->assertCommandIsSuccessful();
+        $this->assertFalse($this->isSuspect($safe->getId()));
+        $this->assertTrue($this->isVerified('1994'));
+    }
 }

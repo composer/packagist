@@ -105,6 +105,7 @@ class TriageSpamQueueCommand extends Command
             $clearedPackages = 0;
 
             foreach ($byVendor as $vendor => $vendorPackages) {
+                $vendor = (string) $vendor;
                 $allSafe = true;
                 $lines = [];
                 foreach ($vendorPackages as $pkg) {
