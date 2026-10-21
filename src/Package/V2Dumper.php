@@ -828,11 +828,8 @@ class V2Dumper
             try {
                 $cdnContent = $this->fetchCdnFile($relativePath);
                 if ($localContent !== $cdnContent) {
-                    $this->statsd->increment('packagist.metadata_cdn_purge_fail');
-                    $this->logger->error(
-                        'Mismatch still present after another cache purge: '.$relativePath,
-                        ['file' => $relativePath, 'local' => base64_encode($localContent), 'cdn' => base64_encode($cdnContent)]
-                    );
+                    $this->statsd->increment('packagist.metadata_cdn_purge_fail', 1, 1, ['reason' => 'still_stale']);
+                    $this->logger->notice('Mismatch still present after another cache purge: '.$relativePath, ['file' => $relativePath]);
                 } else {
                     $this->logger->info('Cache purge worked now for '.$relativePath);
                 }
@@ -857,7 +854,7 @@ class V2Dumper
             return false;
         }
 
-        $this->statsd->increment('packagist.metadata_cdn_purge_fail');
+        $this->statsd->increment('packagist.metadata_cdn_purge_fail', 1, 1, ['reason' => 'verify_error']);
         $this->logger->warning('Failed verifying CDN file: '.$relativePath, ['file' => $relativePath, 'exception' => $e]);
 
         return true;

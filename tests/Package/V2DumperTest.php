@@ -379,11 +379,12 @@ class V2DumperTest extends IntegrationTestCase
     {
         $fetches = [];
         $logs = [];
+        $increments = [];
         $this->rebuildDumper($this->verifyingCdnClient(function (string $path) use (&$fetches): string {
             $fetches[$path] = ($fetches[$path] ?? 0) + 1;
 
             return str_starts_with($path, 'p2/acme/broken') ? 'stale' : $this->localContent($path);
-        }), logger: self::capturingLogger($logs));
+        }), $this->recordingStatsd($increments), self::capturingLogger($logs));
 
         $broken = $this->storeMarkedPackage('acme/broken');
         $healthy = $this->storeMarkedPackage('acme/healthy');
@@ -392,6 +393,7 @@ class V2DumperTest extends IntegrationTestCase
         ksort($fetches);
         self::assertSame(['p2/acme/broken.json' => 2, 'p2/acme/broken~dev.json' => 2, 'p2/acme/healthy.json' => 1, 'p2/acme/healthy~dev.json' => 1], $fetches);
         self::assertCount(2, self::logsStartingWith($logs, 'Mismatch still present after another cache purge: p2/acme/broken'));
+        self::assertSame([['reason' => 'still_stale'], ['reason' => 'still_stale']], self::tagsOf($increments, 'packagist.metadata_cdn_purge_fail'));
         self::assertSame([], array_intersect([$broken, $healthy], $this->stalePackageIds()), 'storage has the right content, so both count as dumped');
     }
 
@@ -400,6 +402,7 @@ class V2DumperTest extends IntegrationTestCase
         $verifying = false;
         $fetches = [];
         $logs = [];
+        $increments = [];
         $this->rebuildDumper($this->verifyingCdnClient(
             function (string $path) use (&$verifying, &$fetches): string {
                 $verifying = true;
@@ -410,7 +413,7 @@ class V2DumperTest extends IntegrationTestCase
             static function (string $path) use (&$verifying): bool {
                 return !$verifying || $path !== 'p2/acme/broken.json';
             },
-        ), logger: self::capturingLogger($logs));
+        ), $this->recordingStatsd($increments), self::capturingLogger($logs));
 
         $broken = $this->storeMarkedPackage('acme/broken');
         $healthy = $this->storeMarkedPackage('acme/healthy');
@@ -420,6 +423,7 @@ class V2DumperTest extends IntegrationTestCase
         ksort($fetches);
         self::assertSame(['p2/acme/broken.json' => 1, 'p2/acme/broken~dev.json' => 1, 'p2/acme/healthy.json' => 1, 'p2/acme/healthy~dev.json' => 1], $fetches);
         self::assertCount(1, self::logsStartingWith($logs, 'Failed verifying CDN file: p2/acme/broken.json'));
+        self::assertSame([['reason' => 'verify_error']], self::tagsOf($increments, 'packagist.metadata_cdn_purge_fail'));
         self::assertSame([], array_intersect([$broken, $healthy], $this->stalePackageIds()));
     }
 
