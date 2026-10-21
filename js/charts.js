@@ -9,7 +9,6 @@ import {
     VisualMapComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
-import jQuery from 'jquery';
 import { formatDate, formatDay, formatDigit } from './chartUtils';
 import '../css/charts.css';
 
@@ -25,7 +24,7 @@ echarts.use([
     CanvasRenderer,
 ]);
 
-(function ($) {
+(function () {
     "use strict";
 
     const DEFAULT_COLORS = [
@@ -99,7 +98,56 @@ echarts.use([
         return chart;
     }
 
-    $(window).on('resize', function () {
+    function getJson(url) {
+        return fetch(url, {headers: {'Accept': 'application/json'}}).then(function (response) {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        });
+    }
+
+    // rendered, i.e. not under a display:none ancestor
+    function isVisible(el) {
+        return el.getClientRects().length > 0;
+    }
+
+    function findToggler(versionId) {
+        return Array.from(document.querySelectorAll('.package .details-toggler')).find(function (el) {
+            return el.getAttribute('data-version-id') === versionId;
+        });
+    }
+
+    function openToggler() {
+        return document.querySelector('.package .details-toggler.open');
+    }
+
+    function setOpenToggler(el) {
+        document.querySelectorAll('.package .details-toggler.open').forEach(function (open) {
+            open.classList.remove('open');
+        });
+        el.classList.add('open');
+    }
+
+    function initializeVersionListExpander() {
+        var versionsList = Array.from(document.querySelectorAll('.package .versions')).find(isVisible);
+        var expanders = document.querySelectorAll('.package .versions-expander');
+        if (versionsList.offsetHeight < versionsList.scrollHeight) {
+            expanders.forEach(function (el) {
+                el.classList.remove('d-none');
+                el.addEventListener('click', function () {
+                    el.classList.add('d-none');
+                    versionsList.style.maxHeight = 'inherit';
+                });
+            });
+        } else {
+            expanders.forEach(function (el) {
+                el.classList.add('d-none');
+            });
+        }
+    }
+
+    window.addEventListener('resize', function () {
         instances.forEach(function (chart) {
             chart.resize();
         });
@@ -126,7 +174,7 @@ echarts.use([
             return;
         }
 
-        if (withDatePicker && $(window).width() < 767) {
+        if (withDatePicker && document.documentElement.clientWidth < 767) {
             withDatePicker = false;
         }
 
@@ -317,11 +365,11 @@ echarts.use([
         return chart;
     }
 
-    $('[data-labels]').each(function () {
+    document.querySelectorAll('[data-labels]').forEach(function (el) {
         initPackagistChart(
-            this,
-            $(this).attr('data-labels').split(','),
-            $(this).attr('data-values').split('|').map(function (values) {
+            el,
+            el.getAttribute('data-labels').split(','),
+            el.getAttribute('data-values').split('|').map(function (values) {
                 values = values.split(':');
                 return {
                     name: values[0],
@@ -354,94 +402,78 @@ echarts.use([
                 return b.name.localeCompare(a.name, undefined, {numeric: true});
             })
 
-            initPackagistChart($('.js-'+type+'-dls')[0], res.labels, series, {
+            initPackagistChart(document.querySelector('.js-'+type+'-dls'), res.labels, series, {
                 withDatePicker: true,
                 // averaged buckets hold a per-day mean, not a bucket total
                 valueLabel: average === 'daily' ? null : perDayLabel
             });
         }
 
-        $.ajax({
-            url: statsUrl,
-            success: function (res) {
-                initChart('all', res);
-            }
-        })
+        getJson(statsUrl).then(function (res) {
+            initChart('all', res);
+        });
         function loadVersionChart(versionId) {
             ongoingRequest = true;
-            $.ajax({
-                url: versionStatsUrl.replace('_VERSION_', versionId) + '?average=' + average + '&from=' + date,
-                success: function (res) {
-                    initChart('version', res);
-                    versionCache[versionId] = res;
-                    ongoingRequest = false;
-                }
+            getJson(versionStatsUrl.replace('_VERSION_', versionId) + '?average=' + average + '&from=' + date).then(function (res) {
+                initChart('version', res);
+                versionCache[versionId] = res;
+                ongoingRequest = false;
             });
         }
 
         function toggleStatsType(statsType) {
-            $('.package .stats-toggler.open').removeClass('open');
-            $('.package .stats-toggler[data-stats-type=' + statsType + ']').addClass('open');
-
-            $('.package .stats-wrapper').hide();
-            $('.package .stats-wrapper[data-stats-type=' + statsType + ']').show();
+            document.querySelectorAll('.package .stats-toggler').forEach(function (el) {
+                el.classList.toggle('open', el.getAttribute('data-stats-type') === statsType);
+            });
+            document.querySelectorAll('.package .stats-wrapper').forEach(function (el) {
+                el.style.display = el.getAttribute('data-stats-type') === statsType ? '' : 'none';
+            });
 
             initializeVersionListExpander();
-        }
-
-        function initializeVersionListExpander() {
-            var versionsList = $('.package .versions:visible')[0];
-            if (versionsList.offsetHeight < versionsList.scrollHeight) {
-                $('.package .versions-expander').removeClass('d-none').on('click', function () {
-                    $(this).addClass('d-none');
-                    $(versionsList).css('max-height', 'inherit');
-                });
-            } else {
-                $('.package .versions-expander').addClass('d-none')
-            }
         }
 
         // initializer for #<version-id> present on page load
         if (hash.length > 1) {
             hash = hash.substring(1);
-            match = $('.package .details-toggler[data-version-id="'+hash+'"]');
-            if (match.length) {
-                $('.package .details-toggler.open').removeClass('open');
-                match.addClass('open');
+            match = findToggler(hash);
+            if (match) {
+                setOpenToggler(match);
 
-                toggleStatsType(match.closest('[data-stats-type]').attr('data-stats-type'));
+                toggleStatsType(match.closest('[data-stats-type]')?.getAttribute('data-stats-type'));
             }
         } else {
-            match = $('.package .details-toggler.open');
-            toggleStatsType(match.closest('[data-stats-type]').attr('data-stats-type'));
+            match = openToggler();
+            toggleStatsType(match?.closest('[data-stats-type]')?.getAttribute('data-stats-type'));
         }
 
-        if ($('.package .details-toggler.open').length) {
-            loadVersionChart($('.package .details-toggler.open').attr('data-version-id'));
+        if (openToggler()) {
+            loadVersionChart(openToggler().getAttribute('data-version-id'));
         }
 
-        $('.package .stats-toggler').on('click', function () {
-            var target = $(this);
-            toggleStatsType($(this).attr('data-stats-type'));
+        document.querySelectorAll('.package .stats-toggler').forEach(function (el) {
+            el.addEventListener('click', function () {
+                toggleStatsType(el.getAttribute('data-stats-type'));
 
-            $('.package .details-toggler[data-version-id="' + target.attr('href').substr(1) + '"]').trigger('click');
+                findToggler(el.getAttribute('href').substr(1))?.click();
+            });
         });
 
-        $('.package .details-toggler').on('click', function () {
-            var res, target = $(this), versionId = target.attr('data-version-id');
+        document.querySelectorAll('.package .details-toggler').forEach(function (target) {
+            target.addEventListener('click', function () {
+                var res, versionId = target.getAttribute('data-version-id');
 
-            if (versionCache[versionId]) {
-                res = versionCache[versionId];
-                initChart('version', res);
-            } else {
-                if (ongoingRequest) {
-                    return;
+                if (versionCache[versionId]) {
+                    res = versionCache[versionId];
+                    initChart('version', res);
+                } else {
+                    if (ongoingRequest) {
+                        return;
+                    }
+                    loadVersionChart(versionId);
                 }
-                loadVersionChart(versionId);
-            }
 
-            $('.package .details-toggler.open').removeClass('open');
-            target.addClass('open');
+                setOpenToggler(target);
+            });
         });
 
         initializeVersionListExpander();
@@ -464,7 +496,7 @@ echarts.use([
 
             series.sort(phpVersionSort)
 
-            initPackagistChart($('.js-'+type+'-dls')[0], res.labels, series, {
+            initPackagistChart(document.querySelector('.js-'+type+'-dls'), res.labels, series, {
                 withDatePicker: true,
                 type: 'area',
                 colorMap: PHP_VERSION_COLORS,
@@ -474,18 +506,15 @@ echarts.use([
 
         function loadVersionChart(versionId, type) {
             ongoingRequest = true;
-            $.ajax({
-                url: versionStatsUrl.replace('_VERSION_', versionId).replace('_TYPE_', type) + '?average=' + average + '&from=' + date,
-                success: function (res) {
-                    initChart('version', res);
-                    versionCache[versionId+type] = res;
-                    ongoingRequest = false;
-                }
+            getJson(versionStatsUrl.replace('_VERSION_', versionId).replace('_TYPE_', type) + '?average=' + average + '&from=' + date).then(function (res) {
+                initChart('version', res);
+                versionCache[versionId+type] = res;
+                ongoingRequest = false;
             });
         }
 
         function switchToChart(versionId) {
-            const type = $('#ignore_platform').is(':checked') ? 'effective' : 'platform';
+            const type = document.querySelector('#ignore_platform')?.checked ? 'effective' : 'platform';
 
             if (versionCache[versionId+type]) {
                 const res = versionCache[versionId+type];
@@ -500,49 +529,32 @@ echarts.use([
             return true;
         }
 
-        function initializeVersionListExpander() {
-            var versionsList = $('.package .versions:visible')[0];
-            if (versionsList.offsetHeight < versionsList.scrollHeight) {
-                $('.package .versions-expander').removeClass('d-none').on('click', function () {
-                    $(this).addClass('d-none');
-                    $(versionsList).css('max-height', 'inherit');
-                });
-            } else {
-                $('.package .versions-expander').addClass('d-none')
-            }
-        }
-
         // initializer for #<version-id> present on page load
         if (hash.length > 1) {
             hash = hash.substring(1);
-            match = $('.package .details-toggler[data-version-id="'+hash+'"]');
-            if (match.length) {
-                $('.package .details-toggler.open').removeClass('open');
-                match.addClass('open');
+            match = findToggler(hash);
+            if (match) {
+                setOpenToggler(match);
             }
         }
 
-        if ($('.package .details-toggler.open').length) {
-            switchToChart($('.package .details-toggler.open').attr('data-version-id'));
+        if (openToggler()) {
+            switchToChart(openToggler().getAttribute('data-version-id'));
         }
 
-        $('.package .details-toggler').on('click', function () {
-            const target = $(this),
-                versionId = target.attr('data-version-id');
+        document.querySelectorAll('.package .details-toggler').forEach(function (target) {
+            target.addEventListener('click', function () {
+                if (!switchToChart(target.getAttribute('data-version-id'))) {
+                    return;
+                }
 
-            if (!switchToChart(versionId)) {
-                return;
-            }
-
-            $('.package .details-toggler.open').removeClass('open');
-            target.addClass('open');
+                setOpenToggler(target);
+            });
         });
 
-        $('#ignore_platform').on('click', function () {
-            const versionId = $('.package .details-toggler.open').attr('data-version-id');
-
-            switchToChart(versionId);
-        })
+        document.querySelector('#ignore_platform')?.addEventListener('click', function () {
+            switchToChart(openToggler()?.getAttribute('data-version-id'));
+        });
 
         initializeVersionListExpander();
     };
@@ -558,7 +570,7 @@ echarts.use([
 
         series.sort(phpVersionSort)
 
-        initPackagistChart($(selector)[0], res.labels, series, {
+        initPackagistChart(document.querySelector(selector), res.labels, series, {
             withDatePicker: true,
             type: 'area',
             colorMap: PHP_VERSION_COLORS,
@@ -577,13 +589,13 @@ echarts.use([
     }
 
     window.initReleaseStats = function (selector, counts, labels) {
-        var el = $(selector)[0];
+        var el = document.querySelector(selector);
         if (!el) {
             return;
         }
 
         function hide() {
-            $(el).closest('section').addClass('d-none');
+            el.closest('section')?.classList.add('d-none');
         }
 
         var keys = Object.keys(counts || {}).sort();
@@ -692,4 +704,4 @@ echarts.use([
 
         return chart;
     };
-})(jQuery);
+})();

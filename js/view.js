@@ -1,62 +1,64 @@
-import jQuery from "jquery";
 import { Modal, Tooltip } from 'bootstrap';
 import notifier from './notifier';
+import { request, formParams, ignoreAjaxError } from './ajax';
 
-const init = function ($) {
+const init = function () {
     "use strict";
 
     var versionCache = {},
         ongoingRequest = false;
 
+    const all = (selector, root = document) => root.querySelectorAll(selector);
+    const on = (selector, event, handler) => all(selector).forEach((el) => el.addEventListener(event, handler));
+
     const togglePackageForm = function (selector) {
-        $('#remove-maintainer-form').addClass('d-none');
-        $('#add-maintainer-form').addClass('d-none');
-        $('#transfer-package-form').addClass('d-none');
-        $(selector).removeClass('d-none');
+        all('#remove-maintainer-form, #add-maintainer-form, #transfer-package-form').forEach((el) => el.classList.add('d-none'));
+        document.querySelector(selector)?.classList.remove('d-none');
     }
 
-    $('#add-maintainer').on('click', function (e) {
+    on('#add-maintainer', 'click', function (e) {
         togglePackageForm('#add-maintainer-form');
         e.preventDefault();
     });
-    $('#remove-maintainer').on('click', function (e) {
+    on('#remove-maintainer', 'click', function (e) {
         togglePackageForm('#remove-maintainer-form');
         e.preventDefault();
     });
-    $('#transfer-package').on('click', function (e) {
+    on('#transfer-package', 'click', function (e) {
         togglePackageForm('#transfer-package-form');
         e.preventDefault();
     });
 
-    $('.package .details-toggler').on('click', function () {
-        var target = $(this);
+    function setVersionDetails(html) {
+        all('.package .version-details').forEach((el) => { el.innerHTML = html; });
+    }
 
-        if (versionCache[target.attr('data-version-id')]) {
-            $('.package .version-details').html(versionCache[target.attr('data-version-id')]);
-        } else if (target.attr('data-load-more')) {
+    on('.package .details-toggler', 'click', function () {
+        var target = this;
+        var versionId = target.getAttribute('data-version-id');
+
+        if (versionCache[versionId]) {
+            setVersionDetails(versionCache[versionId]);
+        } else if (target.getAttribute('data-load-more')) {
             if (ongoingRequest) { // TODO cancel previous requests instead?
                 return;
             }
             ongoingRequest = true;
-            $('.package .version-details').addClass('loading');
-            $.ajax({
-                url: target.attr('data-load-more'),
-                dataType: 'json',
-                success: function (data) {
-                    versionCache[target.attr('data-version-id')] = data.content;
-                    $('.package .version-details')
-                        .html(data.content);
-                },
-                complete: () => {
+            all('.package .version-details').forEach((el) => el.classList.add('loading'));
+            request(target.getAttribute('data-load-more'))
+                .then(function (data) {
+                    versionCache[versionId] = data.content;
+                    setVersionDetails(data.content);
+                })
+                .catch(ignoreAjaxError)
+                .finally(() => {
                     ongoingRequest = false;
-                    $('.package .version-details')
-                        .removeClass('loading')
-                }
-            });
+                    all('.package .version-details').forEach((el) => el.classList.remove('loading'));
+                });
         }
 
-        $('.package .versions .open').removeClass('open');
-        target.addClass('open');
+        all('.package .versions .open').forEach((el) => el.classList.remove('open'));
+        target.classList.add('open');
     });
 
     // Opens the row named by #<version-id>, on page load and on back/forward.
@@ -67,60 +69,57 @@ const init = function ($) {
         }
         // matched by attribute rather than an interpolated selector, as version strings are
         // user-controlled and a quote in one would break the selector parse
-        var row = $('.package .details-toggler').filter(function () {
-            return this.getAttribute('data-version-id') === hash;
+        var row = Array.from(all('.package .details-toggler')).find(function (el) {
+            return el.getAttribute('data-version-id') === hash;
         });
         // clicking a version anchor writes the hash itself, so the hashchange that follows would
         // otherwise redo the load the click just did
-        if (row.length && !row.hasClass('open')) {
+        if (row && !row.classList.contains('open')) {
             row.click();
         }
     }
 
     openVersionFromHash();
-    $(window).on('hashchange', openVersionFromHash);
+    window.addEventListener('hashchange', openVersionFromHash);
 
-    function dispatchAjaxForm(form, success, className, extraData) {
-        var data = $(form).serializeArray();
-        if (extraData) {
-            data = data.concat(extraData);
-        }
-        var options = {
-            cache: false,
-            success: success,
-            data: data,
-            type: $(form).attr('method'),
-            url: $(form).attr('action')
-        };
-        if ($(form).is('.' + className)) {
+    function dispatchAjaxForm(form, success, className, extraParams) {
+        if (form.classList.contains(className)) {
             return;
         }
-        $.ajax(options).then(() => { $(form).removeClass(className); });
-        $(form).addClass(className);
+        var params = formParams(form);
+        Object.entries(extraParams || {}).forEach(([name, value]) => params.append(name, value));
+        form.classList.add(className);
+        request(form.getAttribute('action'), {method: form.getAttribute('method'), params: params, cache: false})
+            .then(success)
+            .catch(ignoreAjaxError)
+            .finally(() => form.classList.remove(className));
     }
 
     // Show the shared deletion-reason modal to capture an optional public + internal (admin-only) reason.
     // Calls onConfirm(publicReason, internalReason) on confirm; aborts silently on cancel/dismiss.
     // Falls back to a plain confirm() if the modal markup is absent on the page.
     function promptDeletionReasons(opts, onConfirm) {
-        var modal = $('#deletion-reason-modal');
-        if (!modal.length) {
+        var modal = document.querySelector('#deletion-reason-modal');
+        if (!modal) {
             if (window.confirm(opts.title + '?')) {
                 onConfirm('', '');
             }
             return;
         }
-        modal.find('.modal-title').text(opts.title);
-        modal.find('.deletion-reason-confirm').text(opts.confirmLabel || 'Confirm');
-        modal.find('.deletion-reason-public').val('');
-        modal.find('.deletion-reason-internal').val('');
-        var modalInstance = Modal.getOrCreateInstance(modal.get(0));
-        modal.find('.deletion-reason-confirm').off('click').on('click', function () {
-            var publicReason = modal.find('.deletion-reason-public').val().trim();
-            var internalReason = modal.find('.deletion-reason-internal').val().trim();
+        var publicInput = modal.querySelector('.deletion-reason-public');
+        var internalInput = modal.querySelector('.deletion-reason-internal');
+        var confirmButton = modal.querySelector('.deletion-reason-confirm');
+        modal.querySelector('.modal-title').textContent = opts.title;
+        confirmButton.textContent = opts.confirmLabel || 'Confirm';
+        publicInput.value = '';
+        internalInput.value = '';
+        var modalInstance = Modal.getOrCreateInstance(modal);
+        confirmButton.onclick = function () {
+            var publicReason = publicInput.value.trim();
+            var internalReason = internalInput.value.trim();
             modalInstance.hide();
             onConfirm(publicReason, internalReason);
-        });
+        };
         modalInstance.show();
     }
 
@@ -132,12 +131,18 @@ const init = function ($) {
     // menu closes - and never visible at all for the data-force-crawl auto-trigger below. Show the
     // state on the menu's toggle and in a toast instead.
     function setUpdateRunning(running) {
-        $('.package-actions .dropdown-toggle').toggleClass('loading', running);
+        all('.package-actions .dropdown-toggle').forEach((el) => el.classList.toggle('loading', running));
         // the trigger is an <a>, so it takes aria-disabled; the menu entry is a real submit input
-        $('.package .force-update .force-update-trigger')
-            .toggleClass('loading disabled', running)
-            .attr('aria-disabled', running ? 'true' : null);
-        $('.package .force-update input[type=submit]').prop('disabled', running);
+        all('.package .force-update .force-update-trigger').forEach(function (el) {
+            el.classList.toggle('loading', running);
+            el.classList.toggle('disabled', running);
+            if (running) {
+                el.setAttribute('aria-disabled', 'true');
+            } else {
+                el.removeAttribute('aria-disabled');
+            }
+        });
+        all('.package .force-update input[type=submit]').forEach((el) => { el.disabled = running; });
 
         if (running) {
             // sticky: an unrelated ajax failure clearing its messages must not take the only
@@ -150,7 +155,6 @@ const init = function ($) {
     }
 
     function forceUpdatePackage(e, updateAll) {
-        var data;
         var showOutput = e && e.shiftKey;
         if (e) {
             e.preventDefault();
@@ -160,113 +164,93 @@ const init = function ($) {
         }
         // data-force-crawl is granted by 'edit' but this form by 'update', and neither role implies
         // the other - without the form there is no action/method to submit to
-        var form = $('.package .force-update');
-        if (!form.length) {
+        var forms = all('.package .force-update');
+        if (!forms.length) {
             return;
         }
-        data = form.serializeArray();
+        var params = new URLSearchParams();
+        forms.forEach((form) => formParams(form).forEach((value, name) => params.append(name, value)));
         if (updateAll) {
-            data.push({name: 'updateAll', value: '1'});
+            params.append('updateAll', '1');
         }
-        data.push({name: 'manualUpdate', value: '1'});
+        params.append('manualUpdate', '1');
 
         setUpdateRunning(true);
 
-        $.ajax({
-            url: form.attr('action'),
-            dataType: 'json',
-            cache: false,
-            data: data,
-            type: form.attr('method'),
-            success: function (data) {
-                if (data.job) {
-                    var pollFailures = 0;
-                    var checkJobStatus = function () {
-                        // own error handler rather than the global $.ajaxSetup one: a poll blip is
-                        // not worth a toast while we are still retrying
-                        $.ajax({
-                            url: '/jobs/' + data.job,
-                            cache: false,
-                            error: function () {
-                                pollFailures++;
-                                if (pollFailures > 3) {
-                                    setUpdateRunning(false);
-                                    notifier.log('Lost contact with the server while the update was running — reload to see the result.', {timeout: 5000});
-                                    return;
-                                }
-                                setTimeout(checkJobStatus, 1000 * Math.pow(2, pollFailures));
-                            },
-                            success: function (data) {
-                                pollFailures = 0;
-                                if (data.status == 'completed' || data.status == 'errored' || data.status == 'failed' || data.status == 'package_deleted') {
-                                    setUpdateRunning(false);
-                                    notifier.remove();
-
-                                    var message = data.message;
-                                    var details = '';
-                                    if (data.status !== 'completed') {
-                                        message += ' [' + data.exceptionClass + '] ' + data.exceptionMsg;
-                                        details = data.details;
-                                    } else if (showOutput) {
-                                        details = data.details;
-                                    }
-
-                                    if (details) {
-                                        notifier.log(message, {}, details);
-                                    } else {
-                                        notifier.log(message, {timeout: 2000});
-                                        setTimeout(function () {
-                                            document.location.reload(true);
-                                        }, 700);
-                                    }
-
-                                    return;
-                                }
-
-                                setTimeout(checkJobStatus, 1000);
-                            }
-                        });
-                    };
-
-                    setTimeout(checkJobStatus, 1000);
-                } else {
+        request(forms[0].getAttribute('action'), {method: forms[0].getAttribute('method'), params: params, cache: false})
+            .then(function (data) {
+                if (!data.job) {
                     setUpdateRunning(false);
+                    return;
                 }
-            },
-            context: form[0]
-        }).fail(function () {
-            // .fail() rather than an error option: the latter would replace the global
-            // $.ajaxSetup handler that surfaces the server's message
-            setUpdateRunning(false);
-        });
+
+                var pollFailures = 0;
+                var checkJobStatus = function () {
+                    // no error toast: a poll blip is not worth one while we are still retrying
+                    request('/jobs/' + data.job, {cache: false, showError: false}).then(function (data) {
+                        pollFailures = 0;
+                        if (data.status == 'completed' || data.status == 'errored' || data.status == 'failed' || data.status == 'package_deleted') {
+                            setUpdateRunning(false);
+                            notifier.remove();
+
+                            var message = data.message;
+                            var details = '';
+                            if (data.status !== 'completed') {
+                                message += ' [' + data.exceptionClass + '] ' + data.exceptionMsg;
+                                details = data.details;
+                            } else if (showOutput) {
+                                details = data.details;
+                            }
+
+                            if (details) {
+                                notifier.log(message, {}, details);
+                            } else {
+                                notifier.log(message, {timeout: 2000});
+                                setTimeout(function () {
+                                    document.location.reload(true);
+                                }, 700);
+                            }
+
+                            return;
+                        }
+
+                        setTimeout(checkJobStatus, 1000);
+                    }, function (err) {
+                        ignoreAjaxError(err);
+                        pollFailures++;
+                        if (pollFailures > 3) {
+                            setUpdateRunning(false);
+                            notifier.log('Lost contact with the server while the update was running — reload to see the result.', {timeout: 5000});
+                            return;
+                        }
+                        setTimeout(checkJobStatus, 1000 * Math.pow(2, pollFailures));
+                    });
+                };
+
+                setTimeout(checkJobStatus, 1000);
+            }, function (err) {
+                ignoreAjaxError(err);
+                setUpdateRunning(false);
+            });
     }
-    $('.package .force-update').on('submit', forceUpdatePackage);
-    $('.package .force-update').on('click', forceUpdatePackage);
-    $('.package .mark-favorite').on('click', function (e) {
-        var options = {
-            dataType: 'json',
-            cache: false,
-            success: function () {
-                $(this).toggleClass('is-starred');
-            },
-            context: this
-        };
+    on('.package .force-update', 'submit', forceUpdatePackage);
+    on('.package .force-update', 'click', forceUpdatePackage);
+    on('.package .mark-favorite', 'click', function (e) {
+        var el = this;
         e.preventDefault();
-        if ($(this).is('.loading')) {
+        if (el.classList.contains('loading')) {
             return;
         }
-        if ($(this).is('.is-starred')) {
-            options.type = 'DELETE';
-            options.url = $(this).data('remove-url');
-        } else {
-            options.type = 'POST';
-            options.data = {"package": $(this).data('package')};
-            options.url = $(this).data('add-url');
-        }
-        $.ajax(options).then(function () { $(this).removeClass('loading'); });
-        $(this).addClass('loading');
+        var pending = el.classList.contains('is-starred')
+            ? request(el.dataset.removeUrl, {method: 'DELETE', cache: false})
+            : request(el.dataset.addUrl, {method: 'POST', params: {package: el.dataset.package}, cache: false});
+        el.classList.add('loading');
+        pending
+            .then(() => el.classList.toggle('is-starred'))
+            .catch(ignoreAjaxError)
+            .finally(() => el.classList.remove('loading'));
     });
-    $('.package .delete').on('submit', function (e) {
+    on('.package .delete', 'submit', function (e) {
         e.preventDefault();
         var form = this;
         var success = function () {
@@ -276,67 +260,68 @@ const init = function ($) {
             })
         };
 
-        if ($(form).data('admin')) {
+        if (form.dataset.admin) {
             promptDeletionReasons({title: 'Delete package', confirmLabel: 'Delete'}, function (publicReason, internalReason) {
-                var extra = [];
-                if (publicReason) extra.push({name: 'reason', value: publicReason});
-                if (internalReason) extra.push({name: 'internalReason', value: internalReason});
+                var extra = {};
+                if (publicReason) extra.reason = publicReason;
+                if (internalReason) extra.internalReason = internalReason;
                 dispatchAjaxForm(form, success, 'request-sent', extra);
             });
         } else if (window.confirm('Are you sure you want to delete this package?')) {
             dispatchAjaxForm(form, success, 'request-sent');
         }
     });
-    $('.package .view-log').on('click', function (e) {
+    on('.package .view-log', 'click', function (e) {
         e.preventDefault();
         const message = e.target.dataset.msg;
         const details = e.target.dataset.details;
         notifier.log(message, {}, details);
     });
-    $('.package .delete-version .submit, .package .recover-version .submit, .package .hide-version .submit').on('click', function (e) {
+    on('.package .delete-version .submit, .package .recover-version .submit, .package .hide-version .submit', 'click', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        $(e.target).closest('form').submit();
+        // a submit event rather than requestSubmit(), which Safari only has from 16
+        e.target.closest('form').dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
     });
 
     function getVersionLabel(form) {
-        return $(form).closest('.version').find('.version-number').text().trim();
+        return form.closest('.version').querySelector('.version-number').textContent.trim();
     }
 
     // Point a deletion tooltip at a new title. BS5 has no "update the title" call, so dispose any
     // existing instance and rebuild it; the text goes on data-bs-title, not the native title
     // attribute, so the browser does not render its own tooltip on top.
-    function setDeletionTooltip($el, title) {
-        $el.each(function () {
-            var existing = Tooltip.getInstance(this);
+    function setDeletionTooltip(elements, title) {
+        elements.forEach(function (el) {
+            var existing = Tooltip.getInstance(el);
             if (existing) {
                 existing.dispose();
             }
-            this.removeAttribute('title');
-            this.setAttribute('data-bs-title', title);
-            new Tooltip(this, {placement: 'top', container: 'body'});
+            el.removeAttribute('title');
+            el.setAttribute('data-bs-title', title);
+            new Tooltip(el, {placement: 'top', container: 'body'});
         });
     }
 
     function applyVersionDeleteResponse(form, data, deletedToast, softDeletedToast) {
-        var row = $(form).closest('.version');
+        var row = form.closest('.version');
         if (data && data.softDeleted) {
             notifier.log(softDeletedToast || 'Version soft-deleted. Reload the page to access the recovery action.', {timeout: 4000});
-            row.addClass('version-soft-deleted');
+            row.classList.add('version-soft-deleted');
             // The row may already carry a badge (hiding an already soft-deleted version), so reuse
             // and refresh it rather than leaving the previous icon and title in place.
-            var alert = row.find('.deletion-alert');
-            if (!alert.length) {
-                alert = $('<span class="action-alert deletion-alert" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-container="body"><i class="bi"></i></span>');
-                alert.insertBefore(row.find('form').first());
+            var alert = row.querySelector('.deletion-alert');
+            if (!alert) {
+                row.querySelector('form')?.insertAdjacentHTML('beforebegin', '<span class="action-alert deletion-alert" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-container="body"><i class="bi"></i></span>');
+                alert = row.querySelector('.deletion-alert');
             }
-            alert.find('i').attr('class', 'bi ' + (data.deletionIcon || 'bi-trash-fill'));
+            alert.querySelector('i').className = 'bi ' + (data.deletionIcon || 'bi-trash-fill');
             // The version number carries the same title, and has no tooltip at all until the row is
             // soft-deleted, so it needs the same treatment as the badge.
             var title = data.deletionTitle || 'Deleted';
-            setDeletionTooltip(alert, title);
-            setDeletionTooltip(row.find('.version-number'), title);
-            row.find('.delete-version, .hide-version').remove();
+            setDeletionTooltip([alert], title);
+            setDeletionTooltip(all('.version-number', row), title);
+            all('.delete-version, .hide-version', row).forEach((el) => el.remove());
         } else {
             notifier.log(deletedToast, {timeout: 3000});
             row.remove();
@@ -344,40 +329,38 @@ const init = function ($) {
     }
 
     // Submit a version-action form via ajax, guarding against duplicate submits.
-    // `overrides` may carry {url, type, data} to override the form's defaults (used by the
+    // `overrides` may carry {url, method, params} to override the form's defaults (used by the
     // admin-reason fallthrough in .delete-version which retargets to admin_delete_version).
-    // Returns the jqXHR, or null if the request-sent guard tripped.
     function dispatchVersionAction(form, onSuccess, overrides) {
-        if ($(form).is('.request-sent')) {
-            return null;
+        if (form.classList.contains('request-sent')) {
+            return;
         }
         overrides = overrides || {};
-        $(form).addClass('request-sent');
-        return $.ajax({
-            url: overrides.url || $(form).attr('action'),
-            type: overrides.type || $(form).attr('method'),
+        form.classList.add('request-sent');
+        request(overrides.url || form.getAttribute('action'), {
+            method: overrides.method || form.getAttribute('method'),
+            params: overrides.params || formParams(form),
             cache: false,
-            dataType: 'json',
-            data: overrides.data || $(form).serializeArray(),
-            success: onSuccess,
-            complete: function () { $(form).removeClass('request-sent'); }
-        });
+        })
+            .then(onSuccess)
+            .catch(ignoreAjaxError)
+            .finally(() => form.classList.remove('request-sent'));
     }
 
-    $('.package .recover-version').on('submit', function (e) {
+    on('.package .recover-version', 'submit', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
         var form = this;
         dispatchVersionAction(form, function () {
             notifier.log('Version recovered. Reload the page to see the active version.', {timeout: 3000});
-            var row = $(form).closest('.version');
-            row.removeClass('version-soft-deleted');
-            row.find('.deletion-alert').remove();
-            $(form).remove();
+            var row = form.closest('.version');
+            row.classList.remove('version-soft-deleted');
+            all('.deletion-alert', row).forEach((el) => el.remove());
+            form.remove();
         });
     });
 
-    $('.package .delete-version').on('submit', function (e) {
+    on('.package .delete-version', 'submit', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
         var form = this;
@@ -386,17 +369,17 @@ const init = function ($) {
             applyVersionDeleteResponse(form, data, 'Version successfully deleted');
         };
 
-        if ($(form).data('admin')) {
+        if (form.dataset.admin) {
             promptDeletionReasons({title: 'Remove version ' + label, confirmLabel: 'Remove'}, function (publicReason, internalReason) {
                 var overrides = {};
                 // Only retarget to the admin route when a reason is given; otherwise fall through to the
                 // ordinary delete (soft-delete stable / hard-delete dev), preserving prior behavior.
                 if (publicReason || internalReason) {
-                    overrides.url = $(form).data('admin-url');
-                    overrides.type = 'POST';
-                    overrides.data = [{name: '_token', value: $(form).find('input[name="_token"]').val()}];
-                    if (publicReason) overrides.data.push({name: 'reason', value: publicReason});
-                    if (internalReason) overrides.data.push({name: 'internalReason', value: internalReason});
+                    overrides.url = form.dataset.adminUrl;
+                    overrides.method = 'POST';
+                    overrides.params = new URLSearchParams({_token: form.querySelector('input[name="_token"]').value});
+                    if (publicReason) overrides.params.append('reason', publicReason);
+                    if (internalReason) overrides.params.append('internalReason', internalReason);
                 }
                 dispatchVersionAction(form, success, overrides);
             });
@@ -405,74 +388,79 @@ const init = function ($) {
         }
     });
 
-    $('.package .hide-version').on('submit', function (e) {
+    on('.package .hide-version', 'submit', function (e) {
         e.preventDefault();
         e.stopImmediatePropagation();
         var form = this;
         var label = getVersionLabel(form);
         promptDeletionReasons({title: 'Hide version ' + label, confirmLabel: 'Hide'}, function (publicReason, internalReason) {
-            var data = $(form).serializeArray();
-            if (publicReason) data.push({name: 'reason', value: publicReason});
-            if (internalReason) data.push({name: 'internalReason', value: internalReason});
+            var params = formParams(form);
+            if (publicReason) params.append('reason', publicReason);
+            if (internalReason) params.append('internalReason', internalReason);
             dispatchVersionAction(form, function (resp) {
                 applyVersionDeleteResponse(form, resp, 'Version hidden.', 'Version hidden.');
-            }, {data: data});
+            }, {params: params});
         });
     });
 
-    $('.package').on('click', '.requireme input', function () {
-        this.select();
+    on('.package', 'click', function (e) {
+        if (e.target.matches('.requireme input')) {
+            e.target.select();
+        }
     });
-    if ($('.package').data('force-crawl')) {
+    if (document.querySelector('.package')?.dataset.forceCrawl) {
         forceUpdatePackage(null, true);
     }
 
-    $('.readme a').on('click', function (e) {
+    on('.readme a', 'click', function (e) {
         var targetEl,
             href = e.target.getAttribute('href');
 
         if (href.substr(0, 1) === '#') {
-            targetEl = $(href);
-            if (targetEl.length) {
-                window.scrollTo(0, targetEl.offset().top - 70);
+            targetEl = document.getElementById(href.substring(1));
+            if (targetEl) {
+                window.scrollTo(0, targetEl.getBoundingClientRect().top + window.scrollY - 70);
                 e.preventDefault();
                 e.stopImmediatePropagation();
             }
         }
     });
 
-    var versionsList = $('.package .versions')[0];
+    var versionsList = document.querySelector('.package .versions');
     if (versionsList && versionsList.offsetHeight < versionsList.scrollHeight) {
-        $('.package .versions-expander').removeClass('d-none').on('click', function () {
-            $(this).addClass('d-none');
-            $(versionsList).css('max-height', 'inherit');
+        all('.package .versions-expander').forEach(function (el) {
+            el.classList.remove('d-none');
+            el.addEventListener('click', function () {
+                el.classList.add('d-none');
+                versionsList.style.maxHeight = 'inherit';
+            });
         });
     }
 
     // Handle add/remove buttons for transfer package form
-    $('.add-maintainer-item').on('click', function (e) {
+    on('.add-maintainer-item', 'click', function (e) {
         e.preventDefault();
 
-        var list = $('.maintainers-list');
-        var prototype = list.data('prototype');
-        var index = list.find('li').length + 1;
+        var list = document.querySelector('.maintainers-list');
+        var index = all('li', list).length + 1;
 
-        var newForm = prototype.replace(/__name__/g, index);
-        var newItem = $('<li></li>').append(newForm);
+        var newItem = document.createElement('li');
+        newItem.innerHTML = list.dataset.prototype.replace(/__name__/g, index);
         addMaintainerRemoveButton(newItem);
         list.append(newItem);
     });
 
-    $('.maintainers-list').find('li').each(function(index) {
-        addMaintainerRemoveButton($(this));
-    });
+    all('.maintainers-list li').forEach(addMaintainerRemoveButton);
 
     function addMaintainerRemoveButton(item) {
-        var removeButton = $('<button type="button" class="btn btn-danger btn-sm"><i class="bi bi-x-lg"></i></button>');
-        removeButton.on('click', function(e) {
+        var removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'btn btn-danger btn-sm';
+        removeButton.innerHTML = '<i class="bi bi-x-lg"></i>';
+        removeButton.addEventListener('click', function (e) {
             e.preventDefault();
 
-            if ($('.maintainers-list').find('li').length === 1) {
+            if (all('.maintainers-list li').length === 1) {
                 return;
             }
 
@@ -483,5 +471,5 @@ const init = function ($) {
 };
 
 if (document.querySelector('#view-package-page')) {
-    init(jQuery);
+    init();
 }
