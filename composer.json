@@ -55,33 +55,32 @@
         "scienta/doctrine-json-functions": "^6.3",
         "seld/signal-handler": "^2",
         "snc/redis-bundle": "^4.10",
-        "symfony/asset": "^7",
-        "symfony/console": "^7",
-        "symfony/doctrine-bridge": "^7",
-        "symfony/dotenv": "^7",
-        "symfony/expression-language": "^7",
+        "symfony/asset": "^8.1",
+        "symfony/console": "^8.1",
+        "symfony/doctrine-bridge": "^8.1",
+        "symfony/dotenv": "^8.1",
+        "symfony/expression-language": "^8.1",
         "symfony/flex": "^2",
-        "symfony/form": "^7",
-        "symfony/framework-bundle": "^7",
-        "symfony/html-sanitizer": "^7.0",
-        "symfony/http-client": "^7",
-        "symfony/intl": "^7",
-        "symfony/lock": "^7",
-        "symfony/mailer": "^7",
-        "symfony/monolog-bundle": "^3.6",
-        "symfony/process": "^7",
-        "symfony/property-access": "^7",
-        "symfony/property-info": "^7",
-        "symfony/proxy-manager-bridge": "^6",
-        "symfony/runtime": "^7",
-        "symfony/security-bundle": "^7",
-        "symfony/serializer": "^7",
-        "symfony/translation": "^7",
-        "symfony/twig-bundle": "^7",
-        "symfony/uid": "^7",
-        "symfony/validator": "^7",
-        "symfony/web-link": "^7",
-        "symfony/yaml": "^7",
+        "symfony/form": "^8.1",
+        "symfony/framework-bundle": "^8.1",
+        "symfony/html-sanitizer": "^8.1",
+        "symfony/http-client": "^8.1",
+        "symfony/intl": "^8.1",
+        "symfony/lock": "^8.1",
+        "symfony/mailer": "^8.1",
+        "symfony/monolog-bundle": "^4.1",
+        "symfony/process": "^8.1",
+        "symfony/property-access": "^8.1",
+        "symfony/property-info": "^8.1",
+        "symfony/runtime": "^8.1",
+        "symfony/security-bundle": "^8.1",
+        "symfony/serializer": "^8.1",
+        "symfony/translation": "^8.1",
+        "symfony/twig-bundle": "^8.1",
+        "symfony/uid": "^8.1",
+        "symfony/validator": "^8.1",
+        "symfony/web-link": "^8.1",
+        "symfony/yaml": "^8.1",
         "symfonycasts/verify-email-bundle": "^1.4",
         "twig/extra-bundle": "^3.0",
         "twig/string-extra": "^3.2",
@@ -97,13 +96,13 @@
         "phpunit/phpunit": "^13",
         "staabm/phpstan-dba": "^0.4.0",
         "staabm/phpstan-todo-by": "^0.3",
-        "symfony/browser-kit": "^7",
-        "symfony/css-selector": "^7",
-        "symfony/debug-bundle": "^7",
+        "symfony/browser-kit": "^8.1",
+        "symfony/css-selector": "^8.1",
+        "symfony/debug-bundle": "^8.1",
         "symfony/maker-bundle": "^1.30",
-        "symfony/stopwatch": "^7",
-        "symfony/var-dumper": "^7",
-        "symfony/web-profiler-bundle": "^7"
+        "symfony/stopwatch": "^8.1",
+        "symfony/var-dumper": "^8.1",
+        "symfony/web-profiler-bundle": "^8.1"
     },
     "config": {
         "preferred-install": {
@@ -116,6 +115,11 @@
         "allow-plugins": {
             "symfony/flex": true,
             "symfony/runtime": true
+        },
+        "policy": {
+            "cooldown": {
+                "period": "7 days"
+            }
         }
     },
     "autoload": {
@@ -161,7 +165,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "7.4.*"
+            "require": "8.1.*"
         },
         "symfony-bin-dir": "bin",
         "symfony-web-dir": "web",

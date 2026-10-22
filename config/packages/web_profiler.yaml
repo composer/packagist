@@ -3,11 +3,9 @@ when@dev:
         toolbar: true
 
     framework:
-        profiler:
-            collect_serializer_data: true
+        profiler: true
 
 when@test:
     framework:
         profiler:
             collect: false
-            collect_serializer_data: true

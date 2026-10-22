@@ -27,5 +27,11 @@ class RateLimitingRecaptcha extends Constraint
     // !! Must be set on the InvisibleRecaptchaType options
     // If this is set to true, the RecaptchaHelper::increaseCounter must be called on failure (typically wrong password) to trigger the recaptcha enforcement after X attempts
     // by default (false) recaptcha will always be required
-    public bool $onlyShowAfterIncrementTrigger = false;
+    public function __construct(
+        public bool $onlyShowAfterIncrementTrigger = false,
+        ?array $groups = null,
+        mixed $payload = null,
+    ) {
+        parent::__construct(null, $groups, $payload);
+    }
 }

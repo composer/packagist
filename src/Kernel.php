@@ -34,4 +34,12 @@ class Kernel extends BaseKernel
 
         $container->import($configDir.'/{parameters}.yaml');
     }
+
+    /**
+     * @return list<string> An array of allowed values for APP_ENV
+     */
+    private function getAllowedEnvs(): array // @phpstan-ignore method.unused (called by KernelTrait)
+    {
+        return ['prod', 'dev', 'test'];
+    }
 }
