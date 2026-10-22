@@ -30,7 +30,9 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
 {
     public const SOURCE_NAME = 'WordPress';
 
-    private const IGNORE_CVES = [];
+    private const IGNORE_CVES = [
+        'NO_EXISTS',
+    ];
 
     /**
      * @param list<string> $fallbackGhTokens
@@ -169,7 +171,7 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
                 );
             }
 
-            $nextPage = $responseHeaders['link'] ?? '';
+            $nextPage = (string) $responseHeaders['link'] ?? '';
         }
 
         $advisories = [];
