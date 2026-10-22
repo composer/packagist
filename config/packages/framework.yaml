@@ -17,7 +17,7 @@ framework:
         handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
 
     #esi: true
-    fragments: true
+    fragments: false
     form: true
     assets:
         version: 'v=%env(default::ASSETS_VERSION)%'
