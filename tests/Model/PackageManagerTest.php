@@ -24,6 +24,7 @@ use App\Tests\IntegrationTestCase;
 use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\TestWith;
 use Predis\Client;
+use Symfony\Component\HttpFoundation\Response;
 
 class PackageManagerTest extends IntegrationTestCase
 {
@@ -34,35 +35,6 @@ class PackageManagerTest extends IntegrationTestCase
         parent::setUp();
 
         $this->packageManager = self::getContainer()->get(PackageManager::class);
-    }
-
-    public function testNotifyFailure(): void
-    {
-        $this->markTestSkipped('Do it!');
-
-        $client = self::createClient();
-
-        $package = self::createPackage('composer/composer', 'https://github.com/composer/composer');
-
-        $user = new User();
-        $user->addPackage($package);
-
-        $repo = $this->createMock(UserRepository::class);
-        $em = $this->createMock(EntityManager::class);
-        $updater = $this->createMock(Updater::class);
-
-        $repo->expects($this->once())
-            ->method('findOneBy')
-            ->with($this->equalTo(['username' => 'test', 'apiToken' => 'token']))
-            ->willReturn($user);
-
-        static::$kernel->getContainer()->set('test.user_repo', $repo);
-        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', $em);
-        static::$kernel->getContainer()->set(Updater::class, $updater);
-
-        $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
-        $client->request('POST', '/api/github?username=test&apiToken=token', ['payload' => $payload]);
-        $this->assertEquals(202, $client->getResponse()->getStatusCode());
     }
 
     public function testRecordFailedCrawlStampsCrawledAtUnlessItIsParkedInTheFuture(): void

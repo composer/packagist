@@ -10,7 +10,6 @@ use App\Entity\User;
 use App\Entity\Vendor;
 use App\Model\ProviderManager;
 use App\Service\UpdaterWorker;
-use DateTime;
 use DateTimeImmutable;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;

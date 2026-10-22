@@ -16,6 +16,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\NoResultException;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -47,7 +48,7 @@ class Tag
     }
 
     /**
-     * @throws \Doctrine\ORM\NoResultException
+     * @throws NoResultException
      */
     public static function getByName(EntityManager $em, string $name, bool $create = false): self
     {
@@ -60,7 +61,7 @@ class Tag
                 ->setParameter(1, $name);
 
             return $qb->getQuery()->getSingleResult();
-        } catch (\Doctrine\ORM\NoResultException $e) {
+        } catch (NoResultException $e) {
             if ($create) {
                 $tag = new self($name);
                 $em->persist($tag);

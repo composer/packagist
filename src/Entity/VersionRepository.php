@@ -19,6 +19,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
@@ -324,7 +325,7 @@ class VersionRepository extends ServiceEntityRepository
     }
 
     /**
-     * @throws \Doctrine\ORM\NoResultException
+     * @throws NoResultException
      */
     public function getFullVersion(int $versionId): Version
     {

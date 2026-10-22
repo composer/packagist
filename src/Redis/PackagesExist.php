@@ -12,7 +12,9 @@
 
 namespace App\Redis;
 
-class PackagesExist extends \Predis\Command\ScriptCommand
+use Predis\Command\ScriptCommand;
+
+class PackagesExist extends ScriptCommand
 {
     public function getScript(): string
     {

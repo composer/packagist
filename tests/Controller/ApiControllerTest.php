@@ -25,20 +25,21 @@ use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class ApiControllerTest extends IntegrationTestCase
 {
     public function testGithubFailsOnGet(): void
     {
         $this->client->request('GET', '/api/github');
-        $this->assertEquals(405, $this->client->getResponse()->getStatusCode(), 'GET method should not be allowed for GitHub Post-Receive URL');
+        $this->assertEquals(Response::HTTP_METHOD_NOT_ALLOWED, $this->client->getResponse()->getStatusCode(), 'GET method should not be allowed for GitHub Post-Receive URL');
     }
 
     public function testGitHubFailsWithInvalidCredentials(): void
     {
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
         $this->client->request('POST', '/api/github?username=INVALID_USER&apiToken=INVALID_TOKEN', ['payload' => $payload]);
-        $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), 'POST method should return 403 "Forbidden" if invalid username and API Token are sent: '.$this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_FORBIDDEN, $this->client->getResponse()->getStatusCode(), 'POST method should return 403 "Forbidden" if invalid username and API Token are sent: '.$this->client->getResponse()->getContent());
     }
 
     #[DataProvider('githubApiProvider')]
@@ -59,7 +60,7 @@ class ApiControllerTest extends IntegrationTestCase
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
         $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload]);
-        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     public static function githubApiProvider(): array
@@ -83,7 +84,7 @@ class ApiControllerTest extends IntegrationTestCase
             ['HTTP_X-Hub-Signature-256' => 'not-an-algo=deadbeef', 'CONTENT_TYPE' => 'application/json'],
             $payload
         );
-        $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_FORBIDDEN, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     public function testGithubHookIgnoresEventsThatCannotMoveARef(): void
@@ -101,7 +102,7 @@ class ApiControllerTest extends IntegrationTestCase
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
         $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload], [], ['HTTP_X-GitHub-Event' => 'check_run']);
-        $this->assertEquals(200, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     #[TestWith(['push'])]
@@ -120,7 +121,7 @@ class ApiControllerTest extends IntegrationTestCase
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
         $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload], [], ['HTTP_X-GitHub-Event' => $event]);
-        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     public function testGithubHookAcceptsOrgPingWithoutRepository(): void
@@ -131,7 +132,7 @@ class ApiControllerTest extends IntegrationTestCase
 
         $payload = json_encode(['zen' => 'Keep it logically awesome.', 'organization' => ['login' => 'acme']]);
         $this->client->request('POST', '/api/github', ['payload' => $payload], [], ['HTTP_X-GitHub-Event' => 'ping']);
-        $this->assertEquals(200, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     public function testGithubHookSkipsFrozenPackages(): void
@@ -150,7 +151,7 @@ class ApiControllerTest extends IntegrationTestCase
 
         $payload = json_encode(['repository' => ['url' => 'git://github.com/composer/composer']]);
         $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => $payload]);
-        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
         $body = json_decode((string) $this->client->getResponse()->getContent(), true);
         $this->assertSame([], $body['jobs']);
         $this->assertSame([$package->getName()], $body['skipped']);
@@ -163,7 +164,7 @@ class ApiControllerTest extends IntegrationTestCase
 
         $payload = json_encode(['repository' => 'https://github.com/composer/composer']);
         $this->client->request('POST', '/api/create-package?username=test&apiToken=safe-api-token', ['payload' => $payload]);
-        $this->assertEquals(406, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_NOT_ACCEPTABLE, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
         $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
     }
 
@@ -176,11 +177,11 @@ class ApiControllerTest extends IntegrationTestCase
 
         $payload = json_encode(['repository' => $url]);
         $this->client->request('POST', '/api/update-package?username=test&apiToken=safe-api-token', ['payload' => $payload]);
-        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
 
         $payload = json_encode(['repository' => 'https://packagist.org/packages/'.$package->getName()]);
         $this->client->request('POST', '/api/update-package?username=test&apiToken=api-token', ['payload' => $payload]);
-        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     #[Depends('testGitHubFailsWithInvalidCredentials')]
@@ -264,7 +265,7 @@ class ApiControllerTest extends IntegrationTestCase
         $this->store($advisory);
 
         $this->client->request('GET', '/api/security-advisories/?packages[]=acme/package');
-        $this->assertEquals(200, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_OK, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
 
         $content = json_decode($this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
         $this->assertArrayHasKey('acme/package', $content['advisories']);
@@ -290,7 +291,7 @@ class ApiControllerTest extends IntegrationTestCase
             $payload
         );
 
-        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     public function testBearerTokenAuthenticationWithSafeToken(): void
@@ -312,7 +313,7 @@ class ApiControllerTest extends IntegrationTestCase
             $payload
         );
 
-        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     public function testBearerTokenAuthenticationInvalidCredentials(): void
@@ -329,7 +330,7 @@ class ApiControllerTest extends IntegrationTestCase
             $payload
         );
 
-        $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_FORBIDDEN, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
         $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
     }
 
@@ -347,7 +348,7 @@ class ApiControllerTest extends IntegrationTestCase
             $payload
         );
 
-        $this->assertEquals(403, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_FORBIDDEN, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
         $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
     }
 
@@ -370,7 +371,7 @@ class ApiControllerTest extends IntegrationTestCase
             $payload
         );
 
-        $this->assertEquals(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
     }
 
     public function testComposerVersionsProxiesUpstream(): void
@@ -387,7 +388,7 @@ class ApiControllerTest extends IntegrationTestCase
         $this->client->request('GET', '/api/composer-versions');
         $response = $this->client->getResponse();
 
-        $this->assertSame(200, $response->getStatusCode(), (string) $response->getContent());
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode(), (string) $response->getContent());
         $this->assertSame($body, $response->getContent());
         $this->assertStringContainsString('application/json', (string) $response->headers->get('Content-Type'));
         $this->assertStringContainsString('s-maxage=900', (string) $response->headers->get('Cache-Control'));
@@ -401,7 +402,7 @@ class ApiControllerTest extends IntegrationTestCase
         $this->client->request('GET', '/api/composer-versions');
         $response = $this->client->getResponse();
 
-        $this->assertSame(502, $response->getStatusCode());
+        $this->assertSame(Response::HTTP_BAD_GATEWAY, $response->getStatusCode(), (string) $response->getContent());
         $this->assertJsonStringEqualsJsonString('{"status":"error","message":"Failed to fetch upstream version data, please try again later."}', (string) $response->getContent());
     }
 

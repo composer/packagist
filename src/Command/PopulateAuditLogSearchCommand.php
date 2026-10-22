@@ -14,9 +14,12 @@ namespace App\Command;
 
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
+use App\Util\DoctrineTrait;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Types\UlidType;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -32,9 +35,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Use --from-date to reindex only recent records — either to periodically re-assert index integrity
  * for newer entries, or to resume a run that died (pass the last datetime it printed).
  */
+#[AsCommand(name: 'packagist:populate:audit-log-search', description: 'Backfills the audit_log_search index from existing audit_log records')]
 class PopulateAuditLogSearchCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     private const BATCH_SIZE = 500;
 
@@ -47,8 +51,6 @@ class PopulateAuditLogSearchCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:populate:audit-log-search')
-            ->setDescription('Backfills the audit_log_search index from existing audit_log records')
             ->addOption(
                 'from-date',
                 null,
@@ -122,7 +124,7 @@ class PopulateAuditLogSearchCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function baseQuery(AuditRecordRepository $repo, ?\DateTimeImmutable $fromDate): \Doctrine\ORM\QueryBuilder
+    private function baseQuery(AuditRecordRepository $repo, ?\DateTimeImmutable $fromDate): QueryBuilder
     {
         $qb = $repo->createQueryBuilder('a');
         if ($fromDate !== null) {

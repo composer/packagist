@@ -16,12 +16,13 @@ use App\Entity\Job;
 use App\Entity\Package;
 use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client as RedisClient;
 
 class Scheduler
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     public function __construct(
         private RedisClient $redis,

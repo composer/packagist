@@ -14,7 +14,9 @@ namespace App\Controller;
 
 use App\HealthCheck\MetadataDirCheck;
 use App\HealthCheck\RedisHealthCheck;
-use Laminas\Diagnostics\Check;
+use Laminas\Diagnostics\Check\DiskFree;
+use Laminas\Diagnostics\Check\DiskUsage;
+use Laminas\Diagnostics\Check\PDOCheck;
 use Laminas\Diagnostics\Result\Collection;
 use Laminas\Diagnostics\Result\ResultInterface;
 use Laminas\Diagnostics\Runner\Runner;
@@ -68,9 +70,9 @@ class HealthCheckController
             $machineName = 'dev';
         }
 
-        $runner->addCheck(new Check\DiskUsage(80, 90, '/'));
-        $runner->addCheck(new Check\DiskFree(100 * 1024 * 1024, '/tmp'));
-        $runner->addCheck(new Check\PDOCheck('mysql:dbname='.$dbname.';host='.$dbhost.';port='.$dbport, $dbuser, $dbpass));
+        $runner->addCheck(new DiskUsage(80, 90, '/'));
+        $runner->addCheck(new DiskFree(100 * 1024 * 1024, '/tmp'));
+        $runner->addCheck(new PDOCheck('mysql:dbname='.$dbname.';host='.$dbhost.';port='.$dbport, $dbuser, $dbpass));
         $runner->addCheck(new RedisHealthCheck($this->redisClient));
         $runner->addCheck(new MetadataDirCheck($this->awsMeta));
 
@@ -81,12 +83,12 @@ class HealthCheckController
                 $this->logResults($results, 'Warning on '.$machineName);
             }
 
-            return new Response('OK', 202);
+            return new Response('OK', Response::HTTP_ACCEPTED);
         }
 
         $this->logResults($results, 'FAILURE on '.$machineName);
 
-        return new Response('ERRORS', 500);
+        return new Response('ERRORS', Response::HTTP_INTERNAL_SERVER_ERROR);
     }
 
     private function logResults(Collection $results, string $msg): void

@@ -15,10 +15,12 @@ namespace App\Command;
 use App\Search\PackageIndex;
 use App\Service\Locker;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'packagist:clean-index', description: 'Cleans up the Algolia index of stale virtual packages')]
 class CleanIndexCommand extends Command
 {
     public function __construct(
@@ -28,15 +30,6 @@ class CleanIndexCommand extends Command
         private string $cacheDir,
     ) {
         parent::__construct();
-    }
-
-    protected function configure(): void
-    {
-        $this
-            ->setName('packagist:clean-index')
-            ->setDefinition([])
-            ->setDescription('Cleans up the Algolia index of stale virtual packages')
-        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,7 +42,7 @@ class CleanIndexCommand extends Command
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         $lockAcquired = $this->locker->lockCommand(__CLASS__);
@@ -58,7 +51,7 @@ class CleanIndexCommand extends Command
                 $output->writeln('Aborting, another task is running already');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         // Browsing uses a cursor, so deleting records while iterating cannot make it skip any
@@ -94,7 +87,7 @@ class CleanIndexCommand extends Command
 
         $this->locker->unlockCommand(__CLASS__);
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     private function hasProviders(string $provided): bool

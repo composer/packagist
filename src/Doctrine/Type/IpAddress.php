@@ -13,6 +13,7 @@
 namespace App\Doctrine\Type;
 
 use App\Util\IpAddress as IpAddressConverter;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 
@@ -40,8 +41,8 @@ class IpAddress extends Type
         return self::NAME;
     }
 
-    public function getBindingType(): \Doctrine\DBAL\ParameterType
+    public function getBindingType(): ParameterType
     {
-        return \Doctrine\DBAL\ParameterType::BINARY;
+        return ParameterType::BINARY;
     }
 }

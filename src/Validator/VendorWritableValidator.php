@@ -14,6 +14,7 @@ namespace App\Validator;
 
 use App\Entity\Package;
 use App\Entity\PackageRepository;
+use Doctrine\ORM\NoResultException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -65,7 +66,7 @@ class VendorWritableValidator extends ConstraintValidator
                     ->addViolation()
                 ;
             }
-        } catch (\Doctrine\ORM\NoResultException $e) {
+        } catch (NoResultException $e) {
         }
     }
 }

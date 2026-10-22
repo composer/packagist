@@ -12,7 +12,9 @@
 
 namespace App\Redis;
 
-class FetchVersionIds extends \Predis\Command\ScriptCommand
+use Predis\Command\ScriptCommand;
+
+class FetchVersionIds extends ScriptCommand
 {
     public function getScript(): string
     {

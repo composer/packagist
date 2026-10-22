@@ -25,6 +25,7 @@ use App\Model\ProviderManager;
 use App\Service\CdnClient;
 use App\Service\Locker;
 use App\Service\ReplicaClient;
+use App\Util\DoctrineTrait;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
@@ -49,7 +50,7 @@ use Webmozart\Assert\Assert;
  */
 class V2Dumper
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     private const CDN_PURGE_SETTLE_SECONDS = 2;
 

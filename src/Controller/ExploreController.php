@@ -75,7 +75,7 @@ class ExploreController extends Controller
                     return new JsonResponse([
                         'status' => 'error',
                         'message' => 'The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)',
-                    ], 400);
+                    ], Response::HTTP_BAD_REQUEST);
                 }
             }
             $perPage = max(1, min(100, $perPage));

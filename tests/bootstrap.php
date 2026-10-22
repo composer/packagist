@@ -9,8 +9,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
+use Composer\Util\Platform;
 use Symfony\Component\Dotenv\Dotenv;
+use Symfony\Component\ErrorHandler\ErrorHandler;
 
 require dirname(__DIR__).'/vendor/autoload.php';
 
@@ -19,7 +20,7 @@ if (method_exists(Dotenv::class, 'bootEnv')) {
 }
 
 // hack for PHPUnit 11, see https://github.com/symfony/symfony/issues/53812
-set_exception_handler([new Symfony\Component\ErrorHandler\ErrorHandler(), 'handleException']);
+set_exception_handler([new ErrorHandler(), 'handleException']);
 
 if ($_SERVER['APP_DEBUG']) {
     umask(0o000);
@@ -54,4 +55,4 @@ if (!getenv('QUICK')) {
     executeCommand('php ./bin/console redis:query flushall --env=test -n -q');
 }
 
-Composer\Util\Platform::putEnv('PACKAGIST_TESTS_ARE_RUNNING', '1');
+Platform::putEnv('PACKAGIST_TESTS_ARE_RUNNING', '1');

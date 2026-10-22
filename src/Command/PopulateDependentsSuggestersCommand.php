@@ -14,7 +14,9 @@ namespace App\Command;
 
 use App\Entity\Dependent;
 use App\Service\Locker;
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,9 +24,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:populate:dependents')]
 class PopulateDependentsSuggestersCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     private Locker $locker;
     private ManagerRegistry $doctrine;
@@ -34,14 +37,6 @@ class PopulateDependentsSuggestersCommand extends Command
         $this->locker = $locker;
         $this->doctrine = $doctrine;
         parent::__construct();
-    }
-
-    protected function configure(): void
-    {
-        $this
-            ->setName('packagist:populate:dependents')
-            ->setDefinition([])
-        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -75,6 +70,6 @@ class PopulateDependentsSuggestersCommand extends Command
             }
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

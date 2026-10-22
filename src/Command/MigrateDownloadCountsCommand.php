@@ -20,10 +20,12 @@ use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'packagist:migrate-download-counts', description: 'Migrates download counts from redis to mysql')]
 class MigrateDownloadCountsCommand extends Command
 {
     public function __construct(
@@ -37,14 +39,6 @@ class MigrateDownloadCountsCommand extends Command
         parent::__construct();
     }
 
-    protected function configure(): void
-    {
-        $this
-            ->setName('packagist:migrate-download-counts')
-            ->setDescription('Migrates download counts from redis to mysql')
-        ;
-    }
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         // another migrate command is still active
@@ -54,7 +48,7 @@ class MigrateDownloadCountsCommand extends Command
                 $output->writeln('Aborting, another task is running already');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         $signal = SignalHandler::create(null, $this->logger);
@@ -123,6 +117,6 @@ class MigrateDownloadCountsCommand extends Command
             $this->statsd->increment('nightly_job.end', 1, 1, ['job' => 'migrate-download-counts']);
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

@@ -55,7 +55,7 @@ final readonly class OrganizationInvitationResolver implements ValueResolverInte
         }
 
         $invitationId = $request->attributes->getString($argument->getName());
-        if (!Ulid::isValid($invitationId)) {
+        if (!Ulid::isValid($invitationId, Ulid::FORMAT_BASE_32)) {
             throw new NotFoundHttpException('Invitation not found.');
         }
 

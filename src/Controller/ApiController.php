@@ -82,7 +82,7 @@ class ApiController extends Controller
 
         $this->logger->alert('packages.json is missing and the fallback controller is being hit, you need to use bin/console packagist:dump-v2');
 
-        return new Response('Horrible misconfiguration or the dumper script messed up, you need to use bin/console packagist:dump-v2', 404);
+        return new Response('Horrible misconfiguration or the dumper script messed up, you need to use bin/console packagist:dump-v2', Response::HTTP_NOT_FOUND);
     }
 
     /**
@@ -103,10 +103,10 @@ class ApiController extends Controller
         } catch (\Throwable $e) {
             $this->logger->error('Failed to proxy '.self::COMPOSER_VERSIONS_URL, ['exception' => $e]);
 
-            return new JsonResponse(['status' => 'error', 'message' => 'Failed to fetch upstream version data, please try again later.'], 502);
+            return new JsonResponse(['status' => 'error', 'message' => 'Failed to fetch upstream version data, please try again later.'], Response::HTTP_BAD_GATEWAY);
         }
 
-        $response = new Response($contents, 200, ['Content-Type' => 'application/json']);
+        $response = new Response($contents, Response::HTTP_OK, ['Content-Type' => 'application/json']);
         $response->setSharedMaxAge(900);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
@@ -122,19 +122,19 @@ class ApiController extends Controller
         }
 
         if (!$payload || !\is_array($payload)) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], Response::HTTP_NOT_ACCEPTABLE);
         }
         if (isset($payload['repository']['url']) && \is_string($payload['repository']['url'])) { // supported for BC
             $url = $payload['repository']['url'];
         } elseif (isset($payload['repository']) && \is_string($payload['repository'])) {
             $url = $payload['repository'];
         } else {
-            return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in payload'], 406);
+            return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in payload'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         $user = $this->findUser($request);
         if (null === $user) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         $package = new Package();
@@ -147,7 +147,7 @@ class ApiController extends Controller
                 $errorArray[$error->getPropertyPath()] = $error->getMessage();
             }
 
-            return new JsonResponse(['status' => 'error', 'message' => $errorArray], 406);
+            return new JsonResponse(['status' => 'error', 'message' => $errorArray], Response::HTTP_NOT_ACCEPTABLE);
         }
         try {
             $em = $this->getEM();
@@ -162,10 +162,10 @@ class ApiController extends Controller
         } catch (\Exception $e) {
             $this->logger->critical('Unable to create package', ['exception' => $e]);
 
-            return new JsonResponse(['status' => 'error', 'message' => 'Error saving package'], 500);
+            return new JsonResponse(['status' => 'error', 'message' => 'Error saving package'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        return new JsonResponse(['status' => 'success'], 202);
+        return new JsonResponse(['status' => 'success'], Response::HTTP_ACCEPTED);
     }
 
     /**
@@ -185,7 +185,7 @@ class ApiController extends Controller
         if (null !== $event && !\in_array($event, self::GITHUB_HOOK_EVENTS, true)) {
             $statsd->increment('update_pkg_api.ignored', tags: ['reason' => 'github_event']);
 
-            return new JsonResponse(['status' => 'success', 'message' => 'Ignored '.$event.' event, only '.implode(', ', self::GITHUB_HOOK_EVENTS).' events trigger an update'], 200);
+            return new JsonResponse(['status' => 'success', 'message' => 'Ignored '.$event.' event, only '.implode(', ', self::GITHUB_HOOK_EVENTS).' events trigger an update'], Response::HTTP_OK);
         }
 
         // parse the payload
@@ -196,11 +196,11 @@ class ApiController extends Controller
 
         // an org-level ping carries no repository
         if ('ping' === $event && !isset($payload['repository']['url'])) {
-            return new JsonResponse(['status' => 'success', 'message' => 'Ignored ping event without a repository'], 200);
+            return new JsonResponse(['status' => 'success', 'message' => 'Ignored ping event without a repository'], Response::HTTP_OK);
         }
 
         if (!$payload || !\is_array($payload)) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         if (isset($payload['project']['git_http_url'])) { // gitlab event payload
@@ -224,7 +224,7 @@ class ApiController extends Controller
             $url = $payload['canon_url'].$payload['repository']['absolute_url'];
             $remoteId = null;
         } else {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid payload'], 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid payload'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         $statsd->increment('update_pkg_api');
@@ -239,10 +239,10 @@ class ApiController extends Controller
     {
         $user = $this->findUser($request);
         if (!$user) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
         if (!$package->getMaintainers()->contains($user)) {
-            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], 403);
+            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
         }
 
         $statsd->increment('edit_package_api');
@@ -253,7 +253,7 @@ class ApiController extends Controller
         }
 
         if (!isset($payload['repository']) || !\is_string($payload['repository'])) {
-            return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in request body'], 406);
+            return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in request body'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         $package->setRepository($payload['repository']);
@@ -265,7 +265,7 @@ class ApiController extends Controller
                 $errorArray[$error->getPropertyPath()] = $error->getMessage();
             }
 
-            return new JsonResponse(['status' => 'error', 'message' => $errorArray], 406);
+            return new JsonResponse(['status' => 'error', 'message' => $errorArray], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         $package->setCrawledAt(null);
@@ -274,7 +274,7 @@ class ApiController extends Controller
         $em->persist($package);
         $em->flush();
 
-        return new JsonResponse(['status' => 'success'], 200);
+        return new JsonResponse(['status' => 'success'], Response::HTTP_OK);
     }
 
     #[Route(path: '/jobs/{id}', name: 'get_job', requirements: ['id' => '[a-f0-9]+'], defaults: ['_format' => 'json'], methods: ['GET'])]
@@ -282,7 +282,7 @@ class ApiController extends Controller
     {
         $statsd->increment('get_job_api');
 
-        return new JsonResponse($this->scheduler->getJobStatus($id), 200);
+        return new JsonResponse($this->scheduler->getJobStatus($id), Response::HTTP_OK);
     }
 
     /**
@@ -306,7 +306,7 @@ class ApiController extends Controller
         };
 
         if (!\is_array($contents) || !isset($contents['downloads']) || !\is_array($contents['downloads']) || array_filter($contents['downloads'], $invalidInputs)) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Invalid request format, must be a json object containing a downloads key filled with an array of name/version objects'], 200);
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid request format, must be a json object containing a downloads key filled with an array of name/version objects'], Response::HTTP_OK);
         }
 
         $ip = $request->headers->get('X-'.$trustedIpHeader);
@@ -357,7 +357,7 @@ class ApiController extends Controller
                 $this->logger->warning('Missing UA for '.$request->getContent().' (from '.$request->getClientIp().')');
                 $statsd->increment('installs.missing-ua');
 
-                return new JsonResponse(['status' => 'success'], 201);
+                return new JsonResponse(['status' => 'success'], Response::HTTP_CREATED);
             }
 
             $uaParser = new UserAgentParser($request->headers->get('User-Agent'));
@@ -367,10 +367,10 @@ class ApiController extends Controller
         }
 
         if ($failed) {
-            return new JsonResponse(['status' => 'partial', 'message' => 'Packages '.json_encode($failed).' not found'], 200);
+            return new JsonResponse(['status' => 'partial', 'message' => 'Packages '.json_encode($failed).' not found'], Response::HTTP_OK);
         }
 
-        return new JsonResponse(['status' => 'success'], 201);
+        return new JsonResponse(['status' => 'success'], Response::HTTP_CREATED);
     }
 
     private function extractMinorVersion(string $version): string
@@ -399,21 +399,21 @@ class ApiController extends Controller
         $packageNames = array_filter((array) $packagesInput, static fn ($name) => \is_string($name) && $name !== '');
 
         if ((!$request->query->has('updatedSince') && $packagesInput === null) || (!$packageNames && $packagesInput !== null)) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], 400);
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing array of package names as the "packages" parameter'], Response::HTTP_BAD_REQUEST);
         }
 
         $updatedSince = $request->query->getInt('updatedSince', 0);
         if ($updatedSince > time() + 60) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Invalid updatedSince parameter: timestamp is in the future.'], 400);
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid updatedSince parameter: timestamp is in the future.'], Response::HTTP_BAD_REQUEST);
         }
         if ($updatedSince < 0) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Invalid updatedSince parameter: timestamp should not be negative.'], 400);
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid updatedSince parameter: timestamp should not be negative.'], Response::HTTP_BAD_REQUEST);
         }
         if ($updatedSince > 0 && \count($packageNames) > 0) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Pass only one of "updatedSince" OR "packages" parameters, they cannot be provided together.'], 400);
+            return new JsonResponse(['status' => 'error', 'message' => 'Pass only one of "updatedSince" OR "packages" parameters, they cannot be provided together.'], Response::HTTP_BAD_REQUEST);
         }
         if (!array_is_list($packageNames)) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Pass an array of package names as the "packages" parameter, e.g. packages[]=foo/bar&packages[]=baz/qux'], 400);
+            return new JsonResponse(['status' => 'error', 'message' => 'Pass an array of package names as the "packages" parameter, e.g. packages[]=foo/bar&packages[]=baz/qux'], Response::HTTP_BAD_REQUEST);
         }
 
         $statsd->increment('advisory_api');
@@ -442,7 +442,7 @@ class ApiController extends Controller
             $response['advisories'][$packageName] = array_values($packageAdvisories);
         }
 
-        return new JsonResponse($response, 200);
+        return new JsonResponse($response, Response::HTTP_OK);
     }
 
     /**
@@ -455,7 +455,7 @@ class ApiController extends Controller
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!Preg::isMatchStrictGroups($urlRegex, $url, $match)) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Could not parse payload repository URL'], 406);
+            return new JsonResponse(['status' => 'error', 'message' => 'Could not parse payload repository URL'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         if ($remoteId) {
@@ -485,7 +485,7 @@ class ApiController extends Controller
                 } else {
                     $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_user_sig']);
 
-                    return new JsonResponse(['status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.'], 403);
+                    return new JsonResponse(['status' => 'error', 'message' => 'Secret should be the Packagist API Token for the Packagist user "'.$username.'". Signature verification failed.'], Response::HTTP_FORBIDDEN);
                 }
             } else {
                 $user = null;
@@ -515,7 +515,7 @@ class ApiController extends Controller
                 } else {
                     $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_gh_sig']);
 
-                    return new JsonResponse(['status' => 'error', 'message' => 'Invalid github signature. Delete this webhook and recreate it using the manual account sync trigger from https://packagist.org/about#how-to-update-packages'], 403);
+                    return new JsonResponse(['status' => 'error', 'message' => 'Invalid github signature. Delete this webhook and recreate it using the manual account sync trigger from https://packagist.org/about#how-to-update-packages'], Response::HTTP_FORBIDDEN);
                 }
             }
         }
@@ -524,7 +524,7 @@ class ApiController extends Controller
             if (!$user) {
                 $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'no_user_found']);
 
-                return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], 403);
+                return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_FORBIDDEN);
             }
 
             // try to find the user package
@@ -537,7 +537,7 @@ class ApiController extends Controller
         if (!$packages) {
             $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'no_package_found']);
 
-            return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)'], 404);
+            return new JsonResponse(['status' => 'error', 'message' => 'Could not find a package that matches this request (does user maintain the package?)'], Response::HTTP_NOT_FOUND);
         }
 
         $jobs = [];
@@ -567,7 +567,7 @@ class ApiController extends Controller
             $response['message'] = 'Frozen packages are not updated: '.implode(', ', $skipped);
         }
 
-        return new JsonResponse($response, 202);
+        return new JsonResponse($response, Response::HTTP_ACCEPTED);
     }
 
     /**

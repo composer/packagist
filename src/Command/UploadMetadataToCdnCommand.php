@@ -15,6 +15,7 @@ namespace App\Command;
 use App\Model\ProviderManager;
 use App\Service\CdnClient;
 use Composer\Pcre\Preg;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,6 +24,7 @@ use Symfony\Component\Finder\Finder;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:upload-metadata-to-cdn', description: 'Uploads existing metadata to the CDN')]
 class UploadMetadataToCdnCommand extends Command
 {
     public function __construct(
@@ -31,15 +33,6 @@ class UploadMetadataToCdnCommand extends Command
         private readonly ProviderManager $providerManager,
     ) {
         parent::__construct();
-    }
-
-    protected function configure(): void
-    {
-        $this
-            ->setName('packagist:upload-metadata-to-cdn')
-            ->setDefinition([])
-            ->setDescription('Uploads existing metadata to the CDN')
-        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -70,7 +63,7 @@ class UploadMetadataToCdnCommand extends Command
 
         echo \PHP_EOL.'Done'.\PHP_EOL;
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     /**

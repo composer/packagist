@@ -20,6 +20,7 @@ use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
 use App\Tests\IntegrationTestCase;
 use Doctrine\Persistence\ManagerRegistry;
+use Graze\DogStatsD\Client;
 use Psr\Log\NullLogger;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -36,7 +37,7 @@ class TriageSpamQueueCommandTest extends IntegrationTestCase
             new SpamClassifier(new FeatureExtractor(), new NullLogger(), $modelFile),
             $container->get(Locker::class),
             new NullLogger(),
-            $container->get(\Graze\DogStatsD\Client::class),
+            $container->get(Client::class),
         );
 
         return new CommandTester($command);

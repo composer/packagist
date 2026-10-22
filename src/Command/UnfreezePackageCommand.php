@@ -14,15 +14,18 @@ namespace App\Command;
 
 use App\Entity\Package;
 use App\Model\PackageManager;
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'packagist:unfreeze', description: 'Unfreezes a package, marks it for update and clears frozen status')]
 class UnfreezePackageCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     public function __construct(
         private ManagerRegistry $doctrine,
@@ -34,11 +37,9 @@ class UnfreezePackageCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:unfreeze')
             ->setDefinition([
                 new InputArgument('package', InputArgument::REQUIRED, 'Package name to unfreeze'),
             ])
-            ->setDescription('Unfreezes a package, marks it for update and clears frozen status')
         ;
     }
 
@@ -50,13 +51,13 @@ class UnfreezePackageCommand extends Command
         if ($package === null) {
             $output->writeln('<error>Package '.$name.' not found</error>');
 
-            return 1;
+            return Command::FAILURE;
         }
 
         $this->packageManager->unfreeze($package, 'unfreeze cmd');
 
         $output->writeln('<info>Package '.$name.' has been unfrozen and marked for update</info>');
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

@@ -17,6 +17,7 @@ use App\Entity\Package;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\User;
+use App\Entity\UserFreezeReason;
 use App\Log\AuditLogEventType;
 use App\Support\Attributes\LostTwoFactorAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
@@ -204,7 +205,7 @@ class SupportControllerTest extends IntegrationTestCase
     {
         [$admin, $request, $requester] = $this->givenTwoFactorRequest();
 
-        $requester->freeze(\App\Entity\UserFreezeReason::BadActor);
+        $requester->freeze(UserFreezeReason::BadActor);
         self::getEM()->flush();
 
         $this->client->loginUser($admin);

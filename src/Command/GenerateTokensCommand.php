@@ -15,6 +15,7 @@ namespace App\Command;
 use App\Entity\User;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -22,6 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:tokens:generate', description: 'Generates all missing user tokens')]
 class GenerateTokensCommand extends Command
 {
     use DoctrineTrait;
@@ -32,14 +34,6 @@ class GenerateTokensCommand extends Command
     {
         $this->doctrine = $doctrine;
         parent::__construct();
-    }
-
-    protected function configure(): void
-    {
-        $this
-            ->setName('packagist:tokens:generate')
-            ->setDescription('Generates all missing user tokens')
-        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -62,6 +56,6 @@ class GenerateTokensCommand extends Command
             $this->doctrine->getManager()->clear();
         } while (\count($users) > 0);
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

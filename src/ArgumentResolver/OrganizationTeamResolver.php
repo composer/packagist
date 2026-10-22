@@ -47,7 +47,7 @@ final readonly class OrganizationTeamResolver implements ValueResolverInterface
         }
 
         $teamId = $request->attributes->getString($argument->getName());
-        if (!Ulid::isValid($teamId)) {
+        if (!Ulid::isValid($teamId, Ulid::FORMAT_BASE_32)) {
             throw new NotFoundHttpException('Team not found.');
         }
 

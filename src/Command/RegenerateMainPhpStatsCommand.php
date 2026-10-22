@@ -19,11 +19,13 @@ use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Seld\Signal\SignalHandler;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'packagist:regenerate-main-php-stats', description: 'Regenerates main php stats for a given data point')]
 class RegenerateMainPhpStatsCommand extends Command
 {
     use DoctrineTrait;
@@ -39,8 +41,6 @@ class RegenerateMainPhpStatsCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:regenerate-main-php-stats')
-            ->setDescription('Regenerates main php stats for a given data point')
             ->addArgument('date', InputArgument::REQUIRED, 'Data point date YYYYMMDD format')
         ;
     }
@@ -54,7 +54,7 @@ class RegenerateMainPhpStatsCommand extends Command
                 $output->writeln('Aborting, another task is running already');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         $signal = SignalHandler::create(null, $this->logger);
@@ -95,6 +95,6 @@ class RegenerateMainPhpStatsCommand extends Command
             $this->locker->unlockCommand(__CLASS__);
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

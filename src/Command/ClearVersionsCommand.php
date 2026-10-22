@@ -14,7 +14,9 @@ namespace App\Command;
 
 use App\Entity\Package;
 use App\Entity\Version;
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -24,9 +26,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:clear:versions', description: 'Clears all versions from the databases')]
 class ClearVersionsCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     private ManagerRegistry $doctrine;
 
@@ -39,13 +42,11 @@ class ClearVersionsCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:clear:versions')
             ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force execution, by default it runs in dry-run mode'),
                 new InputOption('ids', null, InputOption::VALUE_REQUIRED, 'Version ids (comma separated) to delete'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package id to clear versions for'),
             ])
-            ->setDescription('Clears all versions from the databases')
         ;
     }
 
@@ -131,6 +132,6 @@ class ClearVersionsCommand extends Command
             $em->flush();
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

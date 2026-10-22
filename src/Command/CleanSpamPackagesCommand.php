@@ -18,7 +18,9 @@ use App\Entity\Version;
 use App\Entity\VersionRepository;
 use App\Model\ProviderManager;
 use App\Service\Scheduler;
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -26,9 +28,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:clean-spam-packages', description: 'Cleans up versions/metadata files from spam packages')]
 class CleanSpamPackagesCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     public function __construct(
         private ManagerRegistry $doctrine,
@@ -36,14 +39,6 @@ class CleanSpamPackagesCommand extends Command
         private Scheduler $scheduler,
     ) {
         parent::__construct();
-    }
-
-    protected function configure(): void
-    {
-        $this
-            ->setName('packagist:clean-spam-packages')
-            ->setDescription('Cleans up versions/metadata files from spam packages')
-        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -75,6 +70,6 @@ class CleanSpamPackagesCommand extends Command
 
         $em->flush();
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

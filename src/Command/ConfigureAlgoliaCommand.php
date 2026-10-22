@@ -41,6 +41,6 @@ class ConfigureAlgoliaCommand extends Command
 
         $this->packageIndex->updateSettings($settings);
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

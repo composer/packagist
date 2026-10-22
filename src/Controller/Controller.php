@@ -15,21 +15,25 @@ namespace App\Controller;
 use App\Entity\Package;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Predis\PredisException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Contracts\Service\Attribute\Required;
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
 abstract class Controller extends AbstractController
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     protected ManagerRegistry $doctrine;
 
-    #[\Symfony\Contracts\Service\Attribute\Required]
+    #[Required]
     public function setDeps(ManagerRegistry $doctrine): void
     {
         $this->doctrine = $doctrine;
@@ -67,7 +71,7 @@ abstract class Controller extends AbstractController
             if ($search) {
                 $favorites = $favMgr->getFaverCounts($ids);
             }
-        } catch (\Predis\PredisException $e) {
+        } catch (PredisException $e) {
         }
 
         return ['downloads' => $downloads, 'favers' => $favorites];
@@ -76,15 +80,15 @@ abstract class Controller extends AbstractController
     protected function blockAbusers(Request $req): ?JsonResponse
     {
         if (str_contains((string) $req->headers->get('User-Agent'), 'Bytespider; spider-feedback@bytedance.com')) {
-            return new JsonResponse('Please respect noindex/nofollow meta tags, and email contact@packagist.org to get unblocked once this is resolved', 429, ['Retry-After' => 31536000]);
+            return new JsonResponse('Please respect noindex/nofollow meta tags, and email contact@packagist.org to get unblocked once this is resolved', Response::HTTP_TOO_MANY_REQUESTS, ['Retry-After' => 31536000]);
         }
 
         if (str_contains((string) $req->headers->get('User-Agent'), 'laravel-toolbox.com API client')) {
-            return new JsonResponse('Please stop crawling dependants data every 20minutes for no reason. Email contact@packagist.org to explain and get unblocked', 429, ['Retry-After' => 31536000]);
+            return new JsonResponse('Please stop crawling dependants data every 20minutes for no reason. Email contact@packagist.org to explain and get unblocked', Response::HTTP_TOO_MANY_REQUESTS, ['Retry-After' => 31536000]);
         }
 
         if ($req->getClientIp() === '18.190.1.42') {
-            return new JsonResponse('Please use the updatedSince flag to fetch new security advisories, and email contact@packagist.org to get unblocked once this is resolved', 429, ['Retry-After' => 31536000]);
+            return new JsonResponse('Please use the updatedSince flag to fetch new security advisories, and email contact@packagist.org to get unblocked once this is resolved', Response::HTTP_TOO_MANY_REQUESTS, ['Retry-After' => 31536000]);
         }
 
         $abusers = [
@@ -102,7 +106,7 @@ abstract class Controller extends AbstractController
             '82.180.155.159',
         ];
         if (\in_array($req->getClientIp(), $abusers, true)) {
-            return new JsonResponse('Please use a proper user-agent with contact information or get in touch before abusing the API', 429, ['Retry-After' => 31536000]);
+            return new JsonResponse('Please use a proper user-agent with contact information or get in touch before abusing the API', Response::HTTP_TOO_MANY_REQUESTS, ['Retry-After' => 31536000]);
         }
 
         return null;

@@ -12,6 +12,7 @@
 
 namespace App\Tests\Controller\Admin;
 
+use App\Entity\User;
 use App\Entity\UserFreezeReason;
 use App\Tests\IntegrationTestCase;
 
@@ -191,8 +192,8 @@ class UserControllerTest extends IntegrationTestCase
         $mod = self::createUser('mod5', 'mod5@example.org', roles: ['ROLE_DISABLE_USERS']);
         $old = self::createUser('oldreg', 'oldreg@example.org');
         $recent = self::createUser('recentreg', 'recentreg@example.org');
-        new \ReflectionProperty(\App\Entity\User::class, 'createdAt')->setValue($old, new \DateTimeImmutable('2020-01-01 12:00:00'));
-        new \ReflectionProperty(\App\Entity\User::class, 'createdAt')->setValue($recent, new \DateTimeImmutable('2026-06-15 12:00:00'));
+        new \ReflectionProperty(User::class, 'createdAt')->setValue($old, new \DateTimeImmutable('2020-01-01 12:00:00'));
+        new \ReflectionProperty(User::class, 'createdAt')->setValue($recent, new \DateTimeImmutable('2026-06-15 12:00:00'));
         $this->store($mod, $old, $recent);
 
         $this->client->loginUser($mod);

@@ -85,6 +85,7 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Requirement\EnumRequirement;
+use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
@@ -273,7 +274,7 @@ class PackageController extends Controller
 
         $since = $req->query->getInt('since');
         if (!$since || $since < 15850612240000) {
-            return new JsonResponse(['error' => 'Invalid or missing "since" query parameter, make sure you store the timestamp at the initial point you started mirroring, then send that to begin receiving changes, e.g. '.$this->generateUrl('metadata_changes', ['since' => $now], UrlGeneratorInterface::ABSOLUTE_URL).' for example.', 'timestamp' => $now], 400);
+            return new JsonResponse(['error' => 'Invalid or missing "since" query parameter, make sure you store the timestamp at the initial point you started mirroring, then send that to begin receiving changes, e.g. '.$this->generateUrl('metadata_changes', ['since' => $now], UrlGeneratorInterface::ABSOLUTE_URL).' for example.', 'timestamp' => $now], Response::HTTP_BAD_REQUEST);
         }
         if ($since < $oldestSyncPoint) {
             return new JsonResponse(['actions' => [['type' => 'resync', 'time' => floor($now / 10000), 'package' => '*']], 'timestamp' => $now]);
@@ -444,10 +445,10 @@ class PackageController extends Controller
             throw new NotFoundHttpException('Package not found');
         }
         if (!str_contains(trim($name, '/'), '/')) {
-            return $this->redirect($this->generateUrl('view_vendor', ['vendor' => $name, '_format' => $format]));
+            return $this->redirectToRoute('view_vendor', ['vendor' => $name, '_format' => $format]);
         }
 
-        return $this->redirect($this->generateUrl('view_package', ['name' => trim($name, '/'), '_format' => $format]));
+        return $this->redirectToRoute('view_package', ['name' => trim($name, '/'), '_format' => $format]);
     }
 
     #[Route(path: '/providers/{name}.{_format}', name: 'view_providers', requirements: ['name' => '[A-Za-z0-9/_.-]+?', '_format' => '(json)'], defaults: ['_format' => 'html'], methods: ['GET'])]
@@ -464,7 +465,7 @@ class PackageController extends Controller
                 return $response;
             }
 
-            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
+            return $this->redirectToRoute('search_web', ['q' => $name, 'reason' => 'package_not_found']);
         }
 
         if ($req->getRequestFormat() !== 'json') {
@@ -898,14 +899,14 @@ class PackageController extends Controller
             }
         }
 
-        $response = new JsonResponse(['package' => $data], 200);
+        $response = new JsonResponse(['package' => $data], Response::HTTP_OK);
         $response->setSharedMaxAge(3600);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
         return $response;
     }
 
-    #[Route(path: '/versions/{versionId}.{_format}', name: 'view_version', requirements: ['versionId' => '[0-9]+', '_format' => '(json)'], methods: ['GET'])]
+    #[Route(path: '/versions/{versionId}.{_format}', name: 'view_version', requirements: ['versionId' => Requirement::DIGITS, '_format' => '(json)'], methods: ['GET'])]
     public function viewPackageVersionAction(Request $req, int $versionId): JsonResponse
     {
         if ($req->getSession()->isStarted()) {
@@ -917,11 +918,11 @@ class PackageController extends Controller
         try {
             $version = $repo->getFullVersion($versionId);
         } catch (NoResultException) {
-            return new JsonResponse(['status' => 'error', 'message' => 'The version could not be found, it may have been deleted in the meantime? Try reloading the page.'], 404);
+            return new JsonResponse(['status' => 'error', 'message' => 'The version could not be found, it may have been deleted in the meantime? Try reloading the page.'], Response::HTTP_NOT_FOUND);
         }
 
         if ($version->getDeletionReason() === VersionDeletionReason::Hidden && !$this->isGranted(PackageActions::ViewHiddenVersion->value, $version->getPackage())) {
-            return new JsonResponse(['status' => 'error', 'message' => 'The version could not be found, it may have been deleted in the meantime? Try reloading the page.'], 404);
+            return new JsonResponse(['status' => 'error', 'message' => 'The version could not be found, it may have been deleted in the meantime? Try reloading the page.'], Response::HTTP_NOT_FOUND);
         }
 
         $resp = new JsonResponse([
@@ -940,7 +941,7 @@ class PackageController extends Controller
         return $resp;
     }
 
-    #[Route(path: '/versions/{versionId}', name: 'delete_version', requirements: ['versionId' => '[0-9]+'], methods: ['DELETE'])]
+    #[Route(path: '/versions/{versionId}', name: 'delete_version', requirements: ['versionId' => Requirement::DIGITS], methods: ['DELETE'])]
     public function deletePackageVersionAction(Request $req, int $versionId, #[CurrentUser] User $user): Response
     {
         $repo = $this->getEM()->getRepository(Version::class);
@@ -948,7 +949,7 @@ class PackageController extends Controller
         try {
             $version = $repo->getFullVersion($versionId);
         } catch (NoResultException) {
-            return new Response('Version '.$versionId.' not found', 404);
+            return new Response('Version '.$versionId.' not found', Response::HTTP_NOT_FOUND);
         }
         $package = $version->getPackage();
 
@@ -983,14 +984,14 @@ class PackageController extends Controller
         return new JsonResponse(['softDeleted' => $softDeleted, 'deletionTitle' => $deletionTitle]);
     }
 
-    #[Route(path: '/versions/{versionId}/admin-delete', name: 'admin_delete_version', requirements: ['versionId' => '[0-9]+'], methods: ['POST'])]
+    #[Route(path: '/versions/{versionId}/admin-delete', name: 'admin_delete_version', requirements: ['versionId' => Requirement::DIGITS], methods: ['POST'])]
     public function adminSoftDeleteVersionAction(Request $req, int $versionId, #[CurrentUser] User $user): Response
     {
         $repo = $this->getEM()->getRepository(Version::class);
         try {
             $version = $repo->getFullVersion($versionId);
         } catch (NoResultException) {
-            return new Response('Version '.$versionId.' not found', 404);
+            return new Response('Version '.$versionId.' not found', Response::HTTP_NOT_FOUND);
         }
 
         $this->denyAccessUnlessGranted(PackageActions::AdminDeleteVersion->value, $version->getPackage(), 'No permission to admin-delete versions');
@@ -1012,14 +1013,14 @@ class PackageController extends Controller
         return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle]);
     }
 
-    #[Route(path: '/versions/{versionId}/admin-hide', name: 'admin_hide_version', requirements: ['versionId' => '[0-9]+'], methods: ['POST'])]
+    #[Route(path: '/versions/{versionId}/admin-hide', name: 'admin_hide_version', requirements: ['versionId' => Requirement::DIGITS], methods: ['POST'])]
     public function adminHideVersionAction(Request $req, int $versionId, #[CurrentUser] User $user): Response
     {
         $repo = $this->getEM()->getRepository(Version::class);
         try {
             $version = $repo->getFullVersion($versionId);
         } catch (NoResultException) {
-            return new Response('Version '.$versionId.' not found', 404);
+            return new Response('Version '.$versionId.' not found', Response::HTTP_NOT_FOUND);
         }
 
         $this->denyAccessUnlessGranted(PackageActions::HideVersion->value, $version->getPackage(), 'No permission to hide versions');
@@ -1048,14 +1049,14 @@ class PackageController extends Controller
         return new JsonResponse(['softDeleted' => true, 'deletionTitle' => $deletionTitle, 'deletionIcon' => 'bi-eye-slash-fill']);
     }
 
-    #[Route(path: '/versions/{versionId}/recover', name: 'recover_version', requirements: ['versionId' => '[0-9]+'], methods: ['POST'])]
+    #[Route(path: '/versions/{versionId}/recover', name: 'recover_version', requirements: ['versionId' => Requirement::DIGITS], methods: ['POST'])]
     public function recoverPackageVersionAction(Request $req, int $versionId, #[CurrentUser] User $user): Response
     {
         $repo = $this->getEM()->getRepository(Version::class);
         try {
             $version = $repo->getFullVersion($versionId);
         } catch (NoResultException) {
-            return new Response('Version '.$versionId.' not found', 404);
+            return new Response('Version '.$versionId.' not found', Response::HTTP_NOT_FOUND);
         }
         $package = $version->getPackage();
 
@@ -1075,7 +1076,7 @@ class PackageController extends Controller
         $repo->recover($version, $user);
         $this->getEM()->flush();
 
-        return new Response('', 204);
+        return new Response('', Response::HTTP_NO_CONTENT);
     }
 
     #[Route(path: '/packages/{name}', name: 'update_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'json'], methods: ['PUT'])]
@@ -1086,7 +1087,7 @@ class PackageController extends Controller
                 ->getRepository(Package::class)
                 ->getPackageByName($name);
         } catch (NoResultException) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
+            return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], Response::HTTP_NOT_FOUND);
         }
 
         if ($package->isFrozen() && $package->getFreezeReason()?->suppressesPackage()) {
@@ -1101,7 +1102,7 @@ class PackageController extends Controller
         // check that a user is logged in to trigger an update on a package they don't own at least to avoid abuse
         $user = $this->getUser();
         if (!$user instanceof User) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], 403);
+            return new JsonResponse(['status' => 'error', 'message' => 'Invalid credentials'], Response::HTTP_FORBIDDEN);
         }
 
         $canUpdatePackage = $this->isGranted(PackageActions::Update->value, $package);
@@ -1121,13 +1122,13 @@ class PackageController extends Controller
             if ($update) {
                 $job = $this->scheduler->scheduleUpdate($package, 'button/api', $updateSourceDistUrl, false, null, $manualUpdate);
 
-                return new JsonResponse(['status' => 'success', 'job' => $job->getId()], 202);
+                return new JsonResponse(['status' => 'success', 'job' => $job->getId()], Response::HTTP_ACCEPTED);
             }
 
-            return new JsonResponse(['status' => 'success'], 202);
+            return new JsonResponse(['status' => 'success'], Response::HTTP_ACCEPTED);
         }
 
-        return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours'], 404);
+        return new JsonResponse(['status' => 'error', 'message' => 'Package was already updated in the last 24 hours'], Response::HTTP_NOT_FOUND);
     }
 
     #[Route(path: '/packages/{name}', name: 'delete_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX], methods: ['DELETE'])]
@@ -1156,10 +1157,10 @@ class PackageController extends Controller
 
             $this->packageManager->deletePackage($package, $reason, $internalReason);
 
-            return new Response('', 204);
+            return new Response('', Response::HTTP_NO_CONTENT);
         }
 
-        return new Response('Invalid form input', 400);
+        return new Response('Invalid form input', Response::HTTP_BAD_REQUEST);
     }
 
     #[Route(path: '/packages/{name:package}/maintainers/', name: 'add_maintainer', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
@@ -1331,7 +1332,7 @@ class PackageController extends Controller
             $em = $this->getEM();
             $em->flush();
 
-            return $this->redirect($this->generateUrl('view_package', ['name' => $package->getName()]));
+            return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
         }
 
         return $this->render('package/abandon.html.twig', [
@@ -1485,7 +1486,7 @@ class PackageController extends Controller
         return $this->render('package/php_stats.html.twig', $data);
     }
 
-    #[Route(path: '/packages/{name}/php-stats/{type}/{version}.json', name: 'version_php_stats', requirements: ['name' => Package::PACKAGE_NAME_REGEX, 'type' => 'platform|effective', 'version' => '.+'])]
+    #[Route(path: '/packages/{name}/php-stats/{type}/{version}.json', name: 'version_php_stats', requirements: ['name' => Package::PACKAGE_NAME_REGEX, 'type' => 'platform|effective', 'version' => Requirement::CATCH_ALL])]
     public function versionPhpStatsAction(Request $req, string $name, string $type, string $version): JsonResponse
     {
         if (!Killswitch::isEnabled(Killswitch::DOWNLOADS_ENABLED)) {
@@ -1497,7 +1498,7 @@ class PackageController extends Controller
                 ->getRepository(Package::class)
                 ->getPackageByName($name);
         } catch (NoResultException $e) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
+            return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], Response::HTTP_NOT_FOUND);
         }
 
         if ($from = $req->query->get('from')) {
@@ -2219,14 +2220,14 @@ class PackageController extends Controller
             return $repo->getPackageByName($name);
         } catch (NoResultException) {
             if ('json' === $req->getRequestFormat()) {
-                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], 404);
+                return new JsonResponse(['status' => 'error', 'message' => 'Package not found'], Response::HTTP_NOT_FOUND);
             }
 
             if ($repo->findProviders($name)) {
-                return $this->redirect($this->generateUrl('view_providers', ['name' => $name]));
+                return $this->redirectToRoute('view_providers', ['name' => $name]);
             }
 
-            return $this->redirect($this->generateUrl('search_web', ['q' => $name, 'reason' => 'package_not_found']));
+            return $this->redirectToRoute('search_web', ['q' => $name, 'reason' => 'package_not_found']);
         }
     }
 

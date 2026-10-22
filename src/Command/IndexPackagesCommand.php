@@ -12,16 +12,19 @@
 
 namespace App\Command;
 
+use Algolia\AlgoliaSearch\Exceptions\AlgoliaException;
 use App\Entity\Package;
 use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Search\PackageIndex;
 use App\Service\Locker;
+use App\Util\DoctrineTrait;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -31,9 +34,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @phpstan-import-type PackageRecord from PackageIndex
  */
+#[AsCommand(name: 'packagist:index', description: 'Indexes packages in Algolia')]
 class IndexPackagesCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     /**
      * How far back the incremental run looks for freshly crawled packages. Four times the 15min
@@ -58,12 +62,10 @@ class IndexPackagesCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:index')
             ->setDefinition([
                 new InputOption('all', null, InputOption::VALUE_NONE, 'Index all packages without clearing the index first'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to index'),
             ])
-            ->setDescription('Indexes packages in Algolia')
         ;
     }
 
@@ -79,7 +81,7 @@ class IndexPackagesCommand extends Command
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         $lockAcquired = $this->locker->lockCommand(__CLASS__);
@@ -88,7 +90,7 @@ class IndexPackagesCommand extends Command
                 $output->writeln('Aborting, another task is running already');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         if ($package) {
@@ -96,7 +98,7 @@ class IndexPackagesCommand extends Command
             if ($packageEntity === null) {
                 $output->writeln('<error>Package '.$package.' not found</error>');
 
-                return 1;
+                return Command::FAILURE;
             }
             $packages = [['id' => $packageEntity->getId()]];
         } elseif ($indexAll) {
@@ -138,7 +140,7 @@ class IndexPackagesCommand extends Command
                         $this->packageIndex->deleteRecord($package->getName());
                         $idsToUpdate[] = $package->getId();
                         continue;
-                    } catch (\Algolia\AlgoliaSearch\Exceptions\AlgoliaException|\InvalidArgumentException $e) {
+                    } catch (AlgoliaException|\InvalidArgumentException $e) {
                     }
                 }
 
@@ -179,7 +181,7 @@ class IndexPackagesCommand extends Command
             $this->statsd->increment('nightly_job.end', 1, 1, ['job' => 'index-packages']);
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     /**

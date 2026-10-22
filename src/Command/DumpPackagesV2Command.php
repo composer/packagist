@@ -19,11 +19,13 @@ use App\Package\V2DumpOutcome;
 use App\Package\V2DumpResult;
 use App\Package\V2DumpWindow;
 use App\Service\Locker;
+use App\Util\DoctrineTrait;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
 use Seld\Signal\SignalHandler;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -32,9 +34,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:dump-v2', description: 'Dumps the packages into the p2 directory')]
 class DumpPackagesV2Command extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     public function __construct(
         private V2Dumper $dumper,
@@ -51,14 +54,12 @@ class DumpPackagesV2Command extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:dump-v2')
             ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a dump of all packages'),
                 new InputOption('gc', null, InputOption::VALUE_NONE, 'Runs garbage collection of old files'),
                 new InputOption('worker-id', null, InputOption::VALUE_REQUIRED, 'Worker ID for parallel operation (0-based)', 0),
                 new InputOption('num-workers', null, InputOption::VALUE_REQUIRED, 'Total number of parallel workers', 1),
             ])
-            ->setDescription('Dumps the packages into the p2 directory')
         ;
     }
 
@@ -73,12 +74,12 @@ class DumpPackagesV2Command extends Command
         if ($numWorkers < 1) {
             $output->writeln('<error>--num-workers must be >= 1</error>');
 
-            return 1;
+            return Command::FAILURE;
         }
         if ($workerId < 0 || $workerId >= $numWorkers) {
             $output->writeln('<error>--worker-id must be >= 0 and < --num-workers</error>');
 
-            return 1;
+            return Command::FAILURE;
         }
 
         $deployLock = $this->cacheDir.'/deploy.globallock';
@@ -87,7 +88,7 @@ class DumpPackagesV2Command extends Command
                 $output->writeln('Aborting, '.$deployLock.' file present');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         // another dumper is still active
@@ -96,7 +97,7 @@ class DumpPackagesV2Command extends Command
             if ($workerId > 0) {
                 $output->writeln('<error>--gc can only be run from worker 0</error>');
 
-                return 1;
+                return Command::FAILURE;
             }
             $lockName = ($this->getName() ?? __CLASS__).'-gc';
         }
@@ -105,7 +106,7 @@ class DumpPackagesV2Command extends Command
                 $output->writeln('Aborting, another task is running already');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         if ($gc) {
@@ -115,7 +116,7 @@ class DumpPackagesV2Command extends Command
                 $this->locker->unlockCommand($lockName);
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         $signal = $force ? null : SignalHandler::create(null, $this->logger);
@@ -193,6 +194,6 @@ class DumpPackagesV2Command extends Command
             $this->locker->unlockCommand($lockName);
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

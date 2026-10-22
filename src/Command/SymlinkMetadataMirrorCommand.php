@@ -12,6 +12,7 @@
 
 namespace App\Command;
 
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -19,6 +20,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:symlink-metadata', description: 'Symlinks metadata dir to the mirrored metadata, if needed')]
 class SymlinkMetadataMirrorCommand extends Command
 {
     public function __construct(
@@ -30,19 +32,10 @@ class SymlinkMetadataMirrorCommand extends Command
         parent::__construct();
     }
 
-    protected function configure(): void
-    {
-        $this
-            ->setName('packagist:symlink-metadata')
-            ->setDefinition([])
-            ->setDescription('Symlinks metadata dir to the mirrored metadata, if needed')
-        ;
-    }
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if (empty($this->awsMetadata) || !$this->awsMetadata['is_web'] || $this->awsMetadata['primary']) {
-            return 0;
+            return Command::SUCCESS;
         }
 
         $verbose = (bool) $input->getOption('verbose');
@@ -75,6 +68,6 @@ class SymlinkMetadataMirrorCommand extends Command
             }
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

@@ -43,7 +43,7 @@ class InternalControllerTest extends IntegrationTestCase
 
         $this->post($path, $contents, $filemtime, $this->sign($path, $contents, $filemtime));
 
-        self::assertSame(202, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        self::assertSame(202, $this->client->getResponse()->getStatusCode(), (string) $this->client->getResponse()->getContent());
         self::assertFileExists($target);
         @unlink($target);
     }

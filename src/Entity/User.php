@@ -397,11 +397,6 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         $this->frozen = $frozen !== null ? UserFreezeReason::from($frozen) : null;
     }
 
-    #[\Deprecated]
-    public function eraseCredentials(): void
-    {
-    }
-
     public function getId(): int
     {
         return $this->id;

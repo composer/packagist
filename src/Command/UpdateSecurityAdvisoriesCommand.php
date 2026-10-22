@@ -16,11 +16,13 @@ use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\Locker;
 use App\Service\Scheduler;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'packagist:security-advisories', description: 'Updates all security advisory for a single source')]
 class UpdateSecurityAdvisoriesCommand extends Command
 {
     public function __construct(
@@ -33,11 +35,9 @@ class UpdateSecurityAdvisoriesCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:security-advisories')
             ->setDefinition([
                 new InputArgument('source', InputArgument::REQUIRED, 'The name of the source'),
             ])
-            ->setDescription('Updates all security advisory for a single source')
         ;
     }
 
@@ -53,7 +53,7 @@ class UpdateSecurityAdvisoriesCommand extends Command
 
         $lockAcquired = $this->locker->lockSecurityAdvisory($source);
         if (!$lockAcquired) {
-            return 0;
+            return Command::SUCCESS;
         }
 
         $this->scheduler->scheduleSecurityAdvisory($source, 0);
@@ -61,6 +61,6 @@ class UpdateSecurityAdvisoriesCommand extends Command
 
         $this->locker->unlockSecurityAdvisory($source);
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

@@ -12,29 +12,22 @@
 
 namespace App\Command;
 
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'packagist:migrate-db', description: 'Migrate DB data types from array to json type, run this command once to migrate old data')]
 class MigrateDataTypesCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     public function __construct(
         private readonly ManagerRegistry $doctrine,
     ) {
         parent::__construct();
-    }
-
-    protected function configure(): void
-    {
-        $this
-            ->setName('packagist:migrate-db')
-            ->setDescription('Migrate DB data types from array to json type, run this command once to migrate old data')
-            ->setDefinition([
-            ])
-        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -97,6 +90,6 @@ class MigrateDataTypesCommand extends Command
             $em->getConnection()->commit();
         } while (\count($users) > 0);
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

@@ -12,7 +12,9 @@
 
 namespace App\Redis;
 
-class DownloadsIncr extends \Predis\Command\ScriptCommand
+use Predis\Command\ScriptCommand;
+
+class DownloadsIncr extends ScriptCommand
 {
     /** Five aggregate stats keys, then the single per-IP throttle key. */
     private const INIT_KEYS = 6;

@@ -16,6 +16,8 @@ use App\Entity\Organization as OrganizationReadModel;
 use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Organization\Domain\Exception\TeamNameTakenException;
+use App\Organization\Domain\Exception\TeamNotFoundException;
+use App\Organization\Domain\Exception\TeamProtectedException;
 use App\Organization\Domain\Organization;
 use App\Organization\Domain\TeamName;
 use App\Organization\EventStore\Actor;
@@ -50,8 +52,8 @@ final class OrganizationMembershipManager
     }
 
     /**
-     * @throws Domain\Exception\TeamNotFoundException
-     * @throws Domain\Exception\TeamProtectedException
+     * @throws TeamNotFoundException
+     * @throws TeamProtectedException
      * @throws TeamNameTakenException
      */
     public function renameTeam(OrganizationReadModel $organization, User $actor, Ulid $teamId, string $name, ?string $ip): void

@@ -35,7 +35,7 @@ class UserCheckerTest extends TestCase
         $user->freeze(UserFreezeReason::Spam);
 
         $this->expectException(CustomUserMessageAccountStatusException::class);
-        $this->expectExceptionMessage('Your account has been disabled.');
+        $this->expectExceptionMessageIsOrContains('Your account has been disabled.');
 
         new UserChecker()->checkPreAuth($user);
     }
@@ -45,7 +45,7 @@ class UserCheckerTest extends TestCase
         $user = self::createUser(enabled: false);
 
         $this->expectException(CustomUserMessageAccountStatusException::class);
-        $this->expectExceptionMessage('not yet enabled');
+        $this->expectExceptionMessageIsOrContains('not yet enabled');
 
         new UserChecker()->checkPreAuth($user);
     }

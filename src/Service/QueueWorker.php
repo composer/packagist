@@ -14,6 +14,7 @@ namespace App\Service;
 
 use App\Entity\Job;
 use App\Logger\LogIdProcessor;
+use App\Util\DoctrineTrait;
 use Composer\Util\Http\ResponseWarnings;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
@@ -24,7 +25,7 @@ use Webmozart\Assert\Assert;
 
 class QueueWorker
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     private int $processedJobs = 0;
 

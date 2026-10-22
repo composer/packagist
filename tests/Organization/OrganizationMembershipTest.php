@@ -19,6 +19,7 @@ use App\Entity\User;
 use App\Organization\Domain\Exception\LastOwnerProtectedException;
 use App\Organization\Domain\Exception\TeamNameTakenException;
 use App\Organization\Domain\Exception\TeamProtectedException;
+use App\Organization\Domain\Organization;
 use App\Organization\Domain\OrganizationTeamKind;
 use App\Organization\OrganizationManager;
 use App\Organization\OrganizationMembershipManager;
@@ -112,7 +113,7 @@ class OrganizationMembershipTest extends IntegrationTestCase
         $this->membership()->leave($this->readModel('acme'), $owner, null);
     }
 
-    private function createOrg(User $owner, string $slug): \App\Organization\Domain\Organization
+    private function createOrg(User $owner, string $slug): Organization
     {
         return static::getService(OrganizationManager::class)->create($owner, $owner, $slug, 'ACME Corp', null);
     }

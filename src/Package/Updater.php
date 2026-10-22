@@ -35,9 +35,11 @@ use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Service\VersionCache;
+use App\Util\DoctrineTrait;
 use App\Util\HttpDownloaderOptionsFactory;
 use cebe\markdown\GithubMarkdown;
 use Composer\Config;
+use Composer\Downloader\TransportException;
 use Composer\IO\ConsoleIO;
 use Composer\IO\IOInterface;
 use Composer\Package\AliasPackage;
@@ -51,6 +53,7 @@ use Composer\Repository\VcsRepository;
 use Composer\Util\ErrorHandler;
 use Composer\Util\HttpDownloader;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
@@ -95,7 +98,7 @@ final readonly class VersionSkippedResult
  */
 class Updater
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     /**
      * Propagate a source/dist URL change across every version of a package.
@@ -523,7 +526,7 @@ class Updater
      *
      * @param array{id: int, version: string, normalizedVersion: string, development: int, source: array{type: string|null, url: string|null, reference: string|null}|null, dist: array{type: string|null, url: string|null, reference: string|null, shasum: string|null}|null, softDeletedAt: string|null, deletionReason: string|null, lastBlockedReference: string|null, defaultBranch: int} $existingVersion
      */
-    private function applyStableImmutabilityGate(IOInterface $io, \Doctrine\ORM\EntityManagerInterface $em, VersionRepository $versionRepo, Package $package, array $existingVersion, CompletePackageInterface $data, int $flags, VcsDriverInterface $driver, ?string $newEffectiveRef): VersionSkippedResult|VersionUpdatedResult
+    private function applyStableImmutabilityGate(IOInterface $io, EntityManagerInterface $em, VersionRepository $versionRepo, Package $package, array $existingVersion, CompletePackageInterface $data, int $flags, VcsDriverInterface $driver, ?string $newEffectiveRef): VersionSkippedResult|VersionUpdatedResult
     {
         $normVersion = $data->getVersion();
         $prettyVersion = $data->getPrettyVersion();
@@ -1131,7 +1134,7 @@ class Updater
             $opts = ['http' => ['header' => ['Accept: application/vnd.github.html+json', 'X-GitHub-Api-Version: 2022-11-28']]];
             $readme = $httpDownloader->get($baseApiUrl.'/readme', $opts)->getBody();
         } catch (\Exception $e) {
-            if (!$e instanceof \Composer\Downloader\TransportException || $e->getCode() !== 404) {
+            if (!$e instanceof TransportException || $e->getCode() !== 404) {
                 return;
             }
             // 404s just mean no readme present so we proceed with the rest

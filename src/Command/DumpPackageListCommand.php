@@ -16,11 +16,13 @@ use App\Entity\PackageRepository;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
 use App\Service\Locker;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'packagist:dump-package-list', description: 'Dumps the gzipped /packages/list.json body into Redis')]
 class DumpPackageListCommand extends Command
 {
     public function __construct(
@@ -35,13 +37,11 @@ class DumpPackageListCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:dump-package-list')
             ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Rebuild even if no package was added or removed since the last run'),
                 new InputOption('rebuild-set', null, InputOption::VALUE_NONE, 'Also rebuild the set:packages Redis set from the DB, to reset any drift'),
                 new InputOption('rebuild-providers', null, InputOption::VALUE_NONE, 'Rebuild the set:providers Redis set from the DB instead of dumping the list'),
             ])
-            ->setDescription('Dumps the gzipped /packages/list.json body into Redis')
         ;
     }
 
@@ -60,20 +60,20 @@ class DumpPackageListCommand extends Command
                 $output->writeln('Aborting, another dump is running already');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         try {
             if ($input->getOption('rebuild-set')) {
                 $this->providerManager->rebuildPackageSet($this->repo->getPackageNames());
 
-                return 0;
+                return Command::SUCCESS;
             }
 
             if ($input->getOption('rebuild-providers')) {
                 $this->providerManager->rebuildProviderSet($this->repo->getProvidedNames());
 
-                return 0;
+                return Command::SUCCESS;
             }
 
             // read before querying: a change landing during the build leaves the version ahead of
@@ -91,6 +91,6 @@ class DumpPackageListCommand extends Command
             $this->locker->unlockCommand($lockName);
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

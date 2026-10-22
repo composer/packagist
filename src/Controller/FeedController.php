@@ -271,7 +271,7 @@ class FeedController extends Controller
 
         $content = $feed->export($format);
 
-        $response = new Response($content, 200);
+        $response = new Response($content, Response::HTTP_OK);
         $response->setSharedMaxAge(3600);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 

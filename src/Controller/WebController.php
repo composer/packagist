@@ -83,7 +83,7 @@ class WebController extends Controller
         if (\in_array($req->getClientIp(), $blockList, true)) {
             return new JsonResponse([
                 'error' => 'Too many requests, reach out to contact@packagist.org',
-            ], 400)->setCallback($req->query->get('callback'));
+            ], Response::HTTP_BAD_REQUEST)->setCallback($req->query->get('callback'));
         }
 
         try {
@@ -98,7 +98,7 @@ class WebController extends Controller
             return new JsonResponse([
                 'status' => 'error',
                 'message' => $e->getMessage(),
-            ], 400)->setCallback($req->query->get('callback'));
+            ], Response::HTTP_BAD_REQUEST)->setCallback($req->query->get('callback'));
         }
 
         try {
@@ -107,7 +107,7 @@ class WebController extends Controller
             return new JsonResponse([
                 'status' => 'error',
                 'message' => 'Could not connect to the search server',
-            ], 500)->setCallback($req->query->get('callback'));
+            ], Response::HTTP_INTERNAL_SERVER_ERROR)->setCallback($req->query->get('callback'));
         }
 
         $response = new JsonResponse($result)->setCallback($req->query->get('callback'));
@@ -264,7 +264,7 @@ class WebController extends Controller
             return new Response('This page is temporarily disabled, please come back later.', Response::HTTP_BAD_GATEWAY);
         }
 
-        return new JsonResponse(['totals' => $totals], 200);
+        return new JsonResponse(['totals' => $totals], Response::HTTP_OK);
     }
 
     /**

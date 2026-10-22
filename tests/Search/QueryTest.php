@@ -17,14 +17,14 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @phpstan-import-type SearchParams from \App\Search\Query
+ * @phpstan-import-type SearchParams from Query
  */
 final class QueryTest extends TestCase
 {
     public function testConstructWithoutQueryTypeTags(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Missing search query, example: ?q=example');
+        $this->expectExceptionMessageIsOrContains('Missing search query, example: ?q=example');
 
         new Query('', [], '', 15, 1);
     }
@@ -109,7 +109,7 @@ final class QueryTest extends TestCase
     public function testConstructPerPageNotLargerThan100(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)');
+        $this->expectExceptionMessageIsOrContains('The optional packages per_page parameter must be an integer between 1 and 100 (default: 15)');
 
         new Query('monolog', [], '', 115, 1);
     }

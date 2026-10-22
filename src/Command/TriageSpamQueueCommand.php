@@ -14,11 +14,16 @@ namespace App\Command;
 
 use App\Entity\Package;
 use App\Entity\PackageReadme;
+use App\Entity\PackageRepository;
 use App\Entity\Vendor;
+use App\Entity\VendorRepository;
 use App\Service\Locker;
 use App\Service\Spam\SpamClassifier;
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Graze\DogStatsD\Client;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -35,16 +40,17 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:spam:triage-queue', description: 'Auto-clears confidently-safe packages from the /spam queue using the trained classifier')]
 class TriageSpamQueueCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     public function __construct(
         private readonly ManagerRegistry $doctrine,
         private readonly SpamClassifier $spamClassifier,
         private readonly Locker $locker,
         private readonly LoggerInterface $logger,
-        private readonly \Graze\DogStatsD\Client $statsd,
+        private readonly Client $statsd,
     ) {
         parent::__construct();
     }
@@ -52,11 +58,9 @@ class TriageSpamQueueCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:spam:triage-queue')
             ->setDefinition([
                 new InputOption('apply', null, InputOption::VALUE_NONE, 'Actually clear (verify) the confidently-safe vendors. Without this the command only reports (dry run).'),
             ])
-            ->setDescription('Auto-clears confidently-safe packages from the /spam queue using the trained classifier')
         ;
     }
 
@@ -80,9 +84,9 @@ class TriageSpamQueueCommand extends Command
 
         try {
             $em = $this->getEM();
-            /** @var \App\Entity\PackageRepository $packageRepo */
+            /** @var PackageRepository $packageRepo */
             $packageRepo = $em->getRepository(Package::class);
-            /** @var \App\Entity\VendorRepository $vendorRepo */
+            /** @var VendorRepository $vendorRepo */
             $vendorRepo = $em->getRepository(Vendor::class);
 
             $packages = $packageRepo->getAllSuspectPackages();
@@ -167,7 +171,7 @@ class TriageSpamQueueCommand extends Command
      *
      * @return array<int, list<string>>
      */
-    private function fetchTags(\App\Entity\PackageRepository $packageRepo, array $packages): array
+    private function fetchTags(PackageRepository $packageRepo, array $packages): array
     {
         $ids = array_map(static fn (array $pkg) => $pkg['id'], $packages);
 

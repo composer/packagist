@@ -14,6 +14,7 @@ namespace App\Tests\Controller;
 
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class FeedControllerTest extends IntegrationTestCase
@@ -26,7 +27,7 @@ class FeedControllerTest extends IntegrationTestCase
         $this->client->request('GET', $url);
 
         $response = $this->client->getResponse();
-        $this->assertEquals(200, $response->getStatusCode(), $response->getContent());
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode(), $response->getContent());
         $this->assertStringContainsString($format, $response->getContent());
 
         if ($vendor !== null) {

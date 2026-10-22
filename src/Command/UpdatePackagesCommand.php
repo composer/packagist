@@ -15,7 +15,9 @@ namespace App\Command;
 use App\Entity\Package;
 use App\Service\Locker;
 use App\Service\Scheduler;
+use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,9 +27,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:update', description: 'Updates packages')]
 class UpdatePackagesCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     private Scheduler $scheduler;
     private Locker $locker;
@@ -44,14 +47,12 @@ class UpdatePackagesCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:update')
             ->setDefinition([
                 new InputOption('force', null, InputOption::VALUE_NONE, 'Force a re-crawl now and roll out source/dist URL changes across all versions (dev: full rebuild; stable: URL rewrite via the immutability gate, references stay frozen)'),
                 new InputOption('delete-before', null, InputOption::VALUE_NONE, 'Force deletion of all dev versions before an update, stable versions remain'),
                 new InputOption('update-source-dist-url', null, InputOption::VALUE_NONE, 'Roll out new source/dist URLs across versions (stable rows: narrow URL rewrite via the strict gate; dev rows: full rebuild). Use after a repo URL change.'),
                 new InputArgument('package', InputArgument::OPTIONAL, 'Package name to update'),
             ])
-            ->setDescription('Updates packages')
         ;
     }
 
@@ -70,7 +71,7 @@ class UpdatePackagesCommand extends Command
                 $output->writeln('Aborting, another task is running already');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         if ($package) {
@@ -78,7 +79,7 @@ class UpdatePackagesCommand extends Command
             if ($packageEntity === null) {
                 $output->writeln('<error>Package '.$package.' not found</error>');
 
-                return 1;
+                return Command::FAILURE;
             }
             $packages = [['id' => $packageEntity->getId()]];
             if ($force) {
@@ -119,6 +120,6 @@ class UpdatePackagesCommand extends Command
 
         $this->locker->unlockCommand(__CLASS__);
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

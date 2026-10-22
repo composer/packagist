@@ -17,6 +17,7 @@ use App\Entity\User;
 use App\Security\UserNotifier;
 use App\Service\Scheduler;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
+use KnpU\OAuth2ClientBundle\Client\Provider\GithubClient;
 use KnpU\OAuth2ClientBundle\Exception\InvalidStateException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Provider\GithubResourceOwner;
@@ -73,9 +74,9 @@ class GitHubLoginController extends Controller
      * in config/packages/knpu_oauth2_client.yaml
      */
     #[Route(path: '/connect/github/check', name: 'connect_github_check')]
-    public function connectCheck(Request $request, ClientRegistry $clientRegistry, Scheduler $scheduler, UserNotifier $userNotifier, #[CurrentUser] User $user): RedirectResponse
+    public function connectCheck(ClientRegistry $clientRegistry, Scheduler $scheduler, UserNotifier $userNotifier, #[CurrentUser] User $user): RedirectResponse
     {
-        /** @var \KnpU\OAuth2ClientBundle\Client\Provider\GithubClient $client */
+        /** @var GithubClient $client */
         $client = $clientRegistry->getClient('github');
         try {
             /** @var AccessToken $token */
@@ -134,7 +135,7 @@ class GitHubLoginController extends Controller
      * in config/packages/knpu_oauth2_client.yaml
      */
     #[Route(path: '/login/github/check', name: 'login_github_check', defaults: ['_format' => 'html'])]
-    public function loginCheck(Request $request, ClientRegistry $clientRegistry): void
+    public function loginCheck(ClientRegistry $clientRegistry): void
     {
     }
 

@@ -12,6 +12,7 @@
 
 namespace App\Tests\Package;
 
+use App\Audit\VersionDeletionReason;
 use App\Entity\FilterListEntry;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -250,7 +251,7 @@ class V2DumperTest extends IntegrationTestCase
         $kept = $this->createVersion($package, '1.0.0');
         $deleted = $this->createVersion($package, '1.1.0');
         $deleted->setSoftDeletedAt(new \DateTimeImmutable());
-        $deleted->setDeletionReason(\App\Audit\VersionDeletionReason::DeletedByMaintainer);
+        $deleted->setDeletionReason(VersionDeletionReason::DeletedByMaintainer);
         $this->store($package, $kept, $deleted);
 
         $this->dumper->dump([$package->getId()], force: true);

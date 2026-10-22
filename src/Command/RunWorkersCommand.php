@@ -14,7 +14,9 @@ namespace App\Command;
 
 use App\Service\QueueWorker;
 use App\Util\Killswitch;
+use Monolog\ErrorHandler;
 use Monolog\Logger;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,6 +24,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Lock\Exception\LockReleasingException;
 
+#[AsCommand(name: 'packagist:run-workers', description: 'Run worker services')]
 class RunWorkersCommand extends Command
 {
     use LockableTrait;
@@ -40,8 +43,6 @@ class RunWorkersCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:run-workers')
-            ->setDescription('Run worker services')
             ->addOption('messages', null, InputOption::VALUE_OPTIONAL, 'Amount of messages to process before exiting', 5000)
             ->addOption('worker-id', 'w', InputOption::VALUE_OPTIONAL, 'Unique worker ID', '1')
         ;
@@ -49,7 +50,7 @@ class RunWorkersCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        \Monolog\ErrorHandler::register($this->logger);
+        ErrorHandler::register($this->logger);
 
         ini_set('memory_limit', '1G');
 
@@ -58,14 +59,14 @@ class RunWorkersCommand extends Command
                 $output->writeln('Aborting, another of the same worker is still active');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         if (!Killswitch::isEnabled(Killswitch::WORKERS_ENABLED)) {
             sleep(10);
             $this->release();
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         try {
@@ -92,6 +93,6 @@ class RunWorkersCommand extends Command
             }
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

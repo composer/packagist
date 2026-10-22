@@ -12,9 +12,12 @@
 
 namespace App\Command;
 
+use App\Entity\Package;
 use App\Service\Spam\FeatureExtractor;
+use App\Util\DoctrineTrait;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -33,9 +36,10 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:spam:build-features', description: 'Builds the labelled spam/safe training dataset (token lists) for scripts/spam/train.py')]
 class BuildSpamFeaturesCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     private const BATCH_SIZE = 500;
 
@@ -49,11 +53,9 @@ class BuildSpamFeaturesCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:spam:build-features')
             ->setDefinition([
                 new InputOption('output-dir', null, InputOption::VALUE_REQUIRED, 'Directory to write metadata.jsonl and readme.jsonl into', '.'),
             ])
-            ->setDescription('Builds the labelled spam/safe training dataset (token lists) for scripts/spam/train.py')
         ;
     }
 
@@ -132,7 +134,7 @@ class BuildSpamFeaturesCommand extends Command
                 ['ids' => ArrayParameterType::INTEGER],
             );
 
-            $packageRepo = $this->getEM()->getRepository(\App\Entity\Package::class);
+            $packageRepo = $this->getEM()->getRepository(Package::class);
             $tagsById = $packageRepo->getTagsByPackageIds($batch);
             $readmesById = $packageRepo->getReadmeContentsByPackageIds($batch);
 

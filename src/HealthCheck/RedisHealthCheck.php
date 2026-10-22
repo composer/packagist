@@ -17,12 +17,13 @@ use Laminas\Diagnostics\Result\Failure;
 use Laminas\Diagnostics\Result\ResultInterface;
 use Laminas\Diagnostics\Result\Success;
 use Laminas\Diagnostics\Result\Warning;
+use Predis\Client;
 
 class RedisHealthCheck implements CheckInterface
 {
-    private \Predis\Client $redis;
+    private Client $redis;
 
-    public function __construct(\Predis\Client $redis)
+    public function __construct(Client $redis)
     {
         $this->redis = $redis;
     }

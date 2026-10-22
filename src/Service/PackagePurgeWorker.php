@@ -14,7 +14,6 @@ namespace App\Service;
 
 use App\Entity\Job;
 use App\Entity\Package;
-use App\Entity\User;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use Doctrine\Persistence\ManagerRegistry;

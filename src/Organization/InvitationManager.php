@@ -19,12 +19,17 @@ use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\OrganizationTeamRepository;
 use App\Entity\User;
 use App\Organization\Domain\Email;
+use App\Organization\Domain\Exception\AlreadyMemberException;
 use App\Organization\Domain\Exception\DuplicatePendingInvitationException;
+use App\Organization\Domain\Exception\InvitationNotPendingException;
+use App\Organization\Domain\Exception\NoPendingInvitationException;
 use App\Organization\Domain\Exception\NoTeamSpecifiedException;
+use App\Organization\Domain\Exception\PolicyNotMetException;
 use App\Organization\Domain\Exception\TeamNotFoundException;
 use App\Organization\Domain\Invitation;
 use App\Organization\Domain\Organization;
 use App\Organization\EventStore\Actor;
+use App\Organization\EventStore\ConcurrencyException;
 use App\Organization\EventStore\EventStore;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
@@ -111,7 +116,7 @@ final class InvitationManager
     /**
      * Bump the expiry and re-send the link, invalidating the previous one.
      *
-     * @throws Domain\Exception\NoPendingInvitationException
+     * @throws NoPendingInvitationException
      */
     public function resend(OrganizationReadModel $organization, User $actor, OrganizationInvitation $invitation, ?string $ip): void
     {
@@ -142,10 +147,10 @@ final class InvitationManager
      * (2FA for owners) and adds the org membership, all in one transaction. The caller has already
      * validated the link token.
      *
-     * @throws Domain\Exception\AlreadyMemberException
-     * @throws Domain\Exception\PolicyNotMetException
-     * @throws Domain\Exception\InvitationNotPendingException
-     * @throws Domain\Exception\NoPendingInvitationException
+     * @throws AlreadyMemberException
+     * @throws PolicyNotMetException
+     * @throws InvitationNotPendingException
+     * @throws NoPendingInvitationException
      * @throws TeamNotFoundException
      */
     public function accept(OrganizationInvitation $invitation, User $user, ?string $ip): void
@@ -185,7 +190,7 @@ final class InvitationManager
      * Resolve a due invitation to `expired` with a system actor. A no-op if it is no longer pending or not
      * yet due (see {@see Invitation::markExpired()}).
      *
-     * @throws \App\Organization\EventStore\ConcurrencyException if another actor resolved it concurrently
+     * @throws ConcurrencyException if another actor resolved it concurrently
      */
     public function expire(OrganizationInvitation $invitation): void
     {

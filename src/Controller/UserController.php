@@ -225,7 +225,7 @@ class UserController extends Controller
 
         $favoriteManager->markFavorite($user, $package);
 
-        return new Response('{"status": "success"}', 201);
+        return new Response('{"status": "success"}', Response::HTTP_CREATED);
     }
 
     #[IsGranted('ROLE_USER')]
@@ -245,7 +245,7 @@ class UserController extends Controller
 
         $favoriteManager->removeFavorite($user, $package);
 
-        return new Response('{"status": "success"}', 204);
+        return new Response('{"status": "success"}', Response::HTTP_NO_CONTENT);
     }
 
     #[IsGranted('ROLE_USER')]

@@ -12,7 +12,9 @@
 
 namespace App\Redis;
 
-class FailedLoginCounter extends \Predis\Command\ScriptCommand
+use Predis\Command\ScriptCommand;
+
+class FailedLoginCounter extends ScriptCommand
 {
     /**
      * @var array<string|int>

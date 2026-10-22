@@ -22,12 +22,11 @@ use App\Security\Voter\PackageActions;
 use Composer\Pcre\Preg;
 use Composer\Repository\PlatformRepository;
 use Symfony\Bundle\SecurityBundle\Security;
-use Twig\Extension\AbstractExtension;
-use Twig\TwigFilter;
-use Twig\TwigFunction;
-use Twig\TwigTest;
+use Twig\Attribute\AsTwigFilter;
+use Twig\Attribute\AsTwigFunction;
+use Twig\Attribute\AsTwigTest;
 
-class PackagistExtension extends AbstractExtension
+class PackagistExtension
 {
     private ProviderManager $providerManager;
     private RecaptchaHelper $recaptchaHelper;
@@ -44,46 +43,13 @@ class PackagistExtension extends AbstractExtension
         $this->userRepo = $userRepo;
     }
 
-    public function getTests(): array
-    {
-        return [
-            new TwigTest('existing_package', [$this, 'packageExistsTest']),
-            new TwigTest('existing_organization', [$this, 'organizationExistsTest']),
-            new TwigTest('existing_user', [$this, 'userExistsTest']),
-            new TwigTest('existing_provider', [$this, 'providerExistsTest']),
-            new TwigTest('numeric', [$this, 'numericTest']),
-        ];
-    }
-
-    public function getFilters(): array
-    {
-        return [
-            new TwigFilter('prettify_source_reference', [$this, 'prettifySourceReference']),
-            new TwigFilter('gravatar_hash', [$this, 'generateGravatarHash']),
-            new TwigFilter('vendor', [$this, 'getVendor']),
-            new TwigFilter('sort_links', [$this, 'sortLinks']),
-            new TwigFilter('version_deletion_title', [$this, 'deletionTitle']),
-            new TwigFilter('json_pretty', [$this, 'jsonPretty']),
-        ];
-    }
-
-    public function getFunctions(): array
-    {
-        return [
-            new TwigFunction('requires_recaptcha', [$this, 'requiresRecaptcha']),
-        ];
-    }
-
-    public function getName(): string
-    {
-        return 'packagist';
-    }
-
+    #[AsTwigFilter(name: 'vendor')]
     public function getVendor(string $packageName): string
     {
         return Preg::replace('{/.*$}', '', $packageName);
     }
 
+    #[AsTwigTest(name: 'numeric')]
     public function numericTest(mixed $val): bool
     {
         if (!\is_string($val) && !\is_int($val)) {
@@ -93,6 +59,7 @@ class PackagistExtension extends AbstractExtension
         return ctype_digit((string) $val);
     }
 
+    #[AsTwigTest(name: 'existing_package')]
     public function packageExistsTest(mixed $package): bool
     {
         if (!\is_string($package)) {
@@ -106,6 +73,7 @@ class PackagistExtension extends AbstractExtension
         return $this->providerManager->packageExists($package);
     }
 
+    #[AsTwigTest(name: 'existing_organization')]
     public function organizationExistsTest(mixed $slug): bool
     {
         if (!\is_string($slug)) {
@@ -119,6 +87,7 @@ class PackagistExtension extends AbstractExtension
         return $this->organizationRepo->slugExists($slug, false);
     }
 
+    #[AsTwigTest(name: 'existing_user')]
     public function userExistsTest(mixed $username): bool
     {
         if (!\is_string($username) || $username === '') {
@@ -128,6 +97,7 @@ class PackagistExtension extends AbstractExtension
         return $this->userRepo->usernameExists($username);
     }
 
+    #[AsTwigTest(name: 'existing_provider')]
     public function providerExistsTest(mixed $package): bool
     {
         if (!\is_string($package)) {
@@ -142,11 +112,13 @@ class PackagistExtension extends AbstractExtension
      * rather than thrown on, so one bad byte in a captured exception message cannot 500 the page.
      * Deliberately not is_safe, so autoescaping still applies.
      */
+    #[AsTwigFilter(name: 'json_pretty')]
     public function jsonPretty(mixed $value): string
     {
         return json_encode($value, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_INVALID_UTF8_SUBSTITUTE | \JSON_THROW_ON_ERROR);
     }
 
+    #[AsTwigFilter(name: 'prettify_source_reference')]
     public function prettifySourceReference(string $sourceReference): string
     {
         if (Preg::isMatch('/^[a-f0-9]{40}$/', $sourceReference)) {
@@ -156,6 +128,7 @@ class PackagistExtension extends AbstractExtension
         return $sourceReference;
     }
 
+    #[AsTwigFilter(name: 'gravatar_hash')]
     public function generateGravatarHash(string $email): string
     {
         return hash('sha256', strtolower($email));
@@ -166,6 +139,7 @@ class PackagistExtension extends AbstractExtension
      *
      * @return PackageLink[]
      */
+    #[AsTwigFilter(name: 'sort_links')]
     public function sortLinks(array $links): array
     {
         usort($links, static function (PackageLink $a, PackageLink $b) {
@@ -189,6 +163,7 @@ class PackagistExtension extends AbstractExtension
         return $links;
     }
 
+    #[AsTwigFunction(name: 'requires_recaptcha')]
     public function requiresRecaptcha(): bool
     {
         $context = $this->recaptchaHelper->buildContext();
@@ -196,6 +171,7 @@ class PackagistExtension extends AbstractExtension
         return $this->recaptchaHelper->requiresRecaptcha($context);
     }
 
+    #[AsTwigFilter(name: 'version_deletion_title')]
     public function deletionTitle(VersionSummary $version): ?string
     {
         return $version->getDeletionTitle(

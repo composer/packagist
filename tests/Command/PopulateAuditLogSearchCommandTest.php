@@ -17,6 +17,7 @@ use App\Entity\AuditRecord;
 use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
 class PopulateAuditLogSearchCommandTest extends IntegrationTestCase
@@ -84,6 +85,6 @@ class PopulateAuditLogSearchCommandTest extends IntegrationTestCase
 
         $tester->execute(['--from-date' => 'not-a-date']);
 
-        self::assertSame(\Symfony\Component\Console\Command\Command::INVALID, $tester->getStatusCode());
+        self::assertSame(Command::INVALID, $tester->getStatusCode());
     }
 }

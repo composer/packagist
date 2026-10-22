@@ -18,12 +18,14 @@ use App\Model\PackageManager;
 use App\Util\DoctrineTrait;
 use Composer\Console\Input\InputOption;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'packagist:transfer-ownership', description: 'Transfer all packages of a vendor')]
 class TransferOwnershipCommand extends Command
 {
     use DoctrineTrait;
@@ -38,8 +40,6 @@ class TransferOwnershipCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:transfer-ownership')
-            ->setDescription('Transfer all packages of a vendor')
             ->setDefinition([
                 new InputArgument('vendorOrPackage', InputArgument::REQUIRED, 'Vendor or package name'),
                 new InputArgument('maintainers', InputArgument::IS_ARRAY | InputArgument::REQUIRED, 'The usernames of the new maintainers'),

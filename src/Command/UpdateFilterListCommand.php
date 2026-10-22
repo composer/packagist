@@ -16,11 +16,13 @@ use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
 use App\Service\Locker;
 use App\Service\Scheduler;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+#[AsCommand(name: 'packagist:filter-list', description: 'Updates all entries for a single filter list source')]
 class UpdateFilterListCommand extends Command
 {
     public function __construct(
@@ -33,12 +35,10 @@ class UpdateFilterListCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('packagist:filter-list')
             ->setDefinition([
                 new InputArgument('list', InputArgument::REQUIRED, 'The name of the filter list', null, FilterLists::cases()),
                 new InputArgument('source', InputArgument::REQUIRED, 'The name of the filter source', null, FilterSources::cases()),
             ])
-            ->setDescription('Updates all entries for a single filter list source')
         ;
     }
 
@@ -62,7 +62,7 @@ class UpdateFilterListCommand extends Command
 
         $lockAcquired = $this->locker->lockFilterList($list->value);
         if (!$lockAcquired) {
-            return 0;
+            return Command::SUCCESS;
         }
 
         $this->scheduler->scheduleFilterList($list, $source, 0);
@@ -70,6 +70,6 @@ class UpdateFilterListCommand extends Command
 
         $this->locker->unlockFilterList($list->value);
 
-        return 0;
+        return Command::SUCCESS;
     }
 }

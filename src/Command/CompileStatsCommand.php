@@ -14,9 +14,11 @@ namespace App\Command;
 
 use App\Entity\Download;
 use App\Service\Locker;
+use App\Util\DoctrineTrait;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Predis\Client;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -24,9 +26,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+#[AsCommand(name: 'packagist:stats:compile', description: 'Updates the redis stats indices')]
 class CompileStatsCommand extends Command
 {
-    use \App\Util\DoctrineTrait;
+    use DoctrineTrait;
 
     public function __construct(
         private Client $redis,
@@ -37,15 +40,6 @@ class CompileStatsCommand extends Command
         parent::__construct();
     }
 
-    protected function configure(): void
-    {
-        $this
-            ->setName('packagist:stats:compile')
-            ->setDefinition([])
-            ->setDescription('Updates the redis stats indices')
-        ;
-    }
-
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $lockAcquired = $this->locker->lockCommand(__CLASS__);
@@ -54,7 +48,7 @@ class CompileStatsCommand extends Command
                 $output->writeln('Aborting, another task is running already');
             }
 
-            return 0;
+            return Command::SUCCESS;
         }
 
         $this->statsd->increment('nightly_job.start', 1, 1, ['job' => 'compile-stats']);
@@ -99,7 +93,7 @@ class CompileStatsCommand extends Command
         $this->locker->unlockCommand(__CLASS__);
         $this->statsd->increment('nightly_job.end', 1, 1, ['job' => 'compile-stats']);
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     protected function sumLastNDays(int $days, int $id, \DateTime $yesterday, Connection $conn): int
