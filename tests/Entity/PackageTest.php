@@ -56,6 +56,28 @@ class PackageTest extends TestCase
         ];
     }
 
+    #[DataProvider('provideRepositoryUrls')]
+    public function testNormalizeRepositoryUrl(string $input, string $expected): void
+    {
+        self::assertSame($expected, Package::normalizeRepositoryUrl($input));
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function provideRepositoryUrls(): array
+    {
+        return [
+            'github scp' => ['git@github.com:acme/foo.git', 'https://github.com/acme/foo'],
+            'github .git' => ['https://github.com/acme/foo.git', 'https://github.com/acme/foo'],
+            'github trailing slash' => ['https://github.com/acme/foo/', 'https://github.com/acme/foo'],
+            'github sub-url' => ['https://github.com/acme/foo/tree/main', 'https://github.com/acme/foo'],
+            'gitlab scp' => ['git@gitlab.com:acme/foo.git', 'https://gitlab.com/acme/foo'],
+            'protocol case' => ['HTTPS://git.example.org/acme/foo', 'https://git.example.org/acme/foo'],
+            'self-hosted scp' => ['git@git.example.org:acme/foo.git', 'git@git.example.org:acme/foo.git'],
+        ];
+    }
+
     public function testInstallCommandWithoutVersion(): void
     {
         $package = new Package();

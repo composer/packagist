@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Package;
 use App\Entity\PackageRepository;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
@@ -21,14 +22,24 @@ use App\Form\Model\AccountDeletionSupportRequest;
 use App\Form\Model\LostTwoFactorSupportRequest;
 use App\Support\Attributes\AccountDeletionAttributes;
 use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageDeletionAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\PackageUnfreezeAttributes;
+use App\Support\Attributes\PackageUrlChange;
+use App\Support\Attributes\PackageUrlChangeAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\PackageDisposition;
+use App\Form\Model\PackageDeletionSupportRequest;
 use App\Form\Model\PackageTransferSupportRequest;
+use App\Form\Model\PackageUnfreezeSupportRequest;
+use App\Form\Model\PackageUrlChangeSupportRequest;
 use App\Form\Model\VendorClaimSupportRequest;
 use App\Form\Type\AccountDeletionSupportType;
 use App\Form\Type\LostTwoFactorSupportType;
+use App\Form\Type\PackageDeletionSupportType;
 use App\Form\Type\PackageTransferSupportType;
+use App\Form\Type\PackageUnfreezeSupportType;
+use App\Form\Type\PackageUrlChangeSupportType;
 use App\Form\Type\VendorClaimSupportType;
 use App\Support\SupportNotifier;
 use App\Support\SupportRequestRateLimiter;
@@ -312,6 +323,178 @@ class SupportController extends Controller
             'submitLabel' => 'Send request',
             'packages' => $user->getPackages(),
         ]);
+    }
+
+    #[IsGranted('ROLE_USER')]
+    #[Route(path: '/contact/unfreeze-package', name: 'support_unfreeze_package', methods: ['GET', 'POST'])]
+    public function unfreezePackage(Request $req, #[CurrentUser] User $user, PackageRepository $packageRepo): Response
+    {
+        $frozen = [];
+        foreach ($packageRepo->findAppealableFrozenPackagesByMaintainer((int) $user->getId()) as $package) {
+            $frozen[$package->getName()] = $package->getFreezeReason();
+        }
+
+        if ($frozen === []) {
+            $this->addFlash('info', 'None of your packages are frozen in a way you can appeal, so there is nothing to request here.');
+
+            return $this->redirectToRoute('support_contact');
+        }
+
+        $data = new PackageUnfreezeSupportRequest();
+        // Intersected rather than trusted, so the deep link from the package page can only ever
+        // preselect something the checkbox list already offers.
+        $data->packageNames = array_values(array_intersect([$req->query->getString('package')], array_keys($frozen)));
+
+        $form = $this->createForm(PackageUnfreezeSupportType::class, $data, ['frozen_packages' => $frozen])->handleRequest($req);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUnfreezeAttributes($data->packageNames));
+
+            if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageUnfreeze, $create)) {
+                return $response;
+            }
+        }
+
+        return $this->renderRequestForm($form, [
+            'heading' => 'Ask us to unfreeze a package',
+            'intro' => 'Frozen packages are not crawled, so new versions stop showing up. Tick the ones you want us to look at.',
+            'submitLabel' => 'Send request',
+            'pickerId' => 'unfreeze-package-picker',
+        ]);
+    }
+
+    #[IsGranted('ROLE_USER')]
+    #[Route(path: '/contact/package-url-change', name: 'support_package_url_change', methods: ['GET', 'POST'])]
+    public function packageUrlChange(Request $req, #[CurrentUser] User $user): Response
+    {
+        $packages = $this->ownPackageNames($user);
+        if ($packages === []) {
+            $this->addFlash('info', 'You do not maintain any packages, so there is no URL for us to change.');
+
+            return $this->redirectToRoute('support_contact');
+        }
+
+        $data = new PackageUrlChangeSupportRequest();
+        $data->packageName = $req->query->getString('package');
+        $data->repository = $req->query->getString('repository');
+
+        $form = $this->createForm(PackageUrlChangeSupportType::class, $data, ['packages' => $packages])->handleRequest($req);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            // Stored as the admin's save will write it, so the request can tell when it has been applied.
+            $url = Package::normalizeRepositoryUrl(trim($data->repository));
+            $package = $this->getEM()->getRepository(Package::class)->findOneBy(['name' => $data->packageName]);
+            if ($package !== null && $package->getRepository() === $url) {
+                $form->get('repository')->addError(new FormError('That is already the repository URL we have on file for this package.'));
+            } else {
+                $change = new PackageUrlChange($data->packageName, $url);
+
+                // Before the insert: once the unique index trips, the entity manager is closed.
+                $existing = $this->supportRequests->findOpen($user, SupportRequestType::PackageUrlChange);
+                if ($existing !== null) {
+                    $response = $this->appendUrlChange($req, $user, $existing, $change, $data->description);
+                } else {
+                    $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUrlChangeAttributes([$change]));
+                    $response = $this->storeRequest($req, $user, SupportRequestType::PackageUrlChange, $create);
+                }
+
+                if ($response !== null) {
+                    return $response;
+                }
+            }
+        }
+
+        return $this->renderRequestForm($form, [
+            'heading' => 'Request a repository URL change',
+            'intro' => 'Editing the URL of a popular package is disabled, because it is how a package gets hijacked. Tell us where it moved and we will make the change.',
+            'submitLabel' => 'Send request',
+        ]);
+    }
+
+    #[IsGranted('ROLE_USER')]
+    #[Route(path: '/contact/delete-packages', name: 'support_delete_packages', methods: ['GET', 'POST'])]
+    public function deletePackages(Request $req, #[CurrentUser] User $user): Response
+    {
+        $packages = $this->ownPackageNames($user);
+        if ($packages === []) {
+            $this->addFlash('info', 'You do not maintain any packages, so there is nothing to delete.');
+
+            return $this->redirectToRoute('support_contact');
+        }
+
+        $data = new PackageDeletionSupportRequest();
+        $form = $this->createForm(PackageDeletionSupportType::class, $data, ['packages' => $packages])->handleRequest($req);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageDeletionAttributes($data->packageNames));
+
+            if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageDeletion, $create)) {
+                return $response;
+            }
+        }
+
+        return $this->renderRequestForm($form, [
+            'heading' => 'Request package deletion',
+            'intro' => 'Packages you can still delete yourself have a Delete button on their own page. Use this for the ones that are too widely used for that, or to clear several at once.',
+            'submitLabel' => 'Send request',
+            'pickerId' => 'delete-packages-picker',
+        ]);
+    }
+
+    /**
+     * Adds a package to the open URL change request, or corrects its URL, since only one request per
+     * type may be open. Returns null when the form should be re-rendered with an error flash.
+     */
+    private function appendUrlChange(Request $req, User $user, SupportRequest $request, PackageUrlChange $change, string $description): ?Response
+    {
+        $attributes = $request->attributesOf(PackageUrlChangeAttributes::class);
+        $previous = $attributes->changeFor($change->packageName);
+
+        if ($previous?->repository === $change->repository) {
+            $this->addFlash('info', $change->packageName.' is already part of your open request ('.$request->publicId.'). We will get back to you by email.');
+
+            return $this->redirectToRoute('support_contact');
+        }
+
+        if ($this->rateLimiter->isLimited($user, SupportRequestType::PackageUrlChange, $req->getClientIp())) {
+            $this->addFlash('error', 'You have submitted this request too many times recently. Please email contact@packagist.org instead.');
+
+            return null;
+        }
+
+        $request->replaceAttributes($attributes->withChange($change));
+
+        $em = $this->getEM();
+        $em->persist(SupportRequestMessage::internalNote(
+            $request,
+            ($previous !== null
+                ? 'The requester changed the URL for '.$change->packageName.' from '.$previous->repository.' to '.$change->repository
+                : 'The requester added '.$change->packageName.' to this request, asking for '.$change->repository).":\n\n".$description,
+            null,
+        ));
+        $request->touch(new \DateTimeImmutable());
+        $em->flush();
+
+        $this->rateLimiter->recordSubmission($user, SupportRequestType::PackageUrlChange, $req->getClientIp());
+        $this->notifier->notifyAdmins($request, updated: true);
+
+        $this->addFlash('success', $change->packageName.($previous !== null ? ' was updated on' : ' was added to').' your open request ('.$request->publicId.'). We will get back to you by email.');
+
+        return $this->redirectToRoute('support_contact');
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function ownPackageNames(User $user): array
+    {
+        $names = [];
+        foreach ($user->getPackages() as $package) {
+            $names[] = $package->getName();
+        }
+        sort($names);
+
+        return $names;
     }
 
     /**
