@@ -477,7 +477,8 @@ class PackageRepository extends ServiceEntityRepository
             ->from(Package::class, 'p')
             ->leftJoin('p.versions', 'v')
             ->orderBy('v.development', \SortDirection::Descending)
-            ->addOrderBy('v.releasedAt', \SortDirection::Descending);
+            ->addOrderBy('v.releasedAt', \SortDirection::Descending)
+            ->addOrderBy('v.id');
 
         if (null !== $ids) {
             $qb->where($qb->expr()->in('p.id', ':ids'))

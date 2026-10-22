@@ -998,17 +998,16 @@ class Package
             return 1;
         }
 
-        // equal versions are sorted by date
-        if ($aVersion === $bVersion) {
-            // make sure sort is stable
-            if ($a->getReleasedAt() == $b->getReleasedAt()) {
-                return $a->getNormalizedVersion() <=> $b->getNormalizedVersion();
-            }
-
-            return $b->getReleasedAt() > $a->getReleasedAt() ? 1 : -1;
+        if ($aVersion !== $bVersion && 0 !== ($result = version_compare($bVersion, $aVersion))) {
+            return $result;
         }
 
-        // the rest is sorted by version
-        return version_compare($bVersion, $aVersion);
+        // equal versions are sorted by date, including distinct ones version_compare() treats as equal (0.0.70 vs 0.0.070)
+        if ($a->getReleasedAt() == $b->getReleasedAt()) {
+            // make sure sort is stable
+            return $a->getNormalizedVersion() <=> $b->getNormalizedVersion();
+        }
+
+        return $b->getReleasedAt() > $a->getReleasedAt() ? 1 : -1;
     }
 }
