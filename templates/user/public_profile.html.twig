@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content %}
-{% set isActualUser = app.user and app.user.username is same as(user.username) %}
+{% set isActualUser = app.user and app.user.username === user.username %}
 <h2 class="title">
     {{ user.username }}
     <small>
@@ -64,7 +64,7 @@
                 <dd>
                     {% if user.githubId %}
                         {{ user.githubId }}
-                        {% if githubUsername is defined and githubUsername %}
+                        {% if githubUsername|default(false) %}
                             - <a href="https://github.com/{{ githubUsername }}">{{ githubUsername }}</a>
                         {% endif %}
                     {% else %}

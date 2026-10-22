@@ -3,7 +3,7 @@
 {% set showSearchDesc = 'hero' %}
 
 {% block content %}
-{% if newsItems is defined and newsItems|length > 0 %}
+{% if newsItems|default(false) %}
 <section class="row">
     <section class="col-12">
         <h2 class="title">Latest News</h2>

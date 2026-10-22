@@ -14,7 +14,7 @@
                 address on that account.
             </p>
 
-            {% if packages is defined and packages|length %}
+            {% if packages|default([])|length %}
                 <p>Packages currently maintained by your account:</p>
                 <ul>
                     {% for package in packages %}

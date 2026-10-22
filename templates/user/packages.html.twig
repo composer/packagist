@@ -4,7 +4,7 @@
 
 
 {% block content %}
-{% set isActualUser = app.user and app.user.username is same as(user.username) %}
+{% set isActualUser = app.user and app.user.username === user.username %}
 <h2 class="title">
     {{ user.username }}
     {%- if not isActualUser %}

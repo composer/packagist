@@ -83,7 +83,7 @@
     </div>
 </div>
 
-{% if showUpdated is defined and showUpdated and package.getUpdatedAt() %}
+{% if showUpdated|default(false) and package.getUpdatedAt() %}
     <div class="last-update">
         {% if not package.isAutoUpdated() %}
             <p class="auto-update-danger">This package is <strong>not</strong> <a href="{{ path('about') ~ '#how-to-update-packages' }}">auto-updated</a>.</p>

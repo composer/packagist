@@ -2,11 +2,12 @@
 
 {% block title %}Teams - {{ organization.displayName }} - {{ parent() }}{% endblock %}
 
-{% set canCreateTeam = is_granted(enum('App\\Security\\Voter\\OrganizationActions').CreateTeam.value, organization) %}
-{% set canRenameTeam = is_granted(enum('App\\Security\\Voter\\OrganizationActions').RenameTeam.value, organization) %}
-{% set canDeleteTeam = is_granted(enum('App\\Security\\Voter\\OrganizationActions').DeleteTeam.value, organization) %}
-{% set canAddTeamMember = is_granted(enum('App\\Security\\Voter\\OrganizationActions').AddTeamMember.value, organization) %}
-{% set canRemoveTeamMember = is_granted(enum('App\\Security\\Voter\\OrganizationActions').RemoveTeamMember.value, organization) %}
+{% set orgActions = enum('App\\Security\\Voter\\OrganizationActions') %}
+{% set canCreateTeam = is_granted(orgActions.CreateTeam.value, organization) %}
+{% set canRenameTeam = is_granted(orgActions.RenameTeam.value, organization) %}
+{% set canDeleteTeam = is_granted(orgActions.DeleteTeam.value, organization) %}
+{% set canAddTeamMember = is_granted(orgActions.AddTeamMember.value, organization) %}
+{% set canRemoveTeamMember = is_granted(orgActions.RemoveTeamMember.value, organization) %}
 
 {% block org_content %}
     <h3 class="title clearfix">

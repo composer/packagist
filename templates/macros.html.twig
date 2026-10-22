@@ -14,7 +14,7 @@
                 <div class="col-12 package-item">
                     <div class="row">
                         <div class="col-md-9 col-xl-10">
-                            {% if package.language is defined and package.language is not empty %}<p class="float-end language">{{ package.language }}</p>{% endif %}
+                            {% if package.language|default(false) %}<p class="float-end language">{{ package.language }}</p>{% endif %}
                             <h4 class="font-bold">
                                 <a href="{{ packageUrl }}">{{ package.name }}</a>{% if package.type in ['php-ext', 'php-ext-zend'] %}<span title="PIE installable extension package">🥧</span>{% endif %}
                                 {% if canSeeFrozen and package.isFrozen() is defined and package.isFrozen() %}
@@ -33,7 +33,7 @@
                                     {% endif %}
                                 {% endif %}
                             </h4>
-                            {% if package.description is defined and package.description %}
+                            {% if package.description|default(false) %}
                                 <p>{{ package.description|u.truncate(300) }}</p>
                             {% endif %}
                             {% if meta.spamScores is defined and meta.spamScores[package.id] is defined %}

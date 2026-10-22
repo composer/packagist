@@ -23,7 +23,7 @@
                             <ul class="versions">
                                 {% set lastDepth = '' %}
                                 {% for version in versions %}
-                                    {% set expanded = version.version is same as expandedVersion %}
+                                    {% set expanded = version.version === expandedVersion %}
                                     {% if lastDepth != '' and lastDepth != version.depth %}
                                         <span class="group-separator"></span>
                                     {% endif %}
