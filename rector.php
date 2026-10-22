@@ -15,7 +15,7 @@ return RectorConfig::configure()
         __DIR__ . '/src',
         __DIR__ . '/tests',
     ])
-    ->withImportNames()
+    ->withImportNames(importShortClasses: false)
     ->withPreparedSets(symfonyCodeQuality: true)
     ->withComposerBased(
         twig: true,
