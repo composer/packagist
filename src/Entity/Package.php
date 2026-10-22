@@ -566,7 +566,8 @@ class Package
         $repoUrl = Preg::replace('{^git@gitlab.com:}i', 'https://gitlab.com/', $repoUrl);
         $repoUrl = Preg::replace('{^https?://(?:www\.)?gitlab\.com/(.*?)\.git$}i', 'https://gitlab.com/$1', $repoUrl);
 
-        $repoUrl = Preg::replace('{^git@+bitbucket.org:}i', 'https://bitbucket.org/', $repoUrl);
+        $repoUrl = Preg::replace('{^git@+(?:ssh\.)?bitbucket.org:}i', 'https://bitbucket.org/', $repoUrl);
+        $repoUrl = Preg::replace('{^ssh://git@(?:ssh\.)?bitbucket.org/}i', 'https://bitbucket.org/', $repoUrl);
         $repoUrl = Preg::replace('{^bitbucket.org:}i', 'https://bitbucket.org/', $repoUrl);
         $repoUrl = Preg::replace('{^https://[a-z0-9_-]*@bitbucket.org/}i', 'https://bitbucket.org/', $repoUrl);
         $repoUrl = Preg::replace('{^(https://bitbucket.org/[^/]+/[^/]+)/src/[^.]+}i', '$1.git', $repoUrl);

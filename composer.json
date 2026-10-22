@@ -29,7 +29,7 @@
         "babdev/pagerfanta-bundle": "^4.2",
         "beelab/recaptcha2-bundle": "^2.3",
         "cebe/markdown": "^1.1",
-        "composer/composer": "^2.8@dev",
+        "composer/composer": "^2.11@dev",
         "composer/pcre": "^3.0",
         "doctrine/common": "^3",
         "doctrine/doctrine-bundle": "^3",

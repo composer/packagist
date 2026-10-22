@@ -307,7 +307,7 @@ class UpdaterWorker
             } elseif ($e instanceof TransportException && $e->getStatusCode() === 404 && strpos($e->getMessage(), 'https://gitlab.com/api/v4/projects/') && strpos($e->getMessage(), '404 Project Not Found')) {
                 // http client 404s on gitlab
                 $found404 = true;
-            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), 'git@bitbucket.org') && strpos($e->getMessage(), 'Please make sure you have the correct access rights')) {
+            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{git@(?:ssh\.)?bitbucket\.org}', $e->getMessage()) && strpos($e->getMessage(), 'Please make sure you have the correct access rights')) {
                 // git clone says we have no right on bitbucket for 404s
                 $found404 = true;
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Please ask the owner to check their account')) {
