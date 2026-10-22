@@ -54,7 +54,7 @@ class OrganizationTeamMemberRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('m')
             ->where('m.teamId = :teamId')
             ->setParameter('teamId', $teamId, 'ulid')
-            ->orderBy('m.addedAt', 'ASC')
+            ->orderBy('m.addedAt', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -83,7 +83,7 @@ class OrganizationTeamMemberRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('m')
             ->where('m.orgId = :orgId')
             ->setParameter('orgId', $orgId, 'ulid')
-            ->orderBy('m.addedAt', 'ASC')
+            ->orderBy('m.addedAt', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }

@@ -55,7 +55,7 @@ class SupportRequestRepository extends ServiceEntityRepository
             ->join('r.user', 'u')
             ->addSelect('u')
             // Oldest un-actioned first: this is a work queue, not a reference table.
-            ->orderBy('r.createdAt', 'ASC')
+            ->orderBy('r.createdAt', \SortDirection::Ascending)
             ->andWhere('r.type IN (:visibleTypes)')
             ->setParameter('visibleTypes', array_map(static fn (SupportRequestType $t): string => $t->value, $visibleTypes));
 
@@ -186,7 +186,7 @@ class SupportRequestRepository extends ServiceEntityRepository
             ->setParameter('user', $current->user)
             ->setParameter('type', SupportRequestType::LostTwoFactor->value)
             ->setParameter('current', $current->id, 'ulid')
-            ->orderBy('r.createdAt', 'DESC')
+            ->orderBy('r.createdAt', \SortDirection::Descending)
             ->setMaxResults(10)
             ->getQuery()
             ->getResult();

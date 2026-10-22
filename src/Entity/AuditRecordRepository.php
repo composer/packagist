@@ -50,7 +50,7 @@ class AuditRecordRepository extends ServiceEntityRepository
                 AuditLogEventType::FilterListEntryEdited->value,
             ])
             ->setParameter('publicId', $publicId)
-            ->orderBy('a.datetime', 'DESC')
+            ->orderBy('a.datetime', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }
@@ -82,7 +82,7 @@ class AuditRecordRepository extends ServiceEntityRepository
                 VersionDeletionReason::DeletedByAdmin->value,
                 VersionDeletionReason::Hidden->value,
             ])
-            ->orderBy('a.id', 'DESC')
+            ->orderBy('a.id', \SortDirection::Descending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -113,7 +113,7 @@ class AuditRecordRepository extends ServiceEntityRepository
             ->setParameter('userId', $user->getId())
             ->setParameter('types', array_map(static fn (AuditLogEventType $type): string => $type->value, $types))
             // ULIDs sort by creation time, so this is the datetime order without the filesort
-            ->orderBy('a.id', 'DESC');
+            ->orderBy('a.id', \SortDirection::Descending);
 
         if (null !== $since) {
             $qb->andWhere('a.datetime > :since')->setParameter('since', $since);

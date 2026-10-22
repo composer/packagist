@@ -108,7 +108,7 @@ class SecurityAdvisoryRepository extends ServiceEntityRepository
             ->addSelect('s')
             ->leftJoin('a.sources', 's')
             ->where('a.packageName = :packageName')
-            ->orderBy('a.reportedAt', 'DESC')
+            ->orderBy('a.reportedAt', \SortDirection::Descending)
             ->setParameter('packageName', $packageName)
             ->getQuery()
             ->getResult();

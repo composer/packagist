@@ -56,8 +56,8 @@ class FilterListController extends Controller
 
         $qb = $this->getEM()->getRepository(FilterListEntry::class)
             ->createQueryBuilder('fl')
-            ->orderBy('fl.updatedAt', 'DESC')
-            ->addOrderBy('fl.id', 'DESC');
+            ->orderBy('fl.updatedAt', \SortDirection::Descending)
+            ->addOrderBy('fl.id', \SortDirection::Descending);
 
         if ($packageQuery !== '') {
             $qb->andWhere('fl.packageName LIKE :package')

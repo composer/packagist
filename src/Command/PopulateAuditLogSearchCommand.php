@@ -92,7 +92,7 @@ class PopulateAuditLogSearchCommand extends Command
 
         do {
             $qb = $this->baseQuery($repo, $fromDate)
-                ->orderBy('a.id', 'ASC')
+                ->orderBy('a.id', \SortDirection::Ascending)
                 ->setMaxResults(self::BATCH_SIZE);
             if ($lastId !== null) {
                 $qb->andWhere('a.id > :lastId')->setParameter('lastId', $lastId, UlidType::NAME);

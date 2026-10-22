@@ -114,7 +114,7 @@ class UserController extends Controller
             ->andWhere('a.userId IN (:ids)')
             ->setParameter('type', AuditLogEventType::UserFrozen->value)
             ->setParameter('ids', $userIds)
-            ->orderBy('a.datetime', 'DESC')
+            ->orderBy('a.datetime', \SortDirection::Descending)
             ->getQuery()->getResult();
 
         $latestByUserId = [];

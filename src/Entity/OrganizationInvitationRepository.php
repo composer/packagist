@@ -37,7 +37,7 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('i')
             ->where('i.orgId = :orgId')
             ->setParameter('orgId', $orgId, 'ulid')
-            ->orderBy('i.createdAt', 'DESC')
+            ->orderBy('i.createdAt', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }
@@ -57,7 +57,7 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
             ->andWhere('i.status = :pending')
             ->setParameter('orgId', $orgId, 'ulid')
             ->setParameter('pending', InvitationStatus::Pending->value)
-            ->orderBy('i.createdAt', 'DESC')
+            ->orderBy('i.createdAt', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }
@@ -113,7 +113,7 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
             ->andWhere('i.expiresAt < :now')
             ->setParameter('pending', InvitationStatus::Pending->value)
             ->setParameter('now', $now)
-            ->orderBy('i.expiresAt', 'ASC')
+            ->orderBy('i.expiresAt', \SortDirection::Ascending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

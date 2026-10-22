@@ -161,7 +161,7 @@ class PackageRepository extends ServiceEntityRepository
         $qb = $this->getEntityManager()->getRepository(Package::class)->createQueryBuilder('p')
             ->select('p.name')
             ->where('(p.frozen IS NULL OR p.frozen NOT IN (:suppressed))')
-            ->orderBy('p.name', 'ASC')
+            ->orderBy('p.name', \SortDirection::Ascending)
             ->setParameter('suppressed', PackageFreezeReason::suppressingCases());
         if ($type !== null) {
             $qb->andWhere('p.type = :type')
@@ -185,7 +185,7 @@ class PackageRepository extends ServiceEntityRepository
             ->leftJoin('p.maintainers', 'm')
             ->where('m.id = :userId')
             ->andWhere('p.repository LIKE :repoUrl')
-            ->orderBy('p.autoUpdated', 'ASC')
+            ->orderBy('p.autoUpdated', \SortDirection::Ascending)
             ->getQuery()
             ->setParameters(['userId' => $userId, 'repoUrl' => 'https://github.com/%']);
 
@@ -476,8 +476,8 @@ class PackageRepository extends ServiceEntityRepository
         $qb->select('p', 'v')
             ->from(Package::class, 'p')
             ->leftJoin('p.versions', 'v')
-            ->orderBy('v.development', 'DESC')
-            ->addOrderBy('v.releasedAt', 'DESC');
+            ->orderBy('v.development', \SortDirection::Descending)
+            ->addOrderBy('v.releasedAt', \SortDirection::Descending);
 
         if (null !== $ids) {
             $qb->where($qb->expr()->in('p.id', ':ids'))
@@ -531,7 +531,7 @@ class PackageRepository extends ServiceEntityRepository
         if (true === $orderByName) {
             $qb->addOrderBy('p.name');
         } else {
-            $qb->addOrderBy('p.id', 'DESC');
+            $qb->addOrderBy('p.id', \SortDirection::Descending);
         }
 
         $this->addFilters($qb, $filters);
@@ -1013,7 +1013,7 @@ class PackageRepository extends ServiceEntityRepository
             ->where('p.abandoned = false')
             ->andWhere('(p.frozen IS NULL OR p.frozen NOT IN (:suppressed))')
             ->setParameter('suppressed', PackageFreezeReason::suppressingCases())
-            ->orderBy('p.id', 'DESC');
+            ->orderBy('p.id', \SortDirection::Descending);
 
         return $qb;
     }
@@ -1030,7 +1030,7 @@ class PackageRepository extends ServiceEntityRepository
             ->andWhere('(p.frozen IS NULL OR p.frozen NOT IN (:suppressed))')
             ->setParameter('suppressed', PackageFreezeReason::suppressingCases())
             ->andWhere("(p.type = 'php-ext' OR p.type = 'php-ext-zend')")
-            ->orderBy('p.id', 'DESC');
+            ->orderBy('p.id', \SortDirection::Descending);
 
         return $qb;
     }

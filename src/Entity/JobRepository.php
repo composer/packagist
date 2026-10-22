@@ -57,7 +57,7 @@ class JobRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('j')
             ->where('j.packageId = :userId')
             ->andWhere('j.type = :type')
-            ->orderBy('j.createdAt', 'DESC')
+            ->orderBy('j.createdAt', \SortDirection::Descending)
             ->getQuery()
             ->setMaxResults(1)
             ->setParameters(['userId' => $userId, 'type' => 'githubuser:migrate'])
@@ -114,7 +114,7 @@ class JobRepository extends ServiceEntityRepository
             ->where('j.packageId = :packageId')
             ->andWhere('j.type = :type')
             // no id tiebreaker, job ids are random hex so ordering by them is meaningless
-            ->orderBy('j.createdAt', 'DESC')
+            ->orderBy('j.createdAt', \SortDirection::Descending)
             ->setParameter('packageId', $packageId)
             ->setParameter('type', 'package:updates');
     }

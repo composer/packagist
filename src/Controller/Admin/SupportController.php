@@ -505,7 +505,7 @@ class SupportController extends Controller
             ->select('p.name')
             ->where('p.vendor = :vendor')
             ->setParameter('vendor', $vendor)
-            ->orderBy('p.name', 'ASC')
+            ->orderBy('p.name', \SortDirection::Ascending)
             ->setMaxResults(self::VENDOR_PACKAGE_LIMIT)
             ->getQuery()
             ->getResult();
@@ -519,7 +519,7 @@ class SupportController extends Controller
                 ->leftJoin('p.maintainers', 'm')
                 ->where('p.name IN (:names)')
                 ->setParameter('names', $names)
-                ->orderBy('p.name', 'ASC')
+                ->orderBy('p.name', \SortDirection::Ascending)
                 ->getQuery()
                 ->getResult();
         }

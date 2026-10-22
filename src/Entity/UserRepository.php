@@ -37,10 +37,10 @@ class UserRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('u')
             ->addSelect('SIZE(u.packages) AS packageCount')
-            ->orderBy($orderByFrozenAt ? 'u.frozenAt' : 'u.id', 'DESC');
+            ->orderBy($orderByFrozenAt ? 'u.frozenAt' : 'u.id', \SortDirection::Descending);
 
         if ($orderByFrozenAt) {
-            $qb->addOrderBy('u.id', 'DESC');
+            $qb->addOrderBy('u.id', \SortDirection::Descending);
         }
 
         return $qb;
@@ -119,7 +119,7 @@ class UserRepository extends ServiceEntityRepository
             ->select('u')
             ->innerJoin('u.packages', 'p', 'WITH', 'p.id = :packageId')
             ->setParameter(':packageId', $package->getId())
-            ->orderBy('u.usernameCanonical', 'ASC');
+            ->orderBy('u.usernameCanonical', \SortDirection::Ascending);
 
         if ($excludeUser) {
             $qb->andWhere('u.id <> :userId')

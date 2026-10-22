@@ -156,7 +156,7 @@ class OrganizationController extends Controller
         $qb = $auditRecordRepository->createQueryBuilder('a')
             ->where('a.organizationId = :organizationId')
             ->setParameter('organizationId', $organization->id, UlidType::NAME)
-            ->orderBy('a.id', 'DESC');
+            ->orderBy('a.id', \SortDirection::Descending);
 
         foreach ($filters as $filter) {
             $filter->filter($qb);

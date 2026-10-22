@@ -110,7 +110,7 @@ class DownloadFixtures extends Fixture implements FixtureGroupInterface
             ->where('v.package = :package')
             ->setParameter('package', $package)
             ->andWhere('v.development = false')
-            ->orderBy('v.normalizedVersion', 'DESC')
+            ->orderBy('v.normalizedVersion', \SortDirection::Descending)
             ->setMaxResults(1)
             ->getQuery()
             ->getSingleResult();

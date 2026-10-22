@@ -48,7 +48,7 @@ class OrganizationRepository extends ServiceEntityRepository
             )
             ->where('o.deletedAt IS NULL')
             ->setParameter('userId', $user->getId())
-            ->orderBy('o.createdAt', 'DESC')
+            ->orderBy('o.createdAt', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }
@@ -61,7 +61,7 @@ class OrganizationRepository extends ServiceEntityRepository
     public function findAllOrdered(): array
     {
         return $this->createQueryBuilder('o')
-            ->orderBy('o.createdAt', 'DESC')
+            ->orderBy('o.createdAt', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }

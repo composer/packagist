@@ -29,7 +29,7 @@ class AuditLogSearchTest extends IntegrationTestCase
     {
         $qb = $this->getEM()->getRepository(AuditRecord::class)
             ->createQueryBuilder('a')
-            ->orderBy('a.id', 'DESC');
+            ->orderBy('a.id', \SortDirection::Descending);
         $filter->filter($qb);
 
         /** @var list<AuditRecord> $result */

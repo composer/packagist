@@ -351,7 +351,7 @@ class VersionRepository extends ServiceEntityRepository
             ->from('App\Entity\Version', 'v')
             ->where('v.development = false')
             ->andWhere('v.releasedAt <= ?0')
-            ->orderBy('v.releasedAt', 'DESC');
+            ->orderBy('v.releasedAt', \SortDirection::Descending);
         $qb->setParameter(0, date('Y-m-d H:i:s'));
 
         if ($onlyPieExtensions) {
@@ -388,7 +388,7 @@ class VersionRepository extends ServiceEntityRepository
             ->from('App\Entity\Version', 'v')
             ->where('v.development = false')
             ->andWhere('v.releasedAt < :now')
-            ->orderBy('v.releasedAt', 'DESC')
+            ->orderBy('v.releasedAt', \SortDirection::Descending)
             ->setMaxResults($count)
             ->setParameter('now', date('Y-m-d H:i:s'));
 
