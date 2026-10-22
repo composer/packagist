@@ -1,62 +1,73 @@
-import jQuery from "jquery";
+import { request, formParams, ignoreRequestError } from './request';
 
-const init = function ($) {
+const init = function () {
     var showSimilarMax = 5;
+    var form = document.querySelector('#submit-package-form');
+    var submit = document.querySelector('#submit');
+
     var onSubmit = function(e) {
-        var success;
         e.preventDefault();
-        if ($('#submit').is('.loading')) {
+        if (submit.classList.contains('loading')) {
             return;
         }
-        $('ul.package-errors, div.similar-packages-notice, div.confirmation', this).remove();
-        success = function (data) {
+        form.querySelectorAll('ul.package-errors, div.similar-packages-notice, div.confirmation').forEach((el) => el.remove());
+        var success = function (data) {
             var html = '';
-            $('#submit').removeClass('loading');
             if (data.status === 'error') {
-                $.each(data.reason, function (k, v) {
+                Object.values(data.reason).forEach(function (v) {
                     html += '<li><div class="alert alert-warning">'+v+'</div></li>';
                 });
-                $('#submit-package-form').prepend('<ul class="list-unstyled package-errors">'+html+'</ul>');
+                form.insertAdjacentHTML('afterbegin', '<ul class="list-unstyled package-errors">'+html+'</ul>');
             } else {
                 if (data.similar.length) {
-                    var $similar = $('<ul class="list-unstyled similar-packages">');
+                    var similarList = document.createElement('ul');
+                    similarList.className = 'list-unstyled similar-packages';
                     var limit = data.similar.length > showSimilarMax ? showSimilarMax : data.similar.length;
                     for ( var i = 0; i < limit; i++ ) {
                         var similar = data.similar[i];
-                        var $link = $('<a>').attr('href', similar.url).text(similar.name);
-                        $similar.append($('<li>').append($link))
+                        var link = document.createElement('a');
+                        link.href = similar.url;
+                        link.textContent = similar.name;
+                        var item = document.createElement('li');
+                        item.append(link);
+                        similarList.append(item);
                     }
                     if (limit != data.similar.length) {
-                        $similar.append($('<li>').text('And ' + (data.similar.length - limit) + ' more'));
+                        var more = document.createElement('li');
+                        more.textContent = 'And ' + (data.similar.length - limit) + ' more';
+                        similarList.append(more);
                     }
-                    $('#submit').before($('<div class="similar-packages-notice">').append(
-                        '<p><strong>Notice:</strong> One or more similarly named packages have already been submitted to Packagist. If this is a fork read the notice above regarding VCS Repositories.'
-                    ).append(
-                        '<p>Similarly named packages:'
-                    ).append($similar));
+                    var notice = document.createElement('div');
+                    notice.className = 'similar-packages-notice';
+                    notice.innerHTML = '<p><strong>Notice:</strong> One or more similarly named packages have already been submitted to Packagist. If this is a fork read the notice above regarding VCS Repositories.</p>'
+                        + '<p>Similarly named packages:</p>';
+                    notice.append(similarList);
+                    submit.before(notice);
                 }
-                $('#submit').before(
+                submit.insertAdjacentHTML(
+                    'beforebegin',
                     '<div class="confirmation">The package name found for your repository is: <strong>'+data.name+'</strong>, press Submit to confirm.</div>'
                 );
-                $('#submit').text('Submit');
-                $('#submit-package-form').off('submit');
+                submit.textContent = 'Submit';
+                form.removeEventListener('submit', onSubmit);
             }
         };
-        $.post($(this).data('check-url'), $(this).serializeArray(), success).fail(function () {
-            $('#submit').removeClass('loading');
-        });
-        $('#submit').addClass('loading');
+        request(form.dataset.checkUrl, {method: 'POST', params: formParams(form)})
+            .then(success)
+            .catch(ignoreRequestError)
+            .finally(() => submit.classList.remove('loading'));
+        submit.classList.add('loading');
     };
 
-    $('#package_repository').change(function() {
-        $('#submit-package-form').off('submit');
-        $('#submit-package-form').submit(onSubmit);
-        $('#submit').text('Check');
-    });
+    var onRepositoryChange = function () {
+        form.addEventListener('submit', onSubmit);
+        submit.textContent = 'Check';
+    };
 
-    $('#package_repository').triggerHandler('change');
+    document.querySelector('#package_repository').addEventListener('change', onRepositoryChange);
+    onRepositoryChange();
 };
 
 if (document.querySelector('#submit-package-page')) {
-    init(jQuery);
+    init();
 }

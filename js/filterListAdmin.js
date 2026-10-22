@@ -1,28 +1,26 @@
-import jQuery from "jquery";
-
-const init = function ($) {
+const init = function (form) {
     "use strict";
 
-    const form = $('#filter-list-bulk-form');
-    const selectAll = form.find('[data-bulk-select-all]');
-    const checkboxes = form.find('[data-bulk-select]');
+    const selectAll = form.querySelector('[data-bulk-select-all]');
+    const checkboxes = form.querySelectorAll('[data-bulk-select]');
 
     function refresh() {
-        const checked = checkboxes.filter(':checked').length;
-        selectAll.prop('checked', checked > 0 && checked === checkboxes.length);
-        selectAll.prop('indeterminate', checked > 0 && checked < checkboxes.length);
+        const checked = Array.from(checkboxes).filter((el) => el.checked).length;
+        selectAll.checked = checked > 0 && checked === checkboxes.length;
+        selectAll.indeterminate = checked > 0 && checked < checkboxes.length;
     }
 
-    selectAll.on('change', function () {
-        checkboxes.prop('checked', selectAll.prop('checked'));
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach((el) => { el.checked = selectAll.checked; });
         refresh();
     });
 
-    checkboxes.on('change', refresh);
+    checkboxes.forEach((el) => el.addEventListener('change', refresh));
 
     refresh();
 };
 
-if (document.querySelector('#filter-list-bulk-form')) {
-    init(jQuery);
+const form = document.querySelector('#filter-list-bulk-form');
+if (form) {
+    init(form);
 }

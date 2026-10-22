@@ -1,6 +1,4 @@
 import { init as initPlausible } from '@plausible-analytics/tracker'
-import './jquery';
-import notifier from './notifier';
 import './search';
 import './view';
 import './submitPackage';
@@ -13,86 +11,63 @@ import '../css/app.scss';
 import 'bootstrap';
 import { Tooltip } from 'bootstrap';
 
-(function ($) {
-    "use strict";
+// Bootstrap focuses the modal itself on show and ignores [autofocus]
+document.addEventListener('shown.bs.modal', function (e) {
+    e.target.querySelector('[autofocus]')?.focus();
+});
 
-    /**
-     * Ajax error handler
-     */
-    $.ajaxSetup({
-        error: function (xhr) {
-            var resp, message, details = undefined;
+/**
+ * API Token visibility toggling
+ */
+document.querySelectorAll('.btn-show-api-token, .api-token').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+        const parent = el.closest('.api-token-group');
+        const token = parent.querySelector('.api-token');
+        token.value = token.dataset.apiToken;
+        token.select();
 
-            notifier.remove();
+        const button = parent.querySelector('.btn-show-api-token');
+        button.textContent = button.textContent.replace('Show', 'Your');
 
-            if (xhr.responseText) {
-                try {
-                    resp = JSON.parse(xhr.responseText);
-                    if (resp.status && resp.status === 'error') {
-                        message = resp.message;
-                        details = resp.details;
-                    }
-                } catch (e) {
-                    message = "We're so sorry, something is wrong on our end.";
-                }
-            }
-
-            notifier.log(message, {}, details);
-        }
+        e.preventDefault();
     });
-
-    // Bootstrap focuses the modal itself on show and ignores [autofocus]
-    $(document).on('shown.bs.modal', '.modal', function () {
-        $(this).find('[autofocus]').first().trigger('focus');
-    });
-
-    /**
-     * API Token visibility toggling
-     */
-    $('.btn-show-api-token, .api-token').each(function() {
-        $(this).click(function (e) {
-            const parent = $(this).closest('.api-token-group');
-            const token = parent.find('.api-token');
-            token.val(token.data('api-token'));
-            token.select();
-
-            const button = parent.find('.btn-show-api-token').first();
-            button.text(button.text().replace('Show', 'Your'));
-
-            e.preventDefault();
-        });
-    });
-    $('.btn-rotate-api-token').click(function (e) {
+});
+document.querySelectorAll('.btn-rotate-api-token').forEach(function (el) {
+    el.addEventListener('click', function (e) {
         if (!window.confirm('Are you sure? This will revoke your current API tokens and generate new ones.')) {
             e.preventDefault();
         }
     });
+});
 
-    $('.toc a').click(function (e) {
+document.querySelectorAll('.toc a').forEach(function (el) {
+    el.addEventListener('click', function (e) {
         setTimeout(function () {
-            scrollTo(0, $($(e.target).attr('href')).offset().top - 65);
+            const target = document.getElementById(e.target.getAttribute('href').substring(1));
+            scrollTo(0, target.getBoundingClientRect().top + window.scrollY - 65);
         }, 0);
     });
+});
 
-    let currentBannerId = $('.banner .banner-close').data('banner-id');
-    $('.banner .banner-close').click(function () {
-        $('.banner').addClass('d-none');
-        try {
-            window.localStorage.setItem('banner-read', currentBannerId);
-        } catch (e) {}
-    });
-    if (currentBannerId !== undefined) {
-        try {
-            if (window.localStorage.getItem('banner-read') !== currentBannerId) {
-                $('.banner').removeClass('d-none');
-            }
-        } catch (e) {}
-    }
+const bannerClose = document.querySelector('.banner .banner-close');
+const currentBannerId = bannerClose?.dataset.bannerId;
+bannerClose?.addEventListener('click', function () {
+    document.querySelectorAll('.banner').forEach((el) => el.classList.add('d-none'));
+    try {
+        window.localStorage.setItem('banner-read', currentBannerId);
+    } catch (e) {}
+});
+if (currentBannerId !== undefined) {
+    try {
+        if (window.localStorage.getItem('banner-read') !== currentBannerId) {
+            document.querySelectorAll('.banner').forEach((el) => el.classList.remove('d-none'));
+        }
+    } catch (e) {}
+}
 
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-        new Tooltip(el);
-    });
-})(jQuery);
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+    new Tooltip(el);
+});
 
 if (
     window.trackPageload !== false

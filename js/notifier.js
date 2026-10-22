@@ -109,7 +109,7 @@ function log(msg, options = {}, details = undefined) {
     return entry;
 }
 
-// without an entry this clears the message toasts, which is what the ajax error handler and the
+// without an entry this clears the message toasts, which is what the request error handler and the
 // job-completion path both want. Sticky ones track a running job rather than carrying a message,
 // so they survive until whoever started the job removes them by entry.
 function remove(entry = undefined) {
