@@ -14,6 +14,7 @@ namespace App\Service;
 
 use App\Entity\Job;
 use App\Logger\LogIdProcessor;
+use Composer\Util\Http\ResponseWarnings;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Logger;
@@ -123,6 +124,8 @@ class QueueWorker
         $processor = $this->jobWorkers[$job->getType()];
 
         $this->logger->reset();
+        // Composer shows each repository warning once per process, but every job has its own output
+        ResponseWarnings::reset();
         $this->logger->debug('Processing '.$job->getType().' job', ['job' => $job->getPayload()]);
 
         try {
