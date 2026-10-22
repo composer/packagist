@@ -13,8 +13,6 @@
 namespace App;
 
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
-use Symfony\Component\Config\Loader\LoaderInterface;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 
@@ -38,7 +36,7 @@ class Kernel extends BaseKernel
     /**
      * @return list<string> An array of allowed values for APP_ENV
      */
-    private function getAllowedEnvs(): array // @phpstan-ignore method.unused (called by KernelTrait)
+    private function getAllowedEnvs(): array
     {
         return ['prod', 'dev', 'test'];
     }

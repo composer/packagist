@@ -719,7 +719,6 @@ class PackageController extends Controller
             $version = $versionMap[$defaultBranch->getId()];
             Assert::notNull($version);
             $expandedVersion = $versionMap[$expanded->getId()] ?? $version;
-            Assert::notNull($expandedVersion);
         }
 
         $data = [
