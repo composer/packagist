@@ -95,4 +95,40 @@ class PackageTest extends TestCase
 
         $package->setSubmittedOnBehalfOf(new User());
     }
+
+    public function testSortVersionsOrdersNumericallyEqualVersionsTheSameWhateverTheInputOrder(): void
+    {
+        $released = new \DateTimeImmutable('2020-07-02 09:34:28');
+        $padded = self::versionForSort('v0.0.070', '0.0.070.0', $released);
+        $unpadded = self::versionForSort('v0.0.70', '0.0.70.0', $released);
+
+        $forward = [$padded, $unpadded];
+        $backward = [$unpadded, $padded];
+        usort($forward, Package::sortVersions(...));
+        usort($backward, Package::sortVersions(...));
+
+        self::assertSame(['v0.0.070', 'v0.0.70'], array_map(static fn (Version $v): string => $v->getVersion(), $forward));
+        self::assertSame(['v0.0.070', 'v0.0.70'], array_map(static fn (Version $v): string => $v->getVersion(), $backward));
+    }
+
+    public function testSortVersionsPutsTheNewerOfTwoNumericallyEqualVersionsFirst(): void
+    {
+        $versions = [
+            self::versionForSort('v0.0.070', '0.0.070.0', new \DateTimeImmutable('2020-07-01')),
+            self::versionForSort('v0.0.70', '0.0.70.0', new \DateTimeImmutable('2020-07-02')),
+        ];
+        usort($versions, Package::sortVersions(...));
+
+        self::assertSame(['v0.0.70', 'v0.0.070'], array_map(static fn (Version $v): string => $v->getVersion(), $versions));
+    }
+
+    private static function versionForSort(string $version, string $normalized, \DateTimeImmutable $releasedAt): Version
+    {
+        $v = new Version();
+        $v->setVersion($version);
+        $v->setNormalizedVersion($normalized);
+        $v->setReleasedAt($releasedAt);
+
+        return $v;
+    }
 }

@@ -773,6 +773,31 @@ class V2DumperTest extends IntegrationTestCase
         }
     }
 
+    public function testNumericallyEqualVersionsAreDumpedInTheSameOrderWhateverTheRowOrder(): void
+    {
+        $this->primeBuildDir();
+        $released = new \DateTimeImmutable('2020-07-02 09:34:28');
+
+        $ids = [];
+        foreach (['acme/forward' => ['0.0.070', '0.0.70'], 'acme/backward' => ['0.0.70', '0.0.070']] as $name => $order) {
+            $package = self::createPackage($name, 'https://example.com/'.$name);
+            $versions = [];
+            foreach ($order as $version) {
+                $versions[] = $v = $this->createVersion($package, $version);
+                $v->setReleasedAt($released);
+            }
+            $this->store($package, ...$versions);
+            $ids[] = $package->getId();
+        }
+
+        $this->dumper->dump($ids, force: true);
+
+        foreach (['acme/forward', 'acme/backward'] as $name) {
+            $metadata = json_decode($this->localContent('p2/'.$name.'.json'), true, flags: \JSON_THROW_ON_ERROR);
+            self::assertSame(['0.0.070', '0.0.70'], array_column($metadata['packages'][$name], 'version'), $name);
+        }
+    }
+
     /**
      * @return list<int>
      */
