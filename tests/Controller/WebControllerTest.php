@@ -80,7 +80,7 @@ class WebControllerTest extends IntegrationTestCase
 
     private function createBrokenRedis(): RedisClient
     {
-        return new class () extends RedisClient {
+        return new class extends RedisClient {
             public function __call($commandID, $arguments): mixed
             {
                 throw new ClientException('redis is down');

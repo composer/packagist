@@ -53,7 +53,7 @@ enum PackageFreezeReason: string
      */
     public function suppressesPackage(): bool
     {
-        return in_array($this, self::suppressingCases(), true);
+        return \in_array($this, self::suppressingCases(), true);
     }
 
     /**

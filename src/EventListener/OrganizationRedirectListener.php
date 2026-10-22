@@ -29,7 +29,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 class OrganizationRedirectListener
 {
     public function __construct(
-        private readonly UrlGeneratorInterface $router
+        private readonly UrlGeneratorInterface $router,
     ) {
     }
 
@@ -47,7 +47,7 @@ class OrganizationRedirectListener
 
         $url = $this->router->generate($request->attributes->getString('_route'), $params);
         if (null !== $queryString = $request->getQueryString()) {
-            $url .= '?' . $queryString;
+            $url .= '?'.$queryString;
         }
 
         $event->setResponse(new RedirectResponse($url, Response::HTTP_FOUND));

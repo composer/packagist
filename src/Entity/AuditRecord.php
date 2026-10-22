@@ -26,6 +26,7 @@ use Symfony\Component\Uid\Ulid;
 
 /**
  * @phpstan-import-type VersionArray from Version
+ *
  * @phpstan-type FilterListEntryData array{package_name: string, version: string, list: string, reason: string|null, source: string, link: string|null, disabled: bool, remote_version: string, overwrite_version: string|null, internal_note: string|null, public_id: string|null}
  */
 #[ORM\Entity(repositoryClass: AuditRecordRepository::class)]
@@ -750,7 +751,7 @@ class AuditRecord
     }
 
     /**
-     * @param FilterListEntryData $previous Snapshot of the editable fields taken before the edit, see {@see self::getFilterListEntryData()}.
+     * @param FilterListEntryData $previous snapshot of the editable fields taken before the edit, see {@see self::getFilterListEntryData()}
      */
     public static function filterListEntryEdited(FilterListEntry $entry, array $previous, ?User $actor, ?int $packageId): self
     {
@@ -836,6 +837,7 @@ class AuditRecord
      * Normalises a Doctrine change set into a JSON-friendly list of field diffs.
      *
      * @param array<string, array{mixed, mixed}|PersistentCollection<array-key, mixed>> $changeSet
+     *
      * @return array<string, array{from: scalar|null, to: scalar|null}>
      */
     private static function getSecurityAdvisoryChanges(array $changeSet): array

@@ -14,10 +14,10 @@ namespace App\Command;
 
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
+use App\Package\V2Dumper;
 use App\Package\V2DumpOutcome;
 use App\Package\V2DumpResult;
 use App\Package\V2DumpWindow;
-use App\Package\V2Dumper;
 use App\Service\Locker;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;

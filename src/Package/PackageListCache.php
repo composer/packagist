@@ -30,7 +30,7 @@ class PackageListCache
     private const int GZIP_LEVEL = 6;
 
     /** Must match PackageController's streamed list responses, as this blob replaces that output. */
-    private const int ENCODING_OPTIONS = JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+    private const int ENCODING_OPTIONS = JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE;
 
     public function __construct(private Client $redis)
     {
@@ -87,7 +87,7 @@ class PackageListCache
      */
     public function write(array $names, int $builtVersion): void
     {
-        $blob = gzencode(json_encode(['packageNames' => $names], self::ENCODING_OPTIONS | JSON_THROW_ON_ERROR), self::GZIP_LEVEL);
+        $blob = gzencode(json_encode(['packageNames' => $names], self::ENCODING_OPTIONS | \JSON_THROW_ON_ERROR), self::GZIP_LEVEL);
         if ($blob === false) {
             throw new \RuntimeException('Failed to gzip the package list');
         }

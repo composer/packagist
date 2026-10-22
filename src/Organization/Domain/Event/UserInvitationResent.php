@@ -51,7 +51,7 @@ final readonly class UserInvitationResent implements InvitationEvent
         return [
             'email' => $this->email,
             'tokenHash' => $this->tokenHash,
-            'newExpiresAt' => $this->newExpiresAt->format(DATE_ATOM),
+            'newExpiresAt' => $this->newExpiresAt->format(\DATE_ATOM),
         ];
     }
 

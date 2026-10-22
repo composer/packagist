@@ -20,6 +20,6 @@ final class OrganizationRenamedException extends \RuntimeException
 {
     public function __construct(public readonly string $currentSlug)
     {
-        parent::__construct(sprintf('Organization slug redirects to "%s".', $currentSlug));
+        parent::__construct(\sprintf('Organization slug redirects to "%s".', $currentSlug));
     }
 }

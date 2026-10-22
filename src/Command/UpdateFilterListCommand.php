@@ -47,7 +47,7 @@ class UpdateFilterListCommand extends Command
         try {
             $list = FilterLists::from($input->getArgument('list'));
         } catch (\ValueError) {
-            $output->writeln('list must be one of '.implode(', ', array_map(fn (FilterLists $list) => $list->value, FilterLists::cases())));
+            $output->writeln('list must be one of '.implode(', ', array_map(static fn (FilterLists $list) => $list->value, FilterLists::cases())));
 
             return self::INVALID;
         }
@@ -55,7 +55,7 @@ class UpdateFilterListCommand extends Command
         try {
             $source = FilterSources::from($input->getArgument('source'));
         } catch (\ValueError) {
-            $output->writeln('source must be one of '.implode(', ', array_map(fn (FilterSources $source) => $source->value, FilterSources::cases())));
+            $output->writeln('source must be one of '.implode(', ', array_map(static fn (FilterSources $source) => $source->value, FilterSources::cases())));
 
             return self::INVALID;
         }

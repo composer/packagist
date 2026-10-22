@@ -212,7 +212,7 @@ class PackageRepository extends ServiceEntityRepository
             ->where('p.name = :name')
             ->setParameter('name', $name)
             ->getQuery()
-            ->getOneOrNullResult(\Doctrine\ORM\Query::HYDRATE_SCALAR_COLUMN);
+            ->getOneOrNullResult(Query::HYDRATE_SCALAR_COLUMN);
 
         return $id === null ? null : (int) $id;
     }
@@ -412,7 +412,7 @@ class PackageRepository extends ServiceEntityRepository
         $params = [
             'suppressed' => PackageFreezeReason::suppressingValues(),
             'since' => ($since ?? new \DateTimeImmutable(self::DUMP_SWEEP_EPOCH))->format('Y-m-d H:i:s'),
-            'now' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+            'now' => new \DateTimeImmutable()->format('Y-m-d H:i:s'),
         ];
         $types = ['suppressed' => ArrayParameterType::STRING];
 
@@ -508,9 +508,9 @@ class PackageRepository extends ServiceEntityRepository
 
     /**
      * @param array<string, string|int|null> $filters
-     * @param bool $includeFrozen When false (default) suppressed (spam/malware) frozen packages are
-     *                            excluded, matching the public listings. Pass true only for
-     *                            moderator-facing listings.
+     * @param bool                           $includeFrozen When false (default) suppressed (spam/malware) frozen packages are
+     *                                                      excluded, matching the public listings. Pass true only for
+     *                                                      moderator-facing listings.
      */
     public function getFilteredQueryBuilder(array $filters = [], bool $orderByName = false, bool $includeFrozen = false): QueryBuilder
     {

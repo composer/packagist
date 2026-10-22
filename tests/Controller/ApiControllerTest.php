@@ -11,13 +11,14 @@
  */
 
 namespace App\Tests\Controller;
+
 use App\Entity\PackageFreezeReason;
-use App\Service\Scheduler;
 use App\Entity\SecurityAdvisory;
+use App\Model\VersionIdCache;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;
-use App\Model\VersionIdCache;
+use App\Service\Scheduler;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;

@@ -22,8 +22,8 @@ use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
 use App\FilterList\RemoteFilterListEntry;
 use App\Model\ProviderManager;
-use App\Package\V2DumpOutcome;
 use App\Package\V2Dumper;
+use App\Package\V2DumpOutcome;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Service\CdnClient;
 use App\Service\Locker;
@@ -841,7 +841,7 @@ class V2DumperTest extends IntegrationTestCase
     }
 
     /**
-     * @param \Closure(string): string    $fetch what the public CDN serves for a path
+     * @param \Closure(string): string      $fetch what the public CDN serves for a path
      * @param (\Closure(string): bool)|null $purge
      */
     private function verifyingCdnClient(\Closure $fetch, ?\Closure $purge = null): CdnClient

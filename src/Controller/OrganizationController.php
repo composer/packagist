@@ -53,10 +53,9 @@ use App\QueryFilter\AuditLog\EventTypeFilter;
 use App\QueryFilter\QueryFilterInterface;
 use App\Security\Voter\OrganizationActions;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
-use Psr\Clock\ClockInterface;
 use Pagerfanta\Pagerfanta;
+use Psr\Clock\ClockInterface;
 use Symfony\Bridge\Doctrine\Types\UlidType;
-use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -65,6 +64,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Uid\Ulid;
 
 class OrganizationController extends Controller
 {
@@ -234,7 +234,7 @@ class OrganizationController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->membershipManager->createTeam($organization, $user, $teamRequest->name, $request->getClientIp());
-                $this->addFlash('success', sprintf('Team "%s" created.', $teamRequest->name));
+                $this->addFlash('success', \sprintf('Team "%s" created.', $teamRequest->name));
 
                 return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -266,7 +266,7 @@ class OrganizationController extends Controller
             try {
                 $previousName = $team->name;
                 $this->membershipManager->renameTeam($organization, $user, $team->teamId, $teamRequest->name, $request->getClientIp());
-                $this->addFlash('success', sprintf('Team "%s" renamed to "%s".', $previousName, $teamRequest->name));
+                $this->addFlash('success', \sprintf('Team "%s" renamed to "%s".', $previousName, $teamRequest->name));
 
                 return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -296,7 +296,7 @@ class OrganizationController extends Controller
             try {
                 $teamName = $team->name;
                 $this->membershipManager->deleteTeam($organization, $user, $team->teamId, $request->getClientIp());
-                $this->addFlash('success', sprintf('Team "%s" deleted.', $teamName));
+                $this->addFlash('success', \sprintf('Team "%s" deleted.', $teamName));
 
                 return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -327,11 +327,11 @@ class OrganizationController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             $target = $this->organizationMemberRepo->findOrgMember($organization->id, $addRequest->username);
             if ($target === null) {
-                $form->addError(new FormError(sprintf('No member "%s" was found in this organization.', $addRequest->username)));
+                $form->addError(new FormError(\sprintf('No member "%s" was found in this organization.', $addRequest->username)));
             } else {
                 try {
                     $this->membershipManager->addTeamMember($organization, $user, $team->teamId, $target->getId(), $request->getClientIp());
-                    $this->addFlash('success', sprintf('Added "%s" to team "%s".', $target->getUsername(), $team->name));
+                    $this->addFlash('success', \sprintf('Added "%s" to team "%s".', $target->getUsername(), $team->name));
 
                     return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
                 } catch (OrganizationException $e) {
@@ -374,7 +374,7 @@ class OrganizationController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->membershipManager->removeTeamMember($organization, $user, $team->teamId, $teamMember->getId(), $request->getClientIp());
-                $this->addFlash('success', sprintf('Removed "%s" from team "%s".', $teamMember->getUsername(), $team->name));
+                $this->addFlash('success', \sprintf('Removed "%s" from team "%s".', $teamMember->getUsername(), $team->name));
 
                 return $this->redirectToRoute('organization_teams', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -438,6 +438,7 @@ class OrganizationController extends Controller
 
     /**
      * @param array<string, string> $teamNamesById
+     *
      * @return list<array{invitation: OrganizationInvitation, teamNames: list<string>}>
      */
     private function loadInvitations(Organization $organization, array $teamNamesById): array
@@ -476,7 +477,7 @@ class OrganizationController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->membershipManager->removeMember($organization, $user, $organizationMember->getId(), $request->getClientIp());
-                $this->addFlash('success', sprintf('Removed "%s" from the organization.', $organizationMember->getUsername()));
+                $this->addFlash('success', \sprintf('Removed "%s" from the organization.', $organizationMember->getUsername()));
 
                 return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -502,7 +503,7 @@ class OrganizationController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->membershipManager->leave($organization, $user, $request->getClientIp());
-                $this->addFlash('success', sprintf('You have left "%s".', $organization->displayName));
+                $this->addFlash('success', \sprintf('You have left "%s".', $organization->displayName));
 
                 return $this->redirectToRoute('organization_list');
             } catch (OrganizationException $e) {
@@ -528,7 +529,7 @@ class OrganizationController extends Controller
             try {
                 $teamIds = array_map(static fn (string $id): Ulid => Ulid::fromString($id), $inviteRequest->teamIds);
                 $this->invitationManager->invite($organization, $user, $inviteRequest->email, $teamIds, $request->getClientIp());
-                $this->addFlash('success', sprintf('Invitation sent to "%s".', $inviteRequest->email));
+                $this->addFlash('success', \sprintf('Invitation sent to "%s".', $inviteRequest->email));
 
                 return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -553,7 +554,7 @@ class OrganizationController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->invitationManager->resend($organization, $user, $invitation, $request->getClientIp());
-                $this->addFlash('success', sprintf('Invitation to "%s" re-sent.', $invitation->email));
+                $this->addFlash('success', \sprintf('Invitation to "%s" re-sent.', $invitation->email));
 
                 return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {
@@ -579,7 +580,7 @@ class OrganizationController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             try {
                 $this->invitationManager->revoke($organization, $user, $invitation, $request->getClientIp());
-                $this->addFlash('success', sprintf('Invitation to "%s" revoked.', $invitation->email));
+                $this->addFlash('success', \sprintf('Invitation to "%s" revoked.', $invitation->email));
 
                 return $this->redirectToRoute('organization_members', ['organization' => $organization->slug]);
             } catch (OrganizationException $e) {

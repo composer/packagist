@@ -128,18 +128,18 @@ class SecurityAdvisoryWorkerTest extends TestCase
         $calls = [];
         $this->em
             ->method('remove')
-            ->willReturnCallback(function (object $entity) use (&$calls): void {
+            ->willReturnCallback(static function (object $entity) use (&$calls): void {
                 $calls[] = $entity instanceof SecurityAdvisory ? 'remove:advisory' : 'remove:source';
             });
         $this->em
             ->method('persist')
-            ->willReturnCallback(function () use (&$calls): void {
+            ->willReturnCallback(static function () use (&$calls): void {
                 $calls[] = 'persist';
             });
         $this->em
             ->expects($this->exactly(2))
             ->method('flush')
-            ->willReturnCallback(function () use (&$calls): void {
+            ->willReturnCallback(static function () use (&$calls): void {
                 $calls[] = 'flush';
             });
 

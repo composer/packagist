@@ -19,7 +19,6 @@ use App\Entity\Package;
 use App\Entity\PackageReadme;
 use App\Entity\RequireLink;
 use App\Entity\Version;
-use App\Entity\VersionRepository;
 use App\Log\AuditLogEventType;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;

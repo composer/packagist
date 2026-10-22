@@ -31,7 +31,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test=audit-log-type]')->each(static fn ($element) => trim($element->text()));
         static::assertContains('Organization created', $types);
 
         $link = $crawler->filter('a[href="/organizations/acme"]');
@@ -57,7 +57,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertResponseIsSuccessful();
 
         $rows = $crawler->filter('[data-test=audit-log-type]');
-        static::assertSame($expected, $rows->each(fn ($element) => trim($element->text())));
+        static::assertSame($expected, $rows->each(static fn ($element) => trim($element->text())));
     }
 
     public function testViewAuditLogsFilteredByUsername(): void
@@ -75,7 +75,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         // The search is case-insensitive and matches the record where naderman is the subject user.
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user' => 'NADERMAN']));
         static::assertResponseIsSuccessful();
-        $rowTexts = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        $rowTexts = $crawler->filter('[data-test=audit-log-type]')->each(static fn ($element) => trim($element->text()));
         static::assertContains('Maintainer added', $rowTexts);
 
         // A username with no records returns an empty, non-crashing result

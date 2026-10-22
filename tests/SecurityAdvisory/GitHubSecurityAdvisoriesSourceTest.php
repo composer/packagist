@@ -266,7 +266,7 @@ class GitHubSecurityAdvisoriesSourceTest extends TestCase
         // Drop the GHSA identifier, leaving only the CVE one.
         $node['advisory']['identifiers'] = [['type' => 'CVE', 'value' => 'CVE-2020-25768']];
 
-        $responseFactory = fn (string $method, string $url, array $options) => new MockResponse(json_encode([
+        $responseFactory = static fn (string $method, string $url, array $options) => new MockResponse(json_encode([
             'data' => [
                 'securityVulnerabilities' => [
                     'nodes' => [$node],

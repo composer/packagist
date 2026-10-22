@@ -111,7 +111,7 @@ class V2Dumper
         $rootFileContents['filter'] = [
             'metadata' => true,
             'lists' => FilterLists::packagesJsonListConfig(),
-            'summary-url' => str_replace('https://', 'https://repo.', $this->router->generate('home', [], UrlGeneratorInterface::ABSOLUTE_URL)) . FilterListSummaryDumper::SUMMARY_PATH,
+            'summary-url' => str_replace('https://', 'https://repo.', $this->router->generate('home', [], UrlGeneratorInterface::ABSOLUTE_URL)).FilterListSummaryDumper::SUMMARY_PATH,
         ];
 
         if ($verbose) {

@@ -23,8 +23,8 @@ $config = new PhpCsFixer\Config();
 return $config
     ->setParallelConfig(PhpCsFixer\Runner\Parallel\ParallelConfigFactory::detect())
     ->setRules([
-        '@PHP84Migration' => true,
-        '@PHPUnit100Migration:risky' => true,
+        '@PHP8x4Migration' => true,
+        '@PHPUnit10x0Migration:risky' => true,
         '@PER-CS' => true,
         '@PER-CS:risky' => true,
         '@Symfony' => true,
@@ -36,6 +36,8 @@ return $config
         'yoda_style' => false,
         'phpdoc_summary' => false,
         'increment_style' => false,
+        'declare_strict_types' => true,
+        'single_line_throw' => false,
     ])
     ->setUsingCache(true)
     ->setRiskyAllowed(true)

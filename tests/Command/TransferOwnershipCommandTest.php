@@ -67,7 +67,7 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $this->assertNotNull($package2);
         $this->assertNotNull($package3);
 
-        $callable = fn (User $user) => $user->getUsernameCanonical();
+        $callable = static fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package1->getMaintainers()->toArray()));
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package2->getMaintainers()->toArray()));
         $this->assertEqualsCanonicalizing(['john'], array_map($callable, $package3->getMaintainers()->toArray()), 'vendor2 packages should not be changed');
@@ -92,7 +92,7 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $this->assertNotNull($package2);
         $this->assertNotNull($package3);
 
-        $callable = fn (User $user) => $user->getUsernameCanonical();
+        $callable = static fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['bob', 'john'], array_map($callable, $package2->getMaintainers()->toArray()), 'vendor1 packages should not be changed');
         $this->assertEqualsCanonicalizing(['alice', 'john'], array_map($callable, $package3->getMaintainers()->toArray()));
     }
@@ -116,7 +116,7 @@ class TransferOwnershipCommandTest extends IntegrationTestCase
         $this->assertNotNull($package1);
         $this->assertNotNull($package2);
 
-        $callable = fn (User $user) => $user->getUsernameCanonical();
+        $callable = static fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['john', 'alice'], array_map($callable, $package1->getMaintainers()->toArray()));
     }
 

@@ -26,8 +26,8 @@ class ValidValueObject extends Constraint
     public string $class;
 
     /**
-     * @param class-string $class value object constructed via `new $class($value)`; on invalid
-     *                            input it must throw an \InvalidArgumentException
+     * @param class-string       $class  value object constructed via `new $class($value)`; on invalid
+     *                                   input it must throw an \InvalidArgumentException
      * @param array<string>|null $groups
      */
     public function __construct(string $class, ?array $groups = null, mixed $payload = null)

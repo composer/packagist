@@ -102,7 +102,7 @@ class PackageManagerTest extends IntegrationTestCase
 
         $this->assertTrue($result);
 
-        $callable = fn (User $user) => $user->getUsernameCanonical();
+        $callable = static fn (User $user) => $user->getUsernameCanonical();
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package->getMaintainers()->toArray()));
         $this->assertAuditLogWasCreated($package, ['john', 'alice'], ['bob', 'alice']);
         $this->assertEmailCount($expectedEmailCount);
@@ -148,7 +148,7 @@ class PackageManagerTest extends IntegrationTestCase
         $this->assertNotNull($record, 'Audit record should be created for package transfer');
         $this->assertSame($package->getId(), $record->packageId);
 
-        $callable = fn (array $user) => $user['username'];
+        $callable = static fn (array $user) => $user['username'];
         $this->assertEqualsCanonicalizing($oldMaintainers, array_map($callable, $record->attributes['previous_maintainers']));
         $this->assertEqualsCanonicalizing($newMaintainers, array_map($callable, $record->attributes['current_maintainers']));
     }

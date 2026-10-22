@@ -71,7 +71,7 @@ final readonly class OrganizationAuditProjector implements Projector
 
         $actor = $this->user($recorded->actor->userId);
         if ($actor === null) {
-            throw new \RuntimeException('Missing actor: ' . $recorded->actor->userId);
+            throw new \RuntimeException('Missing actor: '.$recorded->actor->userId);
         }
 
         // OrganizationCreated carries its own slug/displayName and is projected before the
@@ -100,7 +100,7 @@ final readonly class OrganizationAuditProjector implements Projector
                 $event instanceof TeamMemberRemoved => AuditRecord::organizationTeamMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->teamName($event->teamId), $this->requireUser($event->userId), $actor),
                 $event instanceof MemberRemoved => AuditRecord::organizationMemberRemoved($event->organizationId, $org->slug, $org->displayName, $this->requireUser($event->userId), $actor),
                 $event instanceof MemberLeft => AuditRecord::organizationMemberLeft($event->organizationId, $org->slug, $org->displayName, $this->requireUser($event->userId), $actor),
-                default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
+                default => throw new \LogicException('Unhandled event: '.$event->eventType()->value),
             }
         );
     }

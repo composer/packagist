@@ -52,7 +52,7 @@ final class OrganizationManager
         try {
             $this->eventStore->append($organization, $this->actorFor($organization, $actor), $ip);
         } catch (UniqueConstraintViolationException $e) {
-            throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $slug->value), 0, $e);
+            throw new SlugTakenException(\sprintf('The organization slug "%s" is already taken.', $slug->value), 0, $e);
         }
 
         return $organization;
@@ -96,7 +96,7 @@ final class OrganizationManager
         try {
             $this->eventStore->append($aggregate, $this->actorFor($aggregate, $actor), $ip);
         } catch (UniqueConstraintViolationException $e) {
-            throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $newSlug->value), 0, $e);
+            throw new SlugTakenException(\sprintf('The organization slug "%s" is already taken.', $newSlug->value), 0, $e);
         }
     }
 

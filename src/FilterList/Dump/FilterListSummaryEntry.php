@@ -20,5 +20,6 @@ final readonly class FilterListSummaryEntry
         public string $packageName,
         public FilterLists $list,
         public string $version,
-    ) {}
+    ) {
+    }
 }

@@ -13,11 +13,11 @@
 namespace App\Organization\Projection;
 
 use App\Entity\Organization;
+use App\Entity\OrganizationMember;
+use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationRepository;
 use App\Entity\OrganizationStatus;
 use App\Entity\OrganizationTeam;
-use App\Entity\OrganizationMember;
-use App\Entity\OrganizationMemberRepository;
 use App\Entity\OrganizationTeamMember;
 use App\Entity\OrganizationTeamMemberRepository;
 use App\Entity\OrganizationTeamRepository;
@@ -85,7 +85,7 @@ final readonly class OrganizationReadModelProjector implements Projector
             $event instanceof TeamDeleted => $this->teamDeleted($event),
             $event instanceof MemberRemoved => $this->memberGone($event->organizationId, $event->userId),
             $event instanceof MemberLeft => $this->memberGone($event->organizationId, $event->userId),
-            default => throw new \LogicException('Unhandled event: ' . $event->eventType()->value),
+            default => throw new \LogicException('Unhandled event: '.$event->eventType()->value),
         };
 
         $this->getEM()->flush();

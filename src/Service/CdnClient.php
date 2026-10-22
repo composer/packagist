@@ -113,7 +113,7 @@ class CdnClient
         // purge the cache as well
         $this->purgeMetadataCache($path);
 
-        if (in_array($resp->getStatusCode(), [200, 404], true)) {
+        if (\in_array($resp->getStatusCode(), [200, 404], true)) {
             return;
         }
 
@@ -154,12 +154,12 @@ class CdnClient
 
     public function purgeSummaryUrl(): bool
     {
-        return $this->purgeUrl($this->metadataPublicEndpoint . FilterListSummaryDumper::SUMMARY_PATH);
+        return $this->purgeUrl($this->metadataPublicEndpoint.FilterListSummaryDumper::SUMMARY_PATH);
     }
 
     public function wasPublicRepoFileModifiedSince(string $path, \DateTimeImmutable $since): bool
     {
-        $resp = $this->httpClient->request('HEAD', $this->metadataPublicEndpoint . $path, [
+        $resp = $this->httpClient->request('HEAD', $this->metadataPublicEndpoint.$path, [
             'headers' => [
                 'If-Modified-Since' => $since->format(\DateTimeInterface::RFC7231),
             ],

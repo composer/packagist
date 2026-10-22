@@ -37,7 +37,7 @@ final readonly class AccountDeletionAttributes implements SupportRequestAttribut
 
         return new self(
             PackageDisposition::tryFrom((string) ($data['packageDisposition'] ?? '')) ?? PackageDisposition::Undecided,
-            is_string($transferTo) && $transferTo !== '' ? $transferTo : null,
+            \is_string($transferTo) && $transferTo !== '' ? $transferTo : null,
         );
     }
 

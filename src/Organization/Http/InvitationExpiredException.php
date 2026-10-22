@@ -21,6 +21,6 @@ final class InvitationExpiredException extends \RuntimeException
 {
     public function __construct(public readonly \DateTimeImmutable $expiresAt)
     {
-        parent::__construct(sprintf('Invitation link expired at %s.', $expiresAt->format('c')));
+        parent::__construct(\sprintf('Invitation link expired at %s.', $expiresAt->format('c')));
     }
 }

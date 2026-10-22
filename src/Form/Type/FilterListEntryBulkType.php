@@ -32,12 +32,12 @@ class FilterListEntryBulkType extends AbstractType
         $builder
             ->add('list', EnumType::class, [
                 'class' => FilterLists::class,
-                'choice_label' => fn (FilterLists $list) => $list->value,
+                'choice_label' => static fn (FilterLists $list) => $list->value,
                 'label' => 'List',
             ])
             ->add('source', EnumType::class, [
                 'class' => FilterSources::class,
-                'choice_label' => fn (FilterSources $source) => $source->displayName(),
+                'choice_label' => static fn (FilterSources $source) => $source->displayName(),
                 'label' => 'Source',
                 // Manually added entries are always ours, so this is display-only.
                 'disabled' => true,

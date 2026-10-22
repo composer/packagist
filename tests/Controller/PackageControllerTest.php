@@ -14,8 +14,8 @@ namespace App\Tests\Controller;
 
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
-use App\Entity\Download;
 use App\Entity\Dependent;
+use App\Entity\Download;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -31,16 +31,16 @@ use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedJsonResponse;
-use PHPUnit\Framework\Attributes\TestWith;
-use PHPUnit\Framework\Attributes\DataProvider;
-use Psr\Log\NullLogger;
-use Predis\Client;
 use Doctrine\DBAL\Driver\Exception as DriverExceptionInterface;
 use Doctrine\DBAL\Exception\ConnectionLost;
 use Doctrine\DBAL\Exception\DriverException;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\TestWith;
+use Predis\Client;
+use Psr\Log\NullLogger;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 
 class PackageControllerTest extends IntegrationTestCase
 {
@@ -561,7 +561,7 @@ class PackageControllerTest extends IntegrationTestCase
         $repo->method('getDefaultBranchRequireFor')->willReturn([]);
         $repo->method('getDependents')->willThrowException(new DriverException(self::driverException(self::ER_QUERY_TIMEOUT), null));
         $repo->method('getDependentsUnsorted')->willReturnCallback(
-            function () use ($fallbackWorks): array {
+            static function () use ($fallbackWorks): array {
                 if (!$fallbackWorks) {
                     throw new DriverException(self::driverException(self::ER_QUERY_TIMEOUT), null);
                 }
@@ -791,7 +791,7 @@ class PackageControllerTest extends IntegrationTestCase
 
         $this->assertTrue($package->isMaintainer($maintainer));
 
-        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
+        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::MaintainerAdded->value,
             'packageId' => $package->getId(),
             'actorId' => $owner->getId(),
@@ -832,7 +832,7 @@ class PackageControllerTest extends IntegrationTestCase
 
         $this->assertFalse($package->isMaintainer($maintainer));
 
-        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
+        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::MaintainerRemoved->value,
             'packageId' => $package->getId(),
             'actorId' => $owner->getId(),
@@ -882,12 +882,12 @@ class PackageControllerTest extends IntegrationTestCase
         $package = $em->getRepository(Package::class)->find($package->getId());
         $this->assertNotNull($package);
 
-        $maintainerIds = array_map(fn (User $user) => $user->getId(), $package->getMaintainers()->toArray());
+        $maintainerIds = array_map(static fn (User $user) => $user->getId(), $package->getMaintainers()->toArray());
         $this->assertContains($alice->getId(), $maintainerIds);
         $this->assertContains($bob->getId(), $maintainerIds);
         $this->assertNotContains($john->getId(), $maintainerIds);
 
-        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
+        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::PackageTransferred->value,
             'packageId' => $package->getId(),
         ]);
@@ -1325,7 +1325,7 @@ class PackageControllerTest extends IntegrationTestCase
         $this->client->request('GET', '/packages/test/pkg/stats.json');
         self::assertResponseIsSuccessful();
 
-        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertSame(['downloads', 'versions', 'average', 'date'], array_keys($data));
         self::assertSame(['1.0.0'], $data['versions']);
     }
@@ -1613,7 +1613,7 @@ class PackageControllerTest extends IntegrationTestCase
         $this->client->request('GET', $path.'?from=2026-01-01&to=2026-01-02&average='.$average);
         self::assertResponseIsSuccessful();
 
-        return json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        return json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -1690,7 +1690,7 @@ class PackageControllerTest extends IntegrationTestCase
             json_encode(['packages' => [
                 'listvendor/abandoned' => ['type' => 'library', 'abandoned' => 'other/pkg'],
                 'listvendor/active' => ['type' => 'library', 'abandoned' => false],
-            ]], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+            ]], JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES),
             $body,
         );
         self::assertStringContainsString('listvendor/abandoned', $body);
@@ -1714,7 +1714,7 @@ class PackageControllerTest extends IntegrationTestCase
         $body = $this->requestListJson('vendor=listvendor');
 
         self::assertSame(
-            json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+            json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES),
             $body,
         );
     }
@@ -1732,7 +1732,7 @@ class PackageControllerTest extends IntegrationTestCase
         // asserted on the raw string: a stray `yield $key => $name` would emit an object whose
         // json_decode() looks identical to the array's, so decoding here would hide the regression
         self::assertSame(
-            json_encode(['packageNames' => ['listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+            json_encode(['packageNames' => ['listvendor/abb', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES),
             $this->requestListJson('vendor=listvendor&filter=listvendor/*bb'),
         );
     }
@@ -1774,7 +1774,7 @@ class PackageControllerTest extends IntegrationTestCase
             $body = (string) $response->getContent();
             self::assertSame((string) \strlen($body), $response->headers->get('Content-Length'));
             self::assertSame(
-                json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES),
                 gzdecode($body),
             );
         } finally {
@@ -1795,7 +1795,7 @@ class PackageControllerTest extends IntegrationTestCase
             self::assertResponseIsSuccessful();
             self::assertFalse($this->client->getResponse()->headers->has('Content-Encoding'));
             self::assertSame(
-                json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES),
                 (string) $this->client->getResponse()->getContent(),
             );
         } finally {
@@ -1815,7 +1815,7 @@ class PackageControllerTest extends IntegrationTestCase
         try {
             $body = $this->requestListJson('');
 
-            $decoded = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
+            $decoded = json_decode($body, true, flags: \JSON_THROW_ON_ERROR);
             self::assertIsArray($decoded);
             self::assertContains('listvendor/fallback', $decoded['packageNames']);
         } finally {
@@ -1845,11 +1845,11 @@ class PackageControllerTest extends IntegrationTestCase
             }
 
             self::assertSame(
-                json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                json_encode(['packageNames' => ['listvendor/aaa', 'listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES),
                 $this->requestListJson('vendor=listvendor'),
             );
             self::assertSame(
-                json_encode(['packageNames' => ['listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+                json_encode(['packageNames' => ['listvendor/bbb']], JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES),
                 $this->requestListJson('filter=listvendor/bbb'),
             );
         } finally {

@@ -12,12 +12,9 @@
 
 namespace App\Service;
 
-use App\Audit\VersionDeletionReason;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\User;
-use App\Entity\Version;
-use App\Entity\VersionRepository;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use Doctrine\Persistence\ManagerRegistry;

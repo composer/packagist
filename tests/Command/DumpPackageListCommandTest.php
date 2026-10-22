@@ -64,7 +64,7 @@ class DumpPackageListCommandTest extends IntegrationTestCase
     {
         $blob = $this->cache->read();
         self::assertNotNull($blob);
-        $decoded = json_decode((string) gzdecode($blob), true, flags: JSON_THROW_ON_ERROR);
+        $decoded = json_decode((string) gzdecode($blob), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($decoded);
 
         return $decoded['packageNames'];

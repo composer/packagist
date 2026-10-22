@@ -16,7 +16,7 @@ use App\Support\SupportRequestType;
 
 /**
  * The type-specific payload of a support request, stored in the support_request.attributes JSON
- * column and mapped back to the right class by {@see \App\Support\SupportRequestType::hydrateAttributes()}.
+ * column and mapped back to the right class by {@see SupportRequestType::hydrateAttributes()}.
  *
  * Adding a request type means adding one of these, not another nullable column.
  */

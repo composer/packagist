@@ -20,12 +20,12 @@ class SlugTest extends TestCase
 {
     public function testConstructAcceptsCanonicalValue(): void
     {
-        self::assertSame('acme-corp', (new Slug('acme-corp'))->value);
+        self::assertSame('acme-corp', new Slug('acme-corp')->value);
     }
 
     public function testConstructCanonicalisesCaseAndWhitespace(): void
     {
-        self::assertSame('acme', (new Slug('  ACME  '))->value);
+        self::assertSame('acme', new Slug('  ACME  ')->value);
     }
 
     #[DataProvider('invalidSlugs')]

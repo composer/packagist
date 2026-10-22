@@ -61,7 +61,7 @@ class EventTypeFilter implements QueryFilterInterface
             return new static($key);
         }
 
-        $types = array_filter($values, fn (string $inputValue) => self::isValid($inputValue));
+        $types = array_filter($values, static fn (string $inputValue) => self::isValid($inputValue));
 
         return new static($key, array_values($types));
     }

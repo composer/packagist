@@ -84,6 +84,6 @@ class BlogRssFetcherTest extends TestCase
     {
         $httpClient = new MockHttpClient(new MockResponse($body, ['http_code' => $statusCode]));
 
-        return (new BlogRssFetcher($httpClient, new ArrayAdapter(), new NullLogger()))->getNewsItems();
+        return new BlogRssFetcher($httpClient, new ArrayAdapter(), new NullLogger())->getNewsItems();
     }
 }

@@ -19,17 +19,17 @@ use App\Entity\SupportRequestRepository;
 use App\Entity\User;
 use App\Form\Model\AccountDeletionSupportRequest;
 use App\Form\Model\LostTwoFactorSupportRequest;
-use App\Support\Attributes\AccountDeletionAttributes;
-use App\Support\Attributes\LostTwoFactorAttributes;
-use App\Support\Attributes\PackageTransferAttributes;
-use App\Support\Attributes\VendorClaimAttributes;
-use App\Support\PackageDisposition;
 use App\Form\Model\PackageTransferSupportRequest;
 use App\Form\Model\VendorClaimSupportRequest;
 use App\Form\Type\AccountDeletionSupportType;
 use App\Form\Type\LostTwoFactorSupportType;
 use App\Form\Type\PackageTransferSupportType;
 use App\Form\Type\VendorClaimSupportType;
+use App\Support\Attributes\AccountDeletionAttributes;
+use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\PackageTransferAttributes;
+use App\Support\Attributes\VendorClaimAttributes;
+use App\Support\PackageDisposition;
 use App\Support\SupportNotifier;
 use App\Support\SupportRequestRateLimiter;
 use App\Support\SupportRequestStatus;
@@ -232,7 +232,7 @@ class SupportController extends Controller
         $form = $this->createForm(PackageTransferSupportType::class, $data)->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageTransferAttributes($data->packageNameList()));
+            $create = static fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageTransferAttributes($data->packageNameList()));
 
             if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageTransfer, $create)) {
                 return $response;
@@ -265,7 +265,7 @@ class SupportController extends Controller
                     .'Submit a package under it and it is yours.'
                 ));
             } else {
-                $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new VendorClaimAttributes($data->vendorName));
+                $create = static fn (): SupportRequest => SupportRequest::create($user, $data->description, new VendorClaimAttributes($data->vendorName));
 
                 if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::VendorClaim, $create)) {
                     return $response;
@@ -295,7 +295,7 @@ class SupportController extends Controller
         $form = $this->createForm(AccountDeletionSupportType::class, $data)->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = fn (): SupportRequest => SupportRequest::create(
+            $create = static fn (): SupportRequest => SupportRequest::create(
                 $user,
                 $data->description,
                 new AccountDeletionAttributes($data->packageDisposition ?? PackageDisposition::Undecided, $data->transferTo),

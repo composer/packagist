@@ -31,7 +31,7 @@ readonly class FilterListSummaryDumper
     /**
      * Dump the summary file when needed and purge the CDN cache afterwards.
      *
-     * @param bool $forceDump Skip the staleness check (use when entries were added/removed in the current run).
+     * @param bool $forceDump skip the staleness check (use when entries were added/removed in the current run)
      */
     public function dumpIfStale(bool $forceDump): void
     {

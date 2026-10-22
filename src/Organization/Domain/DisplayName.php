@@ -34,10 +34,10 @@ final readonly class DisplayName
         $value = trim($value);
 
         if ($value === '' || mb_strlen($value) > self::MAX_LENGTH) {
-            throw new \InvalidArgumentException(sprintf('The display name must be between 1 and %d characters.', self::MAX_LENGTH));
+            throw new \InvalidArgumentException(\sprintf('The display name must be between 1 and %d characters.', self::MAX_LENGTH));
         }
 
-        if (!Preg::isMatch('/^' . self::PATTERN . '$/u', $value)) {
+        if (!Preg::isMatch('/^'.self::PATTERN.'$/u', $value)) {
             throw new \InvalidArgumentException('The display name may only contain letters, numbers, spaces and hyphens.');
         }
 

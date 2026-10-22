@@ -18,7 +18,6 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\PackageRepository;
 use App\Entity\ProvideLink;
 use App\Entity\Suggester;
-use App\Entity\Vendor;
 use App\Entity\Version;
 use App\Tests\IntegrationTestCase;
 use Doctrine\Persistence\ManagerRegistry;
@@ -305,7 +304,7 @@ class PackageRepositoryTest extends IntegrationTestCase
 
     private function createBrokenRedis(): Client
     {
-        return new class () extends Client {
+        return new class extends Client {
             public function __call($commandID, $arguments): mixed
             {
                 throw new ClientException('redis is down');

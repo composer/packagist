@@ -27,7 +27,7 @@ final readonly class Email
     {
         $value = trim($value);
 
-        if ($value === '' || mb_strlen($value) > self::MAX_LENGTH || filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
+        if ($value === '' || mb_strlen($value) > self::MAX_LENGTH || filter_var($value, \FILTER_VALIDATE_EMAIL) === false) {
             throw new \InvalidArgumentException('Please provide a valid email address.');
         }
 

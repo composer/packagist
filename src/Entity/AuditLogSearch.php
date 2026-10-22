@@ -23,7 +23,7 @@ use Symfony\Component\Uid\Ulid;
  * Rows are written via raw DBAL in {@see AuditRecordRepository::indexSearchTerms()} and only ever
  * read through DQL sub-queries, so this class is a plain mapping shell (never instantiated in PHP).
  *
- * @see \App\Entity\AuditRecord::getSearchTerms()
+ * @see AuditRecord::getSearchTerms()
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'audit_log_search')]

@@ -48,7 +48,7 @@ class ProfileControllerTest extends IntegrationTestCase
 
         $this->assertResponseStatusCodeSame(302);
 
-        $recipients = array_map(fn (Email $mail) => $mail->getTo()[0]->getAddress(), $this->getMailerMessages());
+        $recipients = array_map(static fn (Email $mail) => $mail->getTo()[0]->getAddress(), $this->getMailerMessages());
         $this->assertEqualsCanonicalizing([$oldEmail, $newEmail], $recipients, 'Notification should have been sent to both old and new email');
 
         $em = self::getEM();

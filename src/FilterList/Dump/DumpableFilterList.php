@@ -12,8 +12,6 @@
 
 namespace App\FilterList\Dump;
 
-use App\FilterList\FilterSources;
-
 final readonly class DumpableFilterList
 {
     public function __construct(

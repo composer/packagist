@@ -24,7 +24,6 @@ use App\Entity\User;
 use App\Entity\Version;
 use App\Package\PackageListCache;
 use App\Search\PackageIndex;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use App\Service\CdnClient;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
@@ -35,6 +34,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
@@ -349,10 +349,10 @@ class PackageManager
     public function transferPackage(Package $package, array $newMaintainers, bool $notifyNewMaintainers): bool
     {
         $oldMaintainers = $package->getMaintainers()->toArray();
-        $normalizedOldMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $oldMaintainers));
+        $normalizedOldMaintainers = array_values(array_map(static fn (User $user) => $user->getId(), $oldMaintainers));
         sort($normalizedOldMaintainers, \SORT_NUMERIC);
 
-        $normalizedMaintainers = array_values(array_map(fn (User $user) => $user->getId(), $newMaintainers));
+        $normalizedMaintainers = array_values(array_map(static fn (User $user) => $user->getId(), $newMaintainers));
         sort($normalizedMaintainers, \SORT_NUMERIC);
 
         if ($normalizedMaintainers === $normalizedOldMaintainers) {

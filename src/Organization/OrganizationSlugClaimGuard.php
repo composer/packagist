@@ -38,17 +38,17 @@ final class OrganizationSlugClaimGuard
     public function assertClaimable(Slug $slug, User $user, ?OrganizationReadModel $claimingOrg = null): void
     {
         if (\in_array($slug->value, NotReservedWordValidator::RESERVED_WORDS, true)) {
-            throw new InvalidSlugException(sprintf('"%s" is a reserved name and cannot be used.', $slug->value));
+            throw new InvalidSlugException(\sprintf('"%s" is a reserved name and cannot be used.', $slug->value));
         }
 
         // A slug that matches an existing vendor prefix may only be claimed by someone
         // who has access to that prefix (i.e. maintains a package under it).
         if ($this->packageRepo->isVendorTaken($slug->value, $user)) {
-            throw new InvalidSlugException(sprintf('"%s" matches a vendor prefix you do not have access to.', $slug->value));
+            throw new InvalidSlugException(\sprintf('"%s" matches a vendor prefix you do not have access to.', $slug->value));
         }
 
         if ($this->organizationRepo->slugExists($slug->value) || $this->slugReservationRepo->isReserved($slug->value, $claimingOrg?->id)) {
-            throw new SlugTakenException(sprintf('The organization slug "%s" is already taken.', $slug->value));
+            throw new SlugTakenException(\sprintf('The organization slug "%s" is already taken.', $slug->value));
         }
     }
 }

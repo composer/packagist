@@ -121,13 +121,13 @@ class TriageSpamQueueCommand extends Command
 
                     $readmeNote = '';
                     if ($readmeHtml !== null && $readmeHtml !== '') {
-                        $readmeNote = sprintf(' readme_spam=%.3f', $this->spamClassifier->predictReadmeSpamProbability($readmeHtml));
+                        $readmeNote = \sprintf(' readme_spam=%.3f', $this->spamClassifier->predictReadmeSpamProbability($readmeHtml));
                     }
-                    $lines[] = sprintf('    [%s] %s (meta_spam=%.3f%s)', $safe ? 'safe' : 'KEEP', $pkg['name'], $metadataProbability, $readmeNote);
+                    $lines[] = \sprintf('    [%s] %s (meta_spam=%.3f%s)', $safe ? 'safe' : 'KEEP', $pkg['name'], $metadataProbability, $readmeNote);
                 }
 
                 $decision = $allSafe ? '<info>CLEAR</info>' : 'keep';
-                $output->writeln(sprintf('%s - %d suspect package(s) => %s', $vendor, \count($vendorPackages), $decision));
+                $output->writeln(\sprintf('%s - %d suspect package(s) => %s', $vendor, \count($vendorPackages), $decision));
                 foreach ($lines as $line) {
                     $output->writeln($line);
                 }
@@ -147,7 +147,7 @@ class TriageSpamQueueCommand extends Command
             }
 
             $output->writeln('');
-            $output->writeln(sprintf(
+            $output->writeln(\sprintf(
                 '%s %d/%d package(s) across %d vendor(s); %d package(s) kept for review.',
                 $apply ? 'Cleared' : 'Would clear',
                 $clearedPackages,

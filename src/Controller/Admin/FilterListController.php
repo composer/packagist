@@ -124,7 +124,7 @@ class FilterListController extends Controller
             $em->flush();
 
             $this->filterListEntryUpdateListener->flushChangesToPackages();
-            $this->addFlash('success', sprintf(
+            $this->addFlash('success', \sprintf(
                 '%d filter list %s created.',
                 \count($lines),
                 \count($lines) === 1 ? 'entry' : 'entries',
@@ -277,7 +277,7 @@ class FilterListController extends Controller
             $this->filterListEntryUpdateListener->flushChangesToPackages();
         }
 
-        $this->addFlash('success', sprintf(
+        $this->addFlash('success', \sprintf(
             '%d %s %s.',
             $changed,
             $changed === 1 ? 'entry' : 'entries',

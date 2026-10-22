@@ -36,7 +36,7 @@ class DownloadManagerTest extends IntegrationTestCase
 
         $this->downloadManager = self::getService(DownloadManager::class);
         $redis = self::getContainer()->get('snc_redis.default');
-        assert($redis instanceof Client);
+        \assert($redis instanceof Client);
         $this->redis = $redis;
 
         $this->cleanup();
@@ -120,7 +120,7 @@ class DownloadManagerTest extends IntegrationTestCase
             $this->redis->del(['throttle:'.$ip.':'.date('Ymd', $this->throttleBoundary())]);
         }
 
-        self::assertGreaterThan(10, count(array_unique($expiries)), 'expiries should be spread, not shared');
+        self::assertGreaterThan(10, \count(array_unique($expiries)), 'expiries should be spread, not shared');
     }
 
     public function testExpiryIsNotPushedOutByLaterRequests(): void

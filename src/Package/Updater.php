@@ -330,7 +330,7 @@ class Updater
                 throw new \LogicException('Received a package instance of type '.$version::class.', expected a CompletePackageInterface instance');
             }
             // skip branch names which are commonly short-lived or not meant to be published
-            if (Preg::isMatch('{^dev-(gh-readonly-queue/|renovate/|dependabot/|conductor-|merge-up/).+}', $version->getPrettyVersion()) || in_array($version->getPrettyVersion(), ['dev-gh-pages', 'dev-release-please--branches--main', 'dev-gitattributes'], true)) {
+            if (Preg::isMatch('{^dev-(gh-readonly-queue/|renovate/|dependabot/|conductor-|merge-up/).+}', $version->getPrettyVersion()) || \in_array($version->getPrettyVersion(), ['dev-gh-pages', 'dev-release-please--branches--main', 'dev-gitattributes'], true)) {
                 continue;
             }
 
@@ -650,7 +650,7 @@ class Updater
 
             return null;
         }
-        if (!is_array($driverDist) || ($driverDist['url'] ?? null) !== $newDistUrl) {
+        if (!\is_array($driverDist) || ($driverDist['url'] ?? null) !== $newDistUrl) {
             $skip('driver-confirmed dist URL does not match incoming dist URL');
 
             return null;
@@ -832,7 +832,7 @@ class Updater
         $version->setInternalDeletionReasonText(null);
         $version->setReleasedAt($data->getReleaseDate() === null ? null : \DateTimeImmutable::createFromInterface($data->getReleaseDate()));
 
-        if ($data->getSourceType() && !in_array($data->getSourceType(), ['perforce', 'fossil'], true)) { // null or '' here explicitly means no source and will be nulled, do not change this behavior
+        if ($data->getSourceType() && !\in_array($data->getSourceType(), ['perforce', 'fossil'], true)) { // null or '' here explicitly means no source and will be nulled, do not change this behavior
             $source['type'] = $this->sanitize($data->getSourceType());
             $source['url'] = $this->sanitize($data->getSourceUrl());
             // force public URLs even if the package somehow got downgraded to a GitDriver

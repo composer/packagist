@@ -22,12 +22,12 @@ use App\Entity\FilterListEntryRepository;
 use App\Entity\Job;
 use App\Entity\JobRepository;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
 use App\Entity\PhpStat;
 use App\Entity\SecurityAdvisory;
 use App\Entity\SecurityAdvisoryRepository;
-use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
@@ -212,7 +212,7 @@ class PackageController extends Controller
      */
     private function streamedListResponse(array $data): StreamedJsonResponse
     {
-        $response = new StreamedJsonResponse($data, encodingOptions: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $response = new StreamedJsonResponse($data, encodingOptions: JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         $response->setSharedMaxAge(300);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, 'true');
 
@@ -928,7 +928,7 @@ class PackageController extends Controller
             'content' => $this->renderView(
                 'package/version_details.html.twig',
                 ['version' => $version]
-            )
+            ),
         ]);
 
         // Soft-deleted versions cannot be cached as they render details based on logged in user.
@@ -1263,7 +1263,7 @@ class PackageController extends Controller
             $this->getEM()->flush();
 
             if ($result) {
-                $usernames = array_map(fn (User $user) => $user->getUsername(), $newMaintainers);
+                $usernames = array_map(static fn (User $user) => $user->getUsername(), $newMaintainers);
                 $this->addFlash('success', \sprintf('Package has been transferred to %s', implode(', ', $usernames)));
             } else {
                 $this->addFlash('warning', 'Package maintainers are identical and have not been changed');
@@ -1504,7 +1504,7 @@ class PackageController extends Controller
             try {
                 $from = new \DateTimeImmutable($from);
             } catch (\Exception) {
-                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$from], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
+                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$from], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
             }
         } else {
             $from = $this->guessPhpStatsStartDate($package);
@@ -1513,7 +1513,7 @@ class PackageController extends Controller
             try {
                 $to = new \DateTimeImmutable($to);
             } catch (\Exception) {
-                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$to], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
+                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$to], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
             }
         } else {
             $to = new \DateTimeImmutable('today 00:00:00');
@@ -1915,7 +1915,7 @@ class PackageController extends Controller
             try {
                 $from = new \DateTimeImmutable($from);
             } catch (\Exception) {
-                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$from], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
+                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$from], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
             }
         } else {
             $from = $this->guessStatsStartDate($version ?: $package);
@@ -1924,7 +1924,7 @@ class PackageController extends Controller
             try {
                 $to = new \DateTimeImmutable($to);
             } catch (\Exception) {
-                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$to], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
+                return new JsonResponse(json_encode(['status' => 'error', 'message' => 'Invalid date format: '.$to], flags: JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_INVALID_UTF8_IGNORE), Response::HTTP_BAD_REQUEST, json: true);
             }
         } else {
             $to = new \DateTimeImmutable('-2days 00:00:00');

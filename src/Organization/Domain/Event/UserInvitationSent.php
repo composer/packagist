@@ -59,7 +59,7 @@ final readonly class UserInvitationSent implements InvitationEvent
             'email' => $this->email,
             'teamIds' => array_map(static fn (Ulid $id): string => $id->toRfc4122(), $this->teamIds),
             'tokenHash' => $this->tokenHash,
-            'expiresAt' => $this->expiresAt->format(DATE_ATOM),
+            'expiresAt' => $this->expiresAt->format(\DATE_ATOM),
         ];
     }
 

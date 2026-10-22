@@ -12,13 +12,13 @@
 
 namespace App\Controller\Admin;
 
-use App\Log\Display\AuditLogDisplayFactory;
 use App\Controller\Controller;
 use App\Entity\Package;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
 use App\Entity\SupportRequestRepository;
 use App\Entity\User;
+use App\Log\Display\AuditLogDisplayFactory;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Model\PackageManager;
@@ -263,7 +263,7 @@ class SupportController extends Controller
         // it keeps a support action inside the request it is filed against, and off the audit trail
         // of packages nobody asked about.
         $name = $req->request->getString('package');
-        if (!in_array($name, $request->attributesOf(PackageTransferAttributes::class)->packageNames, true)) {
+        if (!\in_array($name, $request->attributesOf(PackageTransferAttributes::class)->packageNames, true)) {
             throw new BadRequestHttpException('Package is not part of this request');
         }
 

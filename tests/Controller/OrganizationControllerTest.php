@@ -217,7 +217,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->store($owner);
 
         // Create through the event store so the aggregate has a bootstrapped history.
-        static::getService(OrganizationManager::class)->create($owner,$owner, 'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
 
         $this->client->loginUser($owner);
         $crawler = $this->client->request('GET', '/organizations/acme/teams/create');
@@ -242,7 +242,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->store($owner);
 
         // Create through the event store so the aggregate has a bootstrapped history.
-        static::getService(OrganizationManager::class)->create($owner, $owner,'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
         $organization = $this->organizations()->findOneBySlug('acme');
         self::assertNotNull($organization);
 
@@ -257,7 +257,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertNotNull($backend);
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/rename', $backend->teamId));
+        $crawler = $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/rename', $backend->teamId));
 
         self::assertResponseIsSuccessful();
         $form = $crawler->selectButton('Rename team')->form(['team[name]' => 'platform']);
@@ -276,13 +276,13 @@ class OrganizationControllerTest extends IntegrationTestCase
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
-        static::getService(OrganizationManager::class)->create($owner, $owner,'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
         $organization = $this->organizations()->findOneBySlug('acme');
         self::assertNotNull($organization);
         self::assertNotNull($organization->ownersTeamId);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/rename', $organization->ownersTeamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/rename', $organization->ownersTeamId));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -296,7 +296,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         [$organization, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/delete', $backend->teamId));
+        $crawler = $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/delete', $backend->teamId));
 
         self::assertResponseIsSuccessful();
         $form = $crawler->selectButton('Delete team')->form();
@@ -319,7 +319,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertNotNull($organization);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/delete', $organization->ownersTeamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/delete', $organization->ownersTeamId));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -337,7 +337,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
         $this->client->loginUser($owner);
         // The team belongs to globex, so it must not be reachable under acme.
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/rename', $foreignTeam->teamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/rename', $foreignTeam->teamId));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -351,7 +351,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         [$organization, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
+        $crawler = $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
 
         self::assertResponseIsSuccessful();
         // The owner is already an org member (via the owners team), so they can be added to a custom team.
@@ -374,7 +374,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
+        $crawler = $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
 
         $form = $crawler->selectButton('Add member')->form(['add_team_member[username]' => 'ghost']);
         $crawler = $this->client->submit($form);
@@ -394,7 +394,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
+        $crawler = $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
 
         $form = $crawler->selectButton('Add member')->form(['add_team_member[username]' => 'outsider']);
         $crawler = $this->client->submit($form);
@@ -412,7 +412,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
+        $crawler = $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/add', $backend->teamId));
 
         // The owner is a member, but they are matched by username only: their email must not resolve them.
         $form = $crawler->selectButton('Add member')->form(['add_team_member[username]' => 'owner@example.org']);
@@ -431,7 +431,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/add', new Ulid()));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/add', new Ulid()));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -447,7 +447,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         static::getService(OrganizationMembershipManager::class)->addTeamMember($organization, $owner, $backend->teamId, $owner->getId(), null);
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
+        $crawler = $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
 
         self::assertResponseIsSuccessful();
         $form = $crawler->selectButton('Remove member')->form();
@@ -471,7 +471,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertNotNull($organization);
 
         $this->client->loginUser($owner);
-        $crawler = $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $organization->ownersTeamId));
+        $crawler = $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/owner/remove', $organization->ownersTeamId));
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('is the last owner of ACME Corp and cannot be removed', $crawler->text());
@@ -491,7 +491,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         // A user who is not a member of the org cannot even see the team exists: the resolver's
         // read-access check turns this into a 404 before the owner-only guard is reached.
         $this->client->loginUser($intruder);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -514,7 +514,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         // A member of the org passes the resolver's read-access check, so the owner-only guard is
         // reached and denies with a 403.
         $this->client->loginUser($member);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $team->teamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/owner/remove', $team->teamId));
 
         self::assertResponseStatusCodeSame(403);
     }
@@ -528,7 +528,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         static::getService(OrganizationMembershipManager::class)->addTeamMember($organization, $owner, $backend->teamId, $owner->getId(), null);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
 
         // An owner without 2FA is guided to enable it rather than shown a bare 403.
         self::assertResponseRedirects('/users/owner/2fa/');
@@ -543,7 +543,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/ghost/remove', $backend->teamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/ghost/remove', $backend->teamId));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -559,7 +559,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         [, $backend] = $this->createOrganizationWithCustomTeam($owner, 'acme', 'ACME Corp', 'backend');
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/outsider/remove', $backend->teamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/outsider/remove', $backend->teamId));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -575,7 +575,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertNotNull($organization);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/add', $organization->allMembersTeamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/add', $organization->allMembersTeamId));
 
         // The all-members team's roster is managed automatically; it has no manual add flow.
         self::assertResponseStatusCodeSame(404);
@@ -587,12 +587,12 @@ class OrganizationControllerTest extends IntegrationTestCase
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
-        static::getService(OrganizationManager::class)->create($owner, $owner,  'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
         $organization = $this->organizations()->findOneBySlug('acme');
         self::assertNotNull($organization);
 
         $this->client->loginUser($owner);
-        $this->client->request('GET', sprintf('/organizations/acme/teams/%s/members/owner/remove', $organization->allMembersTeamId));
+        $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/owner/remove', $organization->allMembersTeamId));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -603,7 +603,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $owner->setTotpSecret('totp-secret');
         $this->store($owner);
 
-        static::getService(OrganizationManager::class)->create($owner, $owner,  'acme', 'ACME Corp', null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, 'acme', 'ACME Corp', null);
         $organization = $this->organizations()->findOneBySlug('acme');
         self::assertNotNull($organization);
 
@@ -614,7 +614,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         self::assertStringContainsString('All organization members', $crawler->text());
         self::assertStringContainsString('Membership is managed automatically', $crawler->text());
         // No add/remove links point at the all-members team.
-        self::assertCount(0, $crawler->filter(sprintf('a[href*="/teams/%s/members"]', $organization->allMembersTeamId)));
+        self::assertCount(0, $crawler->filter(\sprintf('a[href*="/teams/%s/members"]', $organization->allMembersTeamId)));
     }
 
     public function testMemberCanViewTeamsButCannotCreate(): void
@@ -844,7 +844,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/acme/audit-log');
         self::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test=audit-log-type]')->each(static fn ($element) => trim($element->text()));
         self::assertCount(2, $types, 'Only the two records for this organization should be listed');
     }
 
@@ -864,7 +864,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/organizations/acme/audit-log?type[]='.AuditLogEventType::OrganizationNameChanged->value);
         self::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test=audit-log-type]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test=audit-log-type]')->each(static fn ($element) => trim($element->text()));
         self::assertCount(1, $types, 'The type filter should narrow the results to a single record');
     }
 
@@ -904,7 +904,7 @@ class OrganizationControllerTest extends IntegrationTestCase
      */
     private function createOrganizationWithCustomTeam(User $owner, string $slug, string $displayName, string $teamName): array
     {
-        static::getService(OrganizationManager::class)->create($owner, $owner,$slug, $displayName, null);
+        static::getService(OrganizationManager::class)->create($owner, $owner, $slug, $displayName, null);
         $organization = $this->organizations()->findOneBySlug($slug);
         self::assertNotNull($organization);
 
@@ -915,7 +915,7 @@ class OrganizationControllerTest extends IntegrationTestCase
             }
         }
 
-        self::fail(sprintf('Team "%s" was not created.', $teamName));
+        self::fail(\sprintf('Team "%s" was not created.', $teamName));
     }
 
     private function persistOrganization(string $slug, string $displayName, ?User $owner = null, ?\DateTimeImmutable $deletedAt = null): Organization

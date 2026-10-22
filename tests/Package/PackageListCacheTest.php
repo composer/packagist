@@ -53,7 +53,7 @@ class PackageListCacheTest extends IntegrationTestCase
         self::assertNotNull($blob);
         // must stay byte-identical to the streamed responses it replaces, escaped slashes included
         self::assertSame(
-            json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES),
+            json_encode(['packageNames' => $names], JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_SLASHES),
             gzdecode($blob),
         );
         self::assertSame(7, $this->cache->getBuiltVersion());

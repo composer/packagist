@@ -108,7 +108,7 @@ class FilterListEntryRepository extends ServiceEntityRepository
     public function getAllSummaryEntries(): array
     {
         return $this->createQueryBuilder('fl')
-            ->select(sprintf(
+            ->select(\sprintf(
                 'NEW %s(fl.packageName, fl.list, COALESCE(fl.overwriteVersion, fl.version))',
                 FilterListSummaryEntry::class,
             ))

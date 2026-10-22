@@ -19,6 +19,6 @@ class EmailTest extends TestCase
 {
     public function testConstructKeepsTheGivenCasing(): void
     {
-        self::assertSame('Alice@Example.org', (new Email('  Alice@Example.org  '))->value);
+        self::assertSame('Alice@Example.org', new Email('  Alice@Example.org  ')->value);
     }
 }

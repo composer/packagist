@@ -11,7 +11,8 @@ final readonly class OrganizationDisplay
         public string $id,
         public string $slug,
         public string $displayName,
-    ) {}
+    ) {
+    }
 
     /**
      * @param OrganizationDisplayArray $record

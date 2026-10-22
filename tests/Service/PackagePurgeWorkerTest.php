@@ -12,7 +12,6 @@
 
 namespace App\Tests\Service;
 
-use App\Audit\VersionDeletionReason;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -118,7 +117,7 @@ class PackagePurgeWorkerTest extends TestCase
 
         $registry = $this->createStub(ManagerRegistry::class);
         $registry->method('getRepository')->willReturnCallback(
-            fn (string $class) => $class === Version::class && $versionRepo !== null ? $versionRepo : $packageRepo,
+            static fn (string $class) => $class === Version::class && $versionRepo !== null ? $versionRepo : $packageRepo,
         );
         $registry->method('getManager')->willReturn($this->createStub(ObjectManager::class));
 

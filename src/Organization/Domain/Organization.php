@@ -113,7 +113,7 @@ final class Organization extends AbstractAggregate
     /**
      * Create a custom team. The `owners` team is bootstrapped by creation, not this path.
      *
-     * @throws TeamNameTakenException    another team already uses this name (case-insensitive)
+     * @throws TeamNameTakenException another team already uses this name (case-insensitive)
      */
     public function createTeam(Ulid $teamId, TeamName $name): void
     {
@@ -126,7 +126,7 @@ final class Organization extends AbstractAggregate
      * Rename a custom team. No-op when the name is unchanged.
      *
      * @throws TeamNotFoundException
-     * @throws TeamProtectedException    the `owners` team cannot be renamed
+     * @throws TeamProtectedException the `owners` team cannot be renamed
      * @throws TeamNameTakenException
      */
     public function renameTeam(Ulid $teamId, TeamName $name): void
@@ -161,8 +161,8 @@ final class Organization extends AbstractAggregate
      * @param bool $targetHasTwoFactor whether the target user has 2FA enabled (checked by the caller)
      *
      * @throws TeamNotFoundException
-     * @throws TeamProtectedException    the `all organization members` team is managed automatically
-     * @throws NotAMemberException       the target has not joined the org (joining is invitation-only)
+     * @throws TeamProtectedException     the `all organization members` team is managed automatically
+     * @throws NotAMemberException        the target has not joined the org (joining is invitation-only)
      * @throws TwoFactorRequiredException adding to `owners` requires the target to have 2FA
      */
     public function addTeamMember(Ulid $teamId, int $userId, bool $targetHasTwoFactor): void
@@ -189,9 +189,9 @@ final class Organization extends AbstractAggregate
      * Remove a user from a single team.
      *
      * @throws TeamNotFoundException
-     * @throws TeamProtectedException       the `all organization members` team is managed automatically
-     * @throws NotAMemberException          the user is not in the team
-     * @throws LastOwnerProtectedException  would empty the `owners` team
+     * @throws TeamProtectedException      the `all organization members` team is managed automatically
+     * @throws NotAMemberException         the user is not in the team
+     * @throws LastOwnerProtectedException would empty the `owners` team
      */
     public function removeTeamMember(Ulid $teamId, int $userId): void
     {
@@ -370,7 +370,7 @@ final class Organization extends AbstractAggregate
             }
 
             if (mb_strtolower($team['name']) === $candidate) {
-                throw new TeamNameTakenException(sprintf('A team named "%s" already exists in this organization.', $name->value));
+                throw new TeamNameTakenException(\sprintf('A team named "%s" already exists in this organization.', $name->value));
             }
         }
     }

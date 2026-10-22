@@ -50,8 +50,8 @@ final class OrganizationMembershipManager
     }
 
     /**
-     * @throws \App\Organization\Domain\Exception\TeamNotFoundException
-     * @throws \App\Organization\Domain\Exception\TeamProtectedException
+     * @throws Domain\Exception\TeamNotFoundException
+     * @throws Domain\Exception\TeamProtectedException
      * @throws TeamNameTakenException
      */
     public function renameTeam(OrganizationReadModel $organization, User $actor, Ulid $teamId, string $name, ?string $ip): void

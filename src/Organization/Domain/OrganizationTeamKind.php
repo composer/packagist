@@ -18,7 +18,7 @@ namespace App\Organization\Domain;
  * members`) are {@see self::System}; teams users create themselves are {@see self::Custom} and can
  * be freely renamed or deleted.
  *
- * The backing values are persisted in the {@see \App\Organization\Domain\Event\TeamCreated} event
+ * The backing values are persisted in the {@see Event\TeamCreated} event
  * payload and the {@see \App\Entity\OrganizationTeam} read model, so they must remain stable.
  */
 enum OrganizationTeamKind: string

@@ -20,12 +20,12 @@ class DisplayNameTest extends TestCase
 {
     public function testConstructAcceptsValidValue(): void
     {
-        self::assertSame('ACME Corp', (new DisplayName('ACME Corp'))->value);
+        self::assertSame('ACME Corp', new DisplayName('ACME Corp')->value);
     }
 
     public function testConstructTrimsWhitespace(): void
     {
-        self::assertSame('ACME Corp', (new DisplayName('  ACME Corp  '))->value);
+        self::assertSame('ACME Corp', new DisplayName('  ACME Corp  ')->value);
     }
 
     #[DataProvider('invalidDisplayNames')]

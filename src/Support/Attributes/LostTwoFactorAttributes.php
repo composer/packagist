@@ -50,7 +50,7 @@ final readonly class LostTwoFactorAttributes implements SupportRequestAttributes
 
         return new self(
             (string) ($data['cancelTokenHash'] ?? ''),
-            is_string($approvableAt) ? new \DateTimeImmutable($approvableAt) : null,
+            \is_string($approvableAt) ? new \DateTimeImmutable($approvableAt) : null,
         );
     }
 

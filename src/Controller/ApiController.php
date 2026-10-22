@@ -420,7 +420,7 @@ class ApiController extends Controller
 
         // resolve Package-URL to package names https://github.com/package-url/purl-spec/blob/main/PURL-SPECIFICATION.rst
         $packageNames = array_map(
-            fn ($name) => Preg::replace('{^pkg:/?/?composer/([^/]+/[^/@?]+).*}', '$1', $name),
+            static fn ($name) => Preg::replace('{^pkg:/?/?composer/([^/]+/[^/@?]+).*}', '$1', $name),
             $packageNames
         );
 

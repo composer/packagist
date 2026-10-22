@@ -60,7 +60,7 @@ class BuildSpamFeaturesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $outputDir = (string) $input->getOption('output-dir');
-        if (!is_dir($outputDir) && !mkdir($outputDir, 0777, true) && !is_dir($outputDir)) {
+        if (!is_dir($outputDir) && !mkdir($outputDir, 0o777, true) && !is_dir($outputDir)) {
             $output->writeln('<error>Could not create output directory '.$outputDir.'</error>');
 
             return Command::FAILURE;
@@ -101,8 +101,8 @@ class BuildSpamFeaturesCommand extends Command
 
         $output->writeln('');
         $output->writeln('Wrote to <info>'.$outputDir.'</info>:');
-        $output->writeln(sprintf('  metadata.jsonl: %d spam, %d safe', $spamCounts['metadata'], $safeCounts['metadata']));
-        $output->writeln(sprintf('  readme.jsonl:   %d spam, %d safe (packages that still have a README)', $spamCounts['readme'], $safeCounts['readme']));
+        $output->writeln(\sprintf('  metadata.jsonl: %d spam, %d safe', $spamCounts['metadata'], $safeCounts['metadata']));
+        $output->writeln(\sprintf('  readme.jsonl:   %d spam, %d safe (packages that still have a README)', $spamCounts['readme'], $safeCounts['readme']));
 
         return Command::SUCCESS;
     }
@@ -120,7 +120,7 @@ class BuildSpamFeaturesCommand extends Command
 
         /** @var list<int> $ids */
         $ids = array_map('intval', $conn->fetchFirstColumn($idSql, $idParams));
-        $output->writeln(sprintf('Processing %d packages for label %d ...', \count($ids), $label));
+        $output->writeln(\sprintf('Processing %d packages for label %d ...', \count($ids), $label));
 
         $metadataCount = 0;
         $readmeCount = 0;
@@ -161,6 +161,6 @@ class BuildSpamFeaturesCommand extends Command
      */
     private function writeLine($handle, int $label, array $tokens): void
     {
-        fwrite($handle, json_encode(['label' => $label, 'tokens' => $tokens], JSON_THROW_ON_ERROR)."\n");
+        fwrite($handle, json_encode(['label' => $label, 'tokens' => $tokens], \JSON_THROW_ON_ERROR)."\n");
     }
 }

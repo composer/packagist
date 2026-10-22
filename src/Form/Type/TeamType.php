@@ -30,7 +30,7 @@ class TeamType extends AbstractType
             ->add('name', TextType::class, [
                 'label' => 'Team name',
                 'attr' => ['maxlength' => TeamName::MAX_LENGTH],
-                'help' => sprintf('Letters, numbers, spaces and hyphens, up to %d characters.', TeamName::MAX_LENGTH),
+                'help' => \sprintf('Letters, numbers, spaces and hyphens, up to %d characters.', TeamName::MAX_LENGTH),
             ]);
     }
 

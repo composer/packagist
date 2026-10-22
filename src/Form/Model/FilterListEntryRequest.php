@@ -75,7 +75,7 @@ class FilterListEntryRequest
         }
 
         try {
-            (new VersionParser())->parseConstraints($this->version);
+            new VersionParser()->parseConstraints($this->version);
         } catch (\UnexpectedValueException $e) {
             $context->buildViolation('Invalid version constraint: %message%')
                 ->setParameter('%message%', $e->getMessage())

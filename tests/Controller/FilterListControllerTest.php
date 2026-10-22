@@ -88,7 +88,7 @@ class FilterListControllerTest extends IntegrationTestCase
         $this->store($admin);
 
         $this->client->loginUser($admin);
-        $this->client->request('GET', '/admin/filter-lists/?' . $query);
+        $this->client->request('GET', '/admin/filter-lists/?'.$query);
 
         static::assertSame(400, $this->client->getResponse()->getStatusCode());
     }

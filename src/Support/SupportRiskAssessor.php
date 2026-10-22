@@ -12,12 +12,12 @@
 
 namespace App\Support;
 
-use App\Log\AuditLogEventType;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\OrganizationMemberRepository;
 use App\Entity\Package;
 use App\Entity\User;
+use App\Log\AuditLogEventType;
 use App\Model\DownloadManager;
 use Predis\PredisException;
 

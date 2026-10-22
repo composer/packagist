@@ -96,7 +96,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $invitation->expiresAt = new \DateTimeImmutable('-1 day');
         static::getEM()->flush();
 
-        $this->client->request('GET', sprintf('/organizations/acme/invitations/%s/resend', $invitation->id->toBase32()));
+        $this->client->request('GET', \sprintf('/organizations/acme/invitations/%s/resend', $invitation->id->toBase32()));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -112,7 +112,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $invitation->status = InvitationStatus::Revoked;
         static::getEM()->flush();
 
-        $this->client->request('GET', sprintf('/organizations/acme/invitations/%s/resend', $invitation->id->toBase32()));
+        $this->client->request('GET', \sprintf('/organizations/acme/invitations/%s/resend', $invitation->id->toBase32()));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -128,7 +128,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         // A second organization the same admin owns; the invitation belongs to acme, not beta.
         static::getService(OrganizationManager::class)->create($owner, $owner, 'beta', 'Beta Corp', null);
 
-        $this->client->request('GET', sprintf('/organizations/beta/invitations/%s/resend', $invitation->id->toBase32()));
+        $this->client->request('GET', \sprintf('/organizations/beta/invitations/%s/resend', $invitation->id->toBase32()));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -206,7 +206,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $this->store($invitation);
 
         $this->client->loginUser($alice);
-        $this->client->request('GET', sprintf('/organizations/acme/invitations/%s/%s', $invitation->id->toBase32(), str_repeat('a', 64)));
+        $this->client->request('GET', \sprintf('/organizations/acme/invitations/%s/%s', $invitation->id->toBase32(), str_repeat('a', 64)));
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -265,7 +265,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $path = $this->acceptUrlPath();
 
         // Tamper with the last character of the 64-hex token.
-        $tampered = substr($path, 0, -1) . ($path[-1] === 'a' ? 'b' : 'a');
+        $tampered = substr($path, 0, -1).($path[-1] === 'a' ? 'b' : 'a');
 
         $this->client->loginUser($alice);
         $this->client->request('GET', $tampered);
@@ -314,7 +314,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         );
         $this->store($invitation);
 
-        $path = sprintf('/organizations/acme/invitations/%s/%s', $invitation->id->toBase32(), $token);
+        $path = \sprintf('/organizations/acme/invitations/%s/%s', $invitation->id->toBase32(), $token);
         $this->client->request('GET', $path);
 
         self::assertResponseRedirects();
@@ -388,7 +388,7 @@ class OrganizationInvitationControllerTest extends IntegrationTestCase
         $body = self::getMailerMessages()[0]->getTextBody() ?? '';
         self::assertSame(1, preg_match('#https?://[^\s]+/invitations/[^\s]+#', $body, $matches));
 
-        return (string) parse_url($matches[0], PHP_URL_PATH);
+        return (string) parse_url($matches[0], \PHP_URL_PATH);
     }
 
     /**

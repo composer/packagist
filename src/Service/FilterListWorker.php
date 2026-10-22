@@ -68,7 +68,7 @@ final readonly class FilterListWorker
             return ['status' => Job::STATUS_RESCHEDULE, 'after' => new \DateTimeImmutable('+2 minutes'), 'message' => 'Could not acquire lock'];
         }
 
-        $filterList = $this->filterLists[$source->value . '-' . $list->value];
+        $filterList = $this->filterLists[$source->value.'-'.$list->value];
         $remoteEntries = $filterList->getListEntries();
         if (null === $remoteEntries) {
             $this->logger->info('Filter list update failed, skipping', [
@@ -124,7 +124,7 @@ final readonly class FilterListWorker
 
                     $body .= 'Package: '.$packageUrl."\n"
                         .'List: '.$list->value."\n"
-                        .'Versions: '.implode(', ', array_map(fn (FilterListEntry $e) => $e->getVersion(), $entries))."\n"
+                        .'Versions: '.implode(', ', array_map(static fn (FilterListEntry $e) => $e->getVersion(), $entries))."\n"
                         .'Reason: '.($entries[0]->getReason() ?? 'N/A')."\n"
                         .'Link: '.($entries[0]->getLink() ?? 'N/A')."\n";
 

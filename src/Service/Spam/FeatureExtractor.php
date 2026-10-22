@@ -94,7 +94,7 @@ class FeatureExtractor
         if (Preg::matchAll('{(?:href|src)\s*=\s*["\']([^"\']+)["\']}i', $readmeHtml, $matches) > 0) {
             foreach ($matches[1] as $url) {
                 $linkCount++;
-                $host = parse_url(trim($url), PHP_URL_HOST);
+                $host = parse_url(trim($url), \PHP_URL_HOST);
                 if (\is_string($host) && $host !== '') {
                     $tokens[] = 'rl:'.mb_strtolower($host);
                 }
@@ -102,7 +102,7 @@ class FeatureExtractor
         }
         $tokens[] = 'rlc:'.$this->linkBucket($linkCount);
 
-        $text = html_entity_decode(strip_tags($readmeHtml), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = html_entity_decode(strip_tags($readmeHtml), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
         $words = $this->words(mb_strtolower($text));
         foreach ($words as $word) {
             $tokens[] = 'r:'.$word;

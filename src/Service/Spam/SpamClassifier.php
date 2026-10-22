@@ -207,7 +207,7 @@ class SpamClassifier
         }
 
         try {
-            $decoded = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+            $decoded = json_decode($contents, true, 512, \JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             $this->logger->warning('Spam model file contains invalid JSON', ['file' => $file, 'exception' => $e]);
 

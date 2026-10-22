@@ -119,7 +119,7 @@ final class Invitation extends AbstractAggregate
      * @param list<Ulid> $acceptedTeamIds the still-existing target teams the user will join
      *
      * @throws InvitationNotPendingException
-     * @throws NoPendingInvitationException the invitation has lapsed
+     * @throws NoPendingInvitationException  the invitation has lapsed
      * @throws AlreadyMemberException        the invitee already belongs to the organization
      * @throws TeamNotFoundException         none of the target teams exist any more
      * @throws PolicyNotMetException         joining owners requires 2FA

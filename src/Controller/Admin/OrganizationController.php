@@ -14,10 +14,10 @@ namespace App\Controller\Admin;
 
 use App\Controller\Controller;
 use App\Entity\OrganizationRepository;
+use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Form\Model\AdminCreateOrganizationRequest;
 use App\Form\Type\AdminCreateOrganizationType;
-use App\Entity\User;
 use App\Organization\Domain\Exception\OrganizationException;
 use App\Organization\OrganizationManager;
 use Symfony\Component\Form\FormError;
@@ -67,7 +67,7 @@ class OrganizationController extends Controller
                         $request->getClientIp(),
                     );
 
-                    $this->addFlash('success', sprintf('Organization "%s" created.', $organization->slug()));
+                    $this->addFlash('success', \sprintf('Organization "%s" created.', $organization->slug()));
 
                     return $this->redirectToRoute('admin_organization_list');
                 } catch (OrganizationException $e) {

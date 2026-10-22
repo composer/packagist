@@ -49,8 +49,8 @@ class V2DumpWindow
     }
 
     /**
-     * @param array<int, string|null> $pending id => staleSince of what the pass selected but did not dump
-     * @param \DateTimeImmutable $selectedAt when the pass's select ran: what became stale after that was not in it
+     * @param array<int, string|null> $pending    id => staleSince of what the pass selected but did not dump
+     * @param \DateTimeImmutable      $selectedAt when the pass's select ran: what became stale after that was not in it
      */
     public static function anchorFor(array $pending, \DateTimeImmutable $selectedAt): \DateTimeImmutable
     {

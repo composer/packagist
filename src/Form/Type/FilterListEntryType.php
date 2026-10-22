@@ -43,13 +43,13 @@ class FilterListEntryType extends AbstractType
             ])
             ->add('list', EnumType::class, [
                 'class' => FilterLists::class,
-                'choice_label' => fn (FilterLists $list) => $list->value,
+                'choice_label' => static fn (FilterLists $list) => $list->value,
                 'label' => 'List',
                 'disabled' => $upstreamLocked,
             ])
             ->add('source', EnumType::class, [
                 'class' => FilterSources::class,
-                'choice_label' => fn (FilterSources $source) => $source->displayName(),
+                'choice_label' => static fn (FilterSources $source) => $source->displayName(),
                 'label' => 'Source',
                 // The source identifies provenance and is never editable.
                 'disabled' => true,

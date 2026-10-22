@@ -57,7 +57,7 @@ class VersionRepository extends ServiceEntityRepository
         // with softDelete() instead. allowStable is only for whole-package deletion, where the entire
         // package (and all its slots) is being removed.
         if (!$allowStable && !$version->isDevelopment()) {
-            throw new \LogicException(sprintf(
+            throw new \LogicException(\sprintf(
                 'Refusing to hard-delete stable version %s %s: stable releases are immutable; use softDelete().',
                 $version->getName(),
                 $version->getVersion()

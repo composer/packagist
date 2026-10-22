@@ -18,7 +18,7 @@ class RemoteSecurityAdvisoryCollection
     private array $groupedSecurityAdvisories = [];
 
     /**
-     * @param list<RemoteSecurityAdvisory> $advisories
+     * @param list<RemoteSecurityAdvisory>       $advisories
      * @param array<string, array<string, true>> $withdrawnAdvisories packageName => (remoteId => true) for advisories withdrawn at the source
      */
     public function __construct(

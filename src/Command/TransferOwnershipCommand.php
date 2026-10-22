@@ -136,12 +136,12 @@ class TransferOwnershipCommand extends Command
     {
         $rows = [];
 
-        usort($packages, fn (Package $a, Package $b) => strcasecmp($a->getName(), $b->getName()));
+        usort($packages, static fn (Package $a, Package $b) => strcasecmp($a->getName(), $b->getName()));
 
-        $newMaintainers = array_map(fn (User $user) => $user->getUsername(), $maintainers);
+        $newMaintainers = array_map(static fn (User $user) => $user->getUsername(), $maintainers);
 
         foreach ($packages as $package) {
-            $currentMaintainers = $package->getMaintainers()->map(fn (User $user) => $user->getUsername())->toArray();
+            $currentMaintainers = $package->getMaintainers()->map(static fn (User $user) => $user->getUsername())->toArray();
             sort($currentMaintainers);
 
             $rows[] = [

@@ -14,8 +14,6 @@ namespace App\Tests\Organization;
 
 use App\Organization\Domain\DisplayName;
 use App\Organization\Domain\Event\MemberJoined;
-use App\Organization\Domain\Event\MemberLeft;
-use App\Organization\Domain\Event\MemberRemoved;
 use App\Organization\Domain\Event\OrganizationCreated;
 use App\Organization\Domain\Event\OrganizationNameChanged;
 use App\Organization\Domain\Event\OrganizationSlugChanged;

@@ -91,13 +91,15 @@ class IntegrationTestCase extends WebTestCase
 
     /**
      * @template T
+     *
      * @param class-string<T> $className
+     *
      * @return T
      */
     protected static function getService(string $className)
     {
         $service = static::getContainer()->get($className);
-        assert($service instanceof $className);
+        \assert($service instanceof $className);
 
         return $service;
     }

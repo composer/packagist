@@ -34,7 +34,7 @@ class MaintainerType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->addModelTransformer(new CallbackTransformer(
-            function (?User $user): string {
+            static function (?User $user): string {
                 return $user?->getUsername() ?? '';
             },
             function (?string $username): ?User {

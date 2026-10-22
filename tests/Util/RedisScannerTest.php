@@ -27,7 +27,7 @@ class RedisScannerTest extends IntegrationTestCase
         parent::setUp();
 
         $redis = self::getContainer()->get('snc_redis.default');
-        assert($redis instanceof Client);
+        \assert($redis instanceof Client);
         $this->redis = $redis;
 
         $this->cleanup();

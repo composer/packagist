@@ -70,7 +70,7 @@ final class InvitationManager
      *
      * @throws DuplicatePendingInvitationException
      * @throws TeamNotFoundException
-     * @throws \App\Organization\Domain\Exception\NoTeamSpecifiedException
+     * @throws NoTeamSpecifiedException
      */
     public function invite(OrganizationReadModel $organization, User $actor, string $email, array $teamIds, ?string $ip): void
     {
@@ -99,7 +99,7 @@ final class InvitationManager
             }
 
             if ($this->organizationInvitationRepo->findActiveForEmail($organization->id, $emailVo->value, $now) !== null) {
-                throw new DuplicatePendingInvitationException(sprintf('There is already a pending invitation for "%s".', $emailVo->value));
+                throw new DuplicatePendingInvitationException(\sprintf('There is already a pending invitation for "%s".', $emailVo->value));
             }
 
             $this->eventStore->append($invitation, $this->ownerActor($actor, $organization), $ip);
@@ -111,7 +111,7 @@ final class InvitationManager
     /**
      * Bump the expiry and re-send the link, invalidating the previous one.
      *
-     * @throws \App\Organization\Domain\Exception\NoPendingInvitationException
+     * @throws Domain\Exception\NoPendingInvitationException
      */
     public function resend(OrganizationReadModel $organization, User $actor, OrganizationInvitation $invitation, ?string $ip): void
     {
@@ -142,10 +142,10 @@ final class InvitationManager
      * (2FA for owners) and adds the org membership, all in one transaction. The caller has already
      * validated the link token.
      *
-     * @throws \App\Organization\Domain\Exception\AlreadyMemberException
-     * @throws \App\Organization\Domain\Exception\PolicyNotMetException
-     * @throws \App\Organization\Domain\Exception\InvitationNotPendingException
-     * @throws \App\Organization\Domain\Exception\NoPendingInvitationException
+     * @throws Domain\Exception\AlreadyMemberException
+     * @throws Domain\Exception\PolicyNotMetException
+     * @throws Domain\Exception\InvitationNotPendingException
+     * @throws Domain\Exception\NoPendingInvitationException
      * @throws TeamNotFoundException
      */
     public function accept(OrganizationInvitation $invitation, User $user, ?string $ip): void
@@ -233,7 +233,7 @@ final class InvitationManager
     /**
      * @param list<Ulid> $teamIds
      *
-     * @throws \App\Organization\Domain\Exception\NoTeamSpecifiedException
+     * @throws NoTeamSpecifiedException
      * @throws TeamNotFoundException
      */
     private function assertTeamsBelongToOrg(OrganizationReadModel $organization, array $teamIds): void
@@ -282,7 +282,7 @@ final class InvitationManager
         $message = new TemplatedEmail()
             ->from(new Address($this->mailFromEmail, $this->mailFromName))
             ->to($email->value)
-            ->subject(sprintf('You have been invited to the "%s" organization on Packagist', $organization->displayName))
+            ->subject(\sprintf('You have been invited to the "%s" organization on Packagist', $organization->displayName))
             ->textTemplate('email/organization_invitation.txt.twig')
             ->context([
                 'organizationName' => $organization->displayName,
