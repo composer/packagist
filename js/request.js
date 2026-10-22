@@ -1,13 +1,13 @@
 import notifier from './notifier';
 
-export class AjaxError extends Error {
+export class RequestError extends Error {
     constructor(message, responseText = '') {
         super(message);
         this.responseText = responseText;
     }
 }
 
-export function showAjaxError(responseText) {
+export function showRequestError(responseText) {
     let message, details;
 
     notifier.remove();
@@ -31,7 +31,7 @@ export function formParams(form) {
 }
 
 /**
- * Resolves with the parsed JSON body (null when empty). Failures reject with an AjaxError after
+ * Resolves with the parsed JSON body (null when empty). Failures reject with an RequestError after
  * showing the server's message in a toast, unless showError is false.
  */
 export function request(url, {method = 'GET', params = null, cache = true, showError = true} = {}) {
@@ -60,27 +60,27 @@ export function request(url, {method = 'GET', params = null, cache = true, showE
     })
         .then((response) => response.text().then((text) => {
             if (!response.ok) {
-                throw new AjaxError('HTTP ' + response.status, text);
+                throw new RequestError('HTTP ' + response.status, text);
             }
             try {
                 return text ? JSON.parse(text) : null;
             } catch (e) {
-                throw new AjaxError('Invalid JSON response', text);
+                throw new RequestError('Invalid JSON response', text);
             }
         }), (e) => {
-            throw new AjaxError(e.message);
+            throw new RequestError(e.message);
         })
         .catch((e) => {
             if (showError) {
-                showAjaxError(e.responseText);
+                showRequestError(e.responseText);
             }
             throw e;
         });
 }
 
 // for call sites with nothing to do on failure beyond the toast request() already showed
-export function ignoreAjaxError(e) {
-    if (!(e instanceof AjaxError)) {
+export function ignoreRequestError(e) {
+    if (!(e instanceof RequestError)) {
         throw e;
     }
 }

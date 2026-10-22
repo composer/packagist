@@ -1,4 +1,4 @@
-import { request, formParams, ignoreAjaxError } from './ajax';
+import { request, formParams, ignoreRequestError } from './request';
 
 const init = function () {
     var showSimilarMax = 5;
@@ -54,7 +54,7 @@ const init = function () {
         };
         request(form.dataset.checkUrl, {method: 'POST', params: formParams(form)})
             .then(success)
-            .catch(ignoreAjaxError)
+            .catch(ignoreRequestError)
             .finally(() => submit.classList.remove('loading'));
         submit.classList.add('loading');
     };

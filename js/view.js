@@ -1,6 +1,6 @@
 import { Modal, Tooltip } from 'bootstrap';
 import notifier from './notifier';
-import { request, formParams, ignoreAjaxError } from './ajax';
+import { request, formParams, ignoreRequestError } from './request';
 
 const init = function () {
     "use strict";
@@ -50,7 +50,7 @@ const init = function () {
                     versionCache[versionId] = data.content;
                     setVersionDetails(data.content);
                 })
-                .catch(ignoreAjaxError)
+                .catch(ignoreRequestError)
                 .finally(() => {
                     ongoingRequest = false;
                     all('.package .version-details').forEach((el) => el.classList.remove('loading'));
@@ -82,7 +82,7 @@ const init = function () {
     openVersionFromHash();
     window.addEventListener('hashchange', openVersionFromHash);
 
-    function dispatchAjaxForm(form, success, className, extraParams) {
+    function dispatchForm(form, success, className, extraParams) {
         if (form.classList.contains(className)) {
             return;
         }
@@ -91,7 +91,7 @@ const init = function () {
         form.classList.add(className);
         request(form.getAttribute('action'), {method: form.getAttribute('method'), params: params, cache: false})
             .then(success)
-            .catch(ignoreAjaxError)
+            .catch(ignoreRequestError)
             .finally(() => form.classList.remove(className));
     }
 
@@ -145,7 +145,7 @@ const init = function () {
         all('.package .force-update input[type=submit]').forEach((el) => { el.disabled = running; });
 
         if (running) {
-            // sticky: an unrelated ajax failure clearing its messages must not take the only
+            // sticky: an unrelated request failure clearing its messages must not take the only
             // explanation for the spinner with it
             updateToast = notifier.log('Update in progress…', {spinner: true, sticky: true});
         } else if (updateToast) {
@@ -216,7 +216,7 @@ const init = function () {
 
                         setTimeout(checkJobStatus, 1000);
                     }, function (err) {
-                        ignoreAjaxError(err);
+                        ignoreRequestError(err);
                         pollFailures++;
                         if (pollFailures > 3) {
                             setUpdateRunning(false);
@@ -229,7 +229,7 @@ const init = function () {
 
                 setTimeout(checkJobStatus, 1000);
             }, function (err) {
-                ignoreAjaxError(err);
+                ignoreRequestError(err);
                 setUpdateRunning(false);
             });
     }
@@ -247,7 +247,7 @@ const init = function () {
         el.classList.add('loading');
         pending
             .then(() => el.classList.toggle('is-starred'))
-            .catch(ignoreAjaxError)
+            .catch(ignoreRequestError)
             .finally(() => el.classList.remove('loading'));
     });
     on('.package .delete', 'submit', function (e) {
@@ -265,10 +265,10 @@ const init = function () {
                 var extra = {};
                 if (publicReason) extra.reason = publicReason;
                 if (internalReason) extra.internalReason = internalReason;
-                dispatchAjaxForm(form, success, 'request-sent', extra);
+                dispatchForm(form, success, 'request-sent', extra);
             });
         } else if (window.confirm('Are you sure you want to delete this package?')) {
-            dispatchAjaxForm(form, success, 'request-sent');
+            dispatchForm(form, success, 'request-sent');
         }
     });
     on('.package .view-log', 'click', function (e) {
@@ -328,7 +328,7 @@ const init = function () {
         }
     }
 
-    // Submit a version-action form via ajax, guarding against duplicate submits.
+    // Submit a version-action form via fetch, guarding against duplicate submits.
     // `overrides` may carry {url, method, params} to override the form's defaults (used by the
     // admin-reason fallthrough in .delete-version which retargets to admin_delete_version).
     function dispatchVersionAction(form, onSuccess, overrides) {
@@ -343,7 +343,7 @@ const init = function () {
             cache: false,
         })
             .then(onSuccess)
-            .catch(ignoreAjaxError)
+            .catch(ignoreRequestError)
             .finally(() => form.classList.remove('request-sent'));
     }
 
