@@ -319,9 +319,6 @@
     "psr/simple-cache": {
         "version": "1.0.1"
     },
-    "ralouphie/getallheaders": {
-        "version": "3.0.3"
-    },
     "react/promise": {
         "version": "v2.8.0"
     },
