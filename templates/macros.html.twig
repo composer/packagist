@@ -1,8 +1,8 @@
-{% macro listPackages(packages, paginate, showAutoUpdateWarning, meta, showFrozen) %}
+{% macro listPackages(packages, paginate = true, showAutoUpdateWarning = false, meta = null, showFrozen = false) %}
     {# On listings that opt in (a user's own package list), package moderators additionally see the
        suppressed (spam/malware) frozen packages, flagged as [FROZEN], for review clarity. Browse/
        search/vendor listings never opt in, so frozen packages stay hidden there. #}
-    {% set canSeeFrozen = showFrozen|default(false) and is_granted('ROLE_DISABLE_PACKAGES') %}
+    {% set canSeeFrozen = showFrozen and is_granted('ROLE_DISABLE_PACKAGES') %}
     <ul class="packages list-unstyled">
         {% for package in packages|filter(package => canSeeFrozen or package.isFrozen() is not defined or not package.isFrozen() or not package.getFreezeReason().suppressesPackage()) %}
             {% if package.id is numeric %}
@@ -71,20 +71,20 @@
         {% endfor %}
     </ul>
 
-    {% if paginate is defined and paginate and packages.haveToPaginate() %}
+    {% if paginate and packages.haveToPaginate() %}
         {{ pagerfanta(packages, 'twitter_bootstrap5', {'proximity': 2}) }}
     {% endif %}
 {% endmacro %}
 
-{% macro listPackagesShort(packages, showVersion, showMoreUrl) %}
+{% macro listPackagesShort(packages, showVersion = false, showMoreUrl = false) %}
     <ul class="list-unstyled">
         {% for package in packages %}
             <li>
-                <a href="{{ path('view_package', {'name' : package.name }) }}">{{ package.name }}{% if showVersion is defined and showVersion %}<strong>{{ package.version }}</strong>{% endif %}</a>
+                <a href="{{ path('view_package', {'name' : package.name }) }}">{{ package.name }}{% if showVersion %}<strong>{{ package.version }}</strong>{% endif %}</a>
                 {{ package.description|u.truncate(60) }}
             </li>
         {% endfor %}
-        {% if showMoreUrl is defined and showMoreUrl %}
+        {% if showMoreUrl %}
             <li><a href="{{ path('browse_popular') }}">See more...</a></li>
         {% endif %}
     </ul>
