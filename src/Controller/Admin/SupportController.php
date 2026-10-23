@@ -277,7 +277,7 @@ class SupportController extends Controller
         // The same gate the package page's transfer form uses, asked of this admin and this package.
         $this->denyAccessUnlessGranted(PackageActions::TransferPackage->value, $package);
 
-        if (!$packageManager->transferPackage($package, [$request->user], true)) {
+        if (!$packageManager->transferPackage($actor, $package, [$request->user], true)) {
             $this->addFlash('warning', $request->user->getUsername().' already maintains '.$name.' alone.');
 
             return $redirect;

@@ -167,7 +167,7 @@ class TransferOwnershipCommand extends Command
     private function transferOwnership(array $packages, array $maintainers): void
     {
         foreach ($packages as $package) {
-            $this->packageManager->transferPackage($package, $maintainers, false);
+            $this->packageManager->transferPackage(null, $package, $maintainers, false);
         }
 
         $this->doctrine->getManager()->flush();

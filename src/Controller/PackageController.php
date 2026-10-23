@@ -1260,7 +1260,7 @@ class PackageController extends Controller
 
         try {
             $newMaintainers = $form->getData()->maintainers->toArray();
-            $result = $this->packageManager->transferPackage($package, $newMaintainers, true);
+            $result = $this->packageManager->transferPackage($user, $package, $newMaintainers, true);
             $this->getEM()->flush();
 
             if ($result) {
