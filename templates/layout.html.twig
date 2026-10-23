@@ -1,4 +1,5 @@
-{% set searchQuery = app.request.query.has('q') ? app.request.query.get('q') : app.request.query.get('query') %}
+{% set searchQuery = app.request.query.all()[app.request.query.has('q') ? 'q' : 'query'] ?? '' %}
+{% if searchQuery is iterable %}{% set searchQuery = '' %}{% endif %}
 {% set heroMode = showSearchDesc|default('show') == 'hero' %}
 {# the hero collapses as soon as a search is active, which moves the page h1 back into the navbar #}
 {% set heroCollapsed = heroMode and searchQuery is not empty %}

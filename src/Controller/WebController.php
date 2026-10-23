@@ -295,9 +295,9 @@ class WebController extends Controller
 
     private function checkForQueryMatch(Request $req): ?RedirectResponse
     {
-        $q = $req->query->has('q') ? $req->query->get('q') : $req->query->get('query');
+        $q = $req->query->all()[$req->query->has('q') ? 'q' : 'query'] ?? null;
 
-        if (null === $q) {
+        if (!is_string($q)) {
             return null;
         }
 

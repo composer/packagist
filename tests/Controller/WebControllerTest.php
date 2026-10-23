@@ -20,6 +20,9 @@ use Predis\Client as RedisClient;
 use Predis\ClientException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 class WebControllerTest extends IntegrationTestCase
 {
@@ -37,6 +40,34 @@ class WebControllerTest extends IntegrationTestCase
         // the content block must render whether or not the blog feed returned anything
         static::assertSame('Installing PHP Dependencies', $crawler->filter('#getting-started')->text());
         static::assertSame('Publishing Packages', $crawler->filter('#how-to-submit-packages')->text());
+    }
+
+    public function testSearchQueryPrefillsSearchBox(): void
+    {
+        $crawler = $this->client->request('GET', '/?query=foo');
+        static::assertResponseIsSuccessful();
+        static::assertSame('foo', $crawler->filter('#search_query_query')->attr('value'));
+    }
+
+    public function testNonScalarSearchQueryDoesNotBreakLayout(): void
+    {
+        foreach (['/?query[]=foo', '/?q[]=foo', '/about?query[]=foo'] as $url) {
+            $crawler = $this->client->request('GET', $url);
+            static::assertResponseIsSuccessful();
+            static::assertSame('', $crawler->filter('#search_query_query')->attr('value'));
+        }
+    }
+
+    public function testErrorPageRendersWithNonScalarSearchQuery(): void
+    {
+        // the test kernel is in debug mode, so render the prod error page directly
+        $request = Request::create('/list/', 'GET', ['query' => ['foo']]);
+        $request->setSession(new Session(new MockArraySessionStorage()));
+        self::getContainer()->get('request_stack')->push($request);
+
+        $html = self::getContainer()->get('twig')->render('bundles/TwigBundle/Exception/error404.html.twig');
+        static::assertStringContainsString('Oh noes, 404!', $html);
+        static::assertStringContainsString('id="search_query_query"', $html);
     }
 
     public function testHomepageRendersContentWithoutNews(): void
