@@ -364,6 +364,49 @@ class SupportController extends Controller
     }
 
     /**
+     * Deletes the requester's account, which also removes this request (support_request.userId
+     * cascades), then confirms it to the user by mail.
+     */
+    #[Route(path: '/admin/support/{publicId}/delete-account', name: 'admin_support_request_delete_account', methods: ['POST'])]
+    public function deleteAccount(Request $req, string $publicId): RedirectResponse
+    {
+        // The same role the profile page's delete button requires for someone else's account.
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->assertCsrf($req);
+
+        $request = $this->findRequest($publicId);
+        $redirect = $this->redirectToRoute('admin_support_request', ['publicId' => $publicId]);
+
+        if ($request->type !== SupportRequestType::AccountDeletion) {
+            throw new BadRequestHttpException('Not an account deletion request');
+        }
+
+        if (!$request->isOpen()) {
+            $this->addFlash('warning', 'This request has already been dealt with.');
+
+            return $redirect;
+        }
+
+        $user = $request->user;
+        if (\count($user->getPackages()) > 0) {
+            $this->addFlash('error', $user->getUsername().' still maintains packages, deal with those before deleting the account.');
+
+            return $redirect;
+        }
+
+        $em = $this->getEM();
+        $em->remove($user);
+        $em->flush();
+
+        // Only once the deletion is committed, so a failed delete never tells the user it happened.
+        $this->notifier->notifyUserOfAccountDeletion($request);
+
+        $this->addFlash('success', 'Account '.$user->getUsername().' deleted, confirmation sent to '.$user->getEmail().', and request '.$request->publicId.' removed.');
+
+        return $this->redirectToRoute('admin_support_requests');
+    }
+
+    /**
      * @return list<SupportRequestType>
      */
     private function visibleTypes(): array

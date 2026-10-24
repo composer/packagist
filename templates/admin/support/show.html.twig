@@ -125,11 +125,22 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <p>
-                    Deleting the account is done from
-                    <a href="{{ path('user_profile', {name: supportRequest.user.username}) }}">their profile</a>, once the
-                    packages have been dealt with. That also removes this request.
-                </p>
+
+                <h3>Delete the account</h3>
+                {% if supportRequest.status.value != 'open' %}
+                    <p class="text-muted">Already dealt with.</p>
+                {% elseif requesterPackages %}
+                    <p class="text-muted">Deal with the packages above first; an account that still maintains packages cannot be deleted.</p>
+                {% else %}
+                    <form method="post" action="{{ path('admin_support_request_delete_account', {publicId: supportRequest.publicId}) }}"
+                          onsubmit="return confirm('Permanently delete the account {{ supportRequest.user.username|e('js') }}? This cannot be undone.')">
+                        <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
+                        <button type="submit" class="btn btn-danger">Delete account</button>
+                    </form>
+                    <p class="form-text">
+                        Deletes the account, emails them a confirmation, and removes this request along with its thread.
+                    </p>
+                {% endif %}
             {% endif %}
 
             <h3>Thread</h3>
