@@ -19,9 +19,11 @@ use App\Entity\SupportRequestMessage;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
 use App\Log\AuditLogEventType;
+use App\Support\Attributes\AccountDeletionAttributes;
 use App\Support\Attributes\LostTwoFactorAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
+use App\Support\PackageDisposition;
 use App\Support\SupportRequestStatus;
 use App\Tests\IntegrationTestCase;
 
@@ -502,6 +504,120 @@ class SupportControllerTest extends IntegrationTestCase
 
         self::assertStringContainsString('nothing is published under it', $crawler->filter('body')->html());
         self::assertCount(0, $crawler->filter('#vendor-packages'));
+    }
+
+    public function testDeleteAccountDeletesTheUserAndTheRequestAndNotifiesThem(): void
+    {
+        [$admin, $request, $requester] = $this->givenAccountDeletionRequest();
+        $requesterId = $requester->getId();
+        $this->store(SupportRequestMessage::internalNote($request, 'Checked their packages.', $admin));
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        $this->client->enableProfiler();
+        $this->client->submit($crawler->selectButton('Delete account')->form());
+        $this->assertResponseRedirects('/admin/support/');
+
+        $this->assertEmailCount(1);
+        $mail = $this->getMailerMessage();
+        self::assertNotNull($mail);
+        $this->assertEmailHeaderSame($mail, 'To', 'requester@example.org');
+        self::assertStringContainsString($request->publicId, $mail->getTextBody());
+
+        $em = self::getEM();
+        $em->clear();
+        self::assertNull($em->getRepository(User::class)->find($requesterId));
+        self::assertNull($em->getRepository(SupportRequest::class)->findOneByPublicId($request->publicId));
+        self::assertSame([], $em->getRepository(SupportRequestMessage::class)->findAll());
+
+        $audit = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::UserDeleted->value]);
+        self::assertNotNull($audit);
+        self::assertSame($admin->getId(), $audit->actorId);
+
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.alert-success', 'Account requester deleted');
+    }
+
+    public function testDeleteAccountIsRefusedWhileTheUserMaintainsPackages(): void
+    {
+        [$admin, $request, $requester] = $this->givenAccountDeletionRequest();
+        $this->store(self::createPackage('acme/kept', 'https://example.org/acme/kept', maintainers: [$requester]));
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+        self::assertCount(0, $crawler->selectButton('Delete account'));
+
+        $this->client->enableProfiler();
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/delete-account', ['token' => $this->csrfTokenFor($request)]);
+        $this->assertResponseRedirects('/admin/support/'.$request->publicId);
+        $this->assertEmailCount(0);
+
+        self::assertSame(SupportRequestStatus::Open, $this->reload($request)->status);
+        self::assertNotNull(self::getEM()->getRepository(User::class)->find($requester->getId()));
+    }
+
+    public function testDeleteAccountIsRefusedOnceTheRequestIsDealtWith(): void
+    {
+        [$admin, $request, $requester] = $this->givenAccountDeletionRequest();
+        $request->close(new \DateTimeImmutable());
+        $this->store($request);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+        self::assertCount(0, $crawler->selectButton('Delete account'));
+
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/delete-account', ['token' => $this->csrfTokenFor($request)]);
+        $this->assertResponseRedirects('/admin/support/'.$request->publicId);
+
+        self::getEM()->clear();
+        self::assertNotNull(self::getEM()->getRepository(User::class)->find($requester->getId()));
+    }
+
+    public function testDeleteAccountIsRejectedForOtherRequestTypes(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+
+        $request = SupportRequest::create($requester, 'Please move it.', new PackageTransferAttributes(['acme/thing']));
+        $this->store($request);
+
+        $this->client->loginUser($admin);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/delete-account', ['token' => $this->csrfTokenFor($request)]);
+
+        self::assertSame(400, $this->client->getResponse()->getStatusCode());
+        self::getEM()->clear();
+        self::assertNotNull(self::getEM()->getRepository(User::class)->find($requester->getId()));
+    }
+
+    public function testDeleteAccountRequiresTheAdminRole(): void
+    {
+        [, $request, $requester] = $this->givenAccountDeletionRequest();
+        $moderator = self::createUser('moderator', 'moderator@example.org', roles: ['ROLE_EDIT_PACKAGES', 'ROLE_DISABLE_2FA']);
+        $this->store($moderator);
+
+        $this->client->loginUser($moderator);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/delete-account', ['token' => 'irrelevant']);
+
+        self::assertSame(403, $this->client->getResponse()->getStatusCode());
+        self::getEM()->clear();
+        self::assertNotNull(self::getEM()->getRepository(User::class)->find($requester->getId()));
+    }
+
+    /**
+     * @return array{User, SupportRequest, User}
+     */
+    private function givenAccountDeletionRequest(): array
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_ADMIN']);
+        $requester = self::createUser('requester', 'requester@example.org');
+        $this->store($admin, $requester);
+
+        $request = SupportRequest::create($requester, 'Please delete my account.', new AccountDeletionAttributes(PackageDisposition::Undecided, null));
+        $this->store($request);
+
+        return [$admin, $request, $requester];
     }
 
     /**

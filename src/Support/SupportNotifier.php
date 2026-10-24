@@ -152,6 +152,26 @@ class SupportNotifier
         $this->send($email);
     }
 
+    /** Confirms to the former requester that their account is gone. Sent after the deletion, from the in-memory entities. */
+    public function notifyUserOfAccountDeletion(SupportRequest $request): void
+    {
+        $email = new TemplatedEmail()
+            ->from(new Address($this->mailFromEmail, $this->mailFromName))
+            ->to($request->user->getEmail())
+            ->replyTo($this->mailFromEmail)
+            ->subject('Your Packagist.org account has been deleted ('.$request->publicId.')')
+            ->textTemplate('email/support_account_deleted.txt.twig')
+            ->context([
+                'publicId' => $request->publicId,
+                'username' => $request->user->getUsername(),
+                'contactEmail' => $this->mailFromEmail,
+            ])
+        ;
+        $email->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
+
+        $this->send($email);
+    }
+
     /** A transport failure must never break the request or the admin action that triggered it. */
     private function send(Email $message): void
     {
