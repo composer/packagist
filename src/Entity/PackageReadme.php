@@ -24,7 +24,7 @@ class PackageReadme
     public function __construct(
         #[ORM\Id]
         #[ORM\OneToOne(targetEntity: Package::class)]
-        #[ORM\JoinColumn(referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+        #[ORM\JoinColumn(referencedColumnName: 'id', onDelete: 'CASCADE')]
         public Package $package,
 
         #[ORM\Column(type: 'text', nullable: false)]

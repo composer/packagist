@@ -104,7 +104,7 @@ class SupportRequest
      * @var Collection<int, SupportRequestMessage>
      */
     #[ORM\OneToMany(targetEntity: SupportRequestMessage::class, mappedBy: 'request')]
-    #[ORM\OrderBy(['createdAt' => 'ASC'])]
+    #[ORM\OrderBy(['createdAt' => \SortDirection::Ascending])]
     public Collection $messages;
 
     private function __construct(

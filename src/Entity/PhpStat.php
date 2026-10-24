@@ -74,7 +74,7 @@ class PhpStat
 
     #[ORM\Id]
     #[ORM\ManyToOne(targetEntity: 'App\Entity\Package')]
-    #[ORM\JoinColumn(name: 'package_id', nullable: false)]
+    #[ORM\JoinColumn(name: 'package_id')]
     public Package $package;
 
     /**

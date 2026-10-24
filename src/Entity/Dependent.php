@@ -25,7 +25,6 @@ class Dependent
 
     #[ORM\Id]
     #[ORM\ManyToOne(targetEntity: Package::class)]
-    #[ORM\JoinColumn(nullable: false)]
     private Package $package;
 
     #[ORM\Id]

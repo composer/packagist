@@ -23,7 +23,7 @@ class SecurityAdvisorySource
 {
     #[ORM\Id]
     #[ORM\ManyToOne(targetEntity: SecurityAdvisory::class, inversedBy: 'sources')]
-    #[ORM\JoinColumn(onDelete: 'CASCADE', nullable: false)]
+    #[ORM\JoinColumn(onDelete: 'CASCADE')]
     private SecurityAdvisory $securityAdvisory;
 
     #[ORM\Id]
