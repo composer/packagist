@@ -22,6 +22,7 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
+use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
@@ -31,6 +32,7 @@ use App\FilterList\RemoteFilterListEntry;
 use App\Log\AuditLogEventType;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
+use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
 use App\Tests\IntegrationTestCase;
@@ -198,6 +200,32 @@ class PackageControllerTest extends IntegrationTestCase
             ['2026-03-01T00:00:00Z', null, null, '2026-01-01T00:00:00Z'],
             $crawler->filter('.package-item')->each(static fn ($item) => $item->filter('time')->count() ? $item->filter('time')->attr('datetime') : null),
         );
+    }
+
+    public function testAdvisoriesPageShowsWhenEachAdvisoryWasReported(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $advisory = new SecurityAdvisory(new RemoteSecurityAdvisory(
+            'GHSA-test-test-test',
+            'Remote code execution',
+            'test/pkg',
+            '<1.0.1',
+            'https://example.com/advisory',
+            null,
+            new \DateTimeImmutable('2026-01-27 05:21:14'),
+            SecurityAdvisory::PACKAGIST_ORG,
+            [],
+            'GitHub',
+            null,
+        ), 'GitHub');
+        $this->store($package, $advisory);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg/advisories');
+        self::assertResponseIsSuccessful();
+
+        $reportedAt = $crawler->filter('.package-item time');
+        self::assertSame('2026-01-27', $reportedAt->text());
+        self::assertSame('2026-01-27T05:21:14Z', $reportedAt->attr('datetime'));
     }
 
     public function testPackagePageOmitsManagementFormsForVisitorsWhoCannotUseThem(): void
