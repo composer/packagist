@@ -59,6 +59,13 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
         $nextPage = 'https://api.github.com/repos/WordPress/wordpress-develop/security-advisories?per_page=100';
 
         while ($nextPage !== '') {
+            if (!str_starts_with($nextPage, 'https://api.github.com/repos/')) {
+                $this->logger->error('Unexpected GitHub advisories API, aborting.', [
+                    'exception' => $e,
+                ]);
+
+                return null;
+            }
             $headers = [];
             if (\count($this->fallbackGhTokens) > 0) {
                 $fallbackUser = $this->doctrine->getRepository(User::class)->findOneBy(['usernameCanonical' => $this->fallbackGhTokens[random_int(0, \count($this->fallbackGhTokens) - 1)]]);
@@ -74,7 +81,6 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
                         'headers' => $headers,
                     ]);
                     $data = json_decode($response->getContent(), true, flags: \JSON_THROW_ON_ERROR);
-                    $responseHeaders = $response->getHeaders();
                     break;
                 } catch (\RuntimeException $e) {
                     if ($retries === 0) {
@@ -171,7 +177,7 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
                 );
             }
 
-            $nextPage = (string) $responseHeaders['link'] ?? '';
+            $nextPage = $this->getNextLink($response->getHeaders(false)['link'] ?? []);
         }
 
         $advisories = [];
@@ -195,5 +201,30 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
         }
 
         return new WordPressRemoteSecurityAdvisoryCollection($advisories, $withdrawnAdvisories);
+    }
+
+    private function getNextLink(array $headerValues): ?string
+    {
+        foreach ($headerValues as $header) {
+            // Each link is <uri>; rel="relation"
+            foreach (preg_split('/,\s*(?=<)/', $header) as $segment) {
+                if (!preg_match('/<([^>]+)>\s*(.*)/', trim($segment), $uriMatch)) {
+                    continue;
+                }
+
+                $uri = $uriMatch[1];
+                $params = $uriMatch[2];
+
+                if (preg_match('/;\s*rel\s*=\s*"?([^";]+)"?/i', $params, $relMatch)) {
+                    foreach (explode(' ', trim($relMatch[1])) as $rel) {
+                        if (strtolower($rel) === 'next') {
+                            return $uri;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }
