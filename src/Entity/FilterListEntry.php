@@ -39,7 +39,7 @@ class FilterListEntry
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $reason;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(length: 2048, nullable: true)]
     private ?string $link;
 
     #[ORM\Column(length: 32)]
