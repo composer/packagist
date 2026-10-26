@@ -136,6 +136,7 @@ final readonly class FilterListWorker
 
                     $body .= 'Package: '.$packageUrl."\n"
                         .'List: '.$list->value."\n"
+                        .'Source: '.$source->displayName()."\n"
                         .'Versions: '.implode(', ', array_map(static fn (FilterListEntry $e) => $e->getVersion(), $entries))."\n"
                         .'Reason: '.($entries[0]->getReason() ?? 'N/A')."\n"
                         .'Link: '.($entries[0]->getLink() ?? 'N/A')."\n";

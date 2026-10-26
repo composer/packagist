@@ -209,7 +209,7 @@ class FilterListWorkerTest extends TestCase
         $this->mailer
             ->expects($this->once())
             ->method('send')
-            ->with($this->callback(static fn (Email $email) => str_contains((string) $email->getTextBody(), 'Versions: 2.0.0')));
+            ->with($this->callback(static fn (Email $email) => str_contains((string) $email->getTextBody(), 'Versions: 2.0.0') && str_contains((string) $email->getTextBody(), 'Source: Aikido')));
 
         $this->summaryDumper
             ->expects($this->once())
