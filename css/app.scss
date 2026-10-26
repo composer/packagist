@@ -2574,17 +2574,32 @@ body {
 
 // Footer sponsor styles
 .sponsor {
+    // content-sized so the centered sponsor link sits under the middle of the logos
+    display: grid;
+    grid-template-columns: fit-content(100%);
+    row-gap: 10px;
+
     p {
+        width: auto;
         margin-bottom: 0;
         line-height: 45px;
     }
-    a.short, a.long {
+    p:last-child {
+        grid-column: 1 / -1;
+    }
+    a.long {
         display: inline-block;
         width: 170px;
     }
     @media (min-width: 992px) {
-        a.short {
-            width: 145px;
+        // two columns pushed to the edges, filled column-first to keep the stacked order
+        grid-template-columns: max-content max-content;
+        grid-template-rows: auto auto;
+        grid-auto-flow: column;
+        justify-content: space-between;
+
+        p:last-child {
+            grid-row: 3;
         }
     }
     img {
@@ -2592,8 +2607,10 @@ body {
         position: relative;
         top: -3px;
     }
-    img[alt="Aikido"] {
-        height: 35px;
+    // one width, so logos stacked in a column line up
+    img[alt="Aikido"], img[alt="Bunny.net"], img[alt="Socket"] {
+        width: 156px;
+        height: auto;
     }
 }
 
