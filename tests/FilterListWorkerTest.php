@@ -35,6 +35,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Seld\Signal\SignalHandler;
 use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class FilterListWorkerTest extends TestCase
@@ -119,6 +120,96 @@ class FilterListWorkerTest extends TestCase
         $this->mailer
             ->expects($this->once())
             ->method('send');
+
+        $this->summaryDumper
+            ->expects($this->once())
+            ->method('dumpIfStale')
+            ->with(true);
+
+        $result = $this->worker->process($this->createJob(), SignalHandler::create());
+
+        $this->assertSame(Job::STATUS_COMPLETED, $result['status']);
+    }
+
+    public function testProcessDoesNotMailVersionsListedByAnotherSource(): void
+    {
+        $remote = $this->createRemoteFilterListEntry('vendor/known-malware', '1.0.0');
+
+        $this->expectLock();
+
+        $this->filterList
+            ->expects($this->once())
+            ->method('getListEntries')
+            ->willReturn([$remote]);
+
+        $this->filterListEntryRepository
+            ->expects($this->once())
+            ->method('getEntriesInList')
+            ->willReturn([]);
+
+        $this->filterListEntryRepository
+            ->expects($this->once())
+            ->method('getPackageEntries')
+            ->with('vendor/known-malware', FilterLists::MALWARE)
+            ->willReturn([
+                FilterListEntry::fromRemote($remote),
+                FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/known-malware', '1.0.0', FilterSources::PACKAGIST)),
+            ]);
+
+        $this->em
+            ->expects($this->once())
+            ->method('persist');
+
+        $this->mailer
+            ->expects($this->never())
+            ->method('send');
+
+        $this->summaryDumper
+            ->expects($this->once())
+            ->method('dumpIfStale')
+            ->with(true);
+
+        $result = $this->worker->process($this->createJob(), SignalHandler::create());
+
+        $this->assertSame(Job::STATUS_COMPLETED, $result['status']);
+    }
+
+    public function testProcessMailsVersionsOnlyListedByThisSource(): void
+    {
+        $remote = $this->createRemoteFilterListEntry('vendor/known-malware', '2.0.0');
+
+        $this->expectLock();
+
+        $this->filterList
+            ->expects($this->once())
+            ->method('getListEntries')
+            ->willReturn([$remote]);
+
+        $this->filterListEntryRepository
+            ->expects($this->once())
+            ->method('getEntriesInList')
+            ->willReturn([]);
+
+        $this->filterListEntryRepository
+            ->expects($this->once())
+            ->method('getPackageEntries')
+            ->willReturn([
+                FilterListEntry::fromRemote($remote),
+                FilterListEntry::fromRemote($this->createRemoteFilterListEntry('vendor/known-malware', '1.0.0', FilterSources::PACKAGIST)),
+            ]);
+
+        $this->em
+            ->expects($this->once())
+            ->method('persist');
+
+        $this->urlGenerator
+            ->method('generate')
+            ->willReturn('https://packagist.org/packages/vendor/known-malware');
+
+        $this->mailer
+            ->expects($this->once())
+            ->method('send')
+            ->with($this->callback(static fn (Email $email) => str_contains((string) $email->getTextBody(), 'Versions: 2.0.0')));
 
         $this->summaryDumper
             ->expects($this->once())
@@ -255,7 +346,7 @@ class FilterListWorkerTest extends TestCase
         $this->assertSame(Job::STATUS_COMPLETED, $result['status']);
     }
 
-    private function createRemoteFilterListEntry(string $packageName, string $version): RemoteFilterListEntry
+    private function createRemoteFilterListEntry(string $packageName, string $version, FilterSources $source = FilterSources::AIKIDO): RemoteFilterListEntry
     {
         return new RemoteFilterListEntry(
             $packageName,
@@ -263,7 +354,7 @@ class FilterListWorkerTest extends TestCase
             FilterLists::MALWARE,
             'https://example.com/'.$packageName,
             'malware',
-            FilterSources::AIKIDO,
+            $source,
         );
     }
 

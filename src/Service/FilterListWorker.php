@@ -110,6 +110,18 @@ final readonly class FilterListWorker
                 }
 
                 foreach ($newEntriesByPackage as $packageName => $entries) {
+                    // another source listing the same version means it is blocked already, so a second report is not news
+                    $listedByOtherSources = [];
+                    foreach ($this->doctrine->getRepository(FilterListEntry::class)->getPackageEntries($packageName, $list) as $listed) {
+                        if ($listed->getSource() !== $source) {
+                            $listedByOtherSources[$listed->getVersion()] = true;
+                        }
+                    }
+                    $entries = array_values(array_filter($entries, static fn (FilterListEntry $e) => !isset($listedByOtherSources[$e->getVersion()])));
+                    if ($entries === []) {
+                        continue;
+                    }
+
                     $package = $this->doctrine->getRepository(Package::class)->findOneBy(['name' => $packageName]);
                     $downloads = $package ? $this->downloadManager->getTotalDownloads($package->getId()) : 0;
                     $packageUrl = $this->urlGenerator->generate('view_package', ['name' => $packageName], UrlGeneratorInterface::ABSOLUTE_URL);
