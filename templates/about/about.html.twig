@@ -122,7 +122,7 @@ v2.0.4-p1</code></pre>
             <h4>Do not want to log in via GitHub and grant us webhook configuration access?</h4>
             <p>You can configure a GitHub webhook manually by using the following values:</p>
             <ul>
-                <li>Payload URL: <code>https://packagist.org/api/github?username={{ app.user.username|default('PACKAGIST_USERNAME') }}</code></li>
+                <li>Payload URL: <code>https://packagist.org/api/github?username={{ app.user.username|default('PACKAGIST_USERNAME')|url_encode }}</code></li>
                 <li>Content Type: <code>application/json</code></li>
                 <li>Secret: your <a href="{{ path('my_profile') }}">Packagist API Token</a></li>
                 <li>Which events? Just the <code>push</code> event is enough.</li>
@@ -131,7 +131,7 @@ v2.0.4-p1</code></pre>
 
         <section class="col-lg-6">
             <h3>Bitbucket Webhooks</h3>
-            <p>To enable the Bitbucket web hook, go to your BitBucket repository, open the settings and select "Webhooks" in the menu. Add a new hook. You have to enter the Packagist endpoint, containing both your username and API token. Enter <code>https://packagist.org/api/bitbucket?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> as URL. Save your changes and you're done.</p>
+            <p>To enable the Bitbucket web hook, go to your BitBucket repository, open the settings and select "Webhooks" in the menu. Add a new hook. You have to enter the Packagist endpoint, containing both your username and API token. Enter <code>https://packagist.org/api/bitbucket?username={{ app.user.username|default('USERNAME')|url_encode }}&amp;apiToken=API_TOKEN</code> as URL. Save your changes and you're done.</p>
         </section>
 
         <div class="clearfix"></div>
@@ -148,9 +148,9 @@ v2.0.4-p1</code></pre>
         <div class="clearfix"></div>
         <section class="col-lg-6">
             <h3>Manual hook setup</h3>
-            <p>If you do not use Bitbucket or GitHub there is a generic endpoint you can call manually from a git post-receive hook or similar. You have to do a <code>POST</code> request to <code>https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN</code> with a request body looking like this: <code>{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}</code></p>
+            <p>If you do not use Bitbucket or GitHub there is a generic endpoint you can call manually from a git post-receive hook or similar. You have to do a <code>POST</code> request to <code>https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME')|url_encode }}&amp;apiToken=API_TOKEN</code> with a request body looking like this: <code>{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}</code></p>
             <p>You can do this using curl for example:</p>
-            <pre>curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME') }}&amp;apiToken=API_TOKEN' -d'{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}'</pre>
+            <pre>curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username={{ app.user.username|default('USERNAME')|url_encode }}&amp;apiToken=API_TOKEN' -d'{"repository":{"url":"PACKAGIST_PACKAGE_URL"}}'</pre>
         </section>
 
         <section class="col-lg-6">
