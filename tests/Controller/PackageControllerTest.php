@@ -23,6 +23,7 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
 use App\Entity\SecurityAdvisory;
+use App\Entity\SocketSupplyChainAlert;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
@@ -35,6 +36,7 @@ use App\Package\PackageListCache;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
+use App\Socket\SupplyChainAlertType;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
 use Doctrine\DBAL\Driver\Exception as DriverExceptionInterface;
@@ -148,6 +150,34 @@ class PackageControllerTest extends IntegrationTestCase
         yield 'uppercase http url' => ['HTTP://example.org/new', 'HTTP://example.org/new'];
         yield 'javascript url' => ['javascript://%0aalert(1)', null];
         yield 'data url' => ['data://text/html,x', null];
+    }
+
+    public function testViewShowsSocketSupplyChainAlerts(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $this->store(
+            $package,
+            new SocketSupplyChainAlert('test/pkg', '1.0.0', SupplyChainAlertType::TYPOSQUAT, 'https://socket.dev/composer/package/test/pkg/alerts/1.0.0'),
+            new SocketSupplyChainAlert('test/pkg', '1.1.0', SupplyChainAlertType::TYPOSQUAT, null),
+            new SocketSupplyChainAlert('test/pkg', '1.1.0', SupplyChainAlertType::TELEMETRY, null),
+            new SocketSupplyChainAlert('test/other', '1.0.0', SupplyChainAlertType::PROTESTWARE, null),
+        );
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        $items = $crawler->filter('.socket-supply-chain-alerts li');
+        self::assertSame(['Typosquat: 1.1.0, 1.0.0', 'Telemetry: 1.1.0'], $items->each(static fn ($item) => $item->text()));
+        self::assertSame('https://socket.dev/composer/package/test/pkg/alerts/1.0.0', $items->first()->filter('a')->attr('href'));
+    }
+
+    public function testViewHasNoSocketSupplyChainAlertsWithoutAlerts(): void
+    {
+        $this->store(self::createPackage('test/pkg', 'https://example.com/test/pkg'));
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('.socket-supply-chain-alerts'));
     }
 
     public function testVersionListMakesTheWholeVersionNumberCellALink(): void
