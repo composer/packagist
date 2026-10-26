@@ -60,7 +60,7 @@ class UpdateFilterListCommand extends Command
             return self::INVALID;
         }
 
-        $lockAcquired = $this->locker->lockFilterList($list->value);
+        $lockAcquired = $this->locker->lockFilterList($list->value.'-'.$source->value);
         if (!$lockAcquired) {
             return Command::SUCCESS;
         }
@@ -68,7 +68,7 @@ class UpdateFilterListCommand extends Command
         $this->scheduler->scheduleFilterList($list, $source, 0);
         sleep(2); // sleep to prevent running the same command on multiple machines at around the same time via cron
 
-        $this->locker->unlockFilterList($list->value);
+        $this->locker->unlockFilterList($list->value.'-'.$source->value);
 
         return Command::SUCCESS;
     }
