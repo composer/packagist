@@ -58,11 +58,9 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
         /** @var string $nextPage */
         $nextPage = 'https://api.github.com/repos/WordPress/wordpress-develop/security-advisories?per_page=100';
 
-        while ($nextPage !== '') {
+        while ($nextPage) {
             if (!str_starts_with($nextPage, 'https://api.github.com/repos/')) {
-                $this->logger->error('Unexpected GitHub advisories API, aborting.', [
-                    'exception' => $e,
-                ]);
+                $this->logger->error('Unexpected GitHub advisories API, aborting.');
 
                 return null;
             }
@@ -203,6 +201,9 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
         return new WordPressRemoteSecurityAdvisoryCollection($advisories, $withdrawnAdvisories);
     }
 
+    /**
+     * @param string[] $headerValues Raw values of the Link header (can be multiple)
+     */
     private function getNextLink(array $headerValues): ?string
     {
         foreach ($headerValues as $header) {
