@@ -12,7 +12,7 @@
 
 namespace App\Entity;
 
-use App\Service\UpdaterWorker;
+use App\Package\VcsRepositoryFactory;
 use App\Util\HttpDownloaderOptionsFactory;
 use App\Validator\Copyright;
 use App\Validator\PopularPackageSafety;
@@ -20,12 +20,10 @@ use App\Validator\TypoSquatters;
 use App\Validator\UniquePackage;
 use App\Validator\ValidPackageRepository;
 use App\Validator\VendorWritable;
-use Composer\Factory;
 use Composer\IO\NullIO;
 use Composer\Pcre\Preg;
 use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
-use Composer\Repository\VcsRepository;
 use Composer\Util\HttpDownloader;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -551,11 +549,6 @@ class Package
     {
         $this->vcsDriver = null;
 
-        // prevent local filesystem URLs
-        if (Preg::isMatch('{^(\.|[a-z]:|/)}i', $repoUrl)) {
-            return;
-        }
-
         $repoUrl = Preg::replace('{^git@github.com:}i', 'https://github.com/', $repoUrl);
         $repoUrl = Preg::replace('{^git://github.com/}i', 'https://github.com/', $repoUrl);
         $repoUrl = Preg::replace('{^(https://github.com/.*?)\.git$}i', '$1', $repoUrl);
@@ -578,6 +571,16 @@ class Package
         $this->repository = $repoUrl;
         $this->remoteId = null;
 
+        // prevent local filesystem URLs
+        if (Preg::isMatch('{^(\.|[a-z]:|/|file:)}i', $repoUrl)) {
+            return;
+        }
+
+        // only https is supported, ValidPackageRepositoryValidator reports anything else
+        if (!str_starts_with($repoUrl, 'https://')) {
+            return;
+        }
+
         // avoid user@host URLs
         if (Preg::isMatch('{https?://.+@}', $repoUrl)) {
             return;
@@ -595,10 +598,10 @@ class Package
 
         try {
             $io = new NullIO();
-            $config = Factory::createConfig();
+            $config = VcsRepositoryFactory::createConfig();
             $io->loadConfiguration($config);
             $httpDownloader = new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
-            $repository = new VcsRepository(['url' => $this->repository], $io, $config, $httpDownloader, null, null, UpdaterWorker::VCS_REPO_DRIVERS);
+            $repository = VcsRepositoryFactory::create($this->repository, $io, $config, $httpDownloader);
 
             $driver = $this->vcsDriver = $repository->getDriver();
             if (!$driver) {

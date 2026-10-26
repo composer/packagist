@@ -51,8 +51,8 @@ class ValidPackageRepositoryValidator extends ConstraintValidator
 
         $driver = $value->vcsDriver;
         if (!\is_object($driver)) {
-            if (Preg::isMatch('{^http://}', $value->getRepository())) {
-                $this->addViolation('Non-secure HTTP URLs are not supported, make sure you use an HTTPS or SSH URL');
+            if (!str_starts_with($value->getRepository(), 'https://')) {
+                $this->addViolation('Only HTTPS repository URLs are supported, make sure your URL starts with https://');
             } elseif (Preg::isMatch('{https?://.+@}', $value->getRepository())) {
                 $this->addViolation('URLs with user@host are not supported, use a read-only public URL');
             } elseif (\is_string($value->vcsDriverError)) {
