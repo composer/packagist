@@ -79,7 +79,7 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
                         'headers' => $headers,
                     ]);
                     $data = json_decode($response->getContent(), true, flags: \JSON_THROW_ON_ERROR);
-                    $resHeaders = $response?->getHeaders(false)['link'] ?? [];
+                    $resHeaders = $response->getHeaders(false)['link'] ?? [];
                     break;
                 } catch (\RuntimeException $e) {
                     if ($retries === 0) {
