@@ -57,12 +57,12 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
         $withdrawnAdvisories = [];
         /** @var string $nextPage */
         $nextPage = 'https://api.github.com/repos/WordPress/wordpress-develop/security-advisories?per_page=100';
+        /** @var array<string> $resHeaders */
+        $resHeaders = [];
 
         while ($nextPage) {
             if (!str_starts_with($nextPage, 'https://api.github.com/repos/')) {
-                $this->logger->error('Unexpected GitHub advisories API, aborting.');
-
-                return null;
+                throw new \InvalidArgumentException('Invalid GitHub API endpoint');
             }
             $headers = [];
             if (\count($this->fallbackGhTokens) > 0) {
@@ -79,6 +79,7 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
                         'headers' => $headers,
                     ]);
                     $data = json_decode($response->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+                    $resHeaders = $response?->getHeaders(false)['link'] ?? [];
                     break;
                 } catch (\RuntimeException $e) {
                     if ($retries === 0) {
@@ -175,7 +176,7 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
                 );
             }
 
-            $nextPage = $this->getNextLink($response?->getHeaders(false)['link'] ?? []);
+            $nextPage = $this->getNextLink($resHeaders);
         }
 
         $advisories = [];
