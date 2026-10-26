@@ -31,8 +31,6 @@ final class VcsRepositoryFactory
         'git-bitbucket' => 'Composer\Repository\Vcs\GitBitbucketDriver',
         'forgejo' => 'Composer\Repository\Vcs\ForgejoDriver',
         'git' => 'Composer\Repository\Vcs\GitDriver',
-        'hg' => 'Composer\Repository\Vcs\HgDriver',
-        'svn' => 'Composer\Repository\Vcs\SvnDriver',
     ];
 
     public static function createConfig(): Config
