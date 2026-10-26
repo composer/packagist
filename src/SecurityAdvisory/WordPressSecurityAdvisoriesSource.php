@@ -208,7 +208,7 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
     {
         foreach ($headerValues as $header) {
             // Each link is <uri>; rel="relation"
-            $segments = preg_split('/,\s*(?=<)/', $header) ?? [];
+            $segments = preg_split('/,\s*(?=<)/', $header) ?: [];
             foreach ($segments as $segment) {
                 if (!preg_match('/<([^>]+)>\s*(.*)/', trim($segment), $uriMatch)) {
                     continue;
