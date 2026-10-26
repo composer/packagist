@@ -175,7 +175,7 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
                 );
             }
 
-            $nextPage = $this->getNextLink($response->getHeaders(false)['link'] ?? []);
+            $nextPage = $this->getNextLink($response?->getHeaders(false)['link'] ?? []);
         }
 
         $advisories = [];
@@ -208,7 +208,8 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
     {
         foreach ($headerValues as $header) {
             // Each link is <uri>; rel="relation"
-            foreach (preg_split('/,\s*(?=<)/', $header) as $segment) {
+            $segments = preg_split('/,\s*(?=<)/', $header) ?? [];
+            foreach ($segments as $segment) {
                 if (!preg_match('/<([^>]+)>\s*(.*)/', trim($segment), $uriMatch)) {
                     continue;
                 }
