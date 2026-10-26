@@ -53,6 +53,7 @@ use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\Killswitch;
+use App\Util\VersionReportOrder;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
@@ -2118,7 +2119,7 @@ class PackageController extends Controller
             }
         }
 
-        $data['entries'] = $entries;
+        $data['entries'] = VersionReportOrder::sort($entries, static fn (FilterListEntry $entry) => $entry->getVersion(), static fn (FilterListEntry $entry) => $entry->getReportedAt());
         $data['count'] = \count($entries);
         $data['list'] = $list;
 

@@ -34,8 +34,37 @@ class SocketThreatFeedTest extends TestCase
 
         $this->assertNotNull($result);
         $this->assertCount(2, $result);
-        $this->assertEquals(new SocketThreat('vendor/malware', '1.0.0', 'malware', false, 'https://socket.dev/composer/package/vendor/malware/alerts/1.0.0'), $result[0]);
-        $this->assertEquals(new SocketThreat('vendor/possible', '2.0.0', 'possible_malware', true, 'https://socket.dev/composer/package/vendor/possible/alerts/2.0.0'), $result[1]);
+        $reportedAt = new \DateTimeImmutable('2026-01-01 00:00:00', new \DateTimeZone('UTC'));
+        $this->assertEquals(new SocketThreat('vendor/malware', '1.0.0', 'malware', false, 'https://socket.dev/composer/package/vendor/malware/alerts/1.0.0', $reportedAt), $result[0]);
+        $this->assertEquals(new SocketThreat('vendor/possible', '2.0.0', 'possible_malware', true, 'https://socket.dev/composer/package/vendor/possible/alerts/2.0.0', $reportedAt), $result[1]);
+    }
+
+    public function testGetThreatsReportsCreatedAtInUtc(): void
+    {
+        $item = $this->createItem('pkg:composer/vendor/malware@1.0.0');
+        $item['createdAt'] = '2026-01-01T02:30:00+02:00';
+        $feed = new SocketThreatFeed(new MockHttpClient([$this->createPage([$item])]), new NullLogger(), 'api-key', 'org');
+
+        $result = $feed->getThreats('mal');
+
+        $this->assertNotNull($result);
+        $this->assertSame('2026-01-01 00:30:00 UTC', $result[0]->reportedAt?->format('Y-m-d H:i:s T'));
+    }
+
+    public function testGetThreatsLeavesReportedAtEmptyWhenCreatedAtIsUnusable(): void
+    {
+        $invalid = $this->createItem('pkg:composer/vendor/invalid@1.0.0');
+        $invalid['createdAt'] = 'not a date';
+        $missing = $this->createItem('pkg:composer/vendor/missing@1.0.0');
+        unset($missing['createdAt']);
+        $feed = new SocketThreatFeed(new MockHttpClient([$this->createPage([$invalid, $missing])]), new NullLogger(), 'api-key', 'org');
+
+        $result = $feed->getThreats('mal');
+
+        $this->assertNotNull($result);
+        $this->assertCount(2, $result);
+        $this->assertNull($result[0]->reportedAt);
+        $this->assertNull($result[1]->reportedAt);
     }
 
     public function testGetThreatsQueriesComposerFeedWithFilter(): void

@@ -21,6 +21,7 @@ final readonly class RemoteFilterListEntry
         public ?string $link,
         public string $reason,
         public FilterSources $source,
+        public ?\DateTimeImmutable $reportedAt = null,
     ) {
     }
 }

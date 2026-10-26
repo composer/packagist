@@ -175,6 +175,31 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(0, $crawler->filter('.versions .version div.version-number'));
     }
 
+    public function testMalwarePageListsNewestVersionFirstThenEarliestReport(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $this->store(
+            $package,
+            FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '1.0.0', FilterLists::MALWARE, null, 'malware', FilterSources::SOCKET, new \DateTimeImmutable('2026-01-01'))),
+            FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '2.0.0', FilterLists::MALWARE, null, 'malware', FilterSources::AIKIDO)),
+            FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '2.0.0', FilterLists::MALWARE, null, 'malware', FilterSources::SOCKET, new \DateTimeImmutable('2026-03-01'))),
+            FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '1.10.0', FilterLists::MALWARE, null, 'malware', FilterSources::AIKIDO)),
+        );
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg/filter-lists/malware/');
+        self::assertResponseIsSuccessful();
+
+        // "Flagged version: <version> Reason: ..." and the reporter's logo
+        self::assertSame(
+            [['2.0.0', 'Socket'], ['2.0.0', 'Aikido'], ['1.10.0', 'Aikido'], ['1.0.0', 'Socket']],
+            $crawler->filter('.package-item')->each(static fn ($item) => [explode(' ', $item->text())[2], $item->filter('img')->attr('alt')]),
+        );
+        self::assertSame(
+            ['2026-03-01T00:00:00Z', null, null, '2026-01-01T00:00:00Z'],
+            $crawler->filter('.package-item')->each(static fn ($item) => $item->filter('time')->count() ? $item->filter('time')->attr('datetime') : null),
+        );
+    }
+
     public function testPackagePageOmitsManagementFormsForVisitorsWhoCannotUseThem(): void
     {
         $owner = self::createUser('owner', 'owner@example.org');

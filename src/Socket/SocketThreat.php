@@ -23,6 +23,7 @@ final readonly class SocketThreat
         public string $type,
         public bool $needsHumanReview,
         public ?string $link,
+        public ?\DateTimeImmutable $reportedAt = null,
     ) {
     }
 }

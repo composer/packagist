@@ -47,6 +47,9 @@ class FilterListEntry
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
+    /** When the source reported the entry, null when it does not say */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $reportedAt;
     #[ORM\Column]
     private \DateTimeImmutable $updatedAt;
 
@@ -78,6 +81,7 @@ class FilterListEntry
         ?string $reason,
         ?string $link,
         FilterSources $source,
+        ?\DateTimeImmutable $reportedAt,
     ) {
         $this->assignPublicId();
         $this->list = $list;
@@ -89,6 +93,7 @@ class FilterListEntry
         $this->disabled = false;
 
         $this->createdAt = $this->updatedAt = new \DateTimeImmutable();
+        $this->reportedAt = $reportedAt;
     }
 
     /**
@@ -104,6 +109,7 @@ class FilterListEntry
             $remote->reason,
             $remote->link,
             $remote->source,
+            $remote->reportedAt,
         );
     }
 
@@ -121,7 +127,9 @@ class FilterListEntry
             $request->reason,
             $request->link,
             FilterSources::PACKAGIST,
+            null,
         );
+        $entry->reportedAt = $entry->createdAt;
         $entry->internalNote = $request->internalNote === '' ? null : $request->internalNote;
 
         return $entry;
@@ -250,6 +258,11 @@ class FilterListEntry
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function getReportedAt(): ?\DateTimeImmutable
+    {
+        return $this->reportedAt;
     }
 
     public function getUpdatedAt(): \DateTimeImmutable

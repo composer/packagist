@@ -12,6 +12,7 @@
 
 namespace App\Socket;
 
+use App\Util\Rfc3339;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -88,6 +89,7 @@ class SocketThreatFeed
                         $item['threatType'],
                         $item['needsHumanReview'],
                         $this->getLink($item),
+                        Rfc3339::parse($item['createdAt'] ?? null),
                     );
                 }
 
