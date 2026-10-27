@@ -26,7 +26,7 @@ class PackageType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('repository', TextType::class, [
-            'label' => 'Repository URL (Git/Svn/Hg)',
+            'label' => 'Repository URL (Git, HTTPS)',
             'attr' => [
                 'placeholder' => 'e.g.: https://github.com/composer/composer',
             ],

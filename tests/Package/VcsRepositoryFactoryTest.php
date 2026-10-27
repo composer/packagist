@@ -14,6 +14,7 @@ namespace App\Tests\Package;
 
 use App\Package\VcsRepositoryFactory;
 use Composer\IO\NullIO;
+use Composer\Repository\VcsRepository;
 use Composer\Util\HttpDownloader;
 use Composer\Util\Platform;
 use Composer\Util\ProcessExecutor;
@@ -60,10 +61,49 @@ class VcsRepositoryFactoryTest extends TestCase
         yield 'file' => ['file:///tmp/acme-foo.git'];
     }
 
-    private function createRepository(): void
+    #[DataProvider('providePrivateHostUrls')]
+    public function testPrivateHostsAreRefused(string $url): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('resolves to a private or reserved IP address');
+
+        $this->createRepository($url);
+    }
+
+    /**
+     * @return iterable<array{string}>
+     */
+    public static function providePrivateHostUrls(): iterable
+    {
+        yield 'loopback' => ['https://127.0.0.1/acme/foo.git'];
+        yield 'localhost via /etc/hosts' => ['https://localhost/acme/foo.git'];
+        yield 'decimal loopback' => ['https://2130706433/acme/foo.git'];
+        yield 'rfc1918 with port' => ['https://10.1.2.3:8443/acme/foo.git'];
+        yield 'cloud metadata' => ['http://169.254.169.254/latest/meta-data'];
+        yield 'ipv6 loopback' => ['https://[::1]/acme/foo.git'];
+        yield 'ipv6 unique local' => ['https://[fd00::1]/acme/foo.git'];
+        yield 'ipv4-mapped ipv6' => ['https://[::ffff:127.0.0.1]/acme/foo.git'];
+    }
+
+    public function testPublicHostsAreAccepted(): void
+    {
+        self::assertSame('https://8.8.8.8/acme/foo.git', $this->createRepository('https://8.8.8.8/acme/foo.git')->getRepoConfig()['url']);
+    }
+
+    public function testUrlsWithoutHostAreRefused(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Could not determine the host');
+
+        $this->createRepository('https:///acme/foo.git');
+    }
+
+    // public IP literal so no DNS lookup happens
+    private function createRepository(string $url = 'https://8.8.8.8/acme/foo.git'): VcsRepository
     {
         $io = new NullIO();
         $config = VcsRepositoryFactory::createConfig();
-        VcsRepositoryFactory::create('https://packagist.invalid/acme/foo.git', $io, $config, new HttpDownloader($io, $config));
+
+        return VcsRepositoryFactory::create($url, $io, $config, new HttpDownloader($io, $config));
     }
 }
