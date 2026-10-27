@@ -54,6 +54,7 @@ class UnfreezePackageCommand extends Command
             return Command::FAILURE;
         }
 
+        $package->auditActorFallback = 'admin';
         $this->packageManager->unfreeze($package, 'unfreeze cmd');
 
         $output->writeln('<info>Package '.$name.' has been unfrozen and marked for update</info>');

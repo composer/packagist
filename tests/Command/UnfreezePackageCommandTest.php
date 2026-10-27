@@ -13,9 +13,11 @@
 namespace App\Tests\Command;
 
 use App\Command\UnfreezePackageCommand;
+use App\Entity\AuditRecord;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
+use App\Log\AuditLogEventType;
 use App\Model\PackageManager;
 use App\Tests\IntegrationTestCase;
 use Doctrine\Persistence\ManagerRegistry;
@@ -64,5 +66,9 @@ class UnfreezePackageCommandTest extends IntegrationTestCase
         $job = $em->getRepository(Job::class)->findOneBy(['type' => 'package:updates', 'packageId' => $packageId]);
         self::assertNotNull($job, 'unfreeze should schedule a package update');
         self::assertTrue($job->getPayload()['force_dump'] ?? false, 'the scheduled update should force a re-dump');
+
+        $audit = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::PackageUnfrozen, 'packageId' => $packageId]);
+        self::assertNotNull($audit);
+        self::assertSame('admin', $audit->attributes['actor']);
     }
 }
