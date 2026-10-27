@@ -33,11 +33,11 @@ class VcsRepositoryFactoryTest extends TestCase
         self::assertSame(['https'], VcsRepositoryFactory::createConfig()->get('github-protocols'));
     }
 
-    public function testGitIsLimitedToHttpTransports(): void
+    public function testGitIsLimitedToHttps(): void
     {
         $this->createRepository();
 
-        self::assertSame('https:http', Platform::getEnv('GIT_ALLOW_PROTOCOL'));
+        self::assertSame('https', Platform::getEnv('GIT_ALLOW_PROTOCOL'));
     }
 
     #[DataProvider('provideDisallowedUrls')]
@@ -55,6 +55,7 @@ class VcsRepositoryFactoryTest extends TestCase
      */
     public static function provideDisallowedUrls(): iterable
     {
+        yield 'http' => ['http://packagist.invalid/acme/foo.git'];
         yield 'git' => ['git://packagist.invalid/acme/foo.git'];
         yield 'ssh' => ['ssh://git@packagist.invalid/acme/foo.git'];
         yield 'ftp' => ['ftp://packagist.invalid/acme/foo.git'];

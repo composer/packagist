@@ -48,7 +48,7 @@ final class VcsRepositoryFactory
     public static function create(string $url, IOInterface $io, Config $config, HttpDownloader $httpDownloader, ?VersionCacheInterface $versionCache = null, array $options = []): VcsRepository
     {
         // git otherwise allows every transport but ext::, e.g. ftp:// or any installed git-remote-* helper
-        Platform::putEnv('GIT_ALLOW_PROTOCOL', 'https:http');
+        Platform::putEnv('GIT_ALLOW_PROTOCOL', 'https');
 
         self::assertPublicHost($url);
 
