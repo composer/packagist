@@ -12,6 +12,7 @@
 
 namespace App\Controller;
 
+use App\Service\ReplicaClient;
 use Composer\Pcre\Preg;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\IpUtils;
@@ -36,25 +37,27 @@ class InternalController extends Controller
             throw $this->createAccessDeniedException();
         }
 
-        $path = $req->request->getString('path');
-        $contents = $req->request->getString('contents');
-        $filemtime = $req->request->getInt('filemtime');
+        $path = (string) $req->headers->get('Metadata-Path');
+        $filemtime = (int) $req->headers->get('Metadata-Filemtime');
+        $gzipped = $req->getContent();
         $sig = (string) $req->headers->get('Internal-Signature');
 
-        $expectedSig = hash_hmac('sha256', \strlen($path).':'.$path.':'.\strlen($contents).':'.$contents.':'.$filemtime, $this->internalSecret);
-        if (!hash_equals($expectedSig, $sig)) {
-            $this->logger->error('Invalid signature', ['contents' => $contents, 'path' => $path, 'filemtime' => $filemtime, 'sig' => $sig]);
-            throw $this->createAccessDeniedException();
+        if (!hash_equals(ReplicaClient::sign($path, $gzipped, $filemtime, $this->internalSecret), $sig)) {
+            $this->logger->error('Invalid signature', [
+                'path' => $path,
+                'filemtime' => $filemtime,
+                'sig' => $sig,
+                'content_length_header' => $req->headers->get('Content-Length'),
+                'content_length_received' => \strlen($gzipped),
+            ]);
+
+            return new Response('Invalid signature', Response::HTTP_FORBIDDEN);
         }
 
         if (str_contains($path, '..') || !Preg::isMatch('{^(packages\.json|p2/[^/]+/[^/]+\.json)$}', $path)) {
             $this->logger->error('Invalid path received for metadata write: '.$path);
-            throw $this->createAccessDeniedException();
-        }
 
-        $gzipped = gzencode($contents, 7);
-        if (false === $gzipped) {
-            throw new \RuntimeException('Failed gzencoding '.$contents);
+            return new Response('Invalid path', Response::HTTP_FORBIDDEN);
         }
 
         $path = $this->metadataDir.'/'.$path.'.gz';

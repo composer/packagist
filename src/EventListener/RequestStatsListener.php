@@ -41,7 +41,9 @@ class RequestStatsListener
         $this->pageTiming = microtime(true);
 
         $this->logIdProcessor->startRequest();
-        if ($e->getRequest()->getContent() !== null) {
+        if ($e->getRequest()->headers->get('Content-Type') === 'application/gzip') {
+            $this->logger->debug('Request content received', ['length' => \strlen($e->getRequest()->getContent())]);
+        } elseif ($e->getRequest()->getContent() !== null) {
             $this->logger->debug('Request content received', ['content' => substr($e->getRequest()->getContent(), 0, 10_000)]);
         }
     }
