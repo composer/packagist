@@ -352,9 +352,9 @@ class V2DumperTest extends IntegrationTestCase
 
         $result = $this->dumper->dump($ids);
         self::assertSame(V2DumpOutcome::Aborted, $result->outcome);
-        self::assertSame([$ids[1], $ids[2]], $result->leftStale, 'the package that aborted and the one never reached');
-
-        self::assertCount(2, array_intersect($ids, $this->stalePackageIds()), 'only the package dumped before the failure is recorded');
+        // hydration orders by releasedAt, so which package goes first depends on the clock ticking between creations
+        self::assertCount(2, $result->leftStale, 'the package that aborted and the one never reached');
+        self::assertSame($result->leftStale, array_values(array_intersect($ids, $this->stalePackageIds())), 'only the package dumped before the failure is recorded');
         self::assertCount(1, array_filter($logs, static fn (string $log): bool => str_starts_with($log, 'CDN unreachable, aborting v2 metadata dump run')));
     }
 
