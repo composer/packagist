@@ -23,7 +23,7 @@ These steps are provided for development purposes only.
 - **[Symfony CLI](https://symfony.com/download)** to run the web server
 - **MySQL** (or Docker) for the main data store
 - **Redis** (or Docker) for some functionality (favorites, download statistics)
-- **git / svn / hg** depending on which repositories you want to support
+- **git** to crawl package repositories
 
 ### Installation
 

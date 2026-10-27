@@ -20,6 +20,7 @@ use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\PackageManager;
 use App\Package\Updater;
+use App\Package\VcsRepositoryFactory;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\Util\DoctrineTrait;
 use App\Util\LoggingHttpDownloader;
@@ -31,7 +32,6 @@ use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Pcre\Preg;
 use Composer\Repository\InvalidRepositoryException;
-use Composer\Repository\VcsRepository;
 use Composer\Util\HttpDownloader;
 use Doctrine\ORM\EntityNotFoundException;
 use Doctrine\Persistence\ManagerRegistry;
@@ -48,16 +48,6 @@ use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 class UpdaterWorker
 {
     use DoctrineTrait;
-
-    public const VCS_REPO_DRIVERS = [
-        'github' => 'Composer\Repository\Vcs\GitHubDriver',
-        'gitlab' => 'Composer\Repository\Vcs\GitLabDriver',
-        'git-bitbucket' => 'Composer\Repository\Vcs\GitBitbucketDriver',
-        'forgejo' => 'Composer\Repository\Vcs\ForgejoDriver',
-        'git' => 'Composer\Repository\Vcs\GitDriver',
-        'hg' => 'Composer\Repository\Vcs\HgDriver',
-        'svn' => 'Composer\Repository\Vcs\SvnDriver',
-    ];
 
     private LoggerInterface $logger;
     private ManagerRegistry $doctrine;
@@ -130,7 +120,7 @@ class UpdaterWorker
 
         $this->logger->info('Updating '.$packageName);
 
-        $config = Factory::createConfig();
+        $config = VcsRepositoryFactory::createConfig();
         $io = new BufferIO('', OutputInterface::VERBOSITY_VERY_VERBOSE, new HtmlOutputFormatter(Factory::createAdditionalStyles()));
         $io->loadConfiguration($config);
         $io->enableTimestamps();
@@ -230,16 +220,7 @@ class UpdaterWorker
             }
 
             // prepare repository
-            $repository = new VcsRepository(
-                ['url' => $package->getRepository(), 'options' => ['retry-auth-failure' => false]],
-                $io,
-                $config,
-                $httpDownloader,
-                null,
-                null,
-                self::VCS_REPO_DRIVERS,
-                $versionCache
-            );
+            $repository = VcsRepositoryFactory::create($package->getRepository(), $io, $config, $httpDownloader, $versionCache, ['retry-auth-failure' => false]);
             $repository->setLoader($loader);
 
             // perform the actual update (fetch and re-scan the repository's source)
@@ -298,8 +279,8 @@ class UpdaterWorker
             if ($e instanceof \RuntimeException && strpos($e->getMessage(), 'remote: Repository not found')) {
                 // git clone was attempted and says the repo is not found, that's very conclusive
                 $found404 = true;
-            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), 'git@gitlab.com') && strpos($e->getMessage(), 'Please make sure you have the correct access rights')) {
-                // git clone says we have no right on gitlab for 404s
+            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), 'git@gitlab.com') && (strpos($e->getMessage(), 'Please make sure you have the correct access rights') || str_contains($e->getMessage(), "transport 'ssh' not allowed"))) {
+                // git clone says we have no right on gitlab for 404s (or ssh is disallowed, reached after an API 401/404)
                 $found404 = true;
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@gitlab.com/') && strpos($e->getMessage(), 'You are not allowed to download code from this project')) {
                 // project is gone on gitlab somehow
@@ -307,8 +288,8 @@ class UpdaterWorker
             } elseif ($e instanceof TransportException && $e->getStatusCode() === 404 && strpos($e->getMessage(), 'https://gitlab.com/api/v4/projects/') && strpos($e->getMessage(), '404 Project Not Found')) {
                 // http client 404s on gitlab
                 $found404 = true;
-            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{git@(?:ssh\.)?bitbucket\.org}', $e->getMessage()) && strpos($e->getMessage(), 'Please make sure you have the correct access rights')) {
-                // git clone says we have no right on bitbucket for 404s
+            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{git@(?:ssh\.)?bitbucket\.org}', $e->getMessage()) && (strpos($e->getMessage(), 'Please make sure you have the correct access rights') || str_contains($e->getMessage(), "transport 'ssh' not allowed"))) {
+                // git clone says we have no right on bitbucket for 404s (or ssh is disallowed, reached once https failed)
                 $found404 = true;
             } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Please ask the owner to check their account')) {
                 // git clone says account is disabled on github for private repos(?) if cloning via https
@@ -334,9 +315,6 @@ class UpdaterWorker
             } elseif ($e instanceof \RuntimeException && Preg::isMatch('{Driver could not be established for package}i', $e->getMessage())) {
                 // no driver found as it is a custom hosted git most likely on a server that is now unreachable or similar
                 $found404 = true;
-            } elseif ($e instanceof \RuntimeException && str_contains($e->getMessage(), 'svn: E160013:')) {
-                // svn failed with a 404
-                $found404 = true;
             } elseif ($e instanceof \RuntimeException && (
                 Preg::isMatch('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
                 || Preg::isMatch('{fatal: could not read Username for \'[^\']+\': terminal prompts disabled}i', $e->getMessage())
@@ -349,7 +327,6 @@ class UpdaterWorker
                 || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+(?: after \d+ ms)?: Couldn\'t connect to server}i', $e->getMessage())
                 || Preg::isMatch('{SSL: certificate subject name \([\w.-]+\) does not match target host name \'[\w.-]+\'}i', $e->getMessage())
                 || Preg::isMatch('{gnutls_handshake\(\) failed: The server name sent was not recognized}i', $e->getMessage())
-                || Preg::isMatch('{svn: E170013: Unable to connect to a repository at URL}', $e->getMessage())
             )) {
                 // unreachable host, skip for a week as this may be a temporary failure
                 $found404 = new \DateTimeImmutable('+7 days');

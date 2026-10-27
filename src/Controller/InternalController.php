@@ -32,7 +32,7 @@ class InternalController extends Controller
     public function updateMetadataAction(Request $req): Response
     {
         if ($req->getClientIp() === null || !IpUtils::isPrivateIp($req->getClientIp())) {
-            $this->logger->error('Non-internal IP on internal IP');
+            $this->logger->error('Non-internal IP on internal route', ['ip' => $req->getClientIp()]);
             throw $this->createAccessDeniedException();
         }
 

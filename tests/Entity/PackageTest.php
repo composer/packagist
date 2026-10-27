@@ -22,6 +22,28 @@ use PHPUnit\Framework\TestCase;
 
 class PackageTest extends TestCase
 {
+    #[DataProvider('provideNonHttpsRepositoryUrls')]
+    public function testSetRepositoryDoesNotRunAVcsDriverForNonHttpsUrls(string $url): void
+    {
+        $package = new Package();
+        $package->setRepository($url);
+
+        self::assertNull($package->vcsDriver);
+        self::assertNull($package->vcsDriverError);
+    }
+
+    /**
+     * @return iterable<array{string}>
+     */
+    public static function provideNonHttpsRepositoryUrls(): iterable
+    {
+        yield 'file' => ['file://'.\dirname(__DIR__, 2).'/.git'];
+        yield 'http' => ['http://packagist.invalid/acme/foo.git'];
+        yield 'git protocol' => ['git://packagist.invalid/acme/foo.git'];
+        yield 'scp-style ssh' => ['git@packagist.invalid:acme/foo.git'];
+        yield 'svn' => ['svn://packagist.invalid/acme/foo'];
+    }
+
     public function testWasUpdatedInTheLast24Hours(): void
     {
         $package = new Package();
