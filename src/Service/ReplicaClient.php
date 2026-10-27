@@ -30,27 +30,39 @@ class ReplicaClient
 
     public function uploadMetadata(string $path, string $contents, int $filemtime): void
     {
-        $sig = hash_hmac('sha256', \strlen($path).':'.$path.':'.\strlen($contents).':'.$contents.':'.$filemtime, $this->internalSecret);
+        // sent as a raw gzipped body as form-encoding large files would exceed post_max_size
+        $gzipped = gzencode($contents, 7);
+        if (false === $gzipped) {
+            throw new \RuntimeException('Failed gzencoding '.$path);
+        }
+
+        $sig = self::sign($path, $gzipped, $filemtime, $this->internalSecret);
 
         $resps = [];
         foreach ($this->replicaIps as $ip) {
-            $resps[] = $this->httpClient->request('POST', 'http://'.$ip.'/internal/update-metadata', [
+            $resps[$ip] = $this->httpClient->request('POST', 'http://'.$ip.'/internal/update-metadata', [
                 'headers' => [
                     'Internal-Signature' => $sig,
+                    'Metadata-Path' => $path,
+                    'Metadata-Filemtime' => (string) $filemtime,
+                    'Content-Type' => 'application/gzip',
                     'Host' => 'packagist.org',
                 ],
-                'body' => [
-                    'path' => $path,
-                    'contents' => $contents,
-                    'filemtime' => $filemtime,
-                ],
+                'body' => $gzipped,
+                'max_redirects' => 0,
             ]);
         }
 
-        foreach ($resps as $resp) {
-            if ($resp->getStatusCode() !== Response::HTTP_ACCEPTED) {
-                throw new TransportException('Invalid response code', $resp->getStatusCode());
+        foreach ($resps as $ip => $resp) {
+            $status = $resp->getStatusCode();
+            if ($status !== Response::HTTP_ACCEPTED) {
+                throw new TransportException('Invalid response code '.$status.' from replica '.$ip.' for '.$path.' ('.\strlen($gzipped).' bytes gzipped)', $status);
             }
         }
+    }
+
+    public static function sign(string $path, string $gzippedContents, int $filemtime, string $secret): string
+    {
+        return hash_hmac('sha256', \strlen($path).':'.$path.':'.\strlen($gzippedContents).':'.$gzippedContents.':'.$filemtime, $secret);
     }
 }
