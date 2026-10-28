@@ -1,56 +1,46 @@
-{% extends "user/packages.html.twig" %}
+{% extends 'user/security_layout.html.twig' %}
 
-{% import "macros.html.twig" as macros %}
+{% block title %}Security - {{ parent() }}{% endblock %}
 
-{% block content %}
-    {% set isActualUser = app.user and app.user.username === user.username %}
-
+{% block security_content %}
     {% if backup_code %}
         <div class="alert alert-info">
-            <p>If you lose your phone or otherwise can't get codes via your authenticator app, you can this one-time backup code to sign in: <code>{{ backup_code }}</code></p>
+            <p>If you lose access to your authenticator app, you can use this one-time backup code to sign in: <code>{{ backup_code }}</code></p>
             <p><strong>Take a moment to record this in a safe place. This code will not be shown again!</strong></p>
         </div>
     {% endif %}
 
-    <h2 class="title">
-        {{ user.username }}
-        {%- if not isActualUser %}
-            <small>
-                member since: {{ user.createdAt|date('M d, Y') }}
-                {%- if is_granted('ROLE_ADMIN') %}
-                    <a href="mailto:{{ user.email }}">{{ user.email }}</a>
-                {%- endif %}
-            </small>
-        {%- endif %}
-    </h2>
+    <p class="text-body-secondary mb-4">Manage your password and authenticator app.</p>
 
-    <section class="row">
-        {% if isActualUser %}
-            <section class="col-lg-3">
-                {{ knp_menu_render('profile_menu', {currentClass: 'active', allow_safe_labels: true}) }}
-            </section>
-        {% endif %}
-
-        <section class="{{ isActualUser ? 'col-md-9' : 'col-md-12' }}">
-            {% if user.totpAuthenticationEnabled %}
-                <p class="alert alert-success">
-                    <span class="icon-lock"></span>
-                    Two-factor authentication is currently <strong>enabled</strong>.
-                </p>
-
-                <p>Two-factor authentication is an extra layer of security for your Packagist account designed to ensure that you're the only person who can access your account, even if someone knows your password.</p>
-
-                <a href="{{ path('user_2fa_disable', {name: user.username}) }}" class="text-danger">Disable two-factor authentication</a>
-            {% else %}
-                <p class="alert alert-warning">
-                    <span class="icon-unlock"></span>
-                    Two-factor authentication is currently <strong>disabled</strong>.
-                </p>
-
-                <p>Two-factor authentication is an extra layer of security for your Packagist account designed to ensure that you're the only person who can access your account, even if someone knows your password.</p>
-
-                <a href="{{ path('user_2fa_enable', {name: user.username}) }}" class="btn w-100 btn-primary btn-lg">Enable two-factor authentication</a>
-            {% endif %}
+    {% if isActualUser %}
+        <section class="card mb-3" aria-labelledby="password-heading">
+            <div class="card-body">
+                <h4 class="h5" id="password-heading">Password</h4>
+                <p>Keep your account secure with a strong, unique password.</p>
+                <a class="btn btn-secondary" href="{{ path('change_password') }}">Change password</a>
+            </div>
         </section>
+    {% endif %}
+    <section class="card mb-3" aria-labelledby="authenticator-heading">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+                <h4 class="h5 mb-0" id="authenticator-heading">Authenticator app</h4>
+                <span class="badge {{ user.totpAuthenticationEnabled ? 'text-bg-success' : 'text-bg-secondary' }}">{{ user.totpAuthenticationEnabled ? 'Enabled' : 'Not set up' }}</span>
+            </div>
+            <p>Use a time-based code from your authenticator app as your second factor when signing in.</p>
+            {% if isActualUser and user.totpAuthenticationEnabled %}
+                <a class="btn btn-secondary" href="{{ path('security_authenticator') }}">View authenticator app settings</a>
+            {% elseif isActualUser %}
+                <a class="btn btn-secondary" href="{{ path('security_authenticator') }}">Set up an authenticator app</a>
+            {% endif %}
+        </div>
     </section>
+
+    {% if user.totpAuthenticationEnabled %}
+        <section class="border-top pt-3" aria-labelledby="disable-heading">
+            <h4 class="h5" id="disable-heading">Remove authenticator app</h4>
+            <p>This removes the authenticator app from this account and invalidates its backup code.</p>
+            <a class="text-danger" href="{{ path('user_2fa_disable', {name: user.username}) }}">Remove authenticator app</a>
+        </section>
+    {% endif %}
 {% endblock %}

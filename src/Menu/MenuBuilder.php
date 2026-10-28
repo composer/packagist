@@ -35,12 +35,26 @@ class MenuBuilder
         }
     }
 
-    public function createUserMenu(): ItemInterface
+    public function createUserMenu(bool $showUsername = false): ItemInterface
     {
         $menu = $this->factory->createItem('root');
         $menu->setChildrenAttribute('class', 'list-unstyled');
 
         $this->addProfileMenu($menu);
+        if ($showUsername) {
+            $profile = $menu->getChild($this->translator->trans('menu.profile'));
+            if ($profile !== null) {
+                $profile->setLabel('<span class="icon-user" aria-hidden="true"></span>'.htmlspecialchars($this->username, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'));
+                $profile->setLinkAttribute('class', 'mobile-profile-link');
+                $profile->setLinkAttribute('aria-label', $this->translator->trans('menu.profile').': '.$this->username);
+            }
+            foreach ($menu->getChildren() as $item) {
+                if ($item !== $profile) {
+                    $item->setLinkAttribute('class', 'account-subnavigation-link');
+                }
+            }
+            $menu->setChildrenAttribute('aria-label', $this->translator->trans('menu.profile').': '.$this->username);
+        }
         $menu->addChild('hr', [
             'label' => '<hr>',
             'labelAttributes' => ['class' => 'normal'],
@@ -225,17 +239,7 @@ class MenuBuilder
             'route' => 'edit_profile',
             'extras' => ['safe_label' => true, 'translation_domain' => false],
         ]);
-        $menu->addChild($this->translator->trans('menu.change_password'), [
-            'label' => '<span class="icon-key"></span>'.$this->translator->trans('menu.change_password'),
-            'route' => 'change_password',
-            'extras' => ['safe_label' => true, 'translation_domain' => false],
-        ]);
-        $menu->addChild($this->translator->trans('menu.configure_2fa'), [
-            'label' => '<span class="icon-mobile"></span>'.$this->translator->trans('menu.configure_2fa'),
-            'route' => 'user_2fa_configure',
-            'routeParameters' => ['name' => $this->username],
-            'extras' => ['safe_label' => true, 'translation_domain' => false],
-        ]);
+        $this->addSecurityMenu($menu);
         $menu->addChild($this->translator->trans('menu.my_packages'), [
             'label' => '<span class="icon-box"></span>'.$this->translator->trans('menu.my_packages'),
             'route' => 'user_packages',
@@ -262,5 +266,32 @@ class MenuBuilder
                 'extras' => ['safe_label' => true, 'translation_domain' => false],
             ]);
         }
+    }
+
+    private function addSecurityMenu(ItemInterface $menu): void
+    {
+        $security = $menu->addChild($this->translator->trans('menu.security'), [
+            'label' => '<span class="icon-lock"></span>'.$this->translator->trans('menu.security'),
+            'route' => 'security_overview',
+            'extras' => ['safe_label' => true, 'translation_domain' => false],
+        ]);
+        $security->addChild('Overview', [
+            'route' => 'security_overview',
+            'extras' => ['translation_domain' => false, 'routes' => [
+                ['route' => 'user_2fa_configure'],
+            ]],
+        ]);
+        $security->addChild('Change password', [
+            'route' => 'change_password',
+            'extras' => ['translation_domain' => false],
+        ]);
+        $security->addChild('Authenticator app', [
+            'route' => 'security_authenticator',
+            'extras' => ['translation_domain' => false, 'routes' => [
+                ['route' => 'user_2fa_enable'],
+                ['route' => 'user_2fa_confirm'],
+                ['route' => 'user_2fa_disable'],
+            ]],
+        ]);
     }
 }

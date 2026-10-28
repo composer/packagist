@@ -306,6 +306,20 @@ class UserController extends Controller
     }
 
     #[IsGranted('ROLE_USER')]
+    #[Route('/profile/security', name: 'security_overview', methods: ['GET'])]
+    public function securityOverview(Request $request, #[CurrentUser] User $user): Response
+    {
+        return $this->configureTwoFactorAuthAction($user, $user, $request);
+    }
+
+    #[IsGranted('ROLE_USER')]
+    #[Route('/profile/security/authenticator', name: 'security_authenticator', methods: ['GET'])]
+    public function authenticatorSettings(#[CurrentUser] User $user): Response
+    {
+        return $this->render('user/authenticator.html.twig', ['user' => $user]);
+    }
+
+    #[IsGranted('ROLE_USER')]
     #[Route(path: '/users/{name}/2fa/enable', name: 'user_2fa_enable', methods: ['GET', 'POST'])]
     public function enableTwoFactorAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, TotpAuthenticatorInterface $authenticator, TwoFactorAuthManager $authManager): Response
     {
@@ -335,7 +349,7 @@ class UserController extends Controller
             $authManager->enableTwoFactorAuth($user, $loggedUser, $secret);
             $backupCode = $authManager->generateAndSaveNewBackupCode($user);
 
-            $this->addFlash('success', 'Two-factor authentication has been enabled.');
+            $this->addFlash('success', 'Authenticator app enabled.');
             $req->getSession()->set('backup_code', $backupCode);
 
             return $this->redirectToRoute('user_2fa_confirm', ['name' => $user->getUsername()]);
@@ -377,7 +391,7 @@ class UserController extends Controller
         $backupCode = $req->getSession()->remove('backup_code');
 
         if (empty($backupCode)) {
-            return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
+            return $this->redirectToRoute('security_overview');
         }
 
         return $this->render(
@@ -397,9 +411,11 @@ class UserController extends Controller
         if ($this->isCsrfTokenValid('disable_2fa', $req->query->getString('token'))) {
             $authManager->disableTwoFactorAuth($user, $loggedUser, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
 
-            $this->addFlash('success', 'Two-factor authentication has been disabled.');
+            $this->addFlash('success', 'Authenticator app removed.');
 
-            return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
+            return $user->getId() === $loggedUser->getId()
+                ? $this->redirectToRoute('security_overview')
+                : $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
         return $this->render(

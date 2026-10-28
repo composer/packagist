@@ -63,14 +63,14 @@
                     {%- else %}
                         <h1 class="navbar-brand"><a href="{{ path('home') }}">{{ 'brandname'|trans }}</a> <em class="d-none d-lg-inline">{{ 'navclaim'|trans }}</em></h1>
                     {%- endif %}
-                    <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#main-navigation" aria-controls="main-navigation" aria-expanded="false">
                         <span class="visually-hidden">{{ 'menu.togglenav'|trans }}</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
 
-                    <div class="collapse navbar-collapse">
+                    <div class="collapse navbar-collapse" id="main-navigation">
                         <ul class="nav navbar-nav">
                             <li>
                                 <a href="{{ path('browse') }}">{{ 'menu.browse'|trans }}</a>
@@ -82,19 +82,17 @@
                                 <a href="{{ path('submit') }}">{{ 'menu.submit'|trans }}</a>
                             </li>
                         {%- if app.user %}
-                            <li class="nav-user">
+                            <li class="nav-user d-none d-md-block">
                                 <section>
-                                    <a class="username-link" title="{{  app.user.username }}" href="{{ path('my_profile') }}">{{ app.user.username }}</a>
+                                    <a class="username-link" title="{{ app.user.username }}" aria-label="{{ 'menu.profile'|trans }}: {{ app.user.username }}" href="{{ path('my_profile') }}"><span class="icon-user" aria-hidden="true"></span>{{ app.user.username }}</a>
 
                                     <section class="nav-user-menu">
-                                        {{ knp_menu_render('user_menu', {'allow_safe_labels': true}) }}
+                                        {{ knp_menu_render('user_menu', {'allow_safe_labels': true, 'depth': 1}) }}
                                     </section>
                                 </section>
                             </li>
-                            <li class="nav-user d-block d-md-none">
-                                <section>
-                                    <a href="{{ logout_path() }}">Log out</a>
-                                </section>
+                            <li class="mobile-account-menu d-md-none">
+                                {{ knp_menu_render('mobile_user_menu', {'allow_safe_labels': true, 'depth': 1}) }}
                             </li>
                         {%- else %}
                             <li>

@@ -422,6 +422,10 @@ strong {
     display: block;
 }
 
+.username-link .icon-user {
+    margin-right: 8px;
+}
+
 .navbar .nav > .nav-user > section:hover {
     background: rgba(255, 255, 255, 0.1);
 }
@@ -550,6 +554,38 @@ strong {
     }
     .navbar-collapse.show {
         overflow-y: visible;
+    }
+    #main-navigation.show {
+        max-height: calc(100vh - 57px);
+        max-height: calc(100dvh - 57px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+    .navbar .nav > .mobile-account-menu {
+        height: auto;
+        width: 100%;
+    }
+    .mobile-account-menu a {
+        display: block;
+        overflow-wrap: anywhere;
+        padding: 12px 20px;
+        color: #fff;
+        text-decoration: none;
+    }
+    .mobile-account-menu .mobile-profile-link {
+        font-weight: 700;
+    }
+    .mobile-account-menu .account-subnavigation-link {
+        padding-left: 44px;
+    }
+    .mobile-account-menu a:hover, .mobile-account-menu a:focus {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    .mobile-account-menu hr {
+        margin: 4px 0;
+    }
+    .mobile-account-menu [class^="icon-"], .mobile-account-menu [class*=" icon-"] {
+        margin-right: 8px;
     }
     .nav-user .nav-user-menu {
         right: 0;
@@ -1202,6 +1238,47 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 .nav-tabs>li{
   margin-bottom: 0;
+}
+
+.security-settings {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1199.98px) {
+    .security-tabs.nav-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2px;
+    }
+
+    .security-tabs.nav-tabs > li {
+        min-width: 0;
+    }
+
+    .security-tabs.nav-tabs > li > a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 52px;
+        height: 100%;
+        padding: 10px 12px;
+        border-radius: 0;
+        text-align: center;
+    }
+
+    .security-tabs.nav-tabs > li:last-child {
+        grid-column: 1 / -1;
+    }
+}
+@media (min-width: 576px) and (max-width: 1199.98px) {
+    .security-tabs.nav-tabs {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .security-tabs.nav-tabs > li:last-child {
+        grid-column: auto;
+    }
 }
 
 .btn {
