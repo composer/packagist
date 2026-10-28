@@ -31,7 +31,7 @@
             {% if isActualUser %}
                 <a class="btn btn-secondary" href="{{ path('security_authenticator') }}">{{ user.totpAuthenticationEnabled ? 'View authenticator app settings' : 'Set up an authenticator app' }}</a>
             {% elseif user.totpAuthenticationEnabled %}
-                <a class="text-danger" href="{{ path('user_2fa_disable', {name: user.username}) }}">Remove authenticator app</a>
+                <a class="text-danger" href="{{ path('user_totp_disable', {name: user.username}) }}">Remove authenticator app</a>
             {% endif %}
         </div>
     </section>

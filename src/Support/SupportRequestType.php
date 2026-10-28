@@ -14,14 +14,14 @@ namespace App\Support;
 
 use App\Entity\SupportRequest;
 use App\Support\Attributes\AccountDeletionAttributes;
-use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\LostTotpAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\SupportRequestAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 
 enum SupportRequestType: string
 {
-    case LostTwoFactor = 'lost_2fa';
+    case LostTotp = 'lost_totp';
     case PackageTransfer = 'package_transfer';
     case VendorClaim = 'vendor_claim';
     case AccountDeletion = 'account_deletion';
@@ -29,7 +29,7 @@ enum SupportRequestType: string
     public function label(): string
     {
         return match ($this) {
-            self::LostTwoFactor => 'Lost two-factor access',
+            self::LostTotp => 'Lost two-factor access',
             self::PackageTransfer => 'Package transfer',
             self::VendorClaim => 'Vendor name claim',
             self::AccountDeletion => 'Account deletion',
@@ -44,7 +44,7 @@ enum SupportRequestType: string
     public function requiredRole(): string
     {
         return match ($this) {
-            self::LostTwoFactor => 'ROLE_DISABLE_2FA',
+            self::LostTotp => 'ROLE_DISABLE_2FA',
             self::PackageTransfer, self::VendorClaim => 'ROLE_EDIT_PACKAGES',
             // Matches the gate in UserController::deleteUserAction()
             self::AccountDeletion => 'ROLE_ADMIN',
@@ -60,7 +60,7 @@ enum SupportRequestType: string
     public function hydrateAttributes(array $data): SupportRequestAttributes
     {
         return match ($this) {
-            self::LostTwoFactor => LostTwoFactorAttributes::fromArray($data),
+            self::LostTotp => LostTotpAttributes::fromArray($data),
             self::PackageTransfer => PackageTransferAttributes::fromArray($data),
             self::VendorClaim => VendorClaimAttributes::fromArray($data),
             self::AccountDeletion => AccountDeletionAttributes::fromArray($data),
@@ -68,10 +68,10 @@ enum SupportRequestType: string
     }
 
     /**
-     * Sent verbatim when a lost-2FA request is granted, so unlike {@see suggestedReply()} it carries
+     * Sent verbatim when a TOTP reset request is granted, so unlike {@see suggestedReply()} it carries
      * no draft branches for an admin to delete: nobody edits this before it goes out.
      */
-    public static function twoFactorGrantedReply(SupportRequest $request): string
+    public static function totpResetGrantedReply(SupportRequest $request): string
     {
         return <<<TXT
             Your request to reset two-factor authentication has been approved, and two-factor
@@ -89,7 +89,7 @@ enum SupportRequestType: string
      * branches so the admin deletes one and edits the rest.
      *
      * Only ever used to prefill the reply textarea. The one message the system sends on its own is
-     * {@see twoFactorGrantedReply()}.
+     * {@see totpResetGrantedReply()}.
      */
     public function suggestedReply(SupportRequest $request): string
     {
@@ -99,7 +99,7 @@ enum SupportRequestType: string
         $vendorName = $attributes instanceof VendorClaimAttributes ? $attributes->vendorName : '';
 
         return match ($this) {
-            self::LostTwoFactor => <<<TXT
+            self::LostTotp => <<<TXT
                 Before we can reset two-factor authentication on your account, we need to confirm you
                 control it. Please create a secret gist on https://gist.github.com and link us to it
                 to prove ownership of your GitHub account.

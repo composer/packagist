@@ -272,9 +272,9 @@ class MenuBuilder
         $security->addChild($this->translator->trans('menu.authenticator_app'), [
             'route' => 'security_authenticator',
             'extras' => ['translation_domain' => false, 'routes' => [
-                ['route' => 'user_2fa_enable'],
-                ['route' => 'user_2fa_confirm'],
-                ['route' => 'user_2fa_disable'],
+                ['route' => 'user_totp_enable'],
+                ['route' => 'user_totp_confirm'],
+                ['route' => 'user_totp_disable'],
             ]],
         ]);
     }

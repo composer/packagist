@@ -23,7 +23,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * A support task raised from one of the /contact workflows, plus the lost-2FA request raised from
+ * A support task raised from one of the /contact workflows, plus the TOTP reset request raised from
  * the two-factor login prompt.
  *
  * One table with a type discriminator: the four types share their whole lifecycle, and whatever
@@ -75,7 +75,7 @@ class SupportRequest
         get => $this->hydrated ??= $this->type->hydrateAttributes($this->attributeData);
     }
 
-    /** Requester IP, kept for lost-2FA requests only, where it is a fraud signal. */
+    /** Requester IP, kept for TOTP reset requests only, where it is a fraud signal. */
     #[ORM\Column(nullable: true, type: 'ipaddress')]
     public ?string $ip = null;
 

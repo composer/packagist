@@ -70,7 +70,7 @@ final class OrganizationMembershipManager
 
     public function addTeamMember(OrganizationReadModel $organization, User $actor, Ulid $teamId, int $userId, ?string $ip): void
     {
-        $targetHasTwoFactor = $this->userRepo->find($userId)?->isTotpAuthenticationEnabled() ?? false;
+        $targetHasTwoFactor = $this->userRepo->find($userId)?->hasSecondFactorAuthenticationEnabled() ?? false;
 
         $this->mutate($organization, $actor, static fn (Organization $org) => $org->addTeamMember($teamId, $userId, $targetHasTwoFactor), $ip);
     }

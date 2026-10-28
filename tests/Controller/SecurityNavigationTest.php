@@ -87,14 +87,14 @@ class SecurityNavigationTest extends IntegrationTestCase
     {
         $crawler = $this->client->request('GET', '/profile/security');
         self::assertSame('Not set up', $crawler->filter('[aria-labelledby="authenticator-heading"] .badge')->text());
-        self::assertCount(0, $crawler->filter('a[href="/users/alice/2fa/disable"]'));
+        self::assertCount(0, $crawler->filter('a[href="/users/alice/totp/disable"]'));
         $this->user->setTotpSecret('JBSWY3DPEHPK3PXP');
         self::getEM()->flush();
         $this->client->loginUser($this->user);
         $crawler = $this->client->request('GET', '/profile/security');
         self::assertSame('Enabled', $crawler->filter('[aria-labelledby="authenticator-heading"] .badge')->text());
         self::assertSame('/profile/security/authenticator', $crawler->selectLink('View authenticator app settings')->attr('href'));
-        self::assertCount(0, $crawler->filter('a[href="/users/alice/2fa/disable"]'));
+        self::assertCount(0, $crawler->filter('a[href="/users/alice/totp/disable"]'));
     }
 
     public function testSecurityPagesRequireAuthentication(): void
@@ -125,41 +125,41 @@ class SecurityNavigationTest extends IntegrationTestCase
 
     public function testAuthenticatorSetupAndConfirmationKeepExistingBehavior(): void
     {
-        $crawler = $this->client->request('GET', '/users/alice/2fa/enable');
+        $crawler = $this->client->request('GET', '/users/alice/totp/enable');
         self::assertStringStartsWith('Authenticator app - ', $crawler->filter('title')->text());
         self::assertSame('Authenticator app', $crawler->filter('.security-tabs a[aria-current="page"]')->text());
         $form = $crawler->selectButton('Enable authenticator app')->form();
-        $form['enable_two_factor_auth[code]'] = '123456';
+        $form['enable_totp_auth[code]'] = '123456';
         $crawler = $this->client->submit($form);
         self::assertSame(422, $this->client->getResponse()->getStatusCode());
         $form = $crawler->selectButton('Enable authenticator app')->form();
-        $form['enable_two_factor_auth[code]'] = \App\Tests\Mock\TotpAuthenticatorStub::MOCKED_VALID_CODE;
+        $form['enable_totp_auth[code]'] = \App\Tests\Mock\TotpAuthenticatorStub::MOCKED_VALID_CODE;
         $this->client->submit($form);
-        self::assertSame('/users/alice/2fa/confirm', $this->client->getResponse()->headers->get('Location'));
+        self::assertSame('/users/alice/totp/confirm', $this->client->getResponse()->headers->get('Location'));
         $crawler = $this->client->followRedirect();
         self::assertStringStartsWith('Authenticator app - ', $crawler->filter('title')->text());
         self::assertSame('Authenticator app', $crawler->filter('.security-tabs a[aria-current="page"]')->text());
         self::assertCount(1, $crawler->filter('.two-factor-backup-code'));
-        $this->client->request('GET', '/users/alice/2fa/confirm');
+        $this->client->request('GET', '/users/alice/totp/confirm');
         self::assertSame('/profile/security', $this->client->getResponse()->headers->get('Location'));
     }
 
     public function testOwnTwoFactorUrlRedirectsToSecurityOverview(): void
     {
-        $this->client->request('GET', '/users/alice/2fa/');
+        $this->client->request('GET', '/users/alice/totp/');
         self::assertResponseRedirects('/profile/security');
     }
 
     public function testSecurityOverviewCannotBeViewedForAnotherUser(): void
     {
         $this->store(self::createUser('bob', 'bob@example.org'));
-        $this->client->request('GET', '/users/bob/2fa/');
+        $this->client->request('GET', '/users/bob/totp/');
         self::assertSame(403, $this->client->getResponse()->getStatusCode());
     }
 
     public function testSecurityTabsAreChildrenOfTheAccountMenuItem(): void
     {
-        $this->client->request('GET', '/users/alice/2fa/');
+        $this->client->request('GET', '/users/alice/totp/');
         $menu = self::getContainer()->get(\App\Menu\MenuBuilder::class)->createProfileMenu();
         $security = $menu->getChild('Security');
         self::assertNotNull($security);
@@ -177,12 +177,12 @@ class SecurityNavigationTest extends IntegrationTestCase
         $crawler = $this->client->click($crawler->selectLink('Remove authenticator app')->link());
         self::assertSame('Authenticator app', $crawler->filter('.security-tabs a[aria-current="page"]')->text());
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
-        $crawler = $this->client->request('GET', '/users/alice/2fa/disable?token=invalid');
+        $crawler = $this->client->request('GET', '/users/alice/totp/disable?token=invalid');
         self::assertStringStartsWith('Authenticator app - ', $crawler->filter('title')->text());
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
-        self::assertSame('/users/alice/2fa/', $crawler->selectLink('Keep authenticator app')->attr('href'));
+        self::assertSame('/users/alice/totp/', $crawler->selectLink('Keep authenticator app')->attr('href'));
         $this->client->click($crawler->selectLink('Remove authenticator app')->link());
-        self::assertResponseRedirects('/users/alice/2fa/');
+        self::assertResponseRedirects('/users/alice/totp/');
         $this->client->followRedirect();
         self::assertResponseRedirects('/profile/security');
         self::getEM()->clear();
@@ -198,16 +198,16 @@ class SecurityNavigationTest extends IntegrationTestCase
         $other->setTotpSecret('JBSWY3DPEHPK3PXP');
         $this->store($other);
         $this->client->loginUser($this->user);
-        $crawler = $this->client->request('GET', '/users/bob/2fa/');
+        $crawler = $this->client->request('GET', '/users/bob/totp/');
         self::assertResponseIsSuccessful();
         self::assertCount(0, $crawler->filter('.security-tabs'));
         self::assertCount(0, $crawler->filter('[aria-labelledby="password-heading"]'));
         self::assertStringNotContainsString('Manage your password', $crawler->text());
-        self::assertCount(1, $crawler->filter('a[href="/users/bob/2fa/disable"]'));
+        self::assertCount(1, $crawler->filter('a[href="/users/bob/totp/disable"]'));
         $crawler = $this->client->click($crawler->selectLink('Remove authenticator app')->link());
-        self::assertSame('/users/bob/2fa/', $crawler->selectLink('Keep authenticator app')->attr('href'));
+        self::assertSame('/users/bob/totp/', $crawler->selectLink('Keep authenticator app')->attr('href'));
         $this->client->click($crawler->selectLink('Remove authenticator app')->link());
-        self::assertResponseRedirects('/users/bob/2fa/');
+        self::assertResponseRedirects('/users/bob/totp/');
         self::getEM()->clear();
         $updatedUser = self::getEM()->find(User::class, $other->getId());
         self::assertNotNull($updatedUser);

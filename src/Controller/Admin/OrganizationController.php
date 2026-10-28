@@ -55,7 +55,7 @@ class OrganizationController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             $owner = $this->userRepo->findOneByUsernameOrEmail($createRequest->owner);
 
-            if ($owner === null || !$owner->isTotpAuthenticationEnabled()) {
+            if ($owner === null || !$owner->hasSecondFactorAuthenticationEnabled()) {
                 $form->addError(new FormError('The selected owner must enable two-factor authentication before becoming an organization owner.'));
             } else {
                 try {

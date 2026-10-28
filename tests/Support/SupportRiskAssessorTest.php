@@ -31,28 +31,28 @@ class SupportRiskAssessorTest extends IntegrationTestCase
         $this->assessor = self::getContainer()->get(SupportRiskAssessor::class);
     }
 
-    public function testTwoFactorEnabledAtReportsTheLatestActivation(): void
+    public function testTotpEnabledAtReportsTheLatestActivation(): void
     {
         $user = self::createUser('alice', 'alice@example.org');
         $this->store($user);
 
-        $this->record(AuditRecord::twoFactorAuthenticationActivated($user, $user), self::ago('-2 years'));
-        $this->record(AuditRecord::twoFactorAuthenticationDeactivated($user, $user, 'lost device'), self::ago('-8 days'));
+        $this->record(AuditRecord::totpAuthenticationActivated($user, $user), self::ago('-2 years'));
+        $this->record(AuditRecord::totpAuthenticationDeactivated($user, $user, 'lost device'), self::ago('-8 days'));
         $enabledAt = self::ago('-7 days');
-        $this->record(AuditRecord::twoFactorAuthenticationActivated($user, $user), $enabledAt);
+        $this->record(AuditRecord::totpAuthenticationActivated($user, $user), $enabledAt);
 
-        $this->assertEquals($enabledAt, $this->assessor->assess($user)->twoFactorEnabledAt);
+        $this->assertEquals($enabledAt, $this->assessor->assess($user)->totpEnabledAt);
     }
 
-    public function testTwoFactorEnabledAtIsUnknownWithoutAnActivationOfItsOwn(): void
+    public function testTotpEnabledAtIsUnknownWithoutAnActivationOfItsOwn(): void
     {
         $user = self::createUser('alice', 'alice@example.org');
         $other = self::createUser('bob', 'bob@example.org');
         $this->store($user, $other);
 
-        $this->record(AuditRecord::twoFactorAuthenticationActivated($other, $other), self::ago('-1 day'));
+        $this->record(AuditRecord::totpAuthenticationActivated($other, $other), self::ago('-1 day'));
 
-        $this->assertNull($this->assessor->assess($user)->twoFactorEnabledAt);
+        $this->assertNull($this->assessor->assess($user)->totpEnabledAt);
     }
 
     public function testRecentSecurityEventsAreScopedToTheAccountAndTheWindow(): void

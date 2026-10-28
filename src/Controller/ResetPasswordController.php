@@ -17,7 +17,7 @@ use App\Entity\User;
 use App\Form\ResetPasswordFormType;
 use App\Form\ResetPasswordRequestFormType;
 use App\Security\BruteForceLoginFormAuthenticator;
-use App\Security\Passport\Badge\ResolvedTwoFactorCodeCredentials;
+use App\Security\Passport\Badge\ResolvedTotpCodeCredentials;
 use App\Security\UserChecker;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -125,8 +125,8 @@ class ResetPasswordController extends Controller
                 return $this->redirectToRoute('home');
             }
 
-            // A user resetting the password with 2FA enabled, should automatically be marked as 2FA complete as the 2FA code was checked by form validation
-            $badges = $user->isTotpAuthenticationEnabled() ? [new ResolvedTwoFactorCodeCredentials()] : [];
+            // The reset form has already validated the TOTP code, so the login can mark the second-factor challenge complete.
+            $badges = $user->isTotpAuthenticationEnabled() ? [new ResolvedTotpCodeCredentials()] : [];
             if ($response = $userAuthenticator->authenticateUser($user, $authenticator, $request, $badges)) {
                 return $response;
             }

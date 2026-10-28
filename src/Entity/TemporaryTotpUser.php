@@ -16,7 +16,7 @@ use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 
-class TemporaryTwoFactorUser implements TwoFactorInterface
+class TemporaryTotpUser implements TwoFactorInterface
 {
     public function __construct(
         private readonly User $user,

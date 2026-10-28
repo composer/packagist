@@ -48,8 +48,8 @@ enum AuditLogEventType: string
     case UsernameChanged = 'username_changed';
     case GitHubLinkedWithUser = 'github_linked_with_user';
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user';
-    case TwoFaAuthenticationActivated = 'two_fa_activated';
-    case TwoFaAuthenticationDeactivated = 'two_fa_deactivated';
+    case TotpAuthenticationActivated = 'totp_activated';
+    case TotpAuthenticationDeactivated = 'totp_deactivated';
 
     // filterlist
     case FilterListEntryAdded = 'filter_list_entry_added';
@@ -104,8 +104,8 @@ enum AuditLogEventType: string
             self::UserFrozen, self::UserUnfrozen,
             self::PasswordResetRequested, self::PasswordReset, self::PasswordChanged,
             self::EmailChanged, self::UsernameChanged, self::GitHubLinkedWithUser,
-            self::GitHubDisconnectedFromUser, self::TwoFaAuthenticationActivated,
-            self::TwoFaAuthenticationDeactivated => 'user',
+            self::GitHubDisconnectedFromUser, self::TotpAuthenticationActivated,
+            self::TotpAuthenticationDeactivated => 'user',
             self::FilterListEntryAdded, self::FilterListEntryDeleted,
             self::FilterListEntryDisabled, self::FilterListEntryEnabled,
             self::FilterListEntryEdited => 'filterlist',

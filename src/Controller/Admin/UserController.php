@@ -23,7 +23,7 @@ use App\QueryFilter\User\GithubIdFilter;
 use App\QueryFilter\User\GithubLinkedFilter;
 use App\QueryFilter\User\RegisteredAfterFilter;
 use App\QueryFilter\User\RegisteredBeforeFilter;
-use App\QueryFilter\User\TwoFactorFilter;
+use App\QueryFilter\User\TotpFilter;
 use App\QueryFilter\User\UserSearchFilter;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
@@ -59,7 +59,7 @@ class UserController extends Controller
             $frozenFilter,
             RegisteredAfterFilter::fromQuery($req->query),
             RegisteredBeforeFilter::fromQuery($req->query),
-            TwoFactorFilter::fromQuery($req->query),
+            TotpFilter::fromQuery($req->query),
             GithubIdFilter::fromQuery($req->query),
             GithubLinkedFilter::fromQuery($req->query),
         ];

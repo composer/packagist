@@ -15,7 +15,7 @@ namespace App\Validator;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Component\Validator\Constraint;
 
-class TwoFactorCode extends Constraint
+class TotpCode extends Constraint
 {
     public function __construct(
         public readonly TwoFactorInterface $user,

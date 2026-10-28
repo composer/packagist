@@ -20,7 +20,7 @@ use App\Entity\User;
 use App\Entity\UserFreezeReason;
 use App\Log\AuditLogEventType;
 use App\Support\Attributes\AccountDeletionAttributes;
-use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\LostTotpAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\PackageDisposition;
@@ -48,15 +48,15 @@ class SupportControllerTest extends IntegrationTestCase
         $this->store($admin, $requester);
 
         $transfer = SupportRequest::create($requester, 'Please move it.', new PackageTransferAttributes(['acme/thing']));
-        $lost2fa = SupportRequest::create($requester, null, LostTwoFactorAttributes::fromCancelToken('token', null));
-        $this->store($transfer, $lost2fa);
+        $lostTotp = SupportRequest::create($requester, null, LostTotpAttributes::fromCancelToken('token', null));
+        $this->store($transfer, $lostTotp);
 
         $this->client->loginUser($admin);
         $html = $this->client->request('GET', '/admin/support/')->html();
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString($transfer->publicId, $html);
-        self::assertStringNotContainsString($lost2fa->publicId, $html);
+        self::assertStringNotContainsString($lostTotp->publicId, $html);
     }
 
     public function testDetailOfAnUnactionableTypeIsDenied(): void
@@ -65,11 +65,11 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = self::createUser('requester', 'requester@example.org');
         $this->store($admin, $requester);
 
-        $lost2fa = SupportRequest::create($requester, null, LostTwoFactorAttributes::fromCancelToken('token', null));
-        $this->store($lost2fa);
+        $lostTotp = SupportRequest::create($requester, null, LostTotpAttributes::fromCancelToken('token', null));
+        $this->store($lostTotp);
 
         $this->client->loginUser($admin);
-        $this->client->request('GET', '/admin/support/'.$lost2fa->publicId);
+        $this->client->request('GET', '/admin/support/'.$lostTotp->publicId);
 
         self::assertSame(403, $this->client->getResponse()->getStatusCode());
     }
@@ -141,18 +141,18 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertNull($reopened->resolvedAt);
     }
 
-    public function testGrantingATwoFactorResetRequiresTheDisable2faRole(): void
+    public function testGrantingATotpResetRequiresTheDisableSecondFactorRole(): void
     {
         $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
         $requester = $this->twoFactorUser();
         $this->store($admin, $requester);
 
-        $request = SupportRequest::create($requester, null, LostTwoFactorAttributes::fromCancelToken('token', null));
+        $request = SupportRequest::create($requester, null, LostTotpAttributes::fromCancelToken('token', null));
         $this->store($request);
 
         $this->client->loginUser($admin);
         // Denied before the token is even looked at, so its value does not matter here.
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-2fa-reset', ['token' => 'irrelevant']);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => 'irrelevant']);
 
         self::assertSame(403, $this->client->getResponse()->getStatusCode());
         self::assertTrue($this->reload($request)->user->isTotpAuthenticationEnabled());
@@ -166,7 +166,7 @@ class SupportControllerTest extends IntegrationTestCase
         $token = $this->csrfTokenFor($request);
 
         $this->client->enableProfiler();
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-2fa-reset', ['token' => $token]);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => $token]);
 
         $this->assertResponseRedirects('/admin/support/'.$request->publicId);
 
@@ -175,14 +175,14 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertNotNull($reloaded->resolvedAt);
         self::assertFalse($reloaded->user->isTotpAuthenticationEnabled());
 
-        // The standard 2FA-disabled notice plus the support reply: they say different things.
+        // The standard authenticator removal notice plus the support reply: they say different things.
         $this->assertEmailCount(2);
         foreach ($this->getMailerMessages() as $mail) {
             $this->assertEmailHeaderSame($mail, 'To', $requester->getEmail());
         }
 
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::TwoFaAuthenticationDeactivated->value,
+            'type' => AuditLogEventType::TotpAuthenticationDeactivated->value,
             'userId' => $requester->getId(),
         ]);
         self::assertNotNull($audit, 'the deactivation must be attributable to the affected user, not just the actor');
@@ -195,7 +195,7 @@ class SupportControllerTest extends IntegrationTestCase
         [$admin, $request] = $this->givenTwoFactorRequest(approvableAt: new \DateTimeImmutable('+24 hours'));
 
         $this->client->loginUser($admin);
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-2fa-reset', ['token' => $this->csrfTokenFor($request)]);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => $this->csrfTokenFor($request)]);
 
         $reloaded = $this->reload($request);
         self::assertSame(SupportRequestStatus::Open, $reloaded->status);
@@ -211,7 +211,7 @@ class SupportControllerTest extends IntegrationTestCase
         self::getEM()->flush();
 
         $this->client->loginUser($admin);
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-2fa-reset', ['token' => $this->csrfTokenFor($request)]);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => $this->csrfTokenFor($request)]);
 
         $reloaded = $this->reload($request);
         self::assertSame(SupportRequestStatus::Open, $reloaded->status);
@@ -228,7 +228,7 @@ class SupportControllerTest extends IntegrationTestCase
         $this->store($request);
 
         $this->client->loginUser($admin);
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-2fa-reset', ['token' => $this->csrfTokenFor($request)]);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => $this->csrfTokenFor($request)]);
 
         self::assertSame(400, $this->client->getResponse()->getStatusCode());
     }
@@ -644,7 +644,7 @@ class SupportControllerTest extends IntegrationTestCase
         $requester = $this->twoFactorUser();
         $this->store($admin, $requester);
 
-        $request = SupportRequest::create($requester, 'I dropped my phone in a lake.', LostTwoFactorAttributes::fromCancelToken('token', $approvableAt));
+        $request = SupportRequest::create($requester, 'I dropped my phone in a lake.', LostTotpAttributes::fromCancelToken('token', $approvableAt));
         $this->store($request);
 
         return [$admin, $request, $requester];

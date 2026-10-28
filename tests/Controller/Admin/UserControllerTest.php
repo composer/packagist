@@ -86,7 +86,7 @@ class UserControllerTest extends IntegrationTestCase
         $this->store($mod);
         $this->client->loginUser($mod);
 
-        foreach (['frozen=frozen', 'twofa=on', 'github_linked=true', 'registered_from=2026-02-31', 'registered_to=01/2026'] as $query) {
+        foreach (['frozen=frozen', 'totp=on', 'github_linked=true', 'registered_from=2026-02-31', 'registered_to=01/2026'] as $query) {
             $this->client->request('GET', '/admin/users?'.$query);
             self::assertSame(400, $this->client->getResponse()->getStatusCode(), $query);
         }
@@ -160,7 +160,7 @@ class UserControllerTest extends IntegrationTestCase
         self::assertStringNotContainsString('temphold', $spamOnly);
     }
 
-    public function testTwoFactorAndGithubFilters(): void
+    public function testTotpAndGithubFilters(): void
     {
         $mod = self::createUser('mod4', 'mod4@example.org', roles: ['ROLE_DISABLE_USERS']);
         $secured = self::createUser('secured', 'secured@example.org', githubId: '777001');
@@ -171,10 +171,10 @@ class UserControllerTest extends IntegrationTestCase
 
         $this->client->loginUser($mod);
 
-        $twoFaEnabled = $this->client->request('GET', '/admin/users?twofa=enabled')->html();
+        $totpEnabled = $this->client->request('GET', '/admin/users?totp=enabled')->html();
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('secured', $twoFaEnabled);
-        self::assertStringNotContainsString('plainacct', $twoFaEnabled);
+        self::assertStringContainsString('secured', $totpEnabled);
+        self::assertStringNotContainsString('plainacct', $totpEnabled);
 
         $notLinked = $this->client->request('GET', '/admin/users?github_linked=no')->html();
         self::assertResponseIsSuccessful();

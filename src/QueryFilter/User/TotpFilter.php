@@ -12,11 +12,11 @@
 
 namespace App\QueryFilter\User;
 
-class TwoFactorFilter extends AbstractNullableColumnFilter
+class TotpFilter extends AbstractNullableColumnFilter
 {
     protected static function key(): string
     {
-        return 'twofa';
+        return 'totp';
     }
 
     protected static function column(): string

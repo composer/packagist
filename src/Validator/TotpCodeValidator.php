@@ -16,7 +16,7 @@ use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInte
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 
-class TwoFactorCodeValidator extends ConstraintValidator
+class TotpCodeValidator extends ConstraintValidator
 {
     public function __construct(
         private readonly TotpAuthenticatorInterface $totpAuthenticator,
@@ -24,7 +24,7 @@ class TwoFactorCodeValidator extends ConstraintValidator
     }
 
     /**
-     * @param TwoFactorCode $constraint
+     * @param TotpCode $constraint
      */
     public function validate(mixed $value, Constraint $constraint): void
     {

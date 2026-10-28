@@ -6,7 +6,7 @@ scheb_two_factor:
 
     backup_codes:
         enabled: true
-        manager: App\Security\TwoFactorAuthManager
+        manager: App\Security\TotpAuthManager
 
     totp:
         enabled: true
@@ -20,3 +20,8 @@ scheb_two_factor:
 
     # prevent reusing 2FA codes
     code_reuse_cache: 'cache.app'
+
+when@test:
+    scheb_two_factor:
+        trusted_device:
+            key: 'test-only-trusted-device-signing-key'

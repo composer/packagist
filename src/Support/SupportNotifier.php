@@ -99,26 +99,26 @@ class SupportNotifier
     }
 
     /**
-     * Warns the account owner that someone who knows their password asked us to reset two-factor
-     * authentication, and gives them a link to veto it without waiting for an admin.
+     * Warns the account owner that someone who knows their password asked us to reset their
+     * authenticator app, and gives them a link to veto it without waiting for an admin.
      *
      * Deliberately carries none of the requester's text: the requester is not yet known to be the
      * owner, and this mail goes out over the Packagist address.
      */
-    public function notifyTwoFactorRequestFiled(SupportRequest $request, string $cancelToken): void
+    public function notifyTotpResetRequested(SupportRequest $request, string $cancelToken): void
     {
         $email = new TemplatedEmail()
             ->from(new Address($this->mailFromEmail, $this->mailFromName))
             ->to($request->user->getEmail())
             ->replyTo($this->mailFromEmail)
             ->subject('Two-factor reset requested on your Packagist.org account')
-            ->textTemplate('email/support_two_factor_requested.txt.twig')
+            ->textTemplate('email/support_totp_requested.txt.twig')
             ->context([
                 'publicId' => $request->publicId,
                 'requestedAt' => $request->createdAt,
                 'ip' => $request->ip,
                 'cancelUrl' => $this->urlGenerator->generate(
-                    'support_cancel_2fa_request',
+                    'support_cancel_totp_request',
                     ['publicId' => $request->publicId, 'token' => $cancelToken],
                     UrlGeneratorInterface::ABSOLUTE_URL,
                 ),

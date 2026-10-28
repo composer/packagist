@@ -16,7 +16,7 @@ use App\Entity\User;
 use App\Form\Type\InvisibleRecaptchaType;
 use App\Validator\NotProhibitedPassword;
 use App\Validator\Password;
-use App\Validator\TwoFactorCode;
+use App\Validator\TotpCode;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -57,7 +57,7 @@ class ResetPasswordFormType extends AbstractType
                     'required' => true,
                     'mapped' => false,
                     'constraints' => [
-                        new TwoFactorCode($options['data']),
+                        new TotpCode($options['data']),
                     ],
                 ]);
             $builder->add('captcha', InvisibleRecaptchaType::class, ['only_show_after_increment_trigger' => true]);

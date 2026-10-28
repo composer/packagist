@@ -30,7 +30,7 @@ readonly class SupportRiskPackage
 }
 
 /**
- * What an approved lost-2FA reset would hand over, rendered above the approve button so that
+ * What an approved TOTP reset would hand over, rendered above the approve button so that
  * "most requests are just approved" stays an informed default rather than a rubber stamp.
  */
 readonly class SupportRiskProfile
@@ -44,7 +44,7 @@ readonly class SupportRiskProfile
         public array $packages,
         public int $totalDownloads,
         public int $organizationCount,
-        public ?\DateTimeImmutable $twoFactorEnabledAt,
+        public ?\DateTimeImmutable $totpEnabledAt,
         public array $recentSecurityEvents,
         public bool $hasRecentCredentialChange,
         public array $knownIps,

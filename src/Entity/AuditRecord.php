@@ -541,10 +541,10 @@ class AuditRecord
         );
     }
 
-    public static function twoFactorAuthenticationActivated(User $user, User $actor): self
+    public static function totpAuthenticationActivated(User $user, User $actor): self
     {
         return new self(
-            AuditLogEventType::TwoFaAuthenticationActivated,
+            AuditLogEventType::TotpAuthenticationActivated,
             [
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor),
@@ -554,10 +554,10 @@ class AuditRecord
         );
     }
 
-    public static function twoFactorAuthenticationDeactivated(User $user, User $actor, string $reason): self
+    public static function totpAuthenticationDeactivated(User $user, User $actor, string $reason): self
     {
         return new self(
-            AuditLogEventType::TwoFaAuthenticationDeactivated,
+            AuditLogEventType::TotpAuthenticationDeactivated,
             [
                 'user' => self::getUserData($user),
                 'actor' => self::getUserData($actor),

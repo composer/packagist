@@ -168,7 +168,7 @@ final class InvitationManager
             $organization->isOrgMember($user->getId()),
             $acceptedTeamIds,
             $ownersAmongTeams,
-            $user->isTotpAuthenticationEnabled(),
+            $user->hasSecondFactorAuthenticationEnabled(),
             $now,
         );
         $organization->joinViaInvitation($user->getId(), $acceptedTeamIds, $invitation->id);

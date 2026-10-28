@@ -311,6 +311,11 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
         return $this->totpSecret ? true : false;
     }
 
+    public function hasSecondFactorAuthenticationEnabled(): bool
+    {
+        return $this->isTotpAuthenticationEnabled();
+    }
+
     public function getTotpAuthenticationUsername(): string
     {
         return $this->username;

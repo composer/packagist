@@ -112,7 +112,7 @@ class OrganizationVoter extends Voter
     {
         return match (true) {
             !$this->isOwner($organization, $user) => OrganizationAccessDeniedReason::NotAnOwner,
-            !$user->isTotpAuthenticationEnabled() => OrganizationAccessDeniedReason::TwoFactorRequired,
+            !$user->hasSecondFactorAuthenticationEnabled() => OrganizationAccessDeniedReason::TwoFactorRequired,
             default => null,
         };
     }

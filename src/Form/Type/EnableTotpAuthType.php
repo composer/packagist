@@ -12,8 +12,8 @@
 
 namespace App\Form\Type;
 
-use App\Form\Model\EnableTwoFactorRequest;
-use App\Validator\TwoFactorCode;
+use App\Form\Model\EnableTotpRequest;
+use App\Validator\TotpCode;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -21,14 +21,14 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * @extends AbstractType<EnableTwoFactorRequest>
+ * @extends AbstractType<EnableTotpRequest>
  */
-class EnableTwoFactorAuthType extends AbstractType
+class EnableTotpAuthType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('code', TextType::class, [
-            'constraints' => [new TwoFactorCode($options['user'])],
+            'constraints' => [new TotpCode($options['user'])],
         ]);
     }
 
@@ -36,7 +36,7 @@ class EnableTwoFactorAuthType extends AbstractType
     {
         $resolver
             ->setDefaults([
-                'data_class' => EnableTwoFactorRequest::class,
+                'data_class' => EnableTotpRequest::class,
             ])
             ->define('user')
             ->allowedTypes(TwoFactorInterface::class)

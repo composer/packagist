@@ -35,7 +35,7 @@
                 </p>
             {% endif %}
 
-            <form method="post" action="{{ path('support_cancel_2fa_request', {publicId: supportRequest.publicId}) }}">
+            <form method="post" action="{{ path('support_cancel_totp_request', {publicId: supportRequest.publicId}) }}">
                 <input type="hidden" name="token" value="{{ token }}" />
                 <button type="submit" class="btn btn-danger btn-lg">
                     {{ disputed ? 'This was not me — report it' : 'This was not me — cancel the request' }}

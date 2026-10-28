@@ -87,6 +87,26 @@ class UserTest extends TestCase
         self::assertFalse($a->isEqualTo($b), 'freezing must invalidate the session token');
     }
 
+    public function testTwoFactorStatusTracksAuthenticatorEnrollment(): void
+    {
+        $user = new User();
+        self::assertFalse($user->hasSecondFactorAuthenticationEnabled());
+
+        $user->setTotpSecret('JBSWY3DPEHPK3PXP');
+        self::assertTrue($user->hasSecondFactorAuthenticationEnabled());
+
+        $user->setTotpSecret(null);
+        self::assertFalse($user->hasSecondFactorAuthenticationEnabled());
+    }
+
+    public function testBackupCodeDoesNotEnableTwoFactorAuthentication(): void
+    {
+        $user = new User();
+        $user->setBackupCode('abcd1234');
+
+        self::assertFalse($user->hasSecondFactorAuthenticationEnabled());
+    }
+
     private function makeUser(): User
     {
         $user = self::createUser('sameuser', 'same@example.com', 'samehash');

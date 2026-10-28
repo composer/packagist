@@ -16,7 +16,7 @@ use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 
-readonly class TwoFaDeactivatedDisplay extends AbstractLogDisplay
+readonly class TotpDeactivatedDisplay extends AbstractLogDisplay
 {
     public function __construct(
         \DateTimeImmutable $datetime,
@@ -30,11 +30,11 @@ readonly class TwoFaDeactivatedDisplay extends AbstractLogDisplay
 
     public function getType(): AuditLogEventType
     {
-        return AuditLogEventType::TwoFaAuthenticationDeactivated;
+        return AuditLogEventType::TotpAuthenticationDeactivated;
     }
 
     public function getTemplateName(): string
     {
-        return 'log/display/two_fa_deactivated.html.twig';
+        return 'log/display/totp_deactivated.html.twig';
     }
 }

@@ -1,9 +1,9 @@
 {% extends 'layout.html.twig' %}
 
 {% block content %}
-    <h2 class="title">Two-Factor Authentication</h2>
+    <h2 class="title">Authenticator app</h2>
 
-    <p>This account is protected by two-factor authentication. Please enter your code below to proceed.</p>
+    <p>Enter the code from your authenticator app to sign in.</p>
 
     <section class="row">
         <div class="col-lg-6">
@@ -38,8 +38,8 @@
             </form>
 
             <p>
-                Lost access to your authenticator? Enter the backup code in the form above to disable 2FA.
-                No backup code either? <a href="{{ path('support_lost_2fa') }}">Request a reset</a> and we
+                Lost access to your authenticator? Enter the backup code in the form above to remove your authenticator app.
+                No backup code either? <a href="{{ path('support_lost_totp') }}">Request a reset</a> and we
                 will review it by hand.
             </p>
 

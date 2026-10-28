@@ -13,7 +13,7 @@
 namespace App\Form\EventSubscriber;
 
 use App\Security\RecaptchaHelper;
-use App\Validator\TwoFactorCode;
+use App\Validator\TotpCode;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -40,8 +40,8 @@ class FormInvalidPasswordSubscriber implements EventSubscriberInterface
                     $this->recaptchaHelper->increaseCounter($context);
                 }
 
-                // increment for invalid 2fa code
-                if ($cause instanceof ConstraintViolation && $cause->getConstraint() instanceof TwoFactorCode) {
+                // increment for invalid TOTP code
+                if ($cause instanceof ConstraintViolation && $cause->getConstraint() instanceof TotpCode) {
                     $context = $this->recaptchaHelper->buildContext();
                     $this->recaptchaHelper->increaseCounter($context);
                 }
