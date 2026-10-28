@@ -51,7 +51,7 @@ class AdminAuditLogController extends Controller
         ];
 
         $qb = $auditRecordRepository->createQueryBuilder('a')
-            ->orderBy('a.id', 'DESC');
+            ->orderBy('a.id', \SortDirection::Descending);
 
         foreach ($filters as $filter) {
             $filter->filter($qb);

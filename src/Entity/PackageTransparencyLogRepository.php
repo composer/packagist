@@ -98,8 +98,8 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     public function getQueryBuilderForPublicView(bool $includeHiddenTypes = false): QueryBuilder
     {
         $qb = $this->createQueryBuilder('t')
-            ->orderBy('t.datetime', 'DESC')
-            ->addOrderBy('t.leafIndex', 'DESC');
+            ->orderBy('t.datetime', \SortDirection::Descending)
+            ->addOrderBy('t.leafIndex', \SortDirection::Descending);
 
         if ($includeHiddenTypes) {
             return $qb;

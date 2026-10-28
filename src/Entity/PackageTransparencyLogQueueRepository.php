@@ -93,7 +93,7 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
             ->andWhere('q.auditLogId <= :createdUpTo')
             ->setParameter('after', $after ?? new NilUlid(), UlidType::NAME)
             ->setParameter('createdUpTo', $createdUpTo, UlidType::NAME)
-            ->orderBy('q.auditLogId', 'ASC')
+            ->orderBy('q.auditLogId', \SortDirection::Ascending)
             ->setMaxResults($limit);
 
         /** @var list<PackageTransparencyLogQueue> */
@@ -127,7 +127,7 @@ class PackageTransparencyLogQueueRepository extends ServiceEntityRepository
             ->andWhere('NOT EXISTS (SELECT q.auditLogId FROM '.PackageTransparencyLogQueue::class.' q WHERE q.auditLogId = a.id)')
             ->setParameter('types', $types)
             ->setParameter('after', $after, UlidType::NAME)
-            ->orderBy('a.id', 'ASC')
+            ->orderBy('a.id', \SortDirection::Ascending)
             ->setMaxResults($limit);
 
         /** @var list<array{id: Ulid}> $rows */
