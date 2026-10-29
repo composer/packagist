@@ -32,6 +32,7 @@ use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Pcre\Preg;
 use Composer\Repository\InvalidRepositoryException;
+use Composer\Semver\Intervals;
 use Composer\Util\HttpDownloader;
 use Doctrine\ORM\EntityNotFoundException;
 use Doctrine\Persistence\ManagerRegistry;
