@@ -18,6 +18,7 @@ use App\Entity\PackageFreezeReason;
 use App\Log\TransparencyLogEventType;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\DomCrawler\Crawler;
 
 class TransparencyLogControllerTest extends IntegrationTestCase
 {
@@ -222,36 +223,147 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         }
     }
 
-    public function testPageFarPastTheEndShowsTheLastPage(): void
+    /**
+     * Many entries share the same event time, and the page breaks fall inside those groups.
+     * If the cursor used only the time, entries at a page break would be skipped or shown twice.
+     */
+    public function testNextAndPreviousLinksWalkTheWholeLogInOrder(): void
     {
-        $this->givenProjectedLog();
+        $this->insertEntries('acme', 1, 45);
         $this->givenLoggedInVisitor();
 
-        $crawler = $this->client->request('GET', '/transparency-log?page=999999999');
+        $expected = range(45, 1);
+        usort($expected, static fn (int $a, int $b): int => [$b % 4, $b] <=> [$a % 4, $a]);
+        $expected = array_map(static fn (int $n): string => 'acme/p'.$n, $expected);
 
+        $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
-        static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
-        static::assertCount(0, $crawler->filter('[data-test="page-limit-note"]'));
+        static::assertCount(0, $crawler->filter('a[rel="prev"]'));
+
+        $pages = [$this->shownPackages($crawler)];
+        while (\count($next = $crawler->filter('a[rel="next"]')) > 0) {
+            $crawler = $this->client->click($next->link());
+            static::assertResponseIsSuccessful();
+            $pages[] = $this->shownPackages($crawler);
+        }
+
+        static::assertSame([20, 20, 5], array_map(\count(...), $pages));
+        static::assertSame($expected, array_merge(...$pages));
+
+        $crawler = $this->client->click($crawler->filter('a[rel="prev"]')->link());
+        static::assertResponseIsSuccessful();
+        static::assertSame($pages[1], $this->shownPackages($crawler));
+
+        $crawler = $this->client->click($crawler->filter('a[rel="prev"]')->link());
+        static::assertResponseIsSuccessful();
+        static::assertSame($pages[0], $this->shownPackages($crawler));
+        static::assertCount(0, $crawler->filter('a[rel="prev"]'));
     }
 
-    public function testPageLimitNoteIsShownWhenThereAreMoreEntriesThanPages(): void
+    public function testFiltersAreKeptWhenPaging(): void
     {
-        $conn = $this->getEM()->getConnection();
-        $conn->executeStatement('SET SESSION cte_max_recursion_depth = 20000');
-        $conn->executeStatement(<<<'SQL'
-            INSERT INTO package_transparency_log (id, sourceAuditLogId, leafIndex, type, attributes, datetime, packageId, packageName, vendor)
-            WITH RECURSIVE seq (n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 10001)
-            SELECT UNHEX(MD5(CONCAT('id', n))), UNHEX(MD5(CONCAT('source', n))), n, 'package_created',
-                JSON_OBJECT('name', 'acme/many', 'repository', 'https://github.com/acme/many', 'actor', 'automation'),
-                NOW(), 1, 'acme/many', 'acme'
-            FROM seq
-            SQL);
+        $this->insertEntries('acme', 1, 25);
+        $this->insertEntries('other', 26, 50);
         $this->givenLoggedInVisitor();
 
-        $crawler = $this->client->request('GET', '/transparency-log?page=999999999');
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['vendor' => 'acme']));
+        $shown = $this->shownPackages($crawler);
+
+        $next = $crawler->filter('a[rel="next"]');
+        static::assertStringContainsString('vendor=acme', (string) $next->attr('href'));
+        $crawler = $this->client->click($next->link());
+        static::assertResponseIsSuccessful();
+        $shown = [...$shown, ...$this->shownPackages($crawler)];
+
+        static::assertCount(25, $shown);
+        foreach ($shown as $name) {
+            static::assertStringStartsWith('acme/', $name);
+        }
+        static::assertCount(0, $crawler->filter('a[rel="next"]'));
+    }
+
+    public function testNewestLinkGoesBackToTheFirstPageAndKeepsFilters(): void
+    {
+        $this->insertEntries('acme', 1, 45);
+        $this->insertEntries('other', 46, 50);
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['vendor' => 'acme']));
+        $first = $this->shownPackages($crawler);
+        static::assertCount(0, $crawler->filter('[data-test="newest-page"]'));
+
+        $crawler = $this->client->click($crawler->filter('a[rel="next"]')->link());
+        $crawler = $this->client->click($crawler->filter('a[rel="next"]')->link());
+
+        $newest = $crawler->filter('[data-test="newest-page"]');
+        static::assertSame('/transparency-log?vendor=acme', $newest->attr('href'));
+
+        $crawler = $this->client->click($newest->link());
+        static::assertResponseIsSuccessful();
+        static::assertSame($first, $this->shownPackages($crawler));
+    }
+
+    public function testMalformedCursorIsABadRequest(): void
+    {
+        $this->givenLoggedInVisitor();
+
+        $this->client->request('GET', '/transparency-log?cursor=garbage');
+        static::assertResponseStatusCodeSame(400);
+    }
+
+    /**
+     * Cursor values end up in the WHERE clause, so only cursors the app signed itself are accepted.
+     */
+    public function testUnsignedCursorIsABadRequest(): void
+    {
+        $this->givenLoggedInVisitor();
+
+        $payload = json_encode(['f' => ['t.datetime' => '2026-01-01 10:00:00', 't.leafIndex' => 5], 'd' => 'n'], \JSON_THROW_ON_ERROR);
+        $cursor = rtrim(strtr(base64_encode($payload), '+/', '-_'), '=');
+
+        $this->client->request('GET', '/transparency-log?'.http_build_query(['cursor' => $cursor]));
+        static::assertResponseStatusCodeSame(400);
+    }
+
+    public function testPageParameterFromOldLinksShowsTheFirstPage(): void
+    {
+        $this->insertEntries('acme', 1, 45);
+        $this->givenLoggedInVisitor();
+
+        $first = $this->shownPackages($this->client->request('GET', '/transparency-log'));
+        $crawler = $this->client->request('GET', '/transparency-log?page=3');
 
         static::assertResponseIsSuccessful();
-        static::assertStringContainsString('Only the first 500 pages are shown', $crawler->filter('[data-test="page-limit-note"]')->text());
+        static::assertSame($first, $this->shownPackages($crawler));
+    }
+
+    /**
+     * Inserts package_created entries "<vendor>/p<leafIndex>" for leaf indexes $from to $to, with event
+     * times repeating every four leaves.
+     */
+    private function insertEntries(string $vendor, int $from, int $to): void
+    {
+        $this->getEM()->getConnection()->executeStatement(<<<'SQL'
+            INSERT INTO package_transparency_log (id, sourceAuditLogId, leafIndex, type, attributes, datetime, packageId, packageName, vendor)
+            WITH RECURSIVE seq (n) AS (SELECT CAST(:from AS UNSIGNED) UNION ALL SELECT n + 1 FROM seq WHERE n < :to)
+            SELECT UNHEX(MD5(CONCAT('id', n))), UNHEX(MD5(CONCAT('source', n))), n, 'package_created',
+                JSON_OBJECT('name', CONCAT(:vendor, '/p', n), 'repository', 'https://github.com/acme/many', 'actor', 'automation'),
+                DATE_ADD(:base, INTERVAL n % 4 SECOND), 1, CONCAT(:vendor, '/p', n), :vendor
+            FROM seq
+            SQL, ['from' => $from, 'to' => $to, 'vendor' => $vendor, 'base' => '2026-01-01 10:00:00']);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function shownPackages(Crawler $crawler): array
+    {
+        return $crawler->filter('td.audit-log-details')->each(static function (Crawler $details): string {
+            static::assertMatchesRegularExpression('{\b([a-z]+/p\d+)\b}', $details->text());
+            preg_match('{\b([a-z]+/p\d+)\b}', $details->text(), $match);
+
+            return $match[1];
+        });
     }
 
     private function givenProjectedLog(): void
