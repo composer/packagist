@@ -409,6 +409,7 @@ class UpdaterWorker
             throw $e;
         } finally {
             $this->locker->unlockPackageUpdate($id);
+            Intervals::clear(); // ValidatingArrayLoader uses that so it is safer to clear to avoid caches leaking memory slowly
         }
 
         if ($packageName === FriendsOfPhpSecurityAdvisoriesSource::SECURITY_PACKAGE) {
