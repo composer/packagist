@@ -22,8 +22,9 @@ use App\QueryFilter\TransparencyLog\PackageNameFilter;
 use App\QueryFilter\TransparencyLog\EventTypeFilter;
 use App\QueryFilter\TransparencyLog\UserFilter;
 use App\QueryFilter\TransparencyLog\VendorFilter;
-use App\Model\CappedCountQueryAdapter;
-use Pagerfanta\Pagerfanta;
+use BabDev\PagerfantaBundle\Position\PositionResolver;
+use Pagerfanta\CursorPagerfanta;
+use Pagerfanta\Doctrine\ORM\CursorQueryAdapter;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -32,11 +33,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class TransparencyLogController extends Controller
 {
     private const PER_PAGE = 20;
-    private const MAX_PAGES = 500;
 
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/transparency-log', name: 'view_transparency_log', methods: ['GET'])]
-    public function viewTransparencyLog(Request $request, PackageTransparencyLogRepository $repository, TransparencyLogDisplayFactory $displayFactory): Response
+    public function viewTransparencyLog(Request $request, PackageTransparencyLogRepository $repository, TransparencyLogDisplayFactory $displayFactory, PositionResolver $positionResolver): Response
     {
         // Auditors see everything; the temporarily-hidden types stay hidden for everyone else.
         $includeHiddenTypes = $this->isGranted('ROLE_AUDITOR');
@@ -62,21 +62,17 @@ class TransparencyLogController extends Controller
             $selectedFilters[$filter->getKey()] = $filter->getSelectedValue();
         }
 
-        // Counting and offsetting through the whole log costs seconds once it holds millions of rows.
-        // Older entries stay reachable by narrowing the filters. The one extra row counted tells
-        // whether there are more entries than the pages show.
-        $shownEntries = self::MAX_PAGES * self::PER_PAGE;
-        $paginator = new Pagerfanta(new CappedCountQueryAdapter($qb, $shownEntries + 1));
-        $paginator->setMaxNbPages(self::MAX_PAGES);
-        $paginator->setNormalizeOutOfRangePages(true);
-        $paginator->setMaxPerPage(self::PER_PAGE);
-        $paginator->setCurrentPage(max(1, $request->query->getInt('page', 1)));
+        // Keyset pagination, as counting or offsetting through millions of rows costs seconds.
+        // The bundle signs cursors and turns invalid ones into a 400.
+        $paginator = new CursorPagerfanta(
+            new CursorQueryAdapter($qb, fetchJoinCollection: false, useOutputWalkers: false),
+            self::PER_PAGE,
+            $positionResolver->resolveCursorPosition($request),
+        );
 
         return $this->render('log/transparency_log.html.twig', [
             'transparencyLogDisplays' => $displayFactory->build($paginator),
             'paginator' => $paginator,
-            'maxPages' => self::MAX_PAGES,
-            'hasMoreEntriesThanPages' => $paginator->getNbResults() > $shownEntries,
             'selectableTypes' => $this->selectableTypes($includeHiddenTypes),
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,

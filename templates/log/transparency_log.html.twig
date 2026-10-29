@@ -52,12 +52,11 @@
     } only %}
 
     {% if transparencyLogDisplays|length and paginator.haveToPaginate() %}
-        {{ pagerfanta(paginator, 'twitter_bootstrap5', {'proximity': 2}) }}
-    {% endif %}
-
-    {% if hasMoreEntriesThanPages %}
-        <p class="text-muted" data-test="page-limit-note">
-            Only the first {{ maxPages }} pages are shown. To see older entries, narrow the results with the filters above, for example by package, vendor, maintainer or time range.
-        </p>
+        <div class="d-flex justify-content-center align-items-center gap-3">
+            {% if paginator.hasPreviousPage() %}
+                <a class="link-secondary mb-3" href="{{ path('view_transparency_log', app.request.query.all|filter((value, key) => key not in ['cursor', 'page'])) }}" data-test="newest-page"><i class="bi bi-chevron-double-left" aria-hidden="true"></i> Newest</a>
+            {% endif %}
+            {{ pagerfanta(paginator, 'twitter_bootstrap5_sequential') }}
+        </div>
     {% endif %}
 {% endblock %}
