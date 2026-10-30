@@ -26,6 +26,8 @@ use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\PackageDisposition;
 use App\Support\SupportRequestStatus;
 use App\Tests\IntegrationTestCase;
+use App\Util\IpAddress;
+use Doctrine\DBAL\Connection;
 
 class SupportControllerTest extends IntegrationTestCase
 {
@@ -182,7 +184,7 @@ class SupportControllerTest extends IntegrationTestCase
         }
 
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::TwoFaAuthenticationDeactivated->value,
+            'type' => AuditLogEventType::TwoFactorAuthenticationDeactivated->value,
             'userId' => $requester->getId(),
         ]);
         self::assertNotNull($audit, 'the deactivation must be attributable to the affected user, not just the actor');
@@ -506,6 +508,33 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertCount(0, $crawler->filter('#vendor-packages'));
     }
 
+    public function testAuditorSeesTheIpOfRecentSecurityEvents(): void
+    {
+        [$admin, $request] = $this->givenTwoFactorRequest();
+        $admin->addRole('ROLE_AUDITOR');
+        $this->store($admin);
+        $this->givenSecurityEventFrom($request->user, '203.0.113.7');
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('203.0.113.7', trim($crawler->filter('td.audit-log-ip')->text()));
+    }
+
+    public function testModeratorWithoutAuditorRoleDoesNotSeeTheIpOfRecentSecurityEvents(): void
+    {
+        [$admin, $request] = $this->givenTwoFactorRequest();
+        $this->givenSecurityEventFrom($request->user, '203.0.113.7');
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('[data-test="log-type"]'));
+        self::assertStringNotContainsString('203.0.113.7', (string) $this->client->getResponse()->getContent());
+    }
+
     public function testDeleteAccountDeletesTheUserAndTheRequestAndNotifiesThem(): void
     {
         [$admin, $request, $requester] = $this->givenAccountDeletionRequest();
@@ -648,6 +677,17 @@ class SupportControllerTest extends IntegrationTestCase
         $this->store($request);
 
         return [$admin, $request, $requester];
+    }
+
+    private function givenSecurityEventFrom(User $user, string $ip): void
+    {
+        $record = AuditRecord::passwordChanged($user, $user);
+        self::getEM()->getRepository(AuditRecord::class)->insert($record);
+        // insert() takes the IP from the current request, and a test has none.
+        self::getService(Connection::class)->executeStatement(
+            'UPDATE audit_log SET ip = ? WHERE id = ?',
+            [IpAddress::stringToBinary($ip), $record->id->toBinary()],
+        );
     }
 
     private function twoFactorUser(): User

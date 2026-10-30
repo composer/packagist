@@ -12,6 +12,7 @@
 
 namespace App\Tests\Package;
 
+use App\Log\AuditLogEventType;
 use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
@@ -19,7 +20,7 @@ use App\Entity\Package;
 use App\Entity\PackageReadme;
 use App\Entity\RequireLink;
 use App\Entity\Version;
-use App\Log\AuditLogEventType;
+use App\Entity\VersionRepository;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;

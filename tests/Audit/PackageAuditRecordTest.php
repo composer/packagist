@@ -14,6 +14,7 @@ namespace App\Tests\Controller;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\AuditLogSearchType;
+use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
