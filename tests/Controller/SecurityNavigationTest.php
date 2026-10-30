@@ -126,6 +126,7 @@ class SecurityNavigationTest extends IntegrationTestCase
     public function testAuthenticatorSetupAndConfirmationKeepExistingBehavior(): void
     {
         $crawler = $this->client->request('GET', '/users/alice/2fa/enable');
+        self::assertStringStartsWith('Authenticator app - ', $crawler->filter('title')->text());
         self::assertSame('Authenticator app', $crawler->filter('.security-tabs a[aria-current="page"]')->text());
         $form = $crawler->selectButton('Enable authenticator app')->form();
         $form['enable_two_factor_auth[code]'] = '123456';
@@ -136,6 +137,7 @@ class SecurityNavigationTest extends IntegrationTestCase
         $this->client->submit($form);
         self::assertSame('/users/alice/2fa/confirm', $this->client->getResponse()->headers->get('Location'));
         $crawler = $this->client->followRedirect();
+        self::assertStringStartsWith('Authenticator app - ', $crawler->filter('title')->text());
         self::assertSame('Authenticator app', $crawler->filter('.security-tabs a[aria-current="page"]')->text());
         self::assertCount(1, $crawler->filter('.two-factor-backup-code'));
         $this->client->request('GET', '/users/alice/2fa/confirm');
@@ -176,6 +178,7 @@ class SecurityNavigationTest extends IntegrationTestCase
         self::assertSame('Authenticator app', $crawler->filter('.security-tabs a[aria-current="page"]')->text());
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
         $crawler = $this->client->request('GET', '/users/alice/2fa/disable?token=invalid');
+        self::assertStringStartsWith('Authenticator app - ', $crawler->filter('title')->text());
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
         self::assertSame('/users/alice/2fa/', $crawler->selectLink('Keep authenticator app')->attr('href'));
         $this->client->click($crawler->selectLink('Remove authenticator app')->link());

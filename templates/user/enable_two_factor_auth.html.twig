@@ -1,5 +1,7 @@
 {% extends 'user/security_layout.html.twig' %}
 
+{% block title %}Authenticator app - {{ parent() }}{% endblock %}
+
 {% block security_content %}
     <p>
         Use an app that supports time-based one-time passwords (TOTP), such as
