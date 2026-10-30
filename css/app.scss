@@ -292,10 +292,16 @@ strong {
     .nav-user .username-link {
         max-width: 105px !important;
     }
+    .nav-user .username-link .icon-user {
+        display: none;
+    }
 }
 @media (max-width: 992px) {
     .nav-user .username-link {
         max-width: 200px !important;
+    }
+    .nav-user .username-link .icon-user {
+        display: inline;
     }
 }
 
