@@ -87,7 +87,7 @@ class Version implements VersionSummary
     /**
      * @var array<mixed>
      */
-    #[ORM\Column(type: 'json')]
+    #[ORM\Column(type: 'json_ordered')]
     private array $extra = [];
 
     /**

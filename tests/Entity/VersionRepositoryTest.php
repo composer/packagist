@@ -551,4 +551,28 @@ class VersionRepositoryTest extends IntegrationTestCase
         self::assertSame(['php', 'zeta/z', 'alpha/a'], array_column($data['devRequire'], 'name'));
         self::assertSame(['zz', 'aa'], $data['tags']);
     }
+
+    public function testExtraKeepsKeyOrder(): void
+    {
+        $em = self::getEM();
+        $version = $this->seedStableVersion('vendor/package', '1.0.0', '1.0.0.0');
+        // longest key first, so a store that sorts keys by length (MySQL JSON) or name would reorder them
+        $patches = [
+            'vendor/dep' => [
+                '1 - Longest description of all the patches' => 'https://example.org/1.patch',
+                '2 - Shorter one' => 'https://example.org/2.patch',
+                '3 - Mid-length description' => 'https://example.org/3.patch',
+            ],
+        ];
+        $version->setExtra(['patches' => $patches, 'branch-alias' => ['dev-main' => '1.x-dev']]);
+        $em->flush();
+        $em->clear();
+
+        $expected = ['patches' => $patches, 'branch-alias' => ['dev-main' => '1.x-dev']];
+        self::assertSame($expected, $this->versionRepository->find($version->getId())?->getExtra());
+
+        $package = $em->getRepository(Package::class)->find($version->getPackage()->getId());
+        self::assertNotNull($package);
+        self::assertSame($expected, $this->versionRepository->getVersionListForPackage($package)[0]->getExtra());
+    }
 }
