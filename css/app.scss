@@ -572,10 +572,14 @@ strong {
         color: #fff;
         text-decoration: none;
     }
-    .mobile-account-menu .mobile-profile-link {
+    .mobile-account-menu .mobile-account-heading {
+        display: block;
+        overflow-wrap: anywhere;
+        padding: 12px 20px;
+        color: #fff;
         font-weight: 700;
     }
-    .mobile-account-menu .account-subnavigation-link {
+    .mobile-account-menu li a {
         padding-left: 44px;
     }
     .mobile-account-menu a:hover, .mobile-account-menu a:focus {

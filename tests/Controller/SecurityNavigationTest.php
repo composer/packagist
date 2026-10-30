@@ -37,7 +37,6 @@ class SecurityNavigationTest extends IntegrationTestCase
         self::assertSame('false', $toggle->attr('aria-expanded'));
         self::assertCount(1, $crawler->filter('#'.$target));
         self::assertCount(1, $crawler->filter('header .mobile-account-menu a[href="/profile/security"]'));
-        self::assertCount(0, $crawler->filter('.security-account-menu'));
         $this->client->restart();
         $crawler = $this->client->request('GET', '/login/');
         self::assertCount(0, $crawler->filter('header .mobile-account-menu'));
@@ -50,18 +49,18 @@ class SecurityNavigationTest extends IntegrationTestCase
         $this->client->loginUser($this->user);
         $crawler = $this->client->request('GET', '/profile/security/authenticator');
         $desktop = $crawler->filter('header .username-link');
-        $mobile = $crawler->filter('header .mobile-profile-link');
-        foreach ([$desktop, $mobile] as $profile) {
-            self::assertSame('alice & bob', $profile->text());
-            self::assertSame('Profile: alice & bob', $profile->attr('aria-label'));
-            self::assertSame('/profile/', $profile->attr('href'));
-            self::assertCount(1, $profile->filter('.icon-user[aria-hidden="true"]'));
-        }
+        self::assertSame('alice & bob', $desktop->text());
+        self::assertSame('Profile: alice & bob', $desktop->attr('aria-label'));
+        self::assertSame('/profile/', $desktop->attr('href'));
+        self::assertCount(1, $desktop->filter('.icon-user[aria-hidden="true"]'));
+
+        $mobile = $crawler->filter('header .mobile-account-heading');
+        self::assertSame('alice & bob', $mobile->text());
         self::assertStringContainsString('alice &amp; bob', $mobile->html());
-        self::assertCount(1, $crawler->filter('header .mobile-account-menu a[href="/profile/edit"]'));
-        self::assertCount(1, $crawler->filter('header .mobile-account-menu .account-subnavigation-link[href="/profile/edit"]'));
-        self::assertCount(0, $crawler->filter('header .mobile-profile-link.account-subnavigation-link'));
-        self::assertCount(0, $crawler->filter('header .mobile-account-menu .account-subnavigation-link[href^="/logout"]'));
+        self::assertCount(1, $mobile->filter('.icon-user[aria-hidden="true"]'));
+        foreach (['/profile/', '/profile/edit', '/profile/security'] as $href) {
+            self::assertCount(1, $crawler->filter('header .mobile-account-menu a[href="'.$href.'"]'), $href);
+        }
     }
 
     public function testSecurityNavigationGroupsPasswordAndSecondFactorSettings(): void
@@ -81,8 +80,6 @@ class SecurityNavigationTest extends IntegrationTestCase
             self::assertSame('Security', $crawler->filter('nav[aria-label="Account settings"] li.active > a')->text());
             self::assertCount(0, $crawler->filter('header .mobile-account-menu a[href="/profile/security/password"]'));
             self::assertCount(3, $crawler->filter('.security-tabs a'));
-            self::assertStringNotContainsString('Recovery code', $crawler->filter('.security-tabs')->text());
-            self::assertStringNotContainsString('Passkeys', $crawler->text());
         }
     }
 

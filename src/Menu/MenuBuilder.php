@@ -35,26 +35,12 @@ class MenuBuilder
         }
     }
 
-    public function createUserMenu(bool $showUsername = false): ItemInterface
+    public function createUserMenu(): ItemInterface
     {
         $menu = $this->factory->createItem('root');
         $menu->setChildrenAttribute('class', 'list-unstyled');
 
         $this->addProfileMenu($menu);
-        if ($showUsername) {
-            $profile = $menu->getChild($this->translator->trans('menu.profile'));
-            if ($profile !== null) {
-                $profile->setLabel('<span class="icon-user" aria-hidden="true"></span>'.htmlspecialchars($this->username, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'));
-                $profile->setLinkAttribute('class', 'mobile-profile-link');
-                $profile->setLinkAttribute('aria-label', $this->translator->trans('menu.profile').': '.$this->username);
-            }
-            foreach ($menu->getChildren() as $item) {
-                if ($item !== $profile) {
-                    $item->setLinkAttribute('class', 'account-subnavigation-link');
-                }
-            }
-            $menu->setChildrenAttribute('aria-label', $this->translator->trans('menu.profile').': '.$this->username);
-        }
         $menu->addChild('hr', [
             'label' => '<hr>',
             'labelAttributes' => ['class' => 'normal'],

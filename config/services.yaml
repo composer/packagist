@@ -108,13 +108,6 @@ services:
         tags:
             - { name: knp_menu.menu, alias: user_menu }
 
-    packagist.menu.mobile_user:
-        class: Knp\Menu\MenuItem
-        factory: ['@App\Menu\MenuBuilder', createUserMenu]
-        arguments: [true]
-        tags:
-            - { name: knp_menu.menu, alias: mobile_user_menu }
-
     packagist.menu.profile:
         class: Knp\Menu\MenuItem
         factory: ['@App\Menu\MenuBuilder', createProfileMenu]

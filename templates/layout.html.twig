@@ -92,7 +92,8 @@
                                 </section>
                             </li>
                             <li class="mobile-account-menu d-md-none">
-                                {{ knp_menu_render('mobile_user_menu', {'allow_safe_labels': true, 'depth': 1}) }}
+                                <span class="mobile-account-heading"><span class="icon-user" aria-hidden="true"></span>{{ app.user.username }}</span>
+                                {{ knp_menu_render('user_menu', {'allow_safe_labels': true, 'depth': 1}) }}
                             </li>
                         {%- else %}
                             <li>
