@@ -112,6 +112,12 @@ class SecurityNavigationTest extends IntegrationTestCase
         }
     }
 
+    public function testLegacyChangePasswordUrlRedirects(): void
+    {
+        $this->client->request('GET', '/profile/change-password');
+        self::assertResponseRedirects('/profile/security/password', 301);
+    }
+
     public function testAuthenticatorSetupAndConfirmationKeepExistingBehavior(): void
     {
         $crawler = $this->client->request('GET', '/users/alice/2fa/enable');
