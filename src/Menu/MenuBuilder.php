@@ -275,17 +275,17 @@ class MenuBuilder
             'route' => 'security_overview',
             'extras' => ['safe_label' => true, 'translation_domain' => false],
         ]);
-        $security->addChild('Overview', [
+        $security->addChild($this->translator->trans('menu.security_overview'), [
             'route' => 'security_overview',
             'extras' => ['translation_domain' => false, 'routes' => [
                 ['route' => 'user_2fa_configure'],
             ]],
         ]);
-        $security->addChild('Change password', [
+        $security->addChild($this->translator->trans('menu.change_password'), [
             'route' => 'change_password',
             'extras' => ['translation_domain' => false],
         ]);
-        $security->addChild('Authenticator app', [
+        $security->addChild($this->translator->trans('menu.authenticator_app'), [
             'route' => 'security_authenticator',
             'extras' => ['translation_domain' => false, 'routes' => [
                 ['route' => 'user_2fa_enable'],

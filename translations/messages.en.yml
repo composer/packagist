@@ -21,6 +21,8 @@ menu:
     settings: Settings
     change_password: Change password
     security: Security
+    security_overview: Overview
+    authenticator_app: Authenticator app
     my_packages: My packages
     my_organizations: My organizations
     my_favorites: My favorites
