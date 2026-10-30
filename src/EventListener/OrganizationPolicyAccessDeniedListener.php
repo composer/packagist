@@ -58,7 +58,7 @@ class OrganizationPolicyAccessDeniedListener
 
         if ($reason === OrganizationAccessDeniedReason::TwoFactorRequired) {
             $event->setResponse(new RedirectResponse(
-                $this->router->generate('user_2fa_configure', ['name' => $user->getUsername()]),
+                $this->router->generate('security_authenticator'),
                 Response::HTTP_FOUND,
             ));
 

@@ -277,9 +277,7 @@ class MenuBuilder
         ]);
         $security->addChild($this->translator->trans('menu.security_overview'), [
             'route' => 'security_overview',
-            'extras' => ['translation_domain' => false, 'routes' => [
-                ['route' => 'user_2fa_configure'],
-            ]],
+            'extras' => ['translation_domain' => false],
         ]);
         $security->addChild($this->translator->trans('menu.change_password'), [
             'route' => 'change_password',

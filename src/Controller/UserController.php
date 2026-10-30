@@ -289,27 +289,30 @@ class UserController extends Controller
 
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/users/{name}/2fa/', name: 'user_2fa_configure', methods: ['GET'])]
-    public function configureTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req): Response
+    public function configureTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser): Response
     {
-        if (!$this->isGranted('ROLE_DISABLE_2FA') && $user->getId() !== $loggedUser->getId()) {
-            throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
+        if ($user->getId() === $loggedUser->getId()) {
+            return $this->redirectToRoute('security_overview');
         }
 
-        if ($user->getId() === $loggedUser->getId()) {
-            $backupCode = $req->getSession()->remove('backup_code');
+        if (!$this->isGranted('ROLE_DISABLE_2FA')) {
+            throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
         return $this->render(
             'user/configure_two_factor_auth.html.twig',
-            ['user' => $user, 'backup_code' => $backupCode ?? null]
+            ['user' => $user, 'backup_code' => null]
         );
     }
 
     #[IsGranted('ROLE_USER')]
     #[Route('/profile/security', name: 'security_overview', methods: ['GET'])]
-    public function securityOverview(Request $request, #[CurrentUser] User $user): Response
+    public function securityOverview(Request $req, #[CurrentUser] User $user): Response
     {
-        return $this->configureTwoFactorAuthAction($user, $user, $request);
+        return $this->render(
+            'user/configure_two_factor_auth.html.twig',
+            ['user' => $user, 'backup_code' => $req->getSession()->remove('backup_code')]
+        );
     }
 
     #[IsGranted('ROLE_USER')]
@@ -413,9 +416,7 @@ class UserController extends Controller
 
             $this->addFlash('success', 'Authenticator app removed.');
 
-            return $user->getId() === $loggedUser->getId()
-                ? $this->redirectToRoute('security_overview')
-                : $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
+            return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
         }
 
         return $this->render(

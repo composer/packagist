@@ -30,7 +30,7 @@ class SecurityNavigationTest extends IntegrationTestCase
 
     public function testHamburgerTargetsTheMainMenuAndIncludesMobileAccountLinks(): void
     {
-        $crawler = $this->client->request('GET', '/users/alice/2fa/');
+        $crawler = $this->client->request('GET', '/profile/security');
         $toggle = $crawler->filter('button.navbar-toggler');
         $target = $toggle->attr('aria-controls');
         self::assertSame('#'.$target, $toggle->attr('data-bs-target'));
@@ -68,7 +68,6 @@ class SecurityNavigationTest extends IntegrationTestCase
     {
         $pages = [
             '/profile/security' => 'Overview',
-            '/users/alice/2fa/' => 'Overview',
             '/profile/security/password' => 'Change password',
             '/profile/security/authenticator' => 'Authenticator app',
         ];
@@ -89,13 +88,13 @@ class SecurityNavigationTest extends IntegrationTestCase
 
     public function testOverviewReflectsAuthenticatorStatus(): void
     {
-        $crawler = $this->client->request('GET', '/users/alice/2fa/');
+        $crawler = $this->client->request('GET', '/profile/security');
         self::assertSame('Not set up', $crawler->filter('[aria-labelledby="authenticator-heading"] .badge')->text());
         self::assertCount(0, $crawler->filter('a[href="/users/alice/2fa/disable"]'));
         $this->user->setTotpSecret('JBSWY3DPEHPK3PXP');
         self::getEM()->flush();
         $this->client->loginUser($this->user);
-        $crawler = $this->client->request('GET', '/users/alice/2fa/');
+        $crawler = $this->client->request('GET', '/profile/security');
         self::assertSame('Enabled', $crawler->filter('[aria-labelledby="authenticator-heading"] .badge')->text());
         self::assertSame('/profile/security/authenticator', $crawler->selectLink('View authenticator app settings')->attr('href'));
         self::assertCount(0, $crawler->filter('a[href="/users/alice/2fa/disable"]'));
@@ -146,6 +145,12 @@ class SecurityNavigationTest extends IntegrationTestCase
         self::assertSame('/profile/security', $this->client->getResponse()->headers->get('Location'));
     }
 
+    public function testOwnTwoFactorUrlRedirectsToSecurityOverview(): void
+    {
+        $this->client->request('GET', '/users/alice/2fa/');
+        self::assertResponseRedirects('/profile/security');
+    }
+
     public function testSecurityOverviewCannotBeViewedForAnotherUser(): void
     {
         $this->store(self::createUser('bob', 'bob@example.org'));
@@ -175,8 +180,10 @@ class SecurityNavigationTest extends IntegrationTestCase
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
         $crawler = $this->client->request('GET', '/users/alice/2fa/disable?token=invalid');
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
-        self::assertSame('/profile/security', $crawler->selectLink('Keep authenticator app')->attr('href'));
+        self::assertSame('/users/alice/2fa/', $crawler->selectLink('Keep authenticator app')->attr('href'));
         $this->client->click($crawler->selectLink('Remove authenticator app')->link());
+        self::assertResponseRedirects('/users/alice/2fa/');
+        $this->client->followRedirect();
         self::assertResponseRedirects('/profile/security');
         self::getEM()->clear();
         $updatedUser = self::getEM()->find(User::class, $this->user->getId());

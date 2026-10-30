@@ -24,7 +24,7 @@
         {% if needsTwoFactor %}
             <div class="alert alert-warning">
                 This invitation makes you an owner, which requires two-factor authentication.
-                Please <a href="{{ path('user_2fa_configure', { name: app.user.username }) }}">enable two-factor authentication</a>,
+                Please <a href="{{ path('security_authenticator') }}">enable two-factor authentication</a>,
                 then return to this page to accept.
             </div>
         {% endif %}
