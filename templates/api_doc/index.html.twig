@@ -247,6 +247,8 @@ GET https://repo.{{ packagist_host }}/p2/[vendor]/[package].json
         "name": "[vendor]/[package],
         "description": [description],
         "version": "[version1]",
+        "time": [release datetime, as set by the package author],
+        "published-time": [datetime the version was published on {{ packagist_host }}, not influenced by the package author],
         // ...
       },
       {
