@@ -10,9 +10,9 @@
         </div>
     {% endif %}
 
-    <p class="text-body-secondary mb-4">Manage your password and authenticator app.</p>
-
     {% if isActualUser %}
+        <p class="text-body-secondary mb-4">Manage your password and authenticator app.</p>
+
         <section class="card mb-3" aria-labelledby="password-heading">
             <div class="card-body">
                 <h4 class="h5" id="password-heading">Password</h4>
@@ -28,19 +28,11 @@
                 <span class="badge {{ user.totpAuthenticationEnabled ? 'text-bg-success' : 'text-bg-secondary' }}">{{ user.totpAuthenticationEnabled ? 'Enabled' : 'Not set up' }}</span>
             </div>
             <p>Use a time-based code from your authenticator app as your second factor when signing in.</p>
-            {% if isActualUser and user.totpAuthenticationEnabled %}
-                <a class="btn btn-secondary" href="{{ path('security_authenticator') }}">View authenticator app settings</a>
-            {% elseif isActualUser %}
-                <a class="btn btn-secondary" href="{{ path('security_authenticator') }}">Set up an authenticator app</a>
+            {% if isActualUser %}
+                <a class="btn btn-secondary" href="{{ path('security_authenticator') }}">{{ user.totpAuthenticationEnabled ? 'View authenticator app settings' : 'Set up an authenticator app' }}</a>
+            {% elseif user.totpAuthenticationEnabled %}
+                <a class="text-danger" href="{{ path('user_2fa_disable', {name: user.username}) }}">Remove authenticator app</a>
             {% endif %}
         </div>
     </section>
-
-    {% if user.totpAuthenticationEnabled %}
-        <section class="border-top pt-3" aria-labelledby="disable-heading">
-            <h4 class="h5" id="disable-heading">Remove authenticator app</h4>
-            <p>This removes the authenticator app from this account and invalidates its backup code.</p>
-            <a class="text-danger" href="{{ path('user_2fa_disable', {name: user.username}) }}">Remove authenticator app</a>
-        </section>
-    {% endif %}
 {% endblock %}

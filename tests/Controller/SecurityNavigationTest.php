@@ -97,9 +97,8 @@ class SecurityNavigationTest extends IntegrationTestCase
         $this->client->loginUser($this->user);
         $crawler = $this->client->request('GET', '/users/alice/2fa/');
         self::assertSame('Enabled', $crawler->filter('[aria-labelledby="authenticator-heading"] .badge')->text());
-        self::assertCount(0, $crawler->filter('[aria-labelledby="recovery-heading"]'));
-        self::assertCount(0, $crawler->filter('a[href="/profile/security/recovery"]'));
-        self::assertCount(1, $crawler->filter('a[href="/users/alice/2fa/disable"]'));
+        self::assertSame('/profile/security/authenticator', $crawler->selectLink('View authenticator app settings')->attr('href'));
+        self::assertCount(0, $crawler->filter('a[href="/users/alice/2fa/disable"]'));
     }
 
     public function testSecurityPagesRequireAuthentication(): void
@@ -196,6 +195,8 @@ class SecurityNavigationTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertCount(0, $crawler->filter('.security-tabs'));
         self::assertCount(0, $crawler->filter('[aria-labelledby="password-heading"]'));
+        self::assertStringNotContainsString('Manage your password', $crawler->text());
+        self::assertCount(1, $crawler->filter('a[href="/users/bob/2fa/disable"]'));
         $crawler = $this->client->click($crawler->selectLink('Remove authenticator app')->link());
         self::assertSame('/users/bob/2fa/', $crawler->selectLink('Keep authenticator app')->attr('href'));
         $this->client->click($crawler->selectLink('Remove authenticator app')->link());
