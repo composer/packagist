@@ -15,7 +15,7 @@
     </h2>
     <div class="row">
         {% if isActualUser %}
-            <nav class="col-lg-3 d-none d-lg-block" aria-label="Account settings">
+            <nav class="col-lg-3 d-none d-md-block" aria-label="Account settings">
                 {{ knp_menu_render('profile_menu', {currentClass: 'active', ancestorClass: 'active', depth: 1, allow_safe_labels: true}) }}
             </nav>
         {% endif %}

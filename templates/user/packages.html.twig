@@ -19,7 +19,7 @@
 
 <section class="row">
     {% if isActualUser %}
-        <section class="col-lg-3 d-none d-lg-block">
+        <section class="col-lg-3 d-none d-md-block">
             {{ knp_menu_render('profile_menu', {'currentClass': 'active', 'ancestorClass': 'active', 'depth': 1, 'allow_safe_labels': true}) }}
         </section>
     {% endif %}

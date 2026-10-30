@@ -112,6 +112,16 @@ class SecurityNavigationTest extends IntegrationTestCase
         }
     }
 
+    public function testAccountSidebarShowsWhereverTheMobileAccountMenuIsHidden(): void
+    {
+        foreach (['/profile/', '/profile/security', '/users/alice/packages/', '/users/alice/favorites/'] as $url) {
+            $crawler = $this->client->request('GET', $url);
+            self::assertResponseIsSuccessful();
+            self::assertCount(1, $crawler->filter('header .mobile-account-menu.d-md-none'), $url);
+            self::assertCount(1, $crawler->filter('.d-none.d-md-block > ul.nav-tabs.flex-column'), $url);
+        }
+    }
+
     public function testLegacyChangePasswordUrlRedirects(): void
     {
         $this->client->request('GET', '/profile/change-password');
