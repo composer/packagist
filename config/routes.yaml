@@ -40,3 +40,10 @@ mirrors:
     controller: 'Symfony\Bundle\FrameworkBundle\Controller\TemplateController'
     defaults:
         template: 'mirrors/index.html.twig'
+
+change_password_legacy:
+    path: '/profile/change-password'
+    controller: 'Symfony\Bundle\FrameworkBundle\Controller\RedirectController::redirectAction'
+    defaults:
+        route: 'change_password'
+        permanent: true

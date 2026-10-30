@@ -1,0 +1,38 @@
+{% extends 'layout.html.twig' %}
+
+{% block content %}
+    {% set isActualUser = app.user and app.user.username === user.username %}
+    <h2 class="title">
+        {{ user.username }}
+        {% if not isActualUser %}
+            <small>
+                member since: {{ user.createdAt|date('M d, Y') }}
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+                {% endif %}
+            </small>
+        {% endif %}
+    </h2>
+    <div class="row">
+        {% if isActualUser %}
+            <nav class="col-lg-3 d-none d-md-block" aria-label="Account settings">
+                {{ knp_menu_render('profile_menu', {currentClass: 'active', ancestorClass: 'active', depth: 1, allow_safe_labels: true}) }}
+            </nav>
+        {% endif %}
+        <section class="security-settings {{ isActualUser ? 'col-lg-9' : 'col-12' }}">
+            {% if isActualUser %}
+                {% set securityMenu = knp_menu_get('profile_menu', ['menu.security'|trans]) %}
+                <nav aria-label="Security settings">
+                    <ul class="nav nav-tabs security-tabs flex-wrap mb-4">
+                    {% for tab in securityMenu.children %}
+                        <li{% if tab is knp_menu_current %} class="active"{% endif %}>
+                            <a href="{{ tab.uri }}"{% if tab is knp_menu_current %} aria-current="page"{% endif %}>{{ tab.label }}</a>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </nav>
+            {% endif %}
+            {% block security_content %}{% endblock %}
+        </section>
+    </div>
+{% endblock %}
