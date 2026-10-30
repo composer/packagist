@@ -77,9 +77,13 @@ echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
                     },
                     yAxis: {
                         // scale: true picks a sensible non-zero minimum so flat
-                        // high-volume charts don't look artificially full
+                        // high-volume charts don't look artificially full; the max
+                        // floor stops 0→2 installs rendering as full-height spikes
                         type: 'value',
                         scale: true,
+                        max: function (extent) {
+                            return Math.max(extent.max, 20);
+                        },
                         axisLabel: {show: false},
                         axisTick: {show: false},
                         splitLine: {show: false}
