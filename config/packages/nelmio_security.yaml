@@ -8,6 +8,8 @@ nelmio_security:
         enabled: '%force_ssl%'
         hosts: '%forced_ssl_hosts%'
         hsts_max_age: 31104000 # 1y
+        hsts_subdomains: true
+        hsts_preload: true
     csp:
         enabled: true
         report_logger_service: logger
