@@ -19,6 +19,7 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\PackageManager;
+use App\Package\HttpGitShadow;
 use App\Package\Updater;
 use App\Package\VcsRepositoryFactory;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
@@ -73,6 +74,7 @@ class UpdaterWorker
         private readonly FallbackGitHubAuthProvider $fallbackGitHubAuthProvider,
         CacheItemPoolInterface $cache,
         private readonly string $updaterWorkerCacheDir,
+        private readonly HttpGitShadow $httpGitShadow,
     ) {
         $this->cache = new Psr16Cache($cache);
         $this->logger = $logger;
@@ -230,6 +232,11 @@ class UpdaterWorker
             $emptyRefCache->setEmptyReferences($repository->getEmptyReferences());
             $em->persist($emptyRefCache);
             $em->flush();
+
+            $driver = $repository->getDriver();
+            if ($driver) {
+                $this->httpGitShadow->compareWithUpdate($package, $driver, $versionCache, $config, $httpDownloader);
+            }
         } catch (\Throwable $e) {
             $e = VcsRepositoryFactory::unwrapDisabledGitFallback($e);
             $output = $this->cleanupOutput($io->getOutput());

@@ -64,6 +64,21 @@ class VersionCache implements VersionCacheInterface
         return null;
     }
 
+    /**
+     * @return list<string> source references of the cached versions and references known to have no composer.json
+     */
+    public function getKnownReferences(): array
+    {
+        $references = $this->emptyReferences;
+        foreach ($this->versionCache as $version) {
+            if (isset($version['source']['reference'])) {
+                $references[] = $version['source']['reference'];
+            }
+        }
+
+        return array_values(array_unique($references));
+    }
+
     public function clearVersion(string $version): void
     {
         $parser = new VersionParser();
