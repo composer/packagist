@@ -439,6 +439,58 @@ class HttpGitDriverTest extends TestCase
         yield 'refused' => [static fn () => GitHttpBackendDownloader::response(200, 'application/x-git-upload-pack-result', PktLine::encode("ERR upload-pack: not our ref\n")), ServerRefusedException::class];
     }
 
+    public function testPacksAreInflatedWithinTheStorageBudget(): void
+    {
+        [$commit, $client] = self::largeRepository();
+        $repository = new RemoteRepository($client, maxStoredBytes: 20 * 1024 * 1024);
+
+        $this->expectException(LimitExceededException::class);
+        // refused while inflating, not once the whole pack sits in memory
+        $this->expectExceptionMessage('Pack contents exceed the limit of 20971520 bytes');
+
+        $repository->readFile($commit, 'composer.json');
+    }
+
+    public function testPacksAreInflatedWithinTheMemoryLimit(): void
+    {
+        [$commit, $client] = self::largeRepository();
+        $repository = new RemoteRepository($client);
+        $memoryLimit = (string) \ini_get('memory_limit');
+        // leaves 120 MB, of which a pack may use half, so the 90 MB of blobs are refused after a few of them
+        ini_set('memory_limit', (intdiv(memory_get_usage(true), 1024 * 1024) + 120).'M');
+
+        $this->expectException(LimitExceededException::class);
+        $this->expectExceptionMessage('Pack contents exceed the limit of');
+
+        try {
+            $repository->readFile($commit, 'composer.json');
+        } finally {
+            ini_set('memory_limit', $memoryLimit);
+        }
+    }
+
+    /**
+     * @return array{string, SmartHttpClient} the commit of a repository whose blobs inflate to 90 MB from a pack of a few hundred KB, and a client for it
+     */
+    private static function largeRepository(): array
+    {
+        static $commit = null;
+        if ($commit === null) {
+            $builder = new GitRepositoryBuilder(self::$projectRoot.'/work-large');
+            $files = ['composer.json' => '{"name":"acme/large"}'];
+            for ($i = 0; $i < 6; $i++) {
+                $files['blob-'.$i.'.txt'] = str_repeat(\sprintf("%-59s\n", 'blob '.$i), 262_144);
+            }
+            $commit = $builder->commit($files);
+            $builder->publish(self::$projectRoot, 'large.git');
+        }
+
+        // deltas between the blobs take git seconds to find and the parser seconds to apply, which is not what these tests are about
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot, true, ['pack.window' => '0']);
+
+        return [$commit, new SmartHttpClient($downloader, GitHttpBackendDownloader::BASE_URL.'large.git')];
+    }
+
     /**
      * @param ?list<string> $knownReferences
      */

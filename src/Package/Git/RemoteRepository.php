@@ -284,7 +284,7 @@ final class RemoteRepository
 
     private function store(string $pack): void
     {
-        foreach (new PackParser($this->getObjectFormat())->parse($pack) as $oid => $object) {
+        foreach (new PackParser($this->getObjectFormat(), maxTotalSize: $this->packBudget())->parse($pack) as $oid => $object) {
             if (isset($this->objects[$oid])) {
                 continue;
             }
@@ -294,5 +294,39 @@ final class RemoteRepository
             }
             $this->objects[$oid] = $object;
         }
+    }
+
+    /**
+     * How much a pack may inflate to: what is left of the storage budget, as far as the memory limit has room for it
+     */
+    private function packBudget(): int
+    {
+        $budget = $this->maxStoredBytes - $this->storedBytes;
+        $memoryLimit = self::memoryLimit();
+        if ($memoryLimit !== null) {
+            // the pack, delta bases and the rest of the update need room next to the inflated objects
+            $budget = min($budget, intdiv($memoryLimit - memory_get_usage(true), 2));
+        }
+
+        return max(0, $budget);
+    }
+
+    /**
+     * @return ?int null when unlimited
+     */
+    private static function memoryLimit(): ?int
+    {
+        $limit = \ini_get('memory_limit');
+        if ($limit === false || (int) $limit <= 0) {
+            return null;
+        }
+
+        // ini shorthand only looks at the last character
+        return (int) $limit * match (strtolower(substr($limit, -1))) {
+            'g' => 1024 ** 3,
+            'm' => 1024 ** 2,
+            'k' => 1024,
+            default => 1,
+        };
     }
 }

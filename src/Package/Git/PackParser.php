@@ -26,7 +26,7 @@ final readonly class PackParser
         private ObjectFormat $format,
         private int $maxObjects = 500_000,
         private int $maxObjectSize = 64 * 1024 * 1024,
-        private int $maxTotalSize = 512 * 1024 * 1024,
+        private int $maxTotalSize = 256 * 1024 * 1024,
     ) {
     }
 
