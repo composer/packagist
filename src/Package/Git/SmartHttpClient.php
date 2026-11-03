@@ -393,10 +393,10 @@ final class SmartHttpClient
         if ($status === null || $status < 400) {
             // blocked private IPs and insecure redirects are permanent, anything else at the network level may go away
             if (str_contains($e->getMessage(), 'is blocked for') || str_contains($e->getMessage(), 'does not allow connections to http://')) {
-                return new UnsupportedRepositoryException($message, 0, $e);
+                return new UnsupportedRepositoryException($message, null, $e);
             }
 
-            return new RepositoryUnavailableException($message, 0, $e);
+            return new RepositoryUnavailableException($message, null, $e);
         }
         if ($status === 429 || $status >= 500) {
             return new RepositoryUnavailableException($message, $status, $e);

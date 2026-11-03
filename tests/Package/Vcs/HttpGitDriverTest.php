@@ -14,6 +14,7 @@ namespace App\Tests\Package\Vcs;
 
 use App\Package\Git\LimitExceededException;
 use App\Package\Git\PktLine;
+use App\Package\Git\ProtocolException;
 use App\Package\Git\RemoteRepository;
 use App\Package\Git\RepositoryNotFoundException;
 use App\Package\Git\RepositoryUnavailableException;
@@ -405,6 +406,37 @@ class HttpGitDriverTest extends TestCase
         self::assertInstanceOf(HttpGitDriver::class, $repository->getDriver());
         // 9999999-dev is the alias Composer adds for the default branch
         self::assertSame(['9999999-dev', 'dev-feature', 'dev-main', 'v1.0.0', 'v1.1.0'], $versions);
+    }
+
+    /**
+     * @param \Closure(): \Composer\Util\Http\Response $response
+     * @param class-string<\Throwable>                 $exception
+     */
+    #[DataProvider('provideVersionReadFailures')]
+    public function testFailuresReadingAVersionAbortTheUpdate(\Closure $response, string $exception): void
+    {
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $commit = self::$expected['sha1']['tags']['v1.0.0'];
+        $downloader->interceptor = static fn (string $url, string $method, ?string $body) => $body !== null && str_contains($body, 'want '.$commit) ? $response() : null;
+        $repository = new VcsRepository(['url' => GitHttpBackendDownloader::BASE_URL.'foo-sha1.git'], new NullIO(), $this->createConfig(), $downloader, null, null, ['git' => HttpGitDriver::class]);
+
+        // VcsRepository would otherwise skip v1.0.0 and carry on, and Packagist then deletes the version as gone upstream
+        $this->expectException($exception);
+
+        $repository->getPackages();
+    }
+
+    /**
+     * @return iterable<string, array{\Closure(): \Composer\Util\Http\Response, class-string<\Throwable>}>
+     */
+    public static function provideVersionReadFailures(): iterable
+    {
+        yield '503' => [static fn () => GitHttpBackendDownloader::response(503, 'text/plain', 'error'), RepositoryUnavailableException::class];
+        yield 'timeout' => [static function (): never {
+            throw new TransportException('curl error 28 while downloading: Operation timed out', 0);
+        }, RepositoryUnavailableException::class];
+        yield 'garbage instead of a pack' => [static fn () => GitHttpBackendDownloader::response(200, 'application/x-git-upload-pack-result', 'not a pkt-line'), ProtocolException::class];
+        yield 'refused' => [static fn () => GitHttpBackendDownloader::response(200, 'application/x-git-upload-pack-result', PktLine::encode("ERR upload-pack: not our ref\n")), ServerRefusedException::class];
     }
 
     /**
