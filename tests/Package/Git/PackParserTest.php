@@ -103,6 +103,27 @@ class PackParserTest extends TestCase
         self::assertSame('hello world!', $objects[ObjectFormat::Sha1->hashObject(ObjectType::Blob, 'hello world!')]->contents);
     }
 
+    public function testResolvesChainsOfRefDeltasInLinearTime(): void
+    {
+        // every object is a delta against the one after it, inserting its own contents, so only the last object is a plain blob
+        $count = 20_000;
+        $contents = static fn (int $i) => \sprintf('object %08d', $i);
+        $pack = [];
+        for ($i = 0; $i < $count - 1; $i++) {
+            $base = $contents($i + 1);
+            $pack[] = self::refDelta(hex2bin(ObjectFormat::Sha1->hashObject(ObjectType::Blob, $base)), self::deltaHeader(\strlen($base), 15)."\x0F".$contents($i));
+        }
+        $pack[] = self::object(ObjectType::Blob->value, $contents($count - 1));
+
+        $start = hrtime(true);
+        $objects = new PackParser(ObjectFormat::Sha1)->parse(self::buildPack($pack));
+        $elapsed = (hrtime(true) - $start) / 1e9;
+
+        self::assertCount($count, $objects);
+        self::assertSame($contents(0), $objects[ObjectFormat::Sha1->hashObject(ObjectType::Blob, $contents(0))]->contents);
+        self::assertLessThan(5, $elapsed, 'Resolving the chain took '.round($elapsed, 1).'s, a sign that it went back to scanning every pending delta per resolved object');
+    }
+
     #[DataProvider('provideInvalidPacks')]
     public function testRejectsInvalidPacks(\Closure $pack, string $exception, string $message): void
     {

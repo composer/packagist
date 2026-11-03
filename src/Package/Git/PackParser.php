@@ -58,7 +58,7 @@ final readonly class PackParser
         $objects = [];
         /** @var array<int, string> $oidsByOffset */
         $oidsByOffset = [];
-        /** @var list<array{offset: int, base: string, delta: string}> $pendingRefDeltas */
+        /** @var array<string, list<array{int, string}>> offset and delta data of ref deltas waiting for their base, by base id */
         $pendingRefDeltas = [];
         $totalSize = 0;
         $pos = 12;
@@ -114,46 +114,48 @@ final readonly class PackParser
             } elseif (isset($objects[$baseOid])) {
                 $object = new GitObject($objects[$baseOid]->type, $this->applyDelta($objects[$baseOid]->contents, $data));
             } else {
-                // ref deltas may point at objects later in the pack
-                $pendingRefDeltas[] = ['offset' => $offset, 'base' => $baseOid, 'delta' => $data];
+                // ref deltas may point at objects later in the pack, their data counts until the base shows up
+                $pendingRefDeltas[$baseOid][] = [$offset, $data];
+                $totalSize += \strlen($data);
+                $this->assertTotalSize($totalSize);
                 continue;
             }
 
             $totalSize += \strlen($object->contents);
-            if ($totalSize > $this->maxTotalSize) {
-                throw new LimitExceededException('Pack contents exceed the limit of '.$this->maxTotalSize.' bytes');
+            $this->assertTotalSize($totalSize);
+
+            // deltas waiting for an object are resolved as soon as it is stored, so a chain of them costs linear time
+            $resolved = [[$offset, $object]];
+            while ($resolved !== []) {
+                [$objectOffset, $object] = array_pop($resolved);
+                $oid = $this->format->hashObject($object->type, $object->contents);
+                $objects[$oid] = $object;
+                $oidsByOffset[$objectOffset] = $oid;
+                foreach ($pendingRefDeltas[$oid] ?? [] as [$deltaOffset, $delta]) {
+                    $result = new GitObject($object->type, $this->applyDelta($object->contents, $delta));
+                    $totalSize += \strlen($result->contents) - \strlen($delta);
+                    $this->assertTotalSize($totalSize);
+                    $resolved[] = [$deltaOffset, $result];
+                }
+                unset($pendingRefDeltas[$oid]);
             }
-            $oid = $this->format->hashObject($object->type, $object->contents);
-            $objects[$oid] = $object;
-            $oidsByOffset[$offset] = $oid;
         }
 
         if ($pos !== $end) {
             throw new ProtocolException('Unexpected data after the last pack object');
         }
-
-        while ($pendingRefDeltas !== []) {
-            $remaining = [];
-            foreach ($pendingRefDeltas as $pending) {
-                if (!isset($objects[$pending['base']])) {
-                    $remaining[] = $pending;
-                    continue;
-                }
-                $base = $objects[$pending['base']];
-                $object = new GitObject($base->type, $this->applyDelta($base->contents, $pending['delta']));
-                $totalSize += \strlen($object->contents);
-                if ($totalSize > $this->maxTotalSize) {
-                    throw new LimitExceededException('Pack contents exceed the limit of '.$this->maxTotalSize.' bytes');
-                }
-                $objects[$this->format->hashObject($object->type, $object->contents)] = $object;
-            }
-            if (\count($remaining) === \count($pendingRefDeltas)) {
-                throw new ProtocolException('Pack contains deltas against objects it does not include');
-            }
-            $pendingRefDeltas = $remaining;
+        if ($pendingRefDeltas !== []) {
+            throw new ProtocolException('Pack contains deltas against objects it does not include');
         }
 
         return $objects;
+    }
+
+    private function assertTotalSize(int $totalSize): void
+    {
+        if ($totalSize > $this->maxTotalSize) {
+            throw new LimitExceededException('Pack contents exceed the limit of '.$this->maxTotalSize.' bytes');
+        }
     }
 
     /**
