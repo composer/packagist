@@ -32,6 +32,7 @@ use Composer\Package\CompletePackage;
 use Composer\Package\Link;
 use Composer\Repository\RepositoryInterface;
 use Composer\Repository\Vcs\GitDriver;
+use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
 use Composer\Semver\Constraint\MatchAllConstraint;
@@ -108,6 +109,81 @@ class UpdaterTest extends IntegrationTestCase
 
         $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
         $this->assertStringContainsString('This is the readme', $readme->contents);
+        self::assertNull($this->package->readmeReference);
+    }
+
+    public function testOnlyRereadsTheReadmeWhenTheDefaultBranchMoves(): void
+    {
+        $this->bindReadmeDriver();
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')->willReturn([]);
+        $this->driverMock->method('getBranches')->willReturnOnConsecutiveCalls(
+            ['master' => 'aaaa', 'dev' => 'bbbb'],
+            ['master' => 'aaaa', 'dev' => 'cccc'],
+            ['master' => 'dddd', 'dev' => 'cccc'],
+        );
+        $this->driverMock->expects($this->exactly(2))->method('getFileContent')->with('README.md', 'master')
+                         ->willReturnOnConsecutiveCalls('First readme', 'Second readme');
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        self::assertSame('aaaa', $this->package->readmeReference);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        self::assertStringContainsString('First readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        self::assertStringContainsString('Second readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
+        self::assertSame('dddd', $this->package->readmeReference);
+    }
+
+    public function testForcedUpdatesRereadTheReadme(): void
+    {
+        $this->package->readmeReference = 'aaaa';
+        $this->bindReadmeDriver();
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')->willReturn([]);
+        $this->driverMock->method('getBranches')->willReturn(['master' => 'aaaa']);
+        $this->driverMock->expects($this->once())->method('getFileContent')->willReturn('Fresh readme');
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::FORCE_DUMP);
+
+        self::assertStringContainsString('Fresh readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
+    }
+
+    public function testFailedReadmeReadIsRetriedOnTheNextUpdate(): void
+    {
+        $this->package->readmeReference = 'aaaa';
+        $this->bindReadmeDriver();
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')->willReturn([]);
+        $this->driverMock->method('getBranches')->willReturn(['master' => 'bbbb']);
+        $this->driverMock->expects($this->once())->method('getFileContent')->willThrowException(new \RuntimeException('timeout'));
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        self::assertSame('aaaa', $this->package->readmeReference);
+    }
+
+    public function testUnchangedGitHubReadmeStillUpdatesRepoData(): void
+    {
+        $package = self::createPackage('test/gh', 'https://github.com/test/gh');
+        $package->readmeReference = 'aaaa';
+        $this->store($package);
+        $this->getEM()->persist(new PackageReadme($package, 'Old readme'));
+        $this->getEM()->flush();
+
+        $driver = $this->createStub(GitHubDriver::class);
+        $driver->method('getRootIdentifier')->willReturn('main');
+        $driver->method('getComposerInformation')->willReturn([]);
+        $driver->method('getBranches')->willReturn(['main' => 'aaaa']);
+        $driver->method('getRepoData')->willReturn(['stargazers_count' => 42]);
+        $this->repositoryMock->method('getDriver')->willReturn($driver);
+
+        $this->updater->update($this->ioMock, $this->config, $package, $this->repositoryMock);
+
+        self::assertSame(42, $package->getGitHubStars());
+        self::assertSame('Old readme', $this->getEM()->find(PackageReadme::class, $package->getId())->contents);
+        self::assertSame('aaaa', $package->readmeReference);
     }
 
     public function testFiltersDangerousUrlSchemesFromMetadata(): void

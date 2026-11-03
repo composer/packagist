@@ -479,12 +479,23 @@ class Updater
 
         $em->flush();
 
+        // the readme only changes with the default branch, forced updates re-read it anyway
+        $readmeReference = $this->getDefaultBranchReference($driver);
+        $refreshReadme = $flags !== 0 || $readmeReference === null || $readmeReference !== $package->readmeReference;
         if (null !== ($match = $package->getGitHubComponents())) {
-            $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver);
+            $readmeUpdated = $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver, $refreshReadme);
         } elseif (null !== ($match = $package->getGitLabComponents())) {
-            $this->updateGitLabInfo($httpDownloader, $io, $package, $match[1], $match[2], $driver);
+            $readmeUpdated = $this->updateGitLabInfo($httpDownloader, $io, $package, $match[1], $match[2], $driver, $refreshReadme);
         } else {
-            $this->updateReadme($io, $package, $driver);
+            // GitHub/GitLab info handled separately in updateGitHubInfo/updateGitLabInfo, sweep the special attributes
+            $package->setGitHubStars(null);
+            $package->setGitHubWatches(null);
+            $package->setGitHubForks(null);
+            $package->setGitHubOpenIssues(null);
+            $readmeUpdated = $refreshReadme && $this->updateReadme($io, $package, $driver);
+        }
+        if ($readmeUpdated) {
+            $package->readmeReference = $readmeReference;
         }
 
         $usingDetails = '';
@@ -1023,17 +1034,24 @@ class Updater
         );
     }
 
+    private function getDefaultBranchReference(VcsDriverInterface $driver): ?string
+    {
+        try {
+            $reference = $driver->getBranches()[$driver->getRootIdentifier()] ?? null;
+        } catch (\Exception) {
+            return null;
+        }
+
+        return \is_string($reference) && \strlen($reference) <= 64 ? $reference : null;
+    }
+
     /**
      * Update the readme for $package from $repository.
+     *
+     * @return bool whether the readme was read successfully
      */
-    private function updateReadme(IOInterface $io, Package $package, VcsDriverInterface $driver): void
+    private function updateReadme(IOInterface $io, Package $package, VcsDriverInterface $driver): bool
     {
-        // GitHub readme & info handled separately in updateGitHubInfo, sweep the special attributes
-        $package->setGitHubStars(null);
-        $package->setGitHubWatches(null);
-        $package->setGitHubForks(null);
-        $package->setGitHubOpenIssues(null);
-
         try {
             $composerInfo = $driver->getComposerInformation($driver->getRootIdentifier());
             if (isset($composerInfo['readme']) && \is_string($composerInfo['readme'])) {
@@ -1080,7 +1098,11 @@ class Updater
                 true,
                 IOInterface::VERBOSE
             );
+
+            return false;
         }
+
+        return true;
     }
 
     private function updatePackageReadme(Package $package, ?string $contents): void
@@ -1104,10 +1126,13 @@ class Updater
         $this->getEM()->persist($readme);
     }
 
-    private function updateGitHubInfo(HttpDownloader $httpDownloader, Package $package, string $owner, string $repo, VcsDriverInterface $driver): void
+    /**
+     * @return bool whether the readme was read successfully
+     */
+    private function updateGitHubInfo(HttpDownloader $httpDownloader, Package $package, string $owner, string $repo, VcsDriverInterface $driver, bool $refreshReadme): bool
     {
         if (!$driver instanceof GitHubDriver) {
-            return;
+            return false;
         }
 
         $baseApiUrl = 'https://api.github.com/repos/'.$owner.'/'.$repo;
@@ -1130,12 +1155,16 @@ class Updater
             $package->setGitHubOpenIssues((int) $repoData['open_issues_count']);
         }
 
+        if (!$refreshReadme) {
+            return false;
+        }
+
         try {
             $opts = ['http' => ['header' => ['Accept: application/vnd.github.html+json', 'X-GitHub-Api-Version: 2022-11-28']]];
             $readme = $httpDownloader->get($baseApiUrl.'/readme', $opts)->getBody();
         } catch (\Exception $e) {
             if (!$e instanceof TransportException || $e->getCode() !== 404) {
-                return;
+                return false;
             }
             // 404s just mean no readme present so we proceed with the rest
             $readme = null;
@@ -1144,18 +1173,28 @@ class Updater
         // The content of all readmes, regardless of file type,
         // is returned as HTML by GitHub API
         $this->updatePackageReadme($package, $this->prepareReadme($readme, 'github.com', $owner, $repo));
+
+        return true;
     }
 
-    private function updateGitLabInfo(HttpDownloader $httpDownloader, IOInterface $io, Package $package, string $owner, string $repo, VcsDriverInterface $driver): void
+    /**
+     * @return bool whether the readme was read successfully
+     */
+    private function updateGitLabInfo(HttpDownloader $httpDownloader, IOInterface $io, Package $package, string $owner, string $repo, VcsDriverInterface $driver, bool $refreshReadme): bool
     {
         // GitLab provides a generic URL for the original formatted README,
         // which requires further elaboration. Here we use the already existing
         // function to handle it, and back here to populate the other available
         // metadata
-        $this->updateReadme($io, $package, $driver);
+        $readmeUpdated = $refreshReadme && $this->updateReadme($io, $package, $driver);
 
         if (!$driver instanceof GitLabDriver) {
-            return;
+            $package->setGitHubStars(null);
+            $package->setGitHubWatches(null);
+            $package->setGitHubForks(null);
+            $package->setGitHubOpenIssues(null);
+
+            return $readmeUpdated;
         }
 
         $repoData = $driver->getRepoData();
@@ -1172,6 +1211,8 @@ class Updater
 
         // GitLab does not include a "watch" feature
         $package->setGitHubWatches(null);
+
+        return $readmeUpdated;
     }
 
     /**
