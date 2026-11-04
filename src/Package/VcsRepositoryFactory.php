@@ -13,6 +13,7 @@
 namespace App\Package;
 
 use Composer\Config;
+use Composer\Downloader\TransportException;
 use Composer\Factory;
 use Composer\IO\IOInterface;
 use Composer\Repository\VcsRepository;
@@ -52,7 +53,20 @@ final class VcsRepositoryFactory
 
         self::assertPublicHost($url);
 
-        return new VcsRepository(['url' => $url, 'options' => $options], $io, $config, $httpDownloader, null, null, self::DRIVERS, $versionCache);
+        // a GitHub API failure fails the update instead of switching to a git clone, which lacks the repo data and readme
+        return new VcsRepository(['url' => $url, 'allow-git-fallback' => false, 'options' => $options], $io, $config, $httpDownloader, null, null, self::DRIVERS, $versionCache);
+    }
+
+    /**
+     * Returns the API error that made GitHubDriver attempt the (disabled) git fallback, or $e itself
+     */
+    public static function unwrapDisabledGitFallback(\Throwable $e): \Throwable
+    {
+        if ($e instanceof \RuntimeException && $e->getMessage() === 'Fallback to git driver disabled' && $e->getPrevious() instanceof TransportException) {
+            return $e->getPrevious();
+        }
+
+        return $e;
     }
 
     /**

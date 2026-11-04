@@ -230,15 +230,8 @@ class UpdaterWorker
             $emptyRefCache->setEmptyReferences($repository->getEmptyReferences());
             $em->persist($emptyRefCache);
             $em->flush();
-
-            // github update downgraded to a git clone, this should not happen, so check through API whether the package still exists
-            $driver = $repository->getDriver();
-            if ($driver && Preg::isMatchStrictGroups('{[@/]github.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $match) && str_starts_with($driver->getUrl(), 'git@')) {
-                if ($result = $this->checkForDeadGitHubPackage($package, $match[1], $httpDownloader, $this->cleanupOutput($io->getOutput()))) {
-                    return $result;
-                }
-            }
         } catch (\Throwable $e) {
+            $e = VcsRepositoryFactory::unwrapDisabledGitFallback($e);
             $output = $this->cleanupOutput($io->getOutput());
 
             if (!$this->getEM()->isOpen()) {
@@ -333,7 +326,9 @@ class UpdaterWorker
                 $found404 = new \DateTimeImmutable('+7 days');
             } elseif ($e instanceof TransportException && $e->getStatusCode() === 409 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?/git/refs/heads\?per_page=100" file could not be downloaded \(HTTP/2 409 \)}', $e->getMessage())) {
                 $found404 = true;
-            } elseif ($e instanceof TransportException && $e->getStatusCode() === 451 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded \(HTTP/2 451 \)}', $e->getMessage())) {
+            } elseif ($e instanceof TransportException && \in_array($e->getStatusCode(), [404, 451], true) && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded \(HTTP/2 (404|451) \)}', $e->getMessage())) {
+                $found404 = true;
+            } elseif ($e instanceof TransportException && $e->getStatusCode() === 403 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded}', $e->getMessage()) && str_contains((string) $e->getResponse(), 'Repository access blocked')) {
                 $found404 = true;
             }
 

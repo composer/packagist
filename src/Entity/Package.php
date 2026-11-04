@@ -632,6 +632,7 @@ class Package
                 $this->unfreeze();
             }
         } catch (\Exception $e) {
+            $e = VcsRepositoryFactory::unwrapDisabledGitFallback($e);
             $this->vcsDriverError = '['.$e::class.'] '.$e->getMessage();
         }
     }
