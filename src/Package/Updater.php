@@ -202,6 +202,7 @@ class Updater
         if (!$driver) {
             throw new \RuntimeException('Driver could not be established for package '.$package->getName().' ('.$package->getRepository().')');
         }
+        $package->unreachableSince = null;
 
         if ($package->isFrozen()) {
             return $package;

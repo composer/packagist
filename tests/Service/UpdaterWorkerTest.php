@@ -96,13 +96,24 @@ class UpdaterWorkerTest extends IntegrationTestCase
         self::assertStringStartsWith('git_remote_repository_not_found: RuntimeException: Failed to execute git clone', $this->lastFreezeAuditAttributes()['internalReason']);
     }
 
-    public function testSuccessfulUpdateClearsUnreachableSince(): void
+    public function testChangingTheRepositoryClearsUnreachableSince(): void
     {
         $package = $this->storePackage(new \DateTimeImmutable('-20 days'));
 
-        $package->setUpdatedAt(new \DateTimeImmutable());
+        $package->setRepository('https://8.8.4.4/acme/lib.git');
 
         self::assertNull($package->unreachableSince);
+    }
+
+    public function testUnrelatedPackageChangesKeepUnreachableSince(): void
+    {
+        $since = new \DateTimeImmutable('-20 days');
+        $package = $this->storePackage($since);
+
+        $package->setUpdatedAt(new \DateTimeImmutable());
+        $package->setAbandoned(true);
+
+        self::assertSame($since, $package->unreachableSince);
     }
 
     public function testUnfreezeClearsUnreachableSince(): void

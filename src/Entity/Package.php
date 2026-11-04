@@ -218,7 +218,7 @@ class Package
     private bool $updateFailureNotified = false;
 
     /**
-     * First of a run of update failures that escalate to a gone freeze if they persist, cleared by a successful update
+     * First of a run of update failures that escalate to a gone freeze if they persist, cleared once the repository is reachable again
      */
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     public ?\DateTimeImmutable $unreachableSince = null;
@@ -587,6 +587,7 @@ class Package
 
         $this->repository = $repoUrl;
         $this->remoteId = null;
+        $this->unreachableSince = null;
 
         // prevent local filesystem URLs
         if (Preg::isMatch('{^(\.|[a-z]:|/|file:)}i', $repoUrl)) {
@@ -713,7 +714,6 @@ class Package
     {
         $this->updatedAt = $updatedAt;
         $this->setUpdateFailureNotified(false);
-        $this->unreachableSince = null;
     }
 
     public function getUpdatedAt(): ?\DateTimeImmutable
