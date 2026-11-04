@@ -72,7 +72,7 @@ class HttpGitShadowTest extends TestCase
     protected function setUp(): void
     {
         $this->logs = new TestHandler();
-        $this->shadow = new HttpGitShadow(new Logger('test', [$this->logs]), $this->createStub(StatsDClient::class), new ArrayAdapter());
+        $this->shadow = new HttpGitShadow(new Logger('test', [$this->logs]), $this->createStub(StatsDClient::class), new ArrayAdapter(), 100);
     }
 
     public function testMatchingRepositoryHasNoDifferences(): void
@@ -157,6 +157,17 @@ class HttpGitShadowTest extends TestCase
 
         $this->shadow->compareWithUpdate($this->createPackage(), $this->createStub(GitHubDriver::class), null, $this->createConfig(), $downloader);
         $this->shadow->compareWithUpdate($this->createPackage(), $this->createHttpDriver($downloader, 'diverged.git', null), null, $this->createConfig(), $downloader);
+
+        self::assertSame([], $downloader->requests);
+        self::assertSame([], $this->logs->getRecords());
+    }
+
+    public function testOnlyComparesTheSampledUpdates(): void
+    {
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $shadow = new HttpGitShadow(new Logger('test', [$this->logs]), $this->createStub(StatsDClient::class), new ArrayAdapter(), 0);
+
+        $shadow->compareWithUpdate($this->createPackage(), $this->createReference('diverged.git'), null, $this->createConfig(), $downloader);
 
         self::assertSame([], $downloader->requests);
         self::assertSame([], $this->logs->getRecords());

@@ -36,11 +36,16 @@ class HttpGitShadow
         private readonly LoggerInterface $logger,
         private readonly StatsDClient $statsd,
         private readonly CacheItemPoolInterface $cache,
+        private readonly int $samplePercent = 10,
     ) {
     }
 
     public function compareWithUpdate(Package $package, VcsDriverInterface $driver, ?VersionCache $versionCache, Config $config, HttpDownloader $httpDownloader): void
     {
+        if (random_int(1, 100) > $this->samplePercent) {
+            return;
+        }
+
         $gitDriver = self::findGitDriver($driver);
         if ($gitDriver === null || null === ($url = HttpGitDriver::toHttpsUrl($gitDriver->getUrl()))) {
             return;
