@@ -31,7 +31,7 @@ class UserControllerTest extends IntegrationTestCase
         $this->client->loginUser($user);
 
         $crawler = $this->client->request('GET', \sprintf('/users/%s/2fa/enable', $user->getUsername()));
-        $form = $crawler->selectButton('Enable Two-Factor Authentication')->form();
+        $form = $crawler->selectButton('Enable authenticator app')->form();
         $form->setValues([
             'enable_two_factor_auth[code]' => 123456,
         ]);
@@ -39,7 +39,7 @@ class UserControllerTest extends IntegrationTestCase
         $crawler = $this->client->submit($form);
         $this->assertResponseStatusCodeSame(422);
 
-        $form = $crawler->selectButton('Enable Two-Factor Authentication')->form();
+        $form = $crawler->selectButton('Enable authenticator app')->form();
         $form->setValues([
             'enable_two_factor_auth[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE,
         ]);

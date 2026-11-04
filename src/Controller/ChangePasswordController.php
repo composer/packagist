@@ -26,7 +26,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class ChangePasswordController extends Controller
 {
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/profile/change-password', name: 'change_password')]
+    #[Route(path: '/profile/security/password', name: 'change_password')]
     public function changePasswordAction(Request $request, UserPasswordHasherInterface $passwordHasher, UserNotifier $userNotifier, #[CurrentUser] User $user): Response
     {
         $form = $this->createForm(ChangePasswordFormType::class, $user);
@@ -52,6 +52,7 @@ class ChangePasswordController extends Controller
 
         return $this->render('user/change_password.html.twig', [
             'form' => $form,
+            'user' => $user,
         ]);
     }
 }

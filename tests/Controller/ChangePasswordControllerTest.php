@@ -36,7 +36,7 @@ class ChangePasswordControllerTest extends IntegrationTestCase
 
         $this->client->loginUser($user);
 
-        $crawler = $this->client->request('GET', '/profile/change-password');
+        $crawler = $this->client->request('GET', '/profile/security/password');
 
         $form = $crawler->selectButton('Change password')->form();
         $crawler = $this->client->submit($form, [

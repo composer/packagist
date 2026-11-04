@@ -140,7 +140,7 @@ class OrganizationControllerTest extends IntegrationTestCase
 
         // 2FA is required to manage an organization; an owner without it is guided to enable it
         // rather than shown a bare 403.
-        self::assertResponseRedirects('/users/owner/2fa/');
+        self::assertResponseRedirects('/profile/security/authenticator');
     }
 
     public function testSettingsRendersPrefilledFormForOwner(): void
@@ -207,7 +207,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->client->request('GET', '/organizations/acme/teams/create');
 
         // An owner without 2FA is guided to enable it rather than shown a bare 403.
-        self::assertResponseRedirects('/users/owner/2fa/');
+        self::assertResponseRedirects('/profile/security/authenticator');
     }
 
     public function testOwnerCreatesTeam(): void
@@ -531,7 +531,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->client->request('GET', \sprintf('/organizations/acme/teams/%s/members/owner/remove', $backend->teamId));
 
         // An owner without 2FA is guided to enable it rather than shown a bare 403.
-        self::assertResponseRedirects('/users/owner/2fa/');
+        self::assertResponseRedirects('/profile/security/authenticator');
     }
 
     public function testRemoveUnknownTeamMemberReturns404(): void
@@ -687,7 +687,7 @@ class OrganizationControllerTest extends IntegrationTestCase
         $this->client->request('GET', '/organizations/acme/members/owner/remove');
 
         // An owner without 2FA is guided to enable it rather than shown a bare 403.
-        self::assertResponseRedirects('/users/owner/2fa/');
+        self::assertResponseRedirects('/profile/security/authenticator');
     }
 
     public function testRemoveUnknownMemberReturns404(): void
