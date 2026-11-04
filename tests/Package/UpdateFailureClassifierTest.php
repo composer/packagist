@@ -96,7 +96,7 @@ class UpdateFailureClassifierTest extends TestCase
         ];
         yield 'no driver' => [
             new \RuntimeException('Driver could not be established for package encoredigitalgroup/laravel-cache-prune (https://gitlab.encoredigitalgroup.com/oss/laravel-cache-prune)'),
-            $gone, 'no_driver',
+            $unreachable, 'no_driver',
         ];
         yield 'github api empty repository' => [
             self::transport('The "https://api.github.com/repos/acme/lib/git/refs/heads?per_page=100" file could not be downloaded (HTTP/2 409 )', 409),
@@ -138,6 +138,11 @@ class UpdateFailureClassifierTest extends TestCase
         ];
         yield 'generic transport failure' => [
             self::transport('The "https://api.github.com/repos/acme/lib" file could not be downloaded (HTTP/2 502 )', 502),
+            null, null,
+        ];
+        yield 'github sso authorization required' => [
+            // thrown by Composer's AuthHelper when the token lacks SAML SSO authorization for the org
+            new TransportException('Could not authenticate against github.com', 403),
             null, null,
         ];
         yield 'unrelated runtime exception' => [

@@ -15,11 +15,13 @@ namespace App\Package;
 final readonly class UpdateFailureVerdict
 {
     /**
-     * @param string $code stable identifier of the matched failure, recorded in the audit log
+     * @param string $code            stable identifier of the matched failure, recorded in the audit log
+     * @param bool   $escalatesToGone whether an Unreachable failure turns into Gone once it persisted for long enough
      */
     public function __construct(
         public UpdateFailureKind $kind,
         public string $code,
+        public bool $escalatesToGone = false,
     ) {
     }
 }

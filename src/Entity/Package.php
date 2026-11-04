@@ -218,6 +218,12 @@ class Package
     private bool $updateFailureNotified = false;
 
     /**
+     * First of a run of update failures that escalate to a gone freeze if they persist, cleared by a successful update
+     */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    public ?\DateTimeImmutable $unreachableSince = null;
+
+    /**
      * If set, the content is the reason for being marked suspicious
      */
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -707,6 +713,7 @@ class Package
     {
         $this->updatedAt = $updatedAt;
         $this->setUpdateFailureNotified(false);
+        $this->unreachableSince = null;
     }
 
     public function getUpdatedAt(): ?\DateTimeImmutable
@@ -950,6 +957,7 @@ class Package
         }
         $this->frozen = null;
         $this->setCrawledAt(null);
+        $this->unreachableSince = null;
         // Forcing regardless of the freeze reason: a suppressing freeze purged the published metadata,
         // so it has to be written out again even though the content did not change. For the gentle
         // reasons the re-write is redundant, but cheap insurance on a handful of packages.
