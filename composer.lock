@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f2399de463c39798a9c2713c9e897a62",
+    "content-hash": "c2ac588573bfae5e18c9426415f20b78",
     "packages": [
         {
             "name": "algolia/algoliasearch-client-php",
@@ -12139,7 +12139,8 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-08T21:09:11+00:00"
+            "time": "2026-10-08T21:09:11+00:00",
+            "published-time": "2026-10-08T21:09:23+00:00"
         },
         {
             "name": "phpstan/phpstan-deprecation-rules",
@@ -14729,5 +14730,5 @@
     "platform-overrides": {
         "php": "8.4.11"
     },
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.11.0"
 }
