@@ -36,7 +36,6 @@ use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Service\VersionCache;
 use App\Util\DoctrineTrait;
-use App\Util\HttpDownloaderOptionsFactory;
 use cebe\markdown\GithubMarkdown;
 use Composer\Config;
 use Composer\Downloader\TransportException;
@@ -165,11 +164,6 @@ class Updater
         ErrorHandler::register();
     }
 
-    protected function createHttpDownloader(IOInterface $io, Config $config): HttpDownloader
-    {
-        return new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
-    }
-
     /**
      * Identity used for immutability comparisons: source.reference if present and non-empty,
      * else dist.reference, else null. A version with no effective reference cannot be imported.
@@ -198,10 +192,8 @@ class Updater
      * @param int                            $flags            a few of the constants of this class
      * @param ExistingVersionsForUpdate|null $existingVersions
      */
-    public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, int $flags = 0, ?array $existingVersions = null, ?VersionCache $versionCache = null): Package
+    public function update(IOInterface $io, Config $config, HttpDownloader $httpDownloader, Package $package, VcsRepository $repository, int $flags = 0, ?array $existingVersions = null, ?VersionCache $versionCache = null): Package
     {
-        $httpDownloader = new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
-
         $deleteDate = new \DateTimeImmutable('-1day');
 
         $em = $this->getEM();
