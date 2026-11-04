@@ -145,7 +145,12 @@ class HttpGitShadow
      */
     private function report(Package $package, string $url, array $differences, ?\Throwable $failure): void
     {
-        $this->statsd->increment('packagist.update.http_git_shadow', 1, 1, ['result' => $differences === [] ? 'match' : 'mismatch']);
+        $result = match (true) {
+            $failure !== null => 'failure',
+            $differences === [] => 'match',
+            default => 'mismatch',
+        };
+        $this->statsd->increment('packagist.update.http_git_shadow', 1, 1, ['result' => $result]);
 
         // log once per distinct result as the same mismatch comes back on every crawl
         $item = $this->cache->getItem('http_git_shadow_'.$package->getId());

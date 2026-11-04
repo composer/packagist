@@ -28,6 +28,7 @@ use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Handler\TestHandler;
 use Monolog\Level;
 use Monolog\Logger;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Filesystem\Filesystem;
@@ -142,6 +143,26 @@ class HttpGitShadowTest extends TestCase
         $record = $this->logs->getRecords()[0];
         self::assertSame(['HttpGitDriver failed: App\Package\Git\RepositoryNotFoundException (HTTP 404)'], $record->context['differences']);
         self::assertInstanceOf(\Throwable::class, $record->context['exception']);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideCountedResults(): iterable
+    {
+        yield 'match' => ['foo.git', 'match'];
+        yield 'mismatch' => ['diverged.git', 'mismatch'];
+        yield 'failure' => ['missing.git', 'failure'];
+    }
+
+    #[DataProvider('provideCountedResults')]
+    public function testCountsTheResult(string $path, string $result): void
+    {
+        $statsd = $this->createMock(StatsDClient::class);
+        $statsd->expects($this->once())->method('increment')->with('packagist.update.http_git_shadow', 1, 1, ['result' => $result]);
+        $shadow = new HttpGitShadow(new Logger('test', [$this->logs]), $statsd, new ArrayAdapter(), 100);
+
+        $shadow->compareWithUpdate($this->createPackage(), $this->createReference($path), null, $this->createConfig(), new GitHttpBackendDownloader(self::$projectRoot));
     }
 
     public function testLogsShadowFailuresOnceWhenTheirMessageVaries(): void
