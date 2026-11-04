@@ -19,6 +19,7 @@ use App\Service\VersionCache;
 use App\Tests\Package\Git\GitHttpBackendDownloader;
 use App\Tests\Package\Git\GitRepositoryBuilder;
 use Composer\Config;
+use Composer\Downloader\TransportException;
 use Composer\IO\NullIO;
 use Composer\Repository\Vcs\GitDriver;
 use Composer\Repository\Vcs\GitHubDriver;
@@ -138,7 +139,22 @@ class HttpGitShadowTest extends TestCase
         $this->shadow->compareWithUpdate($this->createPackage(), $this->createReference('missing.git'), null, $this->createConfig(), new GitHttpBackendDownloader(self::$projectRoot));
 
         self::assertTrue($this->logs->hasErrorRecords());
-        self::assertStringStartsWith('HttpGitDriver failed: App\Package\Git\RepositoryNotFoundException', $this->logs->getRecords()[0]->context['differences'][0]);
+        $record = $this->logs->getRecords()[0];
+        self::assertSame(['HttpGitDriver failed: App\Package\Git\RepositoryNotFoundException (HTTP 404)'], $record->context['differences']);
+        self::assertInstanceOf(\Throwable::class, $record->context['exception']);
+    }
+
+    public function testLogsShadowFailuresOnceWhenTheirMessageVaries(): void
+    {
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $downloader->interceptor = static fn () => throw new TransportException('Operation timed out after '.random_int(1000, 999999).' milliseconds');
+        $package = $this->createPackage();
+
+        $this->shadow->compareWithUpdate($package, $this->createReference('foo.git'), null, $this->createConfig(), $downloader);
+        $this->shadow->compareWithUpdate($package, $this->createReference('foo.git'), null, $this->createConfig(), $downloader);
+
+        self::assertCount(1, $this->logs->getRecords());
+        self::assertSame(['HttpGitDriver failed: App\Package\Git\RepositoryUnavailableException'], $this->logs->getRecords()[0]->context['differences']);
     }
 
     public function testErrorsReadingComposerJsonAreReportedAsDifferences(): void

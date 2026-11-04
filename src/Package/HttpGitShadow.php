@@ -16,6 +16,7 @@ use App\Entity\Package;
 use App\Package\Vcs\HttpGitDriver;
 use App\Service\VersionCache;
 use Composer\Config;
+use Composer\Downloader\TransportException;
 use Composer\IO\NullIO;
 use Composer\Repository\Vcs\GitDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
@@ -51,17 +52,20 @@ class HttpGitShadow
             return;
         }
 
+        $failure = null;
         try {
             $knownReferences = $versionCache?->getKnownReferences() ?? [];
             $io = new NullIO();
             $shadow = new HttpGitDriver(['url' => $url, 'known-references' => $knownReferences], $io, $config, $httpDownloader, new ProcessExecutor($io));
             $differences = self::diff($gitDriver, $shadow, $knownReferences);
-        } catch (\Throwable $e) {
-            $differences = ['HttpGitDriver failed: '.$e::class.': '.$e->getMessage()];
+        } catch (\Throwable $failure) {
+            // the message is left out as it can vary between crawls (timings, request ids), which would defeat the dedup
+            $status = $failure instanceof TransportException ? $failure->getStatusCode() : null;
+            $differences = ['HttpGitDriver failed: '.$failure::class.($status !== null ? ' (HTTP '.$status.')' : '')];
         }
 
         try {
-            $this->report($package, $url, $differences);
+            $this->report($package, $url, $differences, $failure);
         } catch (\Throwable $e) {
             $this->logger->error('Could not report the HttpGitDriver shadow result', ['package' => $package->getName(), 'exception' => $e]);
         }
@@ -139,7 +143,7 @@ class HttpGitShadow
     /**
      * @param list<string> $differences
      */
-    private function report(Package $package, string $url, array $differences): void
+    private function report(Package $package, string $url, array $differences, ?\Throwable $failure): void
     {
         $this->statsd->increment('packagist.update.http_git_shadow', 1, 1, ['result' => $differences === [] ? 'match' : 'mismatch']);
 
@@ -165,6 +169,7 @@ class HttpGitShadow
             'url' => $url,
             'differences' => \array_slice($differences, 0, self::MAX_REPORTED_DIFFERENCES),
             'differenceCount' => \count($differences),
+            'exception' => $failure,
         ]);
     }
 }
