@@ -19,6 +19,8 @@ use App\Log\AuditLogEventType;
 use App\Model\DownloadManager;
 use App\Model\PackageManager;
 use App\Package\HttpGitShadow;
+use App\Package\RepositoryApiChecker;
+use App\Package\RepositoryApiState;
 use App\Package\Updater;
 use App\Service\FallbackGitHubAuthProvider;
 use App\Service\Locker;
@@ -41,6 +43,7 @@ class UpdaterWorkerTest extends IntegrationTestCase
 {
     // an IP literal host passes the public host check without a DNS lookup, and the stubbed Updater never connects
     private const string REPOSITORY = 'https://8.8.8.8/acme/lib.git';
+    private const string REPOSITORY_NOT_FOUND = "Failed to execute git clone --mirror -- '".self::REPOSITORY."' '/tmp/x.git'\n\nremote: Repository not found.\n";
     private const string NO_DRIVER = 'Driver could not be established for package acme/lib ('.self::REPOSITORY.')';
 
     public function testNoDriverSkipsTheHostForAWeekOnFirstFailure(): void
@@ -89,7 +92,7 @@ class UpdaterWorkerTest extends IntegrationTestCase
     {
         $package = $this->storePackage();
 
-        $result = $this->runWorker($package, new \RuntimeException("Failed to execute git clone --mirror -- '".self::REPOSITORY."' '/tmp/x.git'\n\nremote: Repository not found.\n"));
+        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND));
 
         self::assertSame(Job::STATUS_PACKAGE_GONE, $result['status']);
         self::assertSame(PackageFreezeReason::Gone, $this->reload($package)->getFreezeReason());
@@ -118,6 +121,67 @@ class UpdaterWorkerTest extends IntegrationTestCase
         self::assertSame(Job::STATUS_PACKAGE_GONE, $result['status']);
         self::assertSame(PackageFreezeReason::Gone, $this->reload($package)->getFreezeReason());
         self::assertStringStartsWith('private_host: App\\Package\\PrivateRepositoryHostException: The repository host 127.0.0.1 resolves', $this->lastFreezeAuditAttributes()['internalReason']);
+    }
+
+    public function testGoneFailureIsNotFrozenWhenTheApiSaysTheRepositoryExists(): void
+    {
+        $package = $this->storePackage();
+
+        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), RepositoryApiState::Exists);
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        self::assertStringContainsString('still exists according to the API', $result['message'] ?? '');
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertLessThanOrEqual(new \DateTimeImmutable(), $package->getCrawledAt());
+    }
+
+    public function testPersistentNoDriverIsNotFrozenWhenTheApiSaysTheRepositoryExists(): void
+    {
+        $package = $this->storePackage(new \DateTimeImmutable('-29 days'));
+
+        $result = $this->runWorker($package, new \RuntimeException(self::NO_DRIVER), RepositoryApiState::Exists);
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        self::assertFalse($this->reload($package)->isFrozen());
+    }
+
+    public function testUnreachableHostIsStillSkippedWhenTheApiSaysTheRepositoryExists(): void
+    {
+        $package = $this->storePackage();
+
+        $result = $this->runWorker($package, new \RuntimeException(self::NO_DRIVER), RepositoryApiState::Exists);
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $this->reload($package)->getCrawledAt());
+    }
+
+    public function testGoneFailureIsFrozenWhenTheApiCheckIsInconclusive(): void
+    {
+        $package = $this->storePackage();
+
+        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), RepositoryApiState::Unknown);
+
+        self::assertSame(Job::STATUS_PACKAGE_GONE, $result['status']);
+        self::assertSame(PackageFreezeReason::Gone, $this->reload($package)->getFreezeReason());
+    }
+
+    public function testPackageWithFewDownloadsIsDeletedWhenTheApiConfirmsItIsMissing(): void
+    {
+        $package = $this->storePackage();
+        $id = $package->getId();
+
+        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), RepositoryApiState::Missing);
+
+        self::assertSame(Job::STATUS_PACKAGE_DELETED, $result['status']);
+        $this->getEM()->clear();
+        self::assertNull($this->getEM()->getRepository(Package::class)->find($id));
+
+        $logs = self::getService(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditLogEventType::PackageDeleted->value]);
+        self::assertCount(1, $logs);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertStringStartsWith('git_remote_repository_not_found: RuntimeException: ', $attributes['internalReason']);
+        self::assertStringEndsWith('(confirmed missing by the API)', $attributes['internalReason']);
     }
 
     public function testChangingTheRepositoryClearsUnreachableSince(): void
@@ -182,8 +246,11 @@ class UpdaterWorkerTest extends IntegrationTestCase
     /**
      * @return array<string, mixed>
      */
-    private function runWorker(Package $package, \Throwable $failure): array
+    private function runWorker(Package $package, \Throwable $failure, ?RepositoryApiState $apiState = null): array
     {
+        $apiChecker = $this->createStub(RepositoryApiChecker::class);
+        $apiChecker->method('check')->willReturn($apiState);
+
         // not a PHPUnit double: Updater::__destruct() would restore_error_handler() and pop PHPUnit's handler
         $updater = new class($failure) extends Updater {
             public function __construct(private readonly \Throwable $failure)
@@ -214,6 +281,7 @@ class UpdaterWorkerTest extends IntegrationTestCase
             new ArrayAdapter(),
             '',
             self::getService(HttpGitShadow::class),
+            $apiChecker,
         );
 
         $job = new Job('update-job', 'package:updates', ['id' => $package->getId(), 'update_equal_refs' => false, 'delete_before' => false, 'force_dump' => false, 'source' => 'test']);

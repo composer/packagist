@@ -20,6 +20,8 @@ use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\PackageManager;
 use App\Package\HttpGitShadow;
+use App\Package\RepositoryApiChecker;
+use App\Package\RepositoryApiState;
 use App\Package\UpdateFailureClassifier;
 use App\Package\UpdateFailureKind;
 use App\Package\UpdateFailureVerdict;
@@ -37,7 +39,6 @@ use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Pcre\Preg;
 use Composer\Repository\InvalidRepositoryException;
 use Composer\Semver\Intervals;
-use Composer\Util\HttpDownloader;
 use Doctrine\ORM\EntityNotFoundException;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
@@ -81,6 +82,7 @@ class UpdaterWorker
         CacheItemPoolInterface $cache,
         private readonly string $updaterWorkerCacheDir,
         private readonly HttpGitShadow $httpGitShadow,
+        private readonly RepositoryApiChecker $repositoryApiChecker,
     ) {
         $this->cache = new Psr16Cache($cache);
         $this->logger = $logger;
@@ -310,20 +312,6 @@ class UpdaterWorker
                     ];
                 }
 
-                // github 404'ed, check through API whether the package still exists and delete if not
-                if (Preg::isMatchStrictGroups('{[@/]github.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $match)) {
-                    if ($result = $this->checkForDeadGitHubPackage($package, $match[1], $httpDownloader, $output, $internalReason)) {
-                        return $result;
-                    }
-                }
-
-                // gitlab 404'ed, check through API whether the package still exists and delete if not
-                if (Preg::isMatchStrictGroups('{https://gitlab.com/([^/]+/.+)$}i', $package->getRepository(), $match)) {
-                    if ($result = $this->checkForDeadGitLabPackage($package, $match[1], $httpDownloader, $output, $internalReason)) {
-                        return $result;
-                    }
-                }
-
                 if ($verdict->escalatesToGone) {
                     $now = new \DateTimeImmutable();
                     $package->unreachableSince ??= $now;
@@ -331,6 +319,23 @@ class UpdaterWorker
                         $internalReason .= ' (unreachable since '.$package->unreachableSince->format(\DATE_ATOM).')';
                         $verdict = new UpdateFailureVerdict(UpdateFailureKind::Gone, $verdict->code);
                     }
+                }
+
+                $apiState = $this->repositoryApiChecker->check($package->getRepository(), $httpDownloader);
+                if ($apiState === RepositoryApiState::Missing) {
+                    return $this->removeDeadPackage($package, $output, $e, $internalReason.' (confirmed missing by the API)');
+                }
+
+                if ($apiState === RepositoryApiState::Exists && $verdict->kind === UpdateFailureKind::Gone) {
+                    $this->packageManager->recordFailedCrawl($package);
+
+                    return [
+                        'status' => Job::STATUS_FAILED,
+                        'message' => 'Update of '.$packageName.' failed, but the repository still exists according to the API so it was not marked as gone.',
+                        'details' => '<pre>'.$output.'</pre>',
+                        'exception' => $e,
+                        'vendor' => $packageVendor,
+                    ];
                 }
 
                 if ($verdict->kind === UpdateFailureKind::Gone) {
@@ -424,65 +429,10 @@ class UpdaterWorker
     }
 
     /**
-     * @return PackageGoneResult|PackageDeletedResult|null
+     * @return PackageGoneResult|PackageDeletedResult
      */
-    private function checkForDeadGitHubPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output, string $internalReason): ?array
+    private function removeDeadPackage(Package $package, string $output, \Throwable $e, string $internalReason): array
     {
-        try {
-            $httpDownloader->get('https://api.github.com/repos/'.$repo.'/git/refs/heads', ['retry-auth-failure' => false]);
-        } catch (\Throwable $e) {
-            // 404 indicates the repo does not exist
-            // 409 indicates an empty repo which is about the same for our purposes
-            // 451 is used for DMCA takedowns which also indicate the package is bust
-            if (
-                $e instanceof TransportException
-                && (
-                    \in_array($e->getStatusCode(), [404, 409, 451], true)
-                    || ($e->getStatusCode() === 403 && str_contains((string) $e->getResponse(), 'Repository access blocked'))
-                )
-            ) {
-                return $this->completeDeadPackageCheck('https://api.github.com/repos/composer/composer/git/refs/heads', $package, $httpDownloader, $output, $e, $internalReason);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @return PackageGoneResult|PackageDeletedResult|null
-     */
-    private function checkForDeadGitLabPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output, string $internalReason): ?array
-    {
-        try {
-            $httpDownloader->get('https://gitlab.com/api/v4/projects/'.urlencode($repo), ['retry-auth-failure' => false]);
-        } catch (\Throwable $e) {
-            // 404 indicates the repo does not exist
-            if (
-                $e instanceof TransportException
-                    && \in_array($e->getStatusCode(), [404], true)
-            ) {
-                return $this->completeDeadPackageCheck('https://gitlab.com/api/v4/projects/'.urlencode('packagist/vcs-repository-test'), $package, $httpDownloader, $output, $e, $internalReason);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @return PackageGoneResult|PackageDeletedResult|null
-     */
-    private function completeDeadPackageCheck(string $referenceRepoApiUrl, Package $package, HttpDownloader $httpDownloader, string $output, TransportException $e, string $internalReason): ?array
-    {
-        try {
-            // check composer reference repo is visible to make sure it's not github/gitlab or something else in between glitching
-            $httpDownloader->get($referenceRepoApiUrl, ['retry-auth-failure' => false]);
-        } catch (\Throwable) {
-            // ignore failures here, we/github/gitlab/.. must be offline
-            return null;
-        }
-
-        $internalReason .= ' (confirmed by the API: HTTP '.$e->getStatusCode().')';
-
         // remove packages with very low downloads and that are 404
         if ($this->downloadManager->getTotalDownloads($package) <= 100) {
             $this->packageManager->deletePackage($package, internalReason: $internalReason);
