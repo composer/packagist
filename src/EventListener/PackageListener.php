@@ -108,7 +108,7 @@ class PackageListener
 
             if ($newFrozen !== null) {
                 // Package was frozen (frozen reason is now set)
-                $this->buffered[] = AuditRecord::packageFrozen($package, $this->getUser(), $newFrozen, $package->auditActorFallback ?? 'automation', $package->getAuditFreezeInternalReason());
+                $this->buffered[] = AuditRecord::packageFrozen($package, $this->getUser(), $newFrozen, $package->auditActorFallback ?? 'automation', $package->auditFreezeInternalReason);
             } elseif ($oldFrozen !== null) {
                 // Package was unfrozen (frozen reason is now null)
                 $this->buffered[] = AuditRecord::packageUnfrozen($package, $this->getUser(), $package->auditActorFallback ?? 'automation');

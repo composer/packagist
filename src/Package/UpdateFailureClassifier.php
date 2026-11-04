@@ -39,11 +39,13 @@ final class UpdateFailureClassifier
             if ($status === 409 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?/git/refs/heads\?per_page=100" file could not be downloaded \(HTTP/2 409 \)}', $msg)) {
                 return self::gone('github_api_empty_repository');
             }
-            if (\in_array($status, [404, 451], true) && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded \(HTTP/2 (404|451) \)}', $msg)) {
-                return self::gone('github_api_'.$status);
-            }
-            if ($status === 403 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded}', $msg) && str_contains((string) $e->getResponse(), 'Repository access blocked')) {
-                return self::gone('github_api_access_blocked');
+            if (Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded}', $msg)) {
+                if (\in_array($status, [404, 451], true) && str_contains($msg, '" file could not be downloaded (HTTP/2 '.$status.' )')) {
+                    return self::gone('github_api_'.$status);
+                }
+                if ($status === 403 && str_contains((string) $e->getResponse(), 'Repository access blocked')) {
+                    return self::gone('github_api_access_blocked');
+                }
             }
         }
 

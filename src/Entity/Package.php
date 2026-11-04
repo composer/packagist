@@ -273,7 +273,7 @@ class Package
     /**
      * Transient (not persisted): admin-only explanation of an automated freeze, e.g. the update error
      */
-    private ?string $auditFreezeInternalReason = null;
+    public ?string $auditFreezeInternalReason = null;
 
     public function __construct()
     {
@@ -954,11 +954,6 @@ class Package
         // so it has to be written out again even though the content did not change. For the gentle
         // reasons the re-write is redundant, but cheap insurance on a handful of packages.
         $this->forceDump();
-    }
-
-    public function getAuditFreezeInternalReason(): ?string
-    {
-        return $this->auditFreezeInternalReason;
     }
 
     public function isFrozen(): bool
