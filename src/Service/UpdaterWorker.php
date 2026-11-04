@@ -400,7 +400,7 @@ class UpdaterWorker
                 $e instanceof TransportException
                 && (
                     \in_array($e->getStatusCode(), [404, 409, 451], true)
-                    || ($e->getStatusCode() === 403 && str_contains('"message": "Repository access blocked"', (string) $e->getResponse()))
+                    || ($e->getStatusCode() === 403 && str_contains((string) $e->getResponse(), 'Repository access blocked'))
                 )
             ) {
                 return $this->completeDeadPackageCheck('https://api.github.com/repos/composer/composer/git/refs/heads', $package, $httpDownloader, $output, $e, $internalReason);
