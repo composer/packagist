@@ -499,19 +499,18 @@ class Updater
         // re-read the readme only if the default branch moved or the repository URL its links use changed. The
         // stored URL is compared with the driver's, as cached versions keep their old URL until the branch moves
         $refreshReadme = $flags !== 0 || $defaultBranchReference === null || $previousDefaultBranchSource !== [$driver->getSource($defaultBranchReference)['url'] ?? null, $defaultBranchReference];
+
+        // cleared first so stats the host stops reporting don't linger, updateGitHubInfo/updateGitLabInfo refill them
+        $package->setGitHubStars(null);
+        $package->setGitHubWatches(null);
+        $package->setGitHubForks(null);
+        $package->setGitHubOpenIssues(null);
         if (null !== ($match = $package->getGitHubComponents())) {
             $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver, $refreshReadme);
         } elseif (null !== ($match = $package->getGitLabComponents())) {
             $this->updateGitLabInfo($httpDownloader, $io, $package, $match[1], $match[2], $driver, $refreshReadme);
-        } else {
-            // GitHub/GitLab info handled separately in updateGitHubInfo/updateGitLabInfo, sweep the special attributes
-            $package->setGitHubStars(null);
-            $package->setGitHubWatches(null);
-            $package->setGitHubForks(null);
-            $package->setGitHubOpenIssues(null);
-            if ($refreshReadme) {
-                $this->updateReadme($io, $package, $driver);
-            }
+        } elseif ($refreshReadme) {
+            $this->updateReadme($io, $package, $driver);
         }
 
         $usingDetails = '';
@@ -1182,11 +1181,6 @@ class Updater
         }
 
         if (!$driver instanceof GitLabDriver) {
-            $package->setGitHubStars(null);
-            $package->setGitHubWatches(null);
-            $package->setGitHubForks(null);
-            $package->setGitHubOpenIssues(null);
-
             return;
         }
 
@@ -1201,9 +1195,6 @@ class Updater
         if (isset($repoData['open_issues_count']) && is_numeric($repoData['open_issues_count'])) {
             $package->setGitHubOpenIssues((int) $repoData['open_issues_count']);
         }
-
-        // GitLab does not include a "watch" feature
-        $package->setGitHubWatches(null);
     }
 
     /**

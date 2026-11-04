@@ -33,6 +33,7 @@ use Composer\Package\Link;
 use Composer\Repository\RepositoryInterface;
 use Composer\Repository\Vcs\GitDriver;
 use Composer\Repository\Vcs\GitHubDriver;
+use Composer\Repository\Vcs\GitLabDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
 use Composer\Semver\Constraint\MatchAllConstraint;
@@ -193,6 +194,34 @@ class UpdaterTest extends IntegrationTestCase
 
         self::assertSame(42, $package->getGitHubStars());
         self::assertSame('Old readme', $this->getEM()->find(PackageReadme::class, $package->getId())->contents);
+    }
+
+    public function testGitLabStatsTheHostStopsReportingAreCleared(): void
+    {
+        $package = self::createPackage('test/gl', 'https://gitlab.com/test/gl');
+        $package->setGitHubStars(5);
+        $package->setGitHubForks(3);
+        $package->setGitHubOpenIssues(7);
+        $this->store($package);
+        $version = $this->seedDevVersion($package, 'dev-main', 'dev-main', 'aaaa');
+        $version->setIsDefaultBranch(true);
+        $this->getEM()->flush();
+
+        $branches = ['main' => 'aaaa'];
+        $this->bindDefaultBranchRepository('test/gl', 'main', $branches);
+        $driver = $this->createStub(GitLabDriver::class);
+        $driver->method('getRootIdentifier')->willReturn('main');
+        $driver->method('getComposerInformation')->willReturn([]);
+        $driver->method('getSource')->willReturn(['type' => 'git', 'url' => 'https://gitlab.com/test/gl', 'reference' => '']);
+        // issues disabled on the project: GitLab omits open_issues_count
+        $driver->method('getRepoData')->willReturn(['star_count' => 6, 'forks_count' => 3]);
+        $this->repositoryMock->method('getDriver')->willReturn($driver);
+
+        $this->updater->update($this->ioMock, $this->config, $package, $this->repositoryMock);
+
+        self::assertSame(6, $package->getGitHubStars());
+        self::assertSame(3, $package->getGitHubForks());
+        self::assertNull($package->getGitHubOpenIssues());
     }
 
     public function testRereadsTheReadmeWhenTheRepositoryUrlChanged(): void
