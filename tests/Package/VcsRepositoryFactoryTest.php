@@ -13,8 +13,13 @@
 namespace App\Tests\Package;
 
 use App\Package\VcsRepositoryFactory;
+use App\Tests\Package\Git\GitHttpBackendDownloader;
+use Composer\Config;
+use Composer\Downloader\TransportException;
 use Composer\IO\NullIO;
+use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\VcsRepository;
+use Composer\Util\Http\Response;
 use Composer\Util\HttpDownloader;
 use Composer\Util\Platform;
 use Composer\Util\ProcessExecutor;
@@ -97,6 +102,52 @@ class VcsRepositoryFactoryTest extends TestCase
         $this->expectExceptionMessage('Could not determine the host');
 
         $this->createRepository('https:///acme/foo.git');
+    }
+
+    public function testGitHubGitFallbackIsDisabled(): void
+    {
+        self::assertFalse($this->createRepository()->getRepoConfig()['allow-git-fallback']);
+    }
+
+    /**
+     * 404 is what GitHub answers for deleted or private repos, 403 for rate limits and blocked repos
+     */
+    #[DataProvider('provideGitHubApiFailures')]
+    public function testGitHubApiFailuresFailInsteadOfFallingBackToGit(int $status): void
+    {
+        $downloader = new GitHttpBackendDownloader(sys_get_temp_dir());
+        $downloader->interceptor = static fn () => new Response(['url' => 'https://api.github.com/repos/acme/foo'], $status, [], '{"message": "Not Found"}');
+        $config = new Config(false);
+        // keeps GitHub from looking up a token in the local git config
+        $config->merge(['config' => ['github-domains' => [], 'cache-dir' => sys_get_temp_dir().'/packagist-test-cache']]);
+        $driver = new GitHubDriver(['url' => 'https://github.com/acme/foo', 'allow-git-fallback' => false], new NullIO(), $config, $downloader, new ProcessExecutor());
+
+        try {
+            $driver->initialize();
+            self::fail('Expected the GitHub API failure to be thrown');
+        } catch (\RuntimeException $e) {
+            $apiError = VcsRepositoryFactory::unwrapDisabledGitFallback($e);
+        }
+
+        self::assertInstanceOf(TransportException::class, $apiError);
+        self::assertSame($status, $apiError->getStatusCode());
+        self::assertSame(['https://api.github.com/repos/acme/foo'], array_column($downloader->requests, 'url'));
+    }
+
+    /**
+     * @return iterable<array{int}>
+     */
+    public static function provideGitHubApiFailures(): iterable
+    {
+        yield 'not found' => [404];
+        yield 'forbidden' => [403];
+    }
+
+    public function testOtherExceptionsAreNotUnwrapped(): void
+    {
+        $e = new \RuntimeException('Something else', 0, new TransportException('Not found', 404));
+
+        self::assertSame($e, VcsRepositoryFactory::unwrapDisabledGitFallback($e));
     }
 
     // public IP literal so no DNS lookup happens
