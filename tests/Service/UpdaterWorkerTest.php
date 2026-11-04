@@ -96,6 +96,18 @@ class UpdaterWorkerTest extends IntegrationTestCase
         self::assertStringStartsWith('git_remote_repository_not_found: RuntimeException: Failed to execute git clone', $this->lastFreezeAuditAttributes()['internalReason']);
     }
 
+    public function testPrivateHostFreezesThePackage(): void
+    {
+        $package = self::createPackage('acme/private', 'https://127.0.0.1/acme/private.git');
+        $this->store($package);
+
+        $result = $this->runWorker($package, new \LogicException('the update must not be attempted'));
+
+        self::assertSame(Job::STATUS_PACKAGE_GONE, $result['status']);
+        self::assertSame(PackageFreezeReason::Gone, $this->reload($package)->getFreezeReason());
+        self::assertStringStartsWith('private_host: App\\Package\\PrivateRepositoryHostException: The repository host 127.0.0.1 resolves', $this->lastFreezeAuditAttributes()['internalReason']);
+    }
+
     public function testChangingTheRepositoryClearsUnreachableSince(): void
     {
         $package = $this->storePackage(new \DateTimeImmutable('-20 days'));

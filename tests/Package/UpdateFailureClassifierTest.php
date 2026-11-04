@@ -12,6 +12,7 @@
 
 namespace App\Tests\Package;
 
+use App\Package\PrivateRepositoryHostException;
 use App\Package\UpdateFailureClassifier;
 use App\Package\UpdateFailureKind;
 use App\Package\UpdateFailureVerdict;
@@ -115,6 +116,19 @@ class UpdateFailureClassifierTest extends TestCase
             $gone, 'github_api_access_blocked',
         ];
 
+        yield 'github api org ip allow list' => [
+            self::transport('The "https://api.github.com/repos/acme/lib" file could not be downloaded (HTTP/2 403 )', 403, '{"message":"Although you appear to have the correct authorization credentials, the `acme` organization has an IP allow list enabled, and your IP address is not permitted to access this resource.","documentation_url":"https://docs.github.com/rest","status":"403"}'),
+            $gone, 'github_api_ip_allow_list',
+        ];
+        yield 'private host' => [
+            new PrivateRepositoryHostException('The repository host gitlab.iqianggou.com resolves to a private or reserved IP address, only publicly reachable repositories are supported'),
+            $gone, 'private_host',
+        ];
+        yield 'private host message on a plain exception' => [
+            new \RuntimeException('The repository host gitlab.iqianggou.com resolves to a private or reserved IP address, only publicly reachable repositories are supported'),
+            null, null,
+        ];
+
         yield 'unresolvable host' => [
             self::gitFailure("fatal: unable to access 'https://git.example.org/acme/lib.git/': Could not resolve host: git.example.org"),
             $unreachable, 'host_unreachable',
@@ -143,6 +157,10 @@ class UpdateFailureClassifierTest extends TestCase
         yield 'github sso authorization required' => [
             // thrown by Composer's AuthHelper when the token lacks SAML SSO authorization for the org
             new TransportException('Could not authenticate against github.com', 403),
+            null, null,
+        ];
+        yield 'github api sso authorization required' => [
+            self::transport('The "https://api.github.com/repos/acme/lib" file could not be downloaded (HTTP/2 403 )', 403, '{"message":"Resource protected by organization SAML enforcement. You must grant your Personal Access token access to this organization."}'),
             null, null,
         ];
         yield 'unrelated runtime exception' => [

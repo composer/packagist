@@ -12,6 +12,7 @@
 
 namespace App\Tests\Package;
 
+use App\Package\PrivateRepositoryHostException;
 use App\Package\VcsRepositoryFactory;
 use App\Tests\Package\Git\GitHttpBackendDownloader;
 use Composer\Config;
@@ -70,7 +71,7 @@ class VcsRepositoryFactoryTest extends TestCase
     #[DataProvider('providePrivateHostUrls')]
     public function testPrivateHostsAreRefused(string $url): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(PrivateRepositoryHostException::class);
         $this->expectExceptionMessage('resolves to a private or reserved IP address');
 
         $this->createRepository($url);

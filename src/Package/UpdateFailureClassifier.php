@@ -25,6 +25,10 @@ final class UpdateFailureClassifier
 
     public static function classify(\Throwable $e): ?UpdateFailureVerdict
     {
+        if ($e instanceof PrivateRepositoryHostException) {
+            return self::gone('private_host');
+        }
+
         $msg = $e->getMessage();
 
         if ($e instanceof TransportException) {
@@ -46,6 +50,10 @@ final class UpdateFailureClassifier
                 if ($status === 403 && str_contains((string) $e->getResponse(), 'Repository access blocked')) {
                     return self::gone('github_api_access_blocked');
                 }
+            }
+            if ($status === 403 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded}', $msg) && str_contains((string) $e->getResponse(), 'has an IP allow list enabled')) {
+                // the allow list blocks by IP so neither the maintainer's token nor ours can get through
+                return self::gone('github_api_ip_allow_list');
             }
         }
 
