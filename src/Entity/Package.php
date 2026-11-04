@@ -270,6 +270,11 @@ class Package
      */
     public ?string $auditActorFallback = null;
 
+    /**
+     * Transient (not persisted): admin-only explanation of an automated freeze, e.g. the update error
+     */
+    private ?string $auditFreezeInternalReason = null;
+
     public function __construct()
     {
         $this->versions = new ArrayCollection();
@@ -928,9 +933,10 @@ class Package
     /**
      * Freezing a package means it will not be updated anymore nor will its metadata be dumped
      */
-    public function freeze(PackageFreezeReason $reason): void
+    public function freeze(PackageFreezeReason $reason, ?string $internalReason = null): void
     {
         $this->frozen = $reason;
+        $this->auditFreezeInternalReason = $internalReason;
         // force re-indexing for suppressed packages to ensure they get deleted from the search index
         if ($reason->suppressesPackage()) {
             $this->setIndexedAt(null);
@@ -948,6 +954,11 @@ class Package
         // so it has to be written out again even though the content did not change. For the gentle
         // reasons the re-write is redundant, but cheap insurance on a handful of packages.
         $this->forceDump();
+    }
+
+    public function getAuditFreezeInternalReason(): ?string
+    {
+        return $this->auditFreezeInternalReason;
     }
 
     public function isFrozen(): bool

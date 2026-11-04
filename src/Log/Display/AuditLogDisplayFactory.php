@@ -171,6 +171,7 @@ class AuditLogDisplayFactory
                 $record->attributes['name'],
                 $record->attributes['repository'],
                 $record->attributes['reason'],
+                $this->internalReason($record->attributes['internalReason'] ?? null),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),

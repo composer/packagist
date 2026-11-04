@@ -23,6 +23,7 @@ readonly class PackageFrozenDisplay extends AbstractLogDisplay
         public string $packageName,
         public string $repository,
         public string $reason,
+        public ?string $internalReason,
         ActorDisplay $actor,
         ?string $ip,
     ) {

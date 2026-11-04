@@ -518,9 +518,9 @@ class AuditRecord
         return new self(AuditLogEventType::PackageUnabandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function packageFrozen(Package $package, ?User $actor, PackageFreezeReason $reason, string $fallbackActor = 'automation'): self
+    public static function packageFrozen(Package $package, ?User $actor, PackageFreezeReason $reason, string $fallbackActor = 'automation', ?string $internalReason = null): self
     {
-        return new self(AuditLogEventType::PackageFrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason->value, 'actor' => self::getUserData($actor, $fallbackActor)], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditLogEventType::PackageFrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason->value, 'internalReason' => $internalReason, 'actor' => self::getUserData($actor, $fallbackActor)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function packageUnfrozen(Package $package, ?User $actor, string $fallbackActor = 'automation'): self

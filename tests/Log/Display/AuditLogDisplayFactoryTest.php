@@ -304,6 +304,41 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('log/display/package_frozen.html.twig', $display->getTemplateName());
     }
 
+    public function testBuildPackageFrozenHidesInternalReasonForNonAuditor(): void
+    {
+        $display = $this->factory->buildSingle($this->createPackageFrozenRecordWithInternalReason());
+
+        self::assertInstanceOf(PackageFrozenDisplay::class, $display);
+        self::assertSame('gone', $display->reason);
+        self::assertNull($display->internalReason);
+    }
+
+    public function testBuildPackageFrozenShowsInternalReasonForAuditor(): void
+    {
+        $security = $this->createStub(Security::class);
+        $security->method('isGranted')->willReturn(true);
+        $this->factory = new AuditLogDisplayFactory($security);
+
+        $display = $this->factory->buildSingle($this->createPackageFrozenRecordWithInternalReason());
+
+        self::assertInstanceOf(PackageFrozenDisplay::class, $display);
+        self::assertSame('github_api_404: not found', $display->internalReason);
+    }
+
+    private function createPackageFrozenRecordWithInternalReason(): AuditRecord
+    {
+        return $this->createAuditRecord(
+            AuditLogEventType::PackageFrozen,
+            [
+                'name' => 'vendor/gone-package',
+                'repository' => 'https://github.com/vendor/gone-package',
+                'reason' => 'gone',
+                'internalReason' => 'github_api_404: not found',
+                'actor' => 'automation',
+            ]
+        );
+    }
+
     public function testBuildPackageUnfrozen(): void
     {
         $auditRecord = $this->createAuditRecord(

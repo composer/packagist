@@ -296,6 +296,7 @@ class PackageAuditRecordTest extends KernelTestCase
         self::assertSame('test/freeze-package', $attributes['name']);
         self::assertSame('https://github.com/test/freeze-package', $attributes['repository']);
         self::assertSame('spam', $attributes['reason']);
+        self::assertNull($attributes['internalReason']);
         self::assertSame('automation', $attributes['actor']);
 
         // Test unfreezing
@@ -310,5 +311,24 @@ class PackageAuditRecordTest extends KernelTestCase
         self::assertSame('test/freeze-package', $attributes['name']);
         self::assertSame('https://github.com/test/freeze-package', $attributes['repository']);
         self::assertSame('automation', $attributes['actor']);
+    }
+
+    public function testPackageFreezingRecordsTheInternalReason(): void
+    {
+        $container = static::getContainer();
+        $em = $container->get(ManagerRegistry::class)->getManager();
+
+        $package = self::createPackage('test/gone-package', 'https://github.com/test/gone-package');
+        $em->persist($package);
+        $em->flush();
+
+        $package->freeze(PackageFreezeReason::Gone, 'github_api_404: Composer\\Downloader\\TransportException: not found');
+        $em->flush();
+
+        $logs = $container->get(Connection::class)->fetchAllAssociative('SELECT * FROM audit_log WHERE type = ? ORDER BY id DESC', [AuditLogEventType::PackageFrozen->value]);
+        self::assertCount(1, $logs);
+        $attributes = json_decode($logs[0]['attributes'], true);
+        self::assertSame('gone', $attributes['reason']);
+        self::assertSame('github_api_404: Composer\\Downloader\\TransportException: not found', $attributes['internalReason']);
     }
 }

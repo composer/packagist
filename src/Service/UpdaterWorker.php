@@ -20,6 +20,8 @@ use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\PackageManager;
 use App\Package\HttpGitShadow;
+use App\Package\UpdateFailureClassifier;
+use App\Package\UpdateFailureKind;
 use App\Package\Updater;
 use App\Package\VcsRepositoryFactory;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
@@ -272,98 +274,32 @@ class UpdaterWorker
                 ];
             }
 
-            $found404 = false;
-
             // attempt to detect a 404/dead repository
             // TODO check and delete those packages with crawledAt in the far future but updatedAt in the past in a second step/job if the repo is really unreachable
             // probably should check for download count and a few other metrics to avoid false positives and ask humans to check the others
-            if ($e instanceof \RuntimeException && strpos($e->getMessage(), 'remote: Repository not found')) {
-                // git clone was attempted and says the repo is not found, that's very conclusive
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), 'git@gitlab.com') && (strpos($e->getMessage(), 'Please make sure you have the correct access rights') || str_contains($e->getMessage(), "transport 'ssh' not allowed"))) {
-                // git clone says we have no right on gitlab for 404s (or ssh is disallowed, reached after an API 401/404)
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@gitlab.com/') && strpos($e->getMessage(), 'You are not allowed to download code from this project')) {
-                // project is gone on gitlab somehow
-                $found404 = true;
-            } elseif ($e instanceof TransportException && $e->getStatusCode() === 404 && strpos($e->getMessage(), 'https://gitlab.com/api/v4/projects/') && strpos($e->getMessage(), '404 Project Not Found')) {
-                // http client 404s on gitlab
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{git@(?:ssh\.)?bitbucket\.org}', $e->getMessage()) && (strpos($e->getMessage(), 'Please make sure you have the correct access rights') || str_contains($e->getMessage(), "transport 'ssh' not allowed"))) {
-                // git clone says we have no right on bitbucket for 404s (or ssh is disallowed, reached once https failed)
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Please ask the owner to check their account')) {
-                // git clone says account is disabled on github for private repos(?) if cloning via https
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), ' Your account is suspended.')) {
-                // git clone says account is suspended on github
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && strpos($e->getMessage(), '@github.com/') && strpos($e->getMessage(), 'Access to this repository has been disabled by GitHub staff due to excessive resource use.')) {
-                // git clone says repo is disabled on github
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && str_contains($e->getMessage(), '@github.com/') && str_contains($e->getMessage(), 'remote: Write access to repository not granted.') && str_contains($e->getMessage(), 'The requested URL returned error: 403')) {
-                // git clone failure on github with a 403 when the repo does not exist (or is private?)
-                $found404 = true;
-            } elseif ($e instanceof TransportException && Preg::isMatch('{https://api.bitbucket.org/2.0/repositories/[^/]+/.+?\?fields=-project}i', $e->getMessage()) && $e->getStatusCode() == 404) {
-                // bitbucket api root returns a 404
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{fatal: repository \'[^\']+\' not found\n}i', $e->getMessage())) {
-                // random git clone failures
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{fatal: Authentication failed}i', $e->getMessage())) {
-                // git clone failed because repo now requires auth
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && Preg::isMatch('{Driver could not be established for package}i', $e->getMessage())) {
-                // no driver found as it is a custom hosted git most likely on a server that is now unreachable or similar
-                $found404 = true;
-            } elseif ($e instanceof \RuntimeException && (
-                Preg::isMatch('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $e->getMessage())
-                || Preg::isMatch('{fatal: could not read Username for \'[^\']+\': terminal prompts disabled}i', $e->getMessage())
-                || Preg::isMatch('{fatal: unable to access \'[^\']+\': Could not resolve host: }i', $e->getMessage())
-                || Preg::isMatch('{fatal: unable to access \'[^\']+\': The requested URL returned error: 503}i', $e->getMessage())
-                || Preg::isMatch('{fatal: unable to access \'[^\']+\': server certificate verification failed}i', $e->getMessage())
-                || Preg::isMatch('{Can\'t connect to host \'[^\']+\': Connection (timed out|refused)}i', $e->getMessage())
-                || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+(?: after \d+ ms)?: Connection (timed out|refused)}i', $e->getMessage())
-                || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+(?: after \d+ ms)?: No route to host}i', $e->getMessage())
-                || Preg::isMatch('{Failed to connect to [\w.-]+ port \d+(?: after \d+ ms)?: Couldn\'t connect to server}i', $e->getMessage())
-                || Preg::isMatch('{SSL: certificate subject name \([\w.-]+\) does not match target host name \'[\w.-]+\'}i', $e->getMessage())
-                || Preg::isMatch('{gnutls_handshake\(\) failed: The server name sent was not recognized}i', $e->getMessage())
-            )) {
-                // unreachable host, skip for a week as this may be a temporary failure
-                $found404 = new \DateTimeImmutable('+7 days');
-            } elseif ($e instanceof TransportException && $e->getStatusCode() === 409 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?/git/refs/heads\?per_page=100" file could not be downloaded \(HTTP/2 409 \)}', $e->getMessage())) {
-                $found404 = true;
-            } elseif ($e instanceof TransportException && \in_array($e->getStatusCode(), [404, 451], true) && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded \(HTTP/2 (404|451) \)}', $e->getMessage())) {
-                $found404 = true;
-            } elseif ($e instanceof TransportException && $e->getStatusCode() === 403 && Preg::isMatch('{^The "https://api\.github\.com/repos/[^/]+/[^/]+?" file could not be downloaded}', $e->getMessage()) && str_contains((string) $e->getResponse(), 'Repository access blocked')) {
-                $found404 = true;
-            }
+            $verdict = UpdateFailureClassifier::classify($e);
+            if ($verdict !== null) {
+                $internalReason = UpdateFailureClassifier::describe($verdict, $e);
 
-            // github 404'ed, check through API whether the package still exists and delete if not
-            if ($found404 && Preg::isMatchStrictGroups('{[@/]github.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $match)) {
-                if ($result = $this->checkForDeadGitHubPackage($package, $match[1], $httpDownloader, $output)) {
-                    return $result;
+                // github 404'ed, check through API whether the package still exists and delete if not
+                if (Preg::isMatchStrictGroups('{[@/]github.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $match)) {
+                    if ($result = $this->checkForDeadGitHubPackage($package, $match[1], $httpDownloader, $output, $internalReason)) {
+                        return $result;
+                    }
                 }
-            }
 
-            // gitlab 404'ed, check through API whether the package still exists and delete if not
-            if ($found404 && Preg::isMatchStrictGroups('{https://gitlab.com/([^/]+/.+)$}i', $package->getRepository(), $match)) {
-                if ($result = $this->checkForDeadGitLabPackage($package, $match[1], $httpDownloader, $output)) {
-                    return $result;
+                // gitlab 404'ed, check through API whether the package still exists and delete if not
+                if (Preg::isMatchStrictGroups('{https://gitlab.com/([^/]+/.+)$}i', $package->getRepository(), $match)) {
+                    if ($result = $this->checkForDeadGitLabPackage($package, $match[1], $httpDownloader, $output, $internalReason)) {
+                        return $result;
+                    }
                 }
-            }
 
-            // detected a 404 so prevent updates for x days or fully if the package is conclusively gone
-            if ($found404) {
-                if ($found404 === true) {
-                    $package->freeze(PackageFreezeReason::Gone);
-                } else {
-                    $package->setCrawledAt($found404);
-                }
-                $this->getEM()->persist($package);
-                $this->getEM()->flush();
+                if ($verdict->kind === UpdateFailureKind::Gone) {
+                    $package->freeze(PackageFreezeReason::Gone, $internalReason);
+                    $this->getEM()->persist($package);
+                    $this->getEM()->flush();
 
-                if ($found404 === true) {
                     return [
                         'status' => Job::STATUS_PACKAGE_GONE,
                         'message' => 'Update of '.$packageName.' failed, package appears to be 404/gone and has been marked frozen.',
@@ -372,6 +308,11 @@ class UpdaterWorker
                         'vendor' => $packageVendor,
                     ];
                 }
+
+                // unreachable host, skip for a week as this may be a temporary failure
+                $package->setCrawledAt(new \DateTimeImmutable('+7 days'));
+                $this->getEM()->persist($package);
+                $this->getEM()->flush();
 
                 return [
                     'status' => Job::STATUS_FAILED,
@@ -447,7 +388,7 @@ class UpdaterWorker
     /**
      * @return PackageGoneResult|PackageDeletedResult|null
      */
-    private function checkForDeadGitHubPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output): ?array
+    private function checkForDeadGitHubPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output, string $internalReason): ?array
     {
         try {
             $httpDownloader->get('https://api.github.com/repos/'.$repo.'/git/refs/heads', ['retry-auth-failure' => false]);
@@ -462,7 +403,7 @@ class UpdaterWorker
                     || ($e->getStatusCode() === 403 && str_contains('"message": "Repository access blocked"', (string) $e->getResponse()))
                 )
             ) {
-                return $this->completeDeadPackageCheck('https://api.github.com/repos/composer/composer/git/refs/heads', $package, $httpDownloader, $output, $e);
+                return $this->completeDeadPackageCheck('https://api.github.com/repos/composer/composer/git/refs/heads', $package, $httpDownloader, $output, $e, $internalReason);
             }
         }
 
@@ -472,7 +413,7 @@ class UpdaterWorker
     /**
      * @return PackageGoneResult|PackageDeletedResult|null
      */
-    private function checkForDeadGitLabPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output): ?array
+    private function checkForDeadGitLabPackage(Package $package, string $repo, HttpDownloader $httpDownloader, string $output, string $internalReason): ?array
     {
         try {
             $httpDownloader->get('https://gitlab.com/api/v4/projects/'.urlencode($repo), ['retry-auth-failure' => false]);
@@ -482,7 +423,7 @@ class UpdaterWorker
                 $e instanceof TransportException
                     && \in_array($e->getStatusCode(), [404], true)
             ) {
-                return $this->completeDeadPackageCheck('https://gitlab.com/api/v4/projects/'.urlencode('packagist/vcs-repository-test'), $package, $httpDownloader, $output, $e);
+                return $this->completeDeadPackageCheck('https://gitlab.com/api/v4/projects/'.urlencode('packagist/vcs-repository-test'), $package, $httpDownloader, $output, $e, $internalReason);
             }
         }
 
@@ -492,19 +433,21 @@ class UpdaterWorker
     /**
      * @return PackageGoneResult|PackageDeletedResult|null
      */
-    private function completeDeadPackageCheck(string $referenceRepoApiUrl, Package $package, HttpDownloader $httpDownloader, string $output, TransportException $e): ?array
+    private function completeDeadPackageCheck(string $referenceRepoApiUrl, Package $package, HttpDownloader $httpDownloader, string $output, TransportException $e, string $internalReason): ?array
     {
         try {
             // check composer reference repo is visible to make sure it's not github/gitlab or something else in between glitching
             $httpDownloader->get($referenceRepoApiUrl, ['retry-auth-failure' => false]);
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             // ignore failures here, we/github/gitlab/.. must be offline
             return null;
         }
 
+        $internalReason .= ' (confirmed by the API: HTTP '.$e->getStatusCode().')';
+
         // remove packages with very low downloads and that are 404
         if ($this->downloadManager->getTotalDownloads($package) <= 100) {
-            $this->packageManager->deletePackage($package);
+            $this->packageManager->deletePackage($package, internalReason: $internalReason);
 
             return [
                 'status' => Job::STATUS_PACKAGE_DELETED,
@@ -515,7 +458,7 @@ class UpdaterWorker
             ];
         }
 
-        $package->freeze(PackageFreezeReason::Gone);
+        $package->freeze(PackageFreezeReason::Gone, $internalReason);
         $this->getEM()->persist($package);
         $this->getEM()->flush();
 
