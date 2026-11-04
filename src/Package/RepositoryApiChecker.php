@@ -37,7 +37,7 @@ class RepositoryApiChecker
                 $httpDownloader,
                 // 409 is an empty repo which is about the same for our purposes, 451 a DMCA takedown
                 static fn (TransportException $e) => \in_array($e->getStatusCode(), [404, 409, 451], true)
-                    || ($e->getStatusCode() === 403 && str_contains('"message": "Repository access blocked"', (string) $e->getResponse())),
+                    || ($e->getStatusCode() === 403 && str_contains((string) $e->getResponse(), 'Repository access blocked')),
             );
         }
 

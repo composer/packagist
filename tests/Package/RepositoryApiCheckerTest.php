@@ -56,6 +56,8 @@ class RepositoryApiCheckerTest extends TestCase
         yield 'github 404' => ['https://github.com/acme/lib', [$github => self::error(404), self::GITHUB_REFERENCE => 200], RepositoryApiState::Missing];
         yield 'github empty repository' => ['https://github.com/acme/lib', [$github => self::error(409), self::GITHUB_REFERENCE => 200], RepositoryApiState::Missing];
         yield 'github dmca takedown' => ['https://github.com/acme/lib', [$github => self::error(451), self::GITHUB_REFERENCE => 200], RepositoryApiState::Missing];
+        yield 'github access blocked' => ['https://github.com/acme/lib', [$github => self::error(403, '{"message":"Repository access blocked","block":{"reason":"tos","created_at":"2026-01-01T00:00:00Z"}}'), self::GITHUB_REFERENCE => 200], RepositoryApiState::Missing];
+        yield 'github access blocked, pretty printed' => ['https://github.com/acme/lib', [$github => self::error(403, "{\n  \"message\": \"Repository access blocked\"\n}"), self::GITHUB_REFERENCE => 200], RepositoryApiState::Missing];
         yield 'github 404 while the reference fails' => ['https://github.com/acme/lib', [$github => self::error(404), self::GITHUB_REFERENCE => self::error(503)], RepositoryApiState::Unknown];
         yield 'github 403' => ['https://github.com/acme/lib', [$github => self::error(403, '{"message":"Although you appear to have the correct authorization credentials, the `acme` organization has an IP allow list enabled"}')], RepositoryApiState::Unknown];
         yield 'github 500' => ['https://github.com/acme/lib', [$github => self::error(500)], RepositoryApiState::Unknown];
