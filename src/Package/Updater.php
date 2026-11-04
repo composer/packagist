@@ -165,6 +165,11 @@ class Updater
         ErrorHandler::register();
     }
 
+    protected function createHttpDownloader(IOInterface $io, Config $config): HttpDownloader
+    {
+        return new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
+    }
+
     /**
      * Identity used for immutability comparisons: source.reference if present and non-empty,
      * else dist.reference, else null. A version with no effective reference cannot be imported.

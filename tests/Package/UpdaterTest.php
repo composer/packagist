@@ -36,6 +36,7 @@ use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
 use Composer\Semver\Constraint\MatchAllConstraint;
+use Composer\Util\HttpDownloader;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
@@ -82,6 +83,24 @@ class UpdaterTest extends IntegrationTestCase
         $packageManagerMock = $this->createStub(PackageManager::class);
 
         $this->updater = new Updater($registry, $providerManagerMock, $versionIdCache, $mailerMock, 'foo@example.org', $routerMock, $eventDispatcherMock, $packageManagerMock, new NullLogger());
+    }
+
+    /**
+     * Returns an Updater whose GitHub API calls go to $httpDownloader instead of the network
+     */
+    private function createUpdaterWithHttpDownloader(HttpDownloader $httpDownloader): Updater
+    {
+        $updater = new class(static::getContainer()->get(ManagerRegistry::class), $this->createStub(ProviderManager::class), $this->createStub(VersionIdCache::class), $this->createStub(MailerInterface::class), 'foo@example.org', $this->createStub(UrlGeneratorInterface::class), $this->createStub(EventDispatcher::class), $this->createStub(PackageManager::class), new NullLogger()) extends Updater {
+            public HttpDownloader $httpDownloader;
+
+            protected function createHttpDownloader(IOInterface $io, Config $config): HttpDownloader
+            {
+                return $this->httpDownloader;
+            }
+        };
+        $updater->httpDownloader = $httpDownloader;
+
+        return $updater;
     }
 
     private function bindReadmeDriver(): void
@@ -167,11 +186,12 @@ class UpdaterTest extends IntegrationTestCase
         $driver->method('getSource')->willReturn(['type' => 'git', 'url' => 'https://example.com/test/pkg', 'reference' => '']);
         $driver->method('getRepoData')->willReturn(['stargazers_count' => 42]);
         $this->repositoryMock->method('getDriver')->willReturn($driver);
+        $httpDownloader = $this->createMock(HttpDownloader::class);
+        $httpDownloader->expects($this->never())->method('get');
 
-        $this->updater->update($this->ioMock, $this->config, $package, $this->repositoryMock);
+        $this->createUpdaterWithHttpDownloader($httpDownloader)->update($this->ioMock, $this->config, $package, $this->repositoryMock);
 
         self::assertSame(42, $package->getGitHubStars());
-        // a read would have hit the GitHub API, which is unreachable in tests and would 404 for this repository
         self::assertSame('Old readme', $this->getEM()->find(PackageReadme::class, $package->getId())->contents);
     }
 
