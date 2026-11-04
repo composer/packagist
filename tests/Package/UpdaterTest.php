@@ -109,81 +109,88 @@ class UpdaterTest extends IntegrationTestCase
 
         $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
         $this->assertStringContainsString('This is the readme', $readme->contents);
-        self::assertNull($this->package->readmeReference);
     }
 
     public function testOnlyRereadsTheReadmeWhenTheDefaultBranchMoves(): void
     {
+        $branches = ['master' => 'aaaa', 'dev' => 'bbbb'];
+        $this->bindDefaultBranchRepository('test/pkg', 'master', $branches);
         $this->bindReadmeDriver();
         $this->driverMock->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->method('getComposerInformation')->willReturn([]);
-        $this->driverMock->method('getBranches')->willReturnOnConsecutiveCalls(
-            ['master' => 'aaaa', 'dev' => 'bbbb'],
-            ['master' => 'aaaa', 'dev' => 'cccc'],
-            ['master' => 'dddd', 'dev' => 'cccc'],
-        );
+        $this->driverMock->method('getBranches')->willReturnCallback(static function () use (&$branches) {
+            return $branches;
+        });
         $this->driverMock->expects($this->exactly(2))->method('getFileContent')->with('README.md', 'master')
                          ->willReturnOnConsecutiveCalls('First readme', 'Second readme');
 
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
-        self::assertSame('aaaa', $this->package->readmeReference);
 
+        $branches['dev'] = 'cccc';
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
         self::assertStringContainsString('First readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
 
+        $branches['master'] = 'dddd';
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
         self::assertStringContainsString('Second readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
-        self::assertSame('dddd', $this->package->readmeReference);
     }
 
     public function testForcedUpdatesRereadTheReadme(): void
     {
-        $this->package->readmeReference = 'aaaa';
+        $branches = ['master' => 'aaaa'];
+        $this->bindDefaultBranchRepository('test/pkg', 'master', $branches);
         $this->bindReadmeDriver();
         $this->driverMock->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->method('getComposerInformation')->willReturn([]);
-        $this->driverMock->method('getBranches')->willReturn(['master' => 'aaaa']);
-        $this->driverMock->expects($this->once())->method('getFileContent')->willReturn('Fresh readme');
+        $this->driverMock->method('getBranches')->willReturn($branches);
+        $this->driverMock->expects($this->exactly(2))->method('getFileContent')
+                         ->willReturnOnConsecutiveCalls('First readme', 'Fresh readme');
 
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
         $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::FORCE_DUMP);
 
         self::assertStringContainsString('Fresh readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
     }
 
-    public function testFailedReadmeReadIsRetriedOnTheNextUpdate(): void
-    {
-        $this->package->readmeReference = 'aaaa';
-        $this->bindReadmeDriver();
-        $this->driverMock->method('getRootIdentifier')->willReturn('master');
-        $this->driverMock->method('getComposerInformation')->willReturn([]);
-        $this->driverMock->method('getBranches')->willReturn(['master' => 'bbbb']);
-        $this->driverMock->expects($this->once())->method('getFileContent')->willThrowException(new \RuntimeException('timeout'));
-
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
-
-        self::assertSame('aaaa', $this->package->readmeReference);
-    }
-
     public function testUnchangedGitHubReadmeStillUpdatesRepoData(): void
     {
         $package = self::createPackage('test/gh', 'https://github.com/test/gh');
-        $package->readmeReference = 'aaaa';
         $this->store($package);
+        $version = $this->seedDevVersion($package, 'dev-main', 'dev-main', 'aaaa');
+        $version->setIsDefaultBranch(true);
         $this->getEM()->persist(new PackageReadme($package, 'Old readme'));
         $this->getEM()->flush();
 
+        $branches = ['main' => 'aaaa'];
+        $this->bindDefaultBranchRepository('test/gh', 'main', $branches);
         $driver = $this->createStub(GitHubDriver::class);
         $driver->method('getRootIdentifier')->willReturn('main');
         $driver->method('getComposerInformation')->willReturn([]);
-        $driver->method('getBranches')->willReturn(['main' => 'aaaa']);
+        $driver->method('getBranches')->willReturn($branches);
         $driver->method('getRepoData')->willReturn(['stargazers_count' => 42]);
         $this->repositoryMock->method('getDriver')->willReturn($driver);
 
         $this->updater->update($this->ioMock, $this->config, $package, $this->repositoryMock);
 
         self::assertSame(42, $package->getGitHubStars());
+        // a read would have hit the GitHub API, which is unreachable in tests and would 404 for this repository
         self::assertSame('Old readme', $this->getEM()->find(PackageReadme::class, $package->getId())->contents);
-        self::assertSame('aaaa', $package->readmeReference);
+    }
+
+    /**
+     * Makes the repository return the default branch at the commit $branches has for it when update() runs
+     *
+     * @param array<string, string> $branches
+     */
+    private function bindDefaultBranchRepository(string $name, string $branch, array &$branches): void
+    {
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturnCallback(function () use ($name, $branch, &$branches) {
+            $package = $this->buildCompletePackage($name, 'dev-'.$branch, 'dev-'.$branch, $branches[$branch]);
+            $package->setIsDefaultBranch(true);
+
+            return [$package];
+        });
     }
 
     public function testFiltersDangerousUrlSchemesFromMetadata(): void

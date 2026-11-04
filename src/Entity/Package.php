@@ -230,12 +230,6 @@ class Package
     private ?PackageFreezeReason $frozen = null;
 
     /**
-     * Default branch commit the readme was last read from
-     */
-    #[ORM\Column(length: 64, nullable: true)]
-    public ?string $readmeReference = null;
-
-    /**
      * @internal
      *
      * @var true|VcsDriverInterface|null
