@@ -141,6 +141,21 @@ class HttpGitShadowTest extends TestCase
         self::assertStringStartsWith('HttpGitDriver failed: App\Package\Git\RepositoryNotFoundException', $this->logs->getRecords()[0]->context['differences'][0]);
     }
 
+    public function testErrorsReadingComposerJsonAreReportedAsDifferences(): void
+    {
+        $reference = new class(['url' => self::$projectRoot.'/foo.git'], new NullIO(), $this->createConfig(), new GitHttpBackendDownloader(self::$projectRoot), new ProcessExecutor()) extends GitDriver {
+            public function getComposerInformation(string $identifier): ?array
+            {
+                throw new \TypeError('broken');
+            }
+        };
+        $reference->initialize();
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $known = [self::$commits['v1'], self::$commits['main']];
+
+        self::assertSame(['composer.json of branch feature ('.self::$commits['feature'].')'], HttpGitShadow::diff($reference, $this->createHttpDriver($downloader, 'foo.git', $known), $known));
+    }
+
     public function testComparesTheGitFallbackOfApiDrivers(): void
     {
         $driver = $this->createStub(GitHubDriver::class);

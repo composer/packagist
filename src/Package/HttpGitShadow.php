@@ -131,7 +131,7 @@ class HttpGitShadow
     {
         try {
             return $driver->getComposerInformation($identifier);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return $e::class;
         }
     }
