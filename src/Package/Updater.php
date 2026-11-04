@@ -36,7 +36,6 @@ use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Service\VersionCache;
 use App\Util\DoctrineTrait;
-use App\Util\HttpDownloaderOptionsFactory;
 use cebe\markdown\GithubMarkdown;
 use Composer\Config;
 use Composer\Downloader\TransportException;
@@ -193,10 +192,8 @@ class Updater
      * @param int                            $flags            a few of the constants of this class
      * @param ExistingVersionsForUpdate|null $existingVersions
      */
-    public function update(IOInterface $io, Config $config, Package $package, VcsRepository $repository, int $flags = 0, ?array $existingVersions = null, ?VersionCache $versionCache = null): Package
+    public function update(IOInterface $io, Config $config, HttpDownloader $httpDownloader, Package $package, VcsRepository $repository, int $flags = 0, ?array $existingVersions = null, ?VersionCache $versionCache = null): Package
     {
-        $httpDownloader = new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions());
-
         $deleteDate = new \DateTimeImmutable('-1day');
 
         $em = $this->getEM();
@@ -315,6 +312,15 @@ class Updater
             $existingVersions = $versionRepository->getVersionMetadataForUpdate($package);
         }
 
+        $previousDefaultBranchSource = null;
+        foreach ($existingVersions as $existingVersion) {
+            if ($existingVersion['defaultBranch']) {
+                $previousDefaultBranchSource = [$existingVersion['source']['url'] ?? null, $existingVersion['source']['reference'] ?? null];
+                break;
+            }
+        }
+        $defaultBranchReference = null;
+
         $processedVersions = [];
         $idsToMarkUpdated = [];
 
@@ -331,6 +337,9 @@ class Updater
             }
             if (!$version instanceof CompletePackageInterface) {
                 throw new \LogicException('Received a package instance of type '.$version::class.', expected a CompletePackageInterface instance');
+            }
+            if ($version->isDefaultBranch()) {
+                $defaultBranchReference = $version->getSourceReference();
             }
             // skip branch names which are commonly short-lived or not meant to be published
             if (Preg::isMatch('{^dev-(gh-readonly-queue/|renovate/|dependabot/|conductor-|merge-up/).+}', $version->getPrettyVersion()) || \in_array($version->getPrettyVersion(), ['dev-gh-pages', 'dev-release-please--branches--main', 'dev-gitattributes'], true)) {
@@ -479,11 +488,20 @@ class Updater
 
         $em->flush();
 
+        // re-read the readme only if the default branch moved or the repository URL its links use changed. The
+        // stored URL is compared with the driver's, as cached versions keep their old URL until the branch moves
+        $refreshReadme = $flags !== 0 || $defaultBranchReference === null || $previousDefaultBranchSource !== [$driver->getSource($defaultBranchReference)['url'] ?? null, $defaultBranchReference];
+
+        // cleared first so stats the host stops reporting don't linger, updateGitHubInfo/updateGitLabInfo refill them
+        $package->setGitHubStars(null);
+        $package->setGitHubWatches(null);
+        $package->setGitHubForks(null);
+        $package->setGitHubOpenIssues(null);
         if (null !== ($match = $package->getGitHubComponents())) {
-            $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver);
+            $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver, $refreshReadme);
         } elseif (null !== ($match = $package->getGitLabComponents())) {
-            $this->updateGitLabInfo($httpDownloader, $io, $package, $match[1], $match[2], $driver);
-        } else {
+            $this->updateGitLabInfo($httpDownloader, $io, $package, $match[1], $match[2], $driver, $refreshReadme);
+        } elseif ($refreshReadme) {
             $this->updateReadme($io, $package, $driver);
         }
 
@@ -1028,12 +1046,6 @@ class Updater
      */
     private function updateReadme(IOInterface $io, Package $package, VcsDriverInterface $driver): void
     {
-        // GitHub readme & info handled separately in updateGitHubInfo, sweep the special attributes
-        $package->setGitHubStars(null);
-        $package->setGitHubWatches(null);
-        $package->setGitHubForks(null);
-        $package->setGitHubOpenIssues(null);
-
         try {
             $composerInfo = $driver->getComposerInformation($driver->getRootIdentifier());
             if (isset($composerInfo['readme']) && \is_string($composerInfo['readme'])) {
@@ -1104,7 +1116,7 @@ class Updater
         $this->getEM()->persist($readme);
     }
 
-    private function updateGitHubInfo(HttpDownloader $httpDownloader, Package $package, string $owner, string $repo, VcsDriverInterface $driver): void
+    private function updateGitHubInfo(HttpDownloader $httpDownloader, Package $package, string $owner, string $repo, VcsDriverInterface $driver, bool $refreshReadme): void
     {
         if (!$driver instanceof GitHubDriver) {
             return;
@@ -1130,6 +1142,10 @@ class Updater
             $package->setGitHubOpenIssues((int) $repoData['open_issues_count']);
         }
 
+        if (!$refreshReadme) {
+            return;
+        }
+
         try {
             $opts = ['http' => ['header' => ['Accept: application/vnd.github.html+json', 'X-GitHub-Api-Version: 2022-11-28']]];
             $readme = $httpDownloader->get($baseApiUrl.'/readme', $opts)->getBody();
@@ -1146,13 +1162,15 @@ class Updater
         $this->updatePackageReadme($package, $this->prepareReadme($readme, 'github.com', $owner, $repo));
     }
 
-    private function updateGitLabInfo(HttpDownloader $httpDownloader, IOInterface $io, Package $package, string $owner, string $repo, VcsDriverInterface $driver): void
+    private function updateGitLabInfo(HttpDownloader $httpDownloader, IOInterface $io, Package $package, string $owner, string $repo, VcsDriverInterface $driver, bool $refreshReadme): void
     {
         // GitLab provides a generic URL for the original formatted README,
         // which requires further elaboration. Here we use the already existing
         // function to handle it, and back here to populate the other available
         // metadata
-        $this->updateReadme($io, $package, $driver);
+        if ($refreshReadme) {
+            $this->updateReadme($io, $package, $driver);
+        }
 
         if (!$driver instanceof GitLabDriver) {
             return;
@@ -1169,9 +1187,6 @@ class Updater
         if (isset($repoData['open_issues_count']) && is_numeric($repoData['open_issues_count'])) {
             $package->setGitHubOpenIssues((int) $repoData['open_issues_count']);
         }
-
-        // GitLab does not include a "watch" feature
-        $package->setGitHubWatches(null);
     }
 
     /**

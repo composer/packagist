@@ -26,15 +26,19 @@ use App\Model\VersionIdCache;
 use App\Package\Updater;
 use App\Tests\IntegrationTestCase;
 use Composer\Config;
+use Composer\Downloader\TransportException;
 use Composer\IO\IOInterface;
 use Composer\IO\NullIO;
 use Composer\Package\CompletePackage;
 use Composer\Package\Link;
 use Composer\Repository\RepositoryInterface;
 use Composer\Repository\Vcs\GitDriver;
+use Composer\Repository\Vcs\GitHubDriver;
+use Composer\Repository\Vcs\GitLabDriver;
 use Composer\Repository\Vcs\VcsDriverInterface;
 use Composer\Repository\VcsRepository;
 use Composer\Semver\Constraint\MatchAllConstraint;
+use Composer\Util\HttpDownloader;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
@@ -47,6 +51,7 @@ class UpdaterTest extends IntegrationTestCase
 {
     private IOInterface&Stub $ioMock;
     private Config $config;
+    private HttpDownloader&Stub $httpDownloader;
     private Package $package;
     private Updater $updater;
     private RepositoryInterface&Stub $repositoryMock;
@@ -57,6 +62,8 @@ class UpdaterTest extends IntegrationTestCase
         parent::setUp();
 
         $this->config = new Config();
+        $this->httpDownloader = $this->createStub(HttpDownloader::class);
+        $this->httpDownloader->method('get')->willThrowException(new TransportException('No network access in tests', 499));
 
         $this->package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
         $this->store($this->package);
@@ -104,10 +111,140 @@ class UpdaterTest extends IntegrationTestCase
         $this->driverMock->expects($this->once())->method('getFileContent')->with('README.md', 'master')
                          ->willReturn('This is the readme');
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
         $this->assertStringContainsString('This is the readme', $readme->contents);
+    }
+
+    public function testOnlyRereadsTheReadmeWhenTheDefaultBranchMoves(): void
+    {
+        $branches = ['master' => 'aaaa', 'dev' => 'bbbb'];
+        $this->bindDefaultBranchRepository('test/pkg', 'master', $branches);
+        $this->bindReadmeDriver();
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')->willReturn([]);
+        $this->driverMock->method('getSource')->willReturn(['type' => 'git', 'url' => 'https://example.com/test/pkg', 'reference' => '']);
+        $this->driverMock->expects($this->exactly(2))->method('getFileContent')->with('README.md', 'master')
+                         ->willReturnOnConsecutiveCalls('First readme', 'Second readme');
+
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+
+        $branches['dev'] = 'cccc';
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+        self::assertStringContainsString('First readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
+
+        $branches['master'] = 'dddd';
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+        self::assertStringContainsString('Second readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
+    }
+
+    public function testForcedUpdatesRereadTheReadme(): void
+    {
+        $branches = ['master' => 'aaaa'];
+        $this->bindDefaultBranchRepository('test/pkg', 'master', $branches);
+        $this->bindReadmeDriver();
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')->willReturn([]);
+        $this->driverMock->method('getSource')->willReturn(['type' => 'git', 'url' => 'https://example.com/test/pkg', 'reference' => '']);
+        $this->driverMock->expects($this->exactly(2))->method('getFileContent')
+                         ->willReturnOnConsecutiveCalls('First readme', 'Fresh readme');
+
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock, Updater::FORCE_DUMP);
+
+        self::assertStringContainsString('Fresh readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
+    }
+
+    public function testUnchangedGitHubReadmeStillUpdatesRepoData(): void
+    {
+        $package = self::createPackage('test/gh', 'https://github.com/test/gh');
+        $this->store($package);
+        $version = $this->seedDevVersion($package, 'dev-main', 'dev-main', 'aaaa');
+        $version->setIsDefaultBranch(true);
+        $this->getEM()->persist(new PackageReadme($package, 'Old readme'));
+        $this->getEM()->flush();
+
+        $branches = ['main' => 'aaaa'];
+        $this->bindDefaultBranchRepository('test/gh', 'main', $branches);
+        $driver = $this->createStub(GitHubDriver::class);
+        $driver->method('getRootIdentifier')->willReturn('main');
+        $driver->method('getComposerInformation')->willReturn([]);
+        $driver->method('getSource')->willReturn(['type' => 'git', 'url' => 'https://example.com/test/pkg', 'reference' => '']);
+        $driver->method('getRepoData')->willReturn(['stargazers_count' => 42]);
+        $this->repositoryMock->method('getDriver')->willReturn($driver);
+        $httpDownloader = $this->createMock(HttpDownloader::class);
+        $httpDownloader->expects($this->never())->method('get');
+
+        $this->updater->update($this->ioMock, $this->config, $httpDownloader, $package, $this->repositoryMock);
+
+        self::assertSame(42, $package->getGitHubStars());
+        self::assertSame('Old readme', $this->getEM()->find(PackageReadme::class, $package->getId())->contents);
+    }
+
+    public function testGitLabStatsTheHostStopsReportingAreCleared(): void
+    {
+        $package = self::createPackage('test/gl', 'https://gitlab.com/test/gl');
+        $package->setGitHubStars(5);
+        $package->setGitHubForks(3);
+        $package->setGitHubOpenIssues(7);
+        $this->store($package);
+        $version = $this->seedDevVersion($package, 'dev-main', 'dev-main', 'aaaa');
+        $version->setIsDefaultBranch(true);
+        $this->getEM()->flush();
+
+        $branches = ['main' => 'aaaa'];
+        $this->bindDefaultBranchRepository('test/gl', 'main', $branches);
+        $driver = $this->createStub(GitLabDriver::class);
+        $driver->method('getRootIdentifier')->willReturn('main');
+        $driver->method('getComposerInformation')->willReturn([]);
+        $driver->method('getSource')->willReturn(['type' => 'git', 'url' => 'https://gitlab.com/test/gl', 'reference' => '']);
+        // issues disabled on the project: GitLab omits open_issues_count
+        $driver->method('getRepoData')->willReturn(['star_count' => 6, 'forks_count' => 3]);
+        $this->repositoryMock->method('getDriver')->willReturn($driver);
+
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $package, $this->repositoryMock);
+
+        self::assertSame(6, $package->getGitHubStars());
+        self::assertSame(3, $package->getGitHubForks());
+        self::assertNull($package->getGitHubOpenIssues());
+    }
+
+    public function testRereadsTheReadmeWhenTheRepositoryUrlChanged(): void
+    {
+        $branches = ['master' => 'aaaa'];
+        $url = 'https://example.com/test/pkg';
+        $this->bindDefaultBranchRepository('test/pkg', 'master', $branches);
+        $this->bindReadmeDriver();
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')->willReturn([]);
+        $this->driverMock->method('getSource')->willReturnCallback(static function () use (&$url) {
+            return ['type' => 'git', 'url' => $url, 'reference' => ''];
+        });
+        $this->driverMock->expects($this->exactly(2))->method('getFileContent')
+                         ->willReturnOnConsecutiveCalls('First readme', 'Moved readme');
+
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+        $url = 'https://example.org/moved/pkg';
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+
+        self::assertStringContainsString('Moved readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
+    }
+
+    /**
+     * Makes the repository return the default branch at the commit $branches has for it when update() runs
+     *
+     * @param array<string, string> $branches
+     */
+    private function bindDefaultBranchRepository(string $name, string $branch, array &$branches): void
+    {
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturnCallback(function () use ($name, $branch, &$branches) {
+            $package = $this->buildCompletePackage($name, 'dev-'.$branch, 'dev-'.$branch, $branches[$branch]);
+            $package->setIsDefaultBranch(true);
+
+            return [$package];
+        });
     }
 
     public function testFiltersDangerousUrlSchemesFromMetadata(): void
@@ -136,7 +273,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
         self::assertNotNull($version);
@@ -174,7 +311,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
         // previously threw: sanitize(): Argument #1 ($str) must be of type ?string, array given
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
         self::assertNotNull($version);
@@ -227,7 +364,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
         self::assertNotNull($version);
@@ -320,7 +457,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->driverMock->expects($this->once())->method('getFileContent')->with('README.md', 'master')
                          ->willReturn($readme);
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
         self::assertSame($readmeHtml, $readme->contents);
@@ -351,7 +488,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->driverMock->expects($this->once())->method('getFileContent')->with('README.md', 'master')
                          ->willReturn($readme);
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
         self::assertSame($readmeHtml, $readme->contents);
@@ -366,7 +503,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->driverMock->expects($this->once())->method('getFileContent')->with('README.txt', 'master')
                          ->willReturn('This is the readme');
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
         self::assertSame('<pre>This is the readme</pre>', $readme->contents);
@@ -381,7 +518,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->driverMock->expects($this->once())->method('getFileContent')->with('liesmich', 'master')
                          ->willReturn('This is the readme');
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $readme = $this->getEM()->find(PackageReadme::class, $this->package->getId());
         self::assertSame('<pre>This is the readme</pre>', $readme->contents);
@@ -526,7 +663,7 @@ class UpdaterTest extends IntegrationTestCase
         $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
         $this->rebuildUpdater($packageManagerMock);
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $blocked = $this->countAudits(AuditLogEventType::VersionReferenceChangeBlocked);
         self::assertSame(0, $blocked);
@@ -546,7 +683,7 @@ class UpdaterTest extends IntegrationTestCase
             ->with($this->package, '1.0.0', 'abcdef1234567890', '9999999999999999');
         $this->rebuildUpdater($packageManagerMock);
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em = self::getEM();
         $em->clear();
@@ -580,7 +717,7 @@ class UpdaterTest extends IntegrationTestCase
         $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
         $this->rebuildUpdater($packageManagerMock);
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         self::assertSame(0, $this->countAudits(AuditLogEventType::VersionReferenceChangeBlocked));
     }
@@ -602,7 +739,7 @@ class UpdaterTest extends IntegrationTestCase
         $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
         $this->rebuildUpdater($packageManagerMock);
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em = self::getEM();
         $em->clear();
@@ -625,7 +762,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em = self::getEM();
         $em->clear();
@@ -643,7 +780,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em = self::getEM();
         $em->clear();
@@ -664,7 +801,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em = self::getEM();
         $em->clear();
@@ -688,7 +825,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$renovate, $dependabot, $mergeQueue, $realBranch, $lookalike]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em = self::getEM();
         $em->clear();
@@ -732,7 +869,7 @@ class UpdaterTest extends IntegrationTestCase
         $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
         $this->rebuildUpdater($packageManagerMock);
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::DELETE_BEFORE);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock, Updater::DELETE_BEFORE);
 
         $em = self::getEM();
         $em->clear();
@@ -775,7 +912,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em->clear();
         $dependents = $em->getRepository(Dependent::class)->findBy(['package' => $this->package->getId()]);
@@ -819,7 +956,7 @@ class UpdaterTest extends IntegrationTestCase
         $packageManagerMock->expects($this->never())->method('notifyVersionReferenceChangeBlocked');
         $this->rebuildUpdater($packageManagerMock);
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::UPDATE_SOURCE_DIST_URL);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock, Updater::UPDATE_SOURCE_DIST_URL);
 
         $em->clear();
         $reloaded = $em->getRepository(Version::class)->find($versionId);
@@ -865,7 +1002,7 @@ class UpdaterTest extends IntegrationTestCase
         $driver->method('getDist')->willReturn(['type' => 'zip', 'url' => 'https://different.example.com/dist/'.$ref, 'reference' => $ref, 'shasum' => $shasum]);
         $this->repositoryMock->method('getDriver')->willReturn($driver);
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::UPDATE_SOURCE_DIST_URL);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock, Updater::UPDATE_SOURCE_DIST_URL);
 
         $em->clear();
         $reloaded = $em->getRepository(Version::class)->find($versionId);
@@ -888,7 +1025,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em = self::getEM();
         $em->clear();
@@ -914,7 +1051,7 @@ class UpdaterTest extends IntegrationTestCase
         $repo1 = $this->createStub(VcsRepository::class);
         $repo1->method('getPackages')->willReturn([$upstreamKept]);
         $repo1->method('getDriver')->willReturn($this->stableDriver());
-        $this->updater->update($this->ioMock, $this->config, $this->package, $repo1);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $repo1);
 
         $em->clear();
         $afterPrune = $em->getRepository(Version::class)->find($goneId);
@@ -931,7 +1068,7 @@ class UpdaterTest extends IntegrationTestCase
         $repo2 = $this->createStub(VcsRepository::class);
         $repo2->method('getPackages')->willReturn([$upstreamGone, $upstreamKept]);
         $repo2->method('getDriver')->willReturn($this->stableDriver());
-        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $package, $repo2);
 
         $em->clear();
         $recovered = $em->getRepository(Version::class)->find($goneId);
@@ -950,7 +1087,7 @@ class UpdaterTest extends IntegrationTestCase
         ]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $this->getEM()->refresh($this->package);
         self::assertTrue($this->package->isDumpRequested(), 'a created version must mark the package for re-dump');
@@ -982,7 +1119,7 @@ class UpdaterTest extends IntegrationTestCase
         ]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         self::assertCount(3, $marksSeenWhileWriting, 'all three versions must have been stored');
         self::assertSame([null, null, null], $marksSeenWhileWriting, 'the package must stay unmarked until the version loop is done');
@@ -1009,7 +1146,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
         try {
-            $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+            $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
             self::fail('the crawl was expected to fail after the version had been written');
         } catch (\RuntimeException $e) {
             self::assertSame('provider list unreachable', $e->getMessage());
@@ -1036,7 +1173,7 @@ class UpdaterTest extends IntegrationTestCase
         ]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $this->getEM()->refresh($this->package);
         self::assertNull($this->package->getDumpRequestedAt(), 'an unchanged re-crawl must not re-stale the metadata');
@@ -1056,7 +1193,7 @@ class UpdaterTest extends IntegrationTestCase
         ]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock, Updater::FORCE_DUMP);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock, Updater::FORCE_DUMP);
 
         $this->getEM()->refresh($this->package);
         self::assertTrue($this->package->isDumpForced(), 'FORCE_DUMP must escalate past the dumper content comparison');
@@ -1076,7 +1213,7 @@ class UpdaterTest extends IntegrationTestCase
         ]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $this->getEM()->refresh($this->package);
         self::assertNull($this->package->getDumpRequestedAt(), 'a dev branch at an unchanged ref must not re-stale the metadata');
@@ -1097,7 +1234,7 @@ class UpdaterTest extends IntegrationTestCase
         ]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $this->getEM()->refresh($this->package);
         self::assertTrue($this->package->isDumpRequested(), 'a version dropping out of the dump must mark the package for re-dump');
@@ -1119,7 +1256,7 @@ class UpdaterTest extends IntegrationTestCase
         ]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $this->getEM()->refresh($this->package);
         self::assertTrue($this->package->isDumpRequested(), 'a recovered version rejoining the dump must mark the package for re-dump');
@@ -1146,7 +1283,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em->clear();
         $package = $em->getRepository(Package::class)->find($this->package->getId());
@@ -1164,7 +1301,7 @@ class UpdaterTest extends IntegrationTestCase
         $repo2 = $this->createStub(VcsRepository::class);
         $repo2->method('getPackages')->willReturn([$upstream]);
         $repo2->method('getDriver')->willReturn($this->stableDriver());
-        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $package, $repo2);
 
         $em->clear();
         $package = $em->getRepository(Package::class)->find($this->package->getId());
@@ -1203,7 +1340,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstreamDefault, $upstreamLegacy]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em->clear();
         $package = $em->getRepository(Package::class)->find($this->package->getId());
@@ -1235,7 +1372,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em->clear();
         $package = $em->getRepository(Package::class)->find($this->package->getId());
@@ -1252,7 +1389,7 @@ class UpdaterTest extends IntegrationTestCase
         $repo2 = $this->createStub(VcsRepository::class);
         $repo2->method('getPackages')->willReturn([$upstream]);
         $repo2->method('getDriver')->willReturn($this->stableDriver());
-        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $package, $repo2);
 
         $em->clear();
         $package = $em->getRepository(Package::class)->find($this->package->getId());
@@ -1285,7 +1422,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
 
-        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
 
         $em->clear();
         $package = $em->getRepository(Package::class)->find($this->package->getId());
@@ -1302,7 +1439,7 @@ class UpdaterTest extends IntegrationTestCase
         $repo2 = $this->createStub(VcsRepository::class);
         $repo2->method('getPackages')->willReturn([$upstream]);
         $repo2->method('getDriver')->willReturn($this->stableDriver());
-        $this->updater->update($this->ioMock, $this->config, $package, $repo2);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $package, $repo2);
 
         $em->clear();
         $package = $em->getRepository(Package::class)->find($this->package->getId());
