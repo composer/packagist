@@ -315,13 +315,14 @@ class Updater
             $existingVersions = $versionRepository->getVersionMetadataForUpdate($package);
         }
 
-        $previousDefaultBranchReference = null;
+        $previousDefaultBranchSource = null;
         foreach ($existingVersions as $existingVersion) {
             if ($existingVersion['defaultBranch']) {
-                $previousDefaultBranchReference = $existingVersion['source']['reference'] ?? null;
+                $previousDefaultBranchSource = [$existingVersion['source']['url'] ?? null, $existingVersion['source']['reference'] ?? null];
                 break;
             }
         }
+        $defaultBranchReference = null;
 
         $processedVersions = [];
         $idsToMarkUpdated = [];
@@ -339,6 +340,9 @@ class Updater
             }
             if (!$version instanceof CompletePackageInterface) {
                 throw new \LogicException('Received a package instance of type '.$version::class.', expected a CompletePackageInterface instance');
+            }
+            if ($version->isDefaultBranch()) {
+                $defaultBranchReference = $version->getSourceReference();
             }
             // skip branch names which are commonly short-lived or not meant to be published
             if (Preg::isMatch('{^dev-(gh-readonly-queue/|renovate/|dependabot/|conductor-|merge-up/).+}', $version->getPrettyVersion()) || \in_array($version->getPrettyVersion(), ['dev-gh-pages', 'dev-release-please--branches--main', 'dev-gitattributes'], true)) {
@@ -487,8 +491,9 @@ class Updater
 
         $em->flush();
 
-        // the readme comes from the default branch, so it only needs reading again when that moved
-        $refreshReadme = $flags !== 0 || $previousDefaultBranchReference === null || $previousDefaultBranchReference !== $this->getDefaultBranchReference($driver);
+        // re-read the readme only if the default branch moved or the repository URL its links use changed. The
+        // stored URL is compared with the driver's, as cached versions keep their old URL until the branch moves
+        $refreshReadme = $flags !== 0 || $defaultBranchReference === null || $previousDefaultBranchSource !== [$driver->getSource($defaultBranchReference)['url'] ?? null, $defaultBranchReference];
         if (null !== ($match = $package->getGitHubComponents())) {
             $this->updateGitHubInfo($httpDownloader, $package, $match[1], $match[2], $driver, $refreshReadme);
         } elseif (null !== ($match = $package->getGitLabComponents())) {
@@ -1038,17 +1043,6 @@ class Updater
             entity: $version,
             events: $postUpdateEvents,
         );
-    }
-
-    private function getDefaultBranchReference(VcsDriverInterface $driver): ?string
-    {
-        try {
-            $reference = $driver->getBranches()[$driver->getRootIdentifier()] ?? null;
-        } catch (\Exception) {
-            return null;
-        }
-
-        return \is_string($reference) ? $reference : null;
     }
 
     /**

@@ -118,9 +118,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->bindReadmeDriver();
         $this->driverMock->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->method('getComposerInformation')->willReturn([]);
-        $this->driverMock->method('getBranches')->willReturnCallback(static function () use (&$branches) {
-            return $branches;
-        });
+        $this->driverMock->method('getSource')->willReturn(['type' => 'git', 'url' => 'https://example.com/test/pkg', 'reference' => '']);
         $this->driverMock->expects($this->exactly(2))->method('getFileContent')->with('README.md', 'master')
                          ->willReturnOnConsecutiveCalls('First readme', 'Second readme');
 
@@ -142,7 +140,7 @@ class UpdaterTest extends IntegrationTestCase
         $this->bindReadmeDriver();
         $this->driverMock->method('getRootIdentifier')->willReturn('master');
         $this->driverMock->method('getComposerInformation')->willReturn([]);
-        $this->driverMock->method('getBranches')->willReturn($branches);
+        $this->driverMock->method('getSource')->willReturn(['type' => 'git', 'url' => 'https://example.com/test/pkg', 'reference' => '']);
         $this->driverMock->expects($this->exactly(2))->method('getFileContent')
                          ->willReturnOnConsecutiveCalls('First readme', 'Fresh readme');
 
@@ -166,7 +164,7 @@ class UpdaterTest extends IntegrationTestCase
         $driver = $this->createStub(GitHubDriver::class);
         $driver->method('getRootIdentifier')->willReturn('main');
         $driver->method('getComposerInformation')->willReturn([]);
-        $driver->method('getBranches')->willReturn($branches);
+        $driver->method('getSource')->willReturn(['type' => 'git', 'url' => 'https://example.com/test/pkg', 'reference' => '']);
         $driver->method('getRepoData')->willReturn(['stargazers_count' => 42]);
         $this->repositoryMock->method('getDriver')->willReturn($driver);
 
@@ -175,6 +173,27 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame(42, $package->getGitHubStars());
         // a read would have hit the GitHub API, which is unreachable in tests and would 404 for this repository
         self::assertSame('Old readme', $this->getEM()->find(PackageReadme::class, $package->getId())->contents);
+    }
+
+    public function testRereadsTheReadmeWhenTheRepositoryUrlChanged(): void
+    {
+        $branches = ['master' => 'aaaa'];
+        $url = 'https://example.com/test/pkg';
+        $this->bindDefaultBranchRepository('test/pkg', 'master', $branches);
+        $this->bindReadmeDriver();
+        $this->driverMock->method('getRootIdentifier')->willReturn('master');
+        $this->driverMock->method('getComposerInformation')->willReturn([]);
+        $this->driverMock->method('getSource')->willReturnCallback(static function () use (&$url) {
+            return ['type' => 'git', 'url' => $url, 'reference' => ''];
+        });
+        $this->driverMock->expects($this->exactly(2))->method('getFileContent')
+                         ->willReturnOnConsecutiveCalls('First readme', 'Moved readme');
+
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+        $url = 'https://example.org/moved/pkg';
+        $this->updater->update($this->ioMock, $this->config, $this->package, $this->repositoryMock);
+
+        self::assertStringContainsString('Moved readme', $this->getEM()->find(PackageReadme::class, $this->package->getId())->contents);
     }
 
     /**
