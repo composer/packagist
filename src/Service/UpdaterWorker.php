@@ -312,44 +312,53 @@ class UpdaterWorker
                     ];
                 }
 
-                if ($verdict->escalatesToGone) {
-                    $now = new \DateTimeImmutable();
-                    $package->unreachableSince ??= $now;
-                    if ($package->unreachableSince <= $now->modify('-'.self::GONE_AFTER_UNREACHABLE_FOR)) {
-                        $internalReason .= ' (unreachable since '.$package->unreachableSince->format(\DATE_ATOM).')';
-                        $verdict = new UpdateFailureVerdict(UpdateFailureKind::Gone, $verdict->code);
+                $now = new \DateTimeImmutable();
+                $apiCheck = $this->repositoryApiChecker->check($package->getRepository(), $httpDownloader);
+                if ($apiCheck?->state === RepositoryApiState::Exists) {
+                    $package->unreachableSince = null;
+
+                    if ($verdict->kind === UpdateFailureKind::Gone) {
+                        // git and the API disagree, tell the maintainers once and keep retrying on the usual schedule
+                        $this->packageManager->notifyRepositoryUnreadable($package);
+
+                        return [
+                            'status' => Job::STATUS_FAILED,
+                            'message' => 'Update of '.$packageName.' failed, but the repository still exists according to the API so it was not marked as gone.',
+                            'details' => '<pre>'.$output.'</pre>',
+                            'exception' => $e,
+                            'vendor' => $packageVendor,
+                        ];
                     }
-                }
+                } elseif ($apiCheck !== null) {
+                    // repos made private by accident were removed in the past, so only act once the API kept saying missing
+                    $package->unreachableSince ??= $now;
+                    if ($apiCheck->state === RepositoryApiState::Missing && $package->unreachableSince <= $now->modify('-'.self::GONE_AFTER_UNREACHABLE_FOR)) {
+                        $internalReason .= ' (failing since '.$package->unreachableSince->format(\DATE_ATOM).', missing according to the API: HTTP '.$apiCheck->statusCode.')';
 
-                $apiState = $this->repositoryApiChecker->check($package->getRepository(), $httpDownloader);
-                if ($apiState === RepositoryApiState::Missing) {
-                    return $this->removeDeadPackage($package, $output, $e, $internalReason.' (confirmed missing by the API)');
-                }
+                        return $this->removeDeadPackage($package, $output, $e, $internalReason);
+                    }
+                } else {
+                    if ($verdict->escalatesToGone) {
+                        $package->unreachableSince ??= $now;
+                        if ($package->unreachableSince <= $now->modify('-'.self::GONE_AFTER_UNREACHABLE_FOR)) {
+                            $internalReason .= ' (unreachable since '.$package->unreachableSince->format(\DATE_ATOM).')';
+                            $verdict = new UpdateFailureVerdict(UpdateFailureKind::Gone, $verdict->code);
+                        }
+                    }
 
-                if ($apiState === RepositoryApiState::Exists && $verdict->kind === UpdateFailureKind::Gone) {
-                    $this->packageManager->recordFailedCrawl($package);
+                    if ($verdict->kind === UpdateFailureKind::Gone) {
+                        $package->freeze(PackageFreezeReason::Gone, $internalReason);
+                        $this->getEM()->persist($package);
+                        $this->getEM()->flush();
 
-                    return [
-                        'status' => Job::STATUS_FAILED,
-                        'message' => 'Update of '.$packageName.' failed, but the repository still exists according to the API so it was not marked as gone.',
-                        'details' => '<pre>'.$output.'</pre>',
-                        'exception' => $e,
-                        'vendor' => $packageVendor,
-                    ];
-                }
-
-                if ($verdict->kind === UpdateFailureKind::Gone) {
-                    $package->freeze(PackageFreezeReason::Gone, $internalReason);
-                    $this->getEM()->persist($package);
-                    $this->getEM()->flush();
-
-                    return [
-                        'status' => Job::STATUS_PACKAGE_GONE,
-                        'message' => 'Update of '.$packageName.' failed, package appears to be 404/gone and has been marked frozen.',
-                        'details' => '<pre>'.$output.'</pre>',
-                        'exception' => $e,
-                        'vendor' => $packageVendor,
-                    ];
+                        return [
+                            'status' => Job::STATUS_PACKAGE_GONE,
+                            'message' => 'Update of '.$packageName.' failed, package appears to be 404/gone and has been marked frozen.',
+                            'details' => '<pre>'.$output.'</pre>',
+                            'exception' => $e,
+                            'vendor' => $packageVendor,
+                        ];
+                    }
                 }
 
                 // unreachable host, skip for a week as this may be a temporary failure

@@ -32,6 +32,34 @@ class RepositoryApiCheckerTest extends TestCase
     #[DataProvider('provideChecks')]
     public function testCheck(string $repositoryUrl, array $responses, ?RepositoryApiState $expected): void
     {
+        self::assertSame($expected, new RepositoryApiChecker()->check($repositoryUrl, $this->downloader($responses))?->state);
+    }
+
+    public function testMissingRecordsTheApiStatus(): void
+    {
+        $check = new RepositoryApiChecker()->check('https://github.com/acme/lib', $this->downloader([
+            'https://api.github.com/repos/acme/lib/git/refs/heads' => self::error(451),
+            self::GITHUB_REFERENCE => 200,
+        ]));
+
+        self::assertSame(RepositoryApiState::Missing, $check?->state);
+        self::assertSame(451, $check->statusCode);
+    }
+
+    public function testUnexpectedErrorsAreNotSwallowed(): void
+    {
+        $httpDownloader = $this->createStub(HttpDownloader::class);
+        $httpDownloader->method('get')->willThrowException(new \LogicException('bug'));
+
+        $this->expectException(\LogicException::class);
+        new RepositoryApiChecker()->check('https://github.com/acme/lib', $httpDownloader);
+    }
+
+    /**
+     * @param array<string, int|TransportException> $responses
+     */
+    private function downloader(array $responses): HttpDownloader
+    {
         $httpDownloader = $this->createStub(HttpDownloader::class);
         $httpDownloader->method('get')->willReturnCallback(static function (string $url) use ($responses): Response {
             self::assertArrayHasKey($url, $responses, 'Unexpected request to '.$url);
@@ -42,7 +70,7 @@ class RepositoryApiCheckerTest extends TestCase
             return new Response(['url' => $url], $responses[$url], [], '{}');
         });
 
-        self::assertSame($expected, new RepositoryApiChecker()->check($repositoryUrl, $httpDownloader));
+        return $httpDownloader;
     }
 
     /**

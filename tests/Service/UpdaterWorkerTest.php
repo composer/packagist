@@ -19,6 +19,7 @@ use App\Log\AuditLogEventType;
 use App\Model\DownloadManager;
 use App\Model\PackageManager;
 use App\Package\HttpGitShadow;
+use App\Package\RepositoryApiCheck;
 use App\Package\RepositoryApiChecker;
 use App\Package\RepositoryApiState;
 use App\Package\Updater;
@@ -125,53 +126,94 @@ class UpdaterWorkerTest extends IntegrationTestCase
 
     public function testGoneFailureIsNotFrozenWhenTheApiSaysTheRepositoryExists(): void
     {
-        $package = $this->storePackage();
+        $package = $this->storePackage(new \DateTimeImmutable('-20 days'));
+        $before = new \DateTimeImmutable('-1 second');
 
-        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), RepositoryApiState::Exists);
+        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), new RepositoryApiCheck(RepositoryApiState::Exists));
 
         self::assertSame(Job::STATUS_FAILED, $result['status']);
         self::assertStringContainsString('still exists according to the API', $result['message'] ?? '');
         $package = $this->reload($package);
         self::assertFalse($package->isFrozen());
-        self::assertLessThanOrEqual(new \DateTimeImmutable(), $package->getCrawledAt());
+        self::assertNull($package->unreachableSince);
+        self::assertTrue($package->isUpdateFailureNotified());
+        self::assertNotNull($package->getCrawledAt());
+        self::assertGreaterThanOrEqual($before, $package->getCrawledAt());
+        self::assertLessThan(new \DateTimeImmutable('+1 day'), $package->getCrawledAt());
     }
 
-    public function testPersistentNoDriverIsNotFrozenWhenTheApiSaysTheRepositoryExists(): void
+    public function testMaintainersAreMailedOnceWhenGitAndTheApiDisagree(): void
+    {
+        $maintainer = self::createUser('maintainer', 'maintainer@example.org');
+        $package = self::createPackage('acme/lib', self::REPOSITORY, maintainers: [$maintainer]);
+        $this->store($maintainer, $package);
+
+        $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), new RepositoryApiCheck(RepositoryApiState::Exists));
+        $this->runWorker($this->reload($package), new \RuntimeException(self::REPOSITORY_NOT_FOUND), new RepositoryApiCheck(RepositoryApiState::Exists));
+
+        $this->assertEmailCount(1);
+        $email = $this->getMailerMessage();
+        self::assertNotNull($email);
+        $this->assertEmailHeaderSame($email, 'Subject', 'acme/lib failed to update, repository could not be read');
+        $this->assertEmailTextBodyContains($email, 'The acme/lib package of which you are a maintainer');
+        $this->assertEmailTextBodyContains($email, '/packages/acme/lib');
+    }
+
+    public function testPersistentNoDriverIsSkippedForAWeekWhenTheApiSaysTheRepositoryExists(): void
     {
         $package = $this->storePackage(new \DateTimeImmutable('-29 days'));
 
-        $result = $this->runWorker($package, new \RuntimeException(self::NO_DRIVER), RepositoryApiState::Exists);
+        $result = $this->runWorker($package, new \RuntimeException(self::NO_DRIVER), new RepositoryApiCheck(RepositoryApiState::Exists));
 
         self::assertSame(Job::STATUS_FAILED, $result['status']);
-        self::assertFalse($this->reload($package)->isFrozen());
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $package->getCrawledAt());
     }
 
     public function testUnreachableHostIsStillSkippedWhenTheApiSaysTheRepositoryExists(): void
     {
         $package = $this->storePackage();
 
-        $result = $this->runWorker($package, new \RuntimeException(self::NO_DRIVER), RepositoryApiState::Exists);
+        $result = $this->runWorker($package, new \RuntimeException(self::NO_DRIVER), new RepositoryApiCheck(RepositoryApiState::Exists));
 
         self::assertSame(Job::STATUS_FAILED, $result['status']);
         self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $this->reload($package)->getCrawledAt());
     }
 
-    public function testGoneFailureIsFrozenWhenTheApiCheckIsInconclusive(): void
+    public function testGoneFailureIsSkippedForAWeekWhenTheApiFirstSaysMissing(): void
     {
         $package = $this->storePackage();
 
-        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), RepositoryApiState::Unknown);
+        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), new RepositoryApiCheck(RepositoryApiState::Missing, 404));
 
-        self::assertSame(Job::STATUS_PACKAGE_GONE, $result['status']);
-        self::assertSame(PackageFreezeReason::Gone, $this->reload($package)->getFreezeReason());
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertNotNull($package->unreachableSince);
+        self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $package->getCrawledAt());
     }
 
-    public function testPackageWithFewDownloadsIsDeletedWhenTheApiConfirmsItIsMissing(): void
+    public function testPersistentGoneFailureIsNotFrozenWhenTheApiCheckIsInconclusive(): void
     {
-        $package = $this->storePackage();
+        $since = new \DateTimeImmutable('-40 days');
+        $package = $this->storePackage($since);
+
+        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), new RepositoryApiCheck(RepositoryApiState::Unknown));
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertSame($since->getTimestamp(), $package->unreachableSince?->getTimestamp());
+        self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $package->getCrawledAt());
+    }
+
+    public function testPackageWithFewDownloadsIsDeletedOnceTheApiKeptSayingMissing(): void
+    {
+        $package = $this->storePackage(new \DateTimeImmutable('-29 days'));
         $id = $package->getId();
 
-        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), RepositoryApiState::Missing);
+        $result = $this->runWorker($package, new \RuntimeException(self::REPOSITORY_NOT_FOUND), new RepositoryApiCheck(RepositoryApiState::Missing, 451));
 
         self::assertSame(Job::STATUS_PACKAGE_DELETED, $result['status']);
         $this->getEM()->clear();
@@ -181,7 +223,7 @@ class UpdaterWorkerTest extends IntegrationTestCase
         self::assertCount(1, $logs);
         $attributes = json_decode($logs[0]['attributes'], true);
         self::assertStringStartsWith('git_remote_repository_not_found: RuntimeException: ', $attributes['internalReason']);
-        self::assertStringEndsWith('(confirmed missing by the API)', $attributes['internalReason']);
+        self::assertStringEndsWith(', missing according to the API: HTTP 451)', $attributes['internalReason']);
     }
 
     public function testChangingTheRepositoryClearsUnreachableSince(): void
@@ -246,10 +288,10 @@ class UpdaterWorkerTest extends IntegrationTestCase
     /**
      * @return array<string, mixed>
      */
-    private function runWorker(Package $package, \Throwable $failure, ?RepositoryApiState $apiState = null): array
+    private function runWorker(Package $package, \Throwable $failure, ?RepositoryApiCheck $apiCheck = null): array
     {
         $apiChecker = $this->createStub(RepositoryApiChecker::class);
-        $apiChecker->method('check')->willReturn($apiState);
+        $apiChecker->method('check')->willReturn($apiCheck);
 
         // not a PHPUnit double: Updater::__destruct() would restore_error_handler() and pop PHPUnit's handler
         $updater = new class($failure) extends Updater {

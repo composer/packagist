@@ -26,9 +26,9 @@ class RepositoryApiChecker
     private const string BITBUCKET_REFERENCE_URL = 'https://api.bitbucket.org/2.0/repositories/atlassian/atlaskit-mk-2?fields=-project';
 
     /**
-     * @return RepositoryApiState|null null if the repository is not hosted on a supported host
+     * @return RepositoryApiCheck|null null if the repository is not hosted on a supported host
      */
-    public function check(string $repositoryUrl, HttpDownloader $httpDownloader): ?RepositoryApiState
+    public function check(string $repositoryUrl, HttpDownloader $httpDownloader): ?RepositoryApiCheck
     {
         if (Preg::isMatchStrictGroups('{[@/]github\.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $repositoryUrl, $match)) {
             return $this->checkUrl(
@@ -37,7 +37,7 @@ class RepositoryApiChecker
                 $httpDownloader,
                 // 409 is an empty repo which is about the same for our purposes, 451 a DMCA takedown
                 static fn (TransportException $e) => \in_array($e->getStatusCode(), [404, 409, 451], true)
-                    || ($e->getStatusCode() === 403 && str_contains((string) $e->getResponse(), 'Repository access blocked')),
+                    || ($e->getStatusCode() === 403 && UpdateFailureClassifier::isGitHubAccessBlockedResponse((string) $e->getResponse())),
             );
         }
 
@@ -66,25 +66,25 @@ class RepositoryApiChecker
     /**
      * @param callable(TransportException): bool $isMissing
      */
-    private function checkUrl(string $url, string $referenceUrl, HttpDownloader $httpDownloader, callable $isMissing): RepositoryApiState
+    private function checkUrl(string $url, string $referenceUrl, HttpDownloader $httpDownloader, callable $isMissing): RepositoryApiCheck
     {
         try {
             $httpDownloader->get($url, ['retry-auth-failure' => false]);
 
-            return RepositoryApiState::Exists;
-        } catch (\Throwable $e) {
-            if (!$e instanceof TransportException || !$isMissing($e)) {
-                return RepositoryApiState::Unknown;
+            return new RepositoryApiCheck(RepositoryApiState::Exists);
+        } catch (TransportException $e) {
+            if (!$isMissing($e)) {
+                return new RepositoryApiCheck(RepositoryApiState::Unknown);
             }
         }
 
         try {
             // the reference repo being visible rules out the host or something in between glitching
             $httpDownloader->get($referenceUrl, ['retry-auth-failure' => false]);
-        } catch (\Throwable) {
-            return RepositoryApiState::Unknown;
+        } catch (TransportException) {
+            return new RepositoryApiCheck(RepositoryApiState::Unknown);
         }
 
-        return RepositoryApiState::Missing;
+        return new RepositoryApiCheck(RepositoryApiState::Missing, $e->getStatusCode());
     }
 }

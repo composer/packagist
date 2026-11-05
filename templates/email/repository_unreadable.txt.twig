@@ -1,0 +1,16 @@
+{% autoescape false -%}
+The {{ package.name }} package of which you are a maintainer has failed to
+update because its repository could not be read, even though the hosting
+service's API reports that it exists.
+
+This usually means the repository was made private, or now requires
+authentication. Packagist can only update packages from public repositories,
+so the package will stay on its last known versions until the repository is
+readable again.
+
+Package page: {{ packageUrl }}
+
+--
+If you do not wish to receive such emails in the future you can disable
+notifications on your profile page: https://packagist.org/profile/edit
+{%- endautoescape %}
