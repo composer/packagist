@@ -41,7 +41,8 @@ class RepositoryApiChecker
             );
         }
 
-        if (Preg::isMatchStrictGroups('{https://gitlab\.com/([^/]+/.+)$}i', $repositoryUrl, $match)) {
+        // the API wants the bare project path, without .git or a /-/tree/... page suffix
+        if (Preg::isMatchStrictGroups('{(?:https://|git@)gitlab\.com[/:]([^/]+/.+?)(?:/-/.*|\.git|/)?$}i', $repositoryUrl, $match)) {
             return $this->checkUrl(
                 'https://gitlab.com/api/v4/projects/'.urlencode($match[1]),
                 self::GITLAB_REFERENCE_URL,
@@ -50,7 +51,7 @@ class RepositoryApiChecker
             );
         }
 
-        if (Preg::isMatchStrictGroups('{[@/]bitbucket\.org[:/]([^/]+)/([^/]+?)(?:\.git)?/?$}i', $repositoryUrl, $match)) {
+        if (Preg::isMatchStrictGroups('{[@/](?:ssh\.)?bitbucket\.org[:/]([^/]+)/([^/]+?)(?:\.git)?/?$}i', $repositoryUrl, $match)) {
             return $this->checkUrl(
                 'https://api.bitbucket.org/2.0/repositories/'.$match[1].'/'.$match[2].'?fields=-project',
                 self::BITBUCKET_REFERENCE_URL,

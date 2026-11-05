@@ -64,12 +64,19 @@ class RepositoryApiCheckerTest extends TestCase
 
         $gitlab = 'https://gitlab.com/api/v4/projects/acme%2Flib';
         yield 'gitlab exists' => ['https://gitlab.com/acme/lib', [$gitlab => 200], RepositoryApiState::Exists];
+        yield 'gitlab url with .git' => ['https://gitlab.com/acme/lib.git', [$gitlab => 200], RepositoryApiState::Exists];
+        yield 'gitlab url with trailing slash' => ['https://gitlab.com/acme/lib/', [$gitlab => 200], RepositoryApiState::Exists];
+        yield 'gitlab tree page url' => ['https://gitlab.com/acme/lib/-/tree/main', [$gitlab => 200], RepositoryApiState::Exists];
+        yield 'gitlab ssh url' => ['git@gitlab.com:acme/lib.git', [$gitlab => 200], RepositoryApiState::Exists];
+        yield 'gitlab subgroup' => ['https://gitlab.com/acme/tools/lib.git', ['https://gitlab.com/api/v4/projects/acme%2Ftools%2Flib' => 200], RepositoryApiState::Exists];
         yield 'gitlab 404' => ['https://gitlab.com/acme/lib', [$gitlab => self::error(404), self::GITLAB_REFERENCE => 200], RepositoryApiState::Missing];
         yield 'gitlab 403' => ['https://gitlab.com/acme/lib', [$gitlab => self::error(403)], RepositoryApiState::Unknown];
 
         $bitbucket = 'https://api.bitbucket.org/2.0/repositories/acme/lib?fields=-project';
         yield 'bitbucket exists' => ['https://bitbucket.org/acme/lib.git', [$bitbucket => 200], RepositoryApiState::Exists];
         yield 'bitbucket ssh url' => ['git@bitbucket.org:acme/lib.git', [$bitbucket => 200], RepositoryApiState::Exists];
+        yield 'bitbucket ssh subdomain url' => ['git@ssh.bitbucket.org:acme/lib.git', [$bitbucket => 200], RepositoryApiState::Exists];
+        yield 'bitbucket ssh subdomain url with scheme' => ['ssh://git@ssh.bitbucket.org/acme/lib.git', [$bitbucket => 200], RepositoryApiState::Exists];
         yield 'bitbucket 404' => ['https://bitbucket.org/acme/lib', [$bitbucket => self::error(404), self::BITBUCKET_REFERENCE => 200], RepositoryApiState::Missing];
         yield 'bitbucket 404 while the reference fails' => ['https://bitbucket.org/acme/lib', [$bitbucket => self::error(404), self::BITBUCKET_REFERENCE => self::error(500)], RepositoryApiState::Unknown];
         yield 'bitbucket 403' => ['https://bitbucket.org/acme/lib', [$bitbucket => self::error(403)], RepositoryApiState::Unknown];
