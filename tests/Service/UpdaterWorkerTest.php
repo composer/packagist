@@ -30,6 +30,7 @@ use App\Service\UpdaterWorker;
 use App\Service\VersionCache;
 use App\Tests\IntegrationTestCase;
 use Composer\Config;
+use Composer\Downloader\TransportException;
 use Composer\IO\IOInterface;
 use Composer\Repository\VcsRepository;
 use Composer\Util\HttpDownloader;
@@ -208,6 +209,32 @@ class UpdaterWorkerTest extends IntegrationTestCase
         self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $package->getCrawledAt());
     }
 
+    public function testApiNotFoundBehindADisabledGitFallbackIsTreatedAsGone(): void
+    {
+        $package = $this->storePackage();
+
+        $result = $this->runWorker($package, self::disabledGitFallback(404), new RepositoryApiCheck(RepositoryApiState::Missing, 404));
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertNotNull($package->unreachableSince);
+        self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $package->getCrawledAt());
+    }
+
+    public function testOtherApiErrorsBehindADisabledGitFallbackAreRetried(): void
+    {
+        $package = $this->storePackage();
+
+        $result = $this->runWorker($package, self::disabledGitFallback(403), new RepositoryApiCheck(RepositoryApiState::Missing, 404));
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertNull($package->unreachableSince);
+        self::assertLessThanOrEqual(new \DateTimeImmutable(), $package->getCrawledAt());
+    }
+
     public function testPackageWithFewDownloadsIsDeletedOnceTheApiKeptSayingMissing(): void
     {
         $package = $this->storePackage(new \DateTimeImmutable('-29 days'));
@@ -254,6 +281,17 @@ class UpdaterWorkerTest extends IntegrationTestCase
         $package->unfreeze();
 
         self::assertNull($package->unreachableSince);
+    }
+
+    /**
+     * What the Bitbucket driver throws when its API request fails and the git fallback is disabled
+     */
+    private static function disabledGitFallback(int $status): \RuntimeException
+    {
+        $apiError = new TransportException('The "https://api.bitbucket.org/2.0/repositories/acme/lib?fields=-project%2C-owner" file could not be downloaded (HTTP/2 '.$status.' )', $status);
+        $apiError->setStatusCode($status);
+
+        return new \RuntimeException('Fallback to git driver disabled', 0, $apiError);
     }
 
     private function storePackage(?\DateTimeImmutable $unreachableSince = null, string $repository = self::REPOSITORY): Package
