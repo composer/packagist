@@ -49,8 +49,12 @@ class SecondFactorAuthenticationListener
     {
         $token = $this->tokens->getToken();
         $user = $event->getUser();
-        if ($token instanceof TwoFactorTokenInterface && $token->getCurrentTwoFactorProvider() === SecondFactorProofStore::TOTP
-            && $user instanceof User && $token->getUser() === $user) {
+        if (
+            $token instanceof TwoFactorTokenInterface
+            && $token->getCurrentTwoFactorProvider() === SecondFactorProofStore::TOTP
+            && $user instanceof User
+            && $token->getUser() === $user
+        ) {
             $this->requests->getCurrentRequest()?->attributes->set(self::VALIDATED_USER, $user->getId());
         }
     }
@@ -59,8 +63,11 @@ class SecondFactorAuthenticationListener
     public function completed(TwoFactorAuthenticationEvent $event): void
     {
         $user = $event->getToken()->getUser();
-        if ($user instanceof User && $user->isTotpAuthenticationEnabled()
-            && $event->getRequest()->attributes->get(self::VALIDATED_USER) === $user->getId()) {
+        if (
+            $user instanceof User
+            && $user->isTotpAuthenticationEnabled()
+            && $event->getRequest()->attributes->get(self::VALIDATED_USER) === $user->getId()
+        ) {
             $this->secondFactorProofStore->record($user, SecondFactorProofStore::TOTP);
         }
     }
@@ -73,8 +80,11 @@ class SecondFactorAuthenticationListener
         }
         $this->secondFactorProofStore->clear();
         $user = $event->getUser();
-        if ($user instanceof User && $user->isTotpAuthenticationEnabled()
-            && $event->getPassport()->hasBadge(ResolvedTotpCodeCredentials::class)) {
+        if (
+            $user instanceof User
+            && $user->isTotpAuthenticationEnabled()
+            && $event->getPassport()->hasBadge(ResolvedTotpCodeCredentials::class)
+        ) {
             $this->secondFactorProofStore->record($user, SecondFactorProofStore::TOTP);
         }
     }
