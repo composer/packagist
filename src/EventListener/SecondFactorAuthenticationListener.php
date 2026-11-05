@@ -17,11 +17,13 @@ use App\Security\Passport\Badge\ResolvedTotpCodeCredentials;
 use App\Security\SecondFactorProofStore;
 use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorTokenInterface;
 use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
+use Scheb\TwoFactorBundle\Security\TwoFactor\Event\TotpCodeEvents;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Event\TwoFactorAuthenticationEvent;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Event\TwoFactorAuthenticationEvents;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Event\TwoFactorCodeEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Core\Authentication\Token\OfflineTokenInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
@@ -72,6 +74,17 @@ class SecondFactorAuthenticationListener
         }
     }
 
+    #[AsEventListener(event: TotpCodeEvents::VALID)]
+    public function totpVerified(TwoFactorCodeEvent $event): void
+    {
+        $user = $this->getAuthenticatedUser();
+        if ($user === null || $event->getUser() !== $user) {
+            return;
+        }
+
+        $this->secondFactorProofStore->record($user, SecondFactorProofStore::TOTP);
+    }
+
     #[AsEventListener(dispatcher: 'security.event_dispatcher.main')]
     public function loggedIn(LoginSuccessEvent $event): void
     {
@@ -93,5 +106,17 @@ class SecondFactorAuthenticationListener
     public function loggedOut(LogoutEvent $event): void
     {
         $this->secondFactorProofStore->clear();
+    }
+
+    private function getAuthenticatedUser(): ?User
+    {
+        $token = $this->tokens->getToken();
+        if ($token === null || $token instanceof TwoFactorTokenInterface || $token instanceof OfflineTokenInterface) {
+            return null;
+        }
+
+        $user = $token->getUser();
+
+        return $user instanceof User ? $user : null;
     }
 }

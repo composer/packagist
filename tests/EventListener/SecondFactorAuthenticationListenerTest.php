@@ -12,10 +12,12 @@
 
 namespace App\Tests\EventListener;
 
+use App\Entity\TemporaryTotpUser;
 use App\Entity\User;
 use App\EventListener\SecondFactorAuthenticationListener;
 use App\Security\Passport\Badge\ResolvedTotpCodeCredentials;
 use App\Security\SecondFactorProofStore;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorToken;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Event\TwoFactorAuthenticationEvent;
@@ -25,6 +27,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Component\Security\Core\Authentication\Token\RememberMeToken;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Http\Authenticator\AuthenticatorInterface;
@@ -86,6 +89,46 @@ class SecondFactorAuthenticationListenerTest extends TestCase
         new \ReflectionProperty(User::class, 'id')->setValue($other, 456);
         $this->listener->codeValidated(new TwoFactorCodeEvent($other, '123456'));
         $this->listener->completed(new TwoFactorAuthenticationEvent($this->request, $this->authenticated));
+        self::assertFalse($this->secondFactorProofStore->hasRecentProof($this->user));
+    }
+
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testValidTotpCodeRecordsProofForTheCurrentUser(bool $remembered): void
+    {
+        $this->tokens->setToken($remembered ? new RememberMeToken($this->user, 'main') : $this->authenticated);
+        $this->listener->totpVerified(new TwoFactorCodeEvent($this->user, '123456'));
+        self::assertTrue($this->secondFactorProofStore->hasRecentProof($this->user, SecondFactorProofStore::TOTP));
+    }
+
+    public function testValidTotpCodeDoesNotCreditAnotherUser(): void
+    {
+        $this->tokens->setToken($this->authenticated);
+        $other = clone $this->user;
+        new \ReflectionProperty(User::class, 'id')->setValue($other, 456);
+        $this->listener->totpVerified(new TwoFactorCodeEvent($other, '123456'));
+        self::assertFalse($this->secondFactorProofStore->hasRecentProof($other));
+        self::assertFalse($this->secondFactorProofStore->hasRecentProof($this->user));
+    }
+
+    public function testValidTotpCodeDoesNotBypassAnIncompleteLoginChallenge(): void
+    {
+        $this->listener->totpVerified(new TwoFactorCodeEvent($this->user, '123456'));
+        self::assertFalse($this->secondFactorProofStore->hasRecentProof($this->user));
+    }
+
+    public function testValidTotpCodeRequiresAnAuthenticatedSession(): void
+    {
+        $this->tokens->setToken(null);
+        $this->listener->totpVerified(new TwoFactorCodeEvent($this->user, '123456'));
+        self::assertFalse($this->secondFactorProofStore->hasRecentProof($this->user));
+    }
+
+    public function testValidTotpCodeForSetupDoesNotRecordProof(): void
+    {
+        $this->tokens->setToken($this->authenticated);
+        $temporaryUser = new TemporaryTotpUser($this->user, 'ANOTHERSECRET');
+        $this->listener->totpVerified(new TwoFactorCodeEvent($temporaryUser, '123456'));
         self::assertFalse($this->secondFactorProofStore->hasRecentProof($this->user));
     }
 

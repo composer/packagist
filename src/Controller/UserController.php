@@ -28,6 +28,7 @@ use App\Model\FavoriteManager;
 use App\Model\RedisAdapter;
 use App\Security\SecondFactorProofStore;
 use App\Security\TotpAuthManager;
+use App\Security\Voter\SecondFactorVoter;
 use App\Service\Scheduler;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
@@ -423,6 +424,12 @@ class UserController extends Controller
     {
         if (!$this->isGranted('ROLE_DISABLE_2FA') && $user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
+        }
+
+        // Removing your own authenticator requires TOTP authentication or verification within the last 10 minutes.
+        // Admin and support removal of another user's authenticator follows the separate permission check above.
+        if ($user->getId() === $loggedUser->getId() && $user->isTotpAuthenticationEnabled() && !$this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP_RECENTLY)) {
+            return $this->redirectToRoute('user_verify_totp');
         }
 
         if ($this->isCsrfTokenValid('disable_totp', $req->query->getString('token'))) {

@@ -32,7 +32,12 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
 
     public function onAuthAttempt(TwoFactorAuthenticationEvent $event): void
     {
-        $key = '2fa-failures:'.$event->getToken()->getUserIdentifier();
+        $this->ensureNotRateLimited($event->getToken()->getUserIdentifier());
+    }
+
+    public function ensureNotRateLimited(string $userIdentifier): void
+    {
+        $key = '2fa-failures:'.$userIdentifier;
         $count = (int) $this->redisCache->get($key);
 
         if ($count >= self::MAX_ATTEMPTS) {
@@ -42,7 +47,12 @@ class TwoFactorAuthRateLimiter implements EventSubscriberInterface
 
     public function onAuthFailure(TwoFactorAuthenticationEvent $event): void
     {
-        $key = '2fa-failures:'.$event->getToken()->getUserIdentifier();
+        $this->recordFailure($event->getToken()->getUserIdentifier());
+    }
+
+    public function recordFailure(string $userIdentifier): void
+    {
+        $key = '2fa-failures:'.$userIdentifier;
 
         $this->redisCache->multi();
         $this->redisCache->incr($key);

@@ -93,11 +93,20 @@ class SecondFactorVoterTest extends TestCase
         self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_TOTP_RECENTLY'));
     }
 
-    public function testRememberMeAndIncompleteMfaCannotReuseEvidence(): void
+    public function testRememberedSessionRequiresExplicitSecondFactorProof(): void
     {
-        $this->secondFactorProofStore->record($this->user, 'totp');
         $this->tokens->setToken(new RememberMeToken($this->user, 'main'));
         $this->assertAllChecks(false);
+        $this->secondFactorProofStore->record($this->user, 'totp');
+        $this->assertAllChecks(true);
+        $this->clock->sleep(600);
+        self::assertTrue($this->authorization->isGranted('IS_AUTHENTICATED_TOTP'));
+        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_TOTP_RECENTLY'));
+    }
+
+    public function testIncompleteMfaCannotReuseEvidence(): void
+    {
+        $this->secondFactorProofStore->record($this->user, 'totp');
         $this->tokens->setToken(new TwoFactorToken(new UsernamePasswordToken($this->user, 'main', ['ROLE_USER']), null, 'main', ['totp']));
         $this->assertAllChecks(false);
         $this->tokens->setToken(null);

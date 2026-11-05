@@ -22,6 +22,7 @@ use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Security\Core\Authentication\Token\RememberMeToken;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class SecondFactorAuthenticationTest extends IntegrationTestCase
@@ -60,10 +61,14 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         $this->client->submit($crawler->filter('form[action="/2fa-check"]')->form(), ['_auth_code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
         self::assertResponseRedirects();
         $this->assertAuthenticationChecks(true, true);
+        $this->client->request('GET', '/users/verify/totp/disable');
+        self::assertResponseIsSuccessful();
         $this->clock->sleep(599);
         $this->assertAuthenticationChecks(true, true);
         $this->clock->sleep(1);
         $this->assertAuthenticationChecks(true, false);
+        $this->client->request('GET', '/users/verify/totp/disable');
+        self::assertResponseRedirects('/profile/security/verify-totp');
     }
 
     public function testTrustedDeviceDoesNotCountAsSecondFactorAuthentication(): void
@@ -79,6 +84,26 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         $this->client->getCookieJar()->set($trusted);
         $this->client->request('POST', '/login/', ['_username' => 'verify', '_password' => self::PASSWORD]);
         $this->assertAuthenticationChecks(false, false);
+    }
+
+    public function testRememberMeRestorationClearsOldProofAndAllowsFreshTotpVerification(): void
+    {
+        $this->client->restart();
+        $this->client->request('POST', '/login/', ['_username' => 'verify', '_password' => self::PASSWORD, '_remember_me' => 'on']);
+        $crawler = $this->client->request('GET', '/2fa');
+        $this->client->submit($crawler->filter('form[action="/2fa-check"]')->form(), ['_auth_code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        self::assertNotNull($this->client->getCookieJar()->get('pauth'));
+        $this->assertAuthenticationChecks(true, true);
+        $session = $this->client->getSession();
+        self::assertNotNull($session);
+        $session->remove('_security_main');
+        $session->save();
+        $this->assertAuthenticationChecks(false, false);
+        self::assertInstanceOf(RememberMeToken::class, self::getContainer()->get('security.token_storage')->getToken());
+        $crawler = $this->client->request('GET', '/profile/security/verify-totp');
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        self::assertResponseRedirects('/users/verify/totp/disable');
+        $this->assertAuthenticationChecks(true, true);
     }
 
     public function testBackupCodeLoginDoesNotCountAsAuthenticatorAuthentication(): void
