@@ -20,9 +20,8 @@ use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * Applies a branch deletion reported by the VCS host without crawling the package: a deleted branch
- * can change nothing but its own dev version, and the host knows for a fact it is gone, so the
- * version is removed right away instead of being soft-deleted for a day by the next crawl.
+ * Applies a branch deletion reported by the VCS host without crawling: the branch's dev version is
+ * removed on the spot instead of being soft-deleted for a day by the next crawl.
  */
 class BranchDeletionHandler
 {
@@ -36,38 +35,44 @@ class BranchDeletionHandler
 
     public function apply(Package $package, string $branch): BranchDeletionOutcome
     {
-        // an in-flight update may have listed the branch already and would recreate the version
-        if (!$this->locker->lockPackageUpdate($package->getId())) {
+        // an in-flight crawl may have listed the branch already and would recreate the version. The
+        // short wait is for a user hook delivering the push and delete events of one deletion together
+        if (!$this->locker->lockPackageUpdate($package->getId(), 2)) {
             return BranchDeletionOutcome::Deferred;
         }
 
         try {
-            $em = $this->getEM();
-            $versionRepo = $em->getRepository(Version::class);
-
-            $version = $versionRepo->findForBranch($package, $branch);
-            if (null === $version) {
-                return BranchDeletionOutcome::NothingToRemove;
-            }
-
-            // dependents, suggesters and the readme are derived from the default branch, so losing
-            // it (the stored flag can lag behind a default branch switch) needs a full update
-            if ($version->isDefaultBranch()) {
-                return BranchDeletionOutcome::Deferred;
-            }
-
-            // intentionally-pulled versions are left alone, as the Updater does
-            $reason = $version->getDeletionReason();
-            if (null !== $reason && VersionDeletionReason::AutoDeletedMissing !== $reason) {
-                return BranchDeletionOutcome::NothingToRemove;
-            }
-
-            $versionRepo->remove($version);
-            $em->flush();
-
-            return BranchDeletionOutcome::Removed;
+            return $this->getEM()->wrapInTransaction(fn () => $this->remove($package, $branch));
         } finally {
             $this->locker->unlockPackageUpdate($package->getId());
         }
+    }
+
+    private function remove(Package $package, string $branch): BranchDeletionOutcome
+    {
+        $em = $this->getEM();
+        $versionRepo = $em->getRepository(Version::class);
+
+        $version = $versionRepo->findForBranch($package, $branch);
+        if (null === $version) {
+            return BranchDeletionOutcome::NothingToRemove;
+        }
+
+        // dependents, suggesters and the readme derive from the default branch, or from the first live
+        // version when none is flagged (the flag can lag behind a default branch switch): crawl then
+        if ($version->isDefaultBranch() || null === $versionRepo->findOneBy(['package' => $package, 'isDefaultBranch' => true, 'softDeletedAt' => null])) {
+            return BranchDeletionOutcome::Deferred;
+        }
+
+        // intentionally-pulled versions are left alone, as the Updater does
+        $reason = $version->getDeletionReason();
+        if (null !== $reason && VersionDeletionReason::AutoDeletedMissing !== $reason) {
+            return BranchDeletionOutcome::NothingToRemove;
+        }
+
+        $versionRepo->remove($version);
+        $em->flush();
+
+        return BranchDeletionOutcome::Removed;
     }
 }

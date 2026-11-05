@@ -15,8 +15,10 @@ namespace App\Entity;
 use App\Audit\VersionDeletionReason;
 use App\Model\VersionIdCache;
 use App\Service\Scheduler;
-use Composer\Semver\VersionParser;
+use Composer\Package\Version\VersionParser;
+use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Common\Collections\AbstractLazyCollection;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\ORM\EntityManagerInterface;
@@ -68,8 +70,11 @@ class VersionRepository extends ServiceEntityRepository
 
         $em = $this->getEntityManager();
         $package = $version->getPackage();
-        $package->getVersions()->removeElement($version);
-        $package->setCrawledAt(new \DateTimeImmutable());
+        $versions = $package->getVersions();
+        // keep a loaded collection consistent, without hydrating every version just to drop one
+        if (!$versions instanceof AbstractLazyCollection || $versions->isInitialized()) {
+            $versions->removeElement($version);
+        }
         $package->setUpdatedAt(new \DateTimeImmutable());
         // A soft-deleted row was already excluded from the metadata, so hard-deleting it changes
         // nothing. Worth skipping: the dominant caller is Updater's prune loop purging dev rows a day
@@ -106,9 +111,18 @@ class VersionRepository extends ServiceEntityRepository
      */
     public function findForBranch(Package $package, string $branch): ?Version
     {
-        $normalizedVersion = str_replace('#', '+', new VersionParser()->normalizeBranch($branch));
+        $normalizedVersion = new VersionParser()->normalizeBranch($branch);
+        if (str_starts_with($normalizedVersion, 'dev-') || VersionParser::DEFAULT_BRANCH_ALIAS === $normalizedVersion) {
+            $prettyVersion = 'dev-'.str_replace('#', '+', $branch);
+            $normalizedVersion = str_replace('#', '+', $normalizedVersion);
+        } else {
+            $prettyVersion = (str_starts_with($branch, 'v') ? 'v' : '').Preg::replace('{(\.9{7})+}', '.x', $normalizedVersion);
+        }
 
-        return $this->findOneBy(['package' => $package, 'normalizedVersion' => $normalizedVersion, 'development' => true]);
+        $version = $this->findOneBy(['package' => $package, 'normalizedVersion' => $normalizedVersion, 'development' => true]);
+
+        // the unique index compares case-insensitively, so `Release` would find the row of a live `release` branch
+        return null !== $version && $version->getVersion() === $prettyVersion ? $version : null;
     }
 
     /**

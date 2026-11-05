@@ -504,11 +504,16 @@ class ApiController extends Controller
                 $sig = Preg::isMatch('{^sha256=(?P<hex>[0-9a-f]{64})$}i', $sig, $sigMatch) ? strtolower($sigMatch['hex']) : '';
                 $expected = hash_hmac('sha256', $request->getContent(), $user->getApiToken());
                 $source = 'manual_github_hook';
-                if (hash_equals($expected, $sig) || hash_equals(hash_hmac('sha256', $request->getContent(), $user->getSafeApiToken()), $sig)) {
+                $mainTokenMatches = hash_equals($expected, $sig);
+                if ($mainTokenMatches || hash_equals(hash_hmac('sha256', $request->getContent(), $user->getSafeApiToken()), $sig)) {
                     $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $source, $user);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
                     $statsd->increment('update_pkg_api.success', tags: ['mode' => 'github_user_secret']);
+                    // the safe token is documented as leak-tolerant, so it may schedule a crawl but never delete
+                    if (!$mainTokenMatches) {
+                        $deletedBranch = null;
+                    }
                 } else {
                     $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_user_sig']);
 
@@ -524,6 +529,10 @@ class ApiController extends Controller
             $user = $this->findUser($request, ApiType::Safe);
             if ($user) {
                 $source = 'manual_hook ('.$user->getUsername().' @ '.$request->getPathInfo().')';
+                // safe token: crawl only, as above
+                if (null !== $deletedBranch && null === $this->findUser($request, ApiType::Unsafe)) {
+                    $deletedBranch = null;
+                }
             }
         }
 
