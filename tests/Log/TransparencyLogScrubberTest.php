@@ -58,6 +58,7 @@ class TransparencyLogScrubberTest extends TestCase
      * @var array<string, list<string>>
      */
     private const WITHHELD_ATTRIBUTES = [
+        'package_frozen' => ['internalReason'],
         'package_deleted' => ['internalReason'],
         'version_soft_deleted' => ['internalReasonText'],
         'email_changed' => ['email_from', 'email_to'],
@@ -315,6 +316,8 @@ class TransparencyLogScrubberTest extends TestCase
             'email_changed',
             // admin-only internalReason
             'package_deleted',
+            // admin-only internalReason
+            'package_frozen',
             // the reason can name a support request
             'totp_deactivated',
             // the version metadata blob, which carries author emails among other things
@@ -400,7 +403,7 @@ class TransparencyLogScrubberTest extends TestCase
 
         yield 'package_frozen' => [
             AuditLogEventType::PackageFrozen,
-            AuditRecord::packageFrozen($package, $admin, PackageFreezeReason::Malware),
+            AuditRecord::packageFrozen($package, $admin, PackageFreezeReason::Malware, internalReason: 'reported by jane, ticket '.self::PRIVATE_MARKER),
             [
                 'name' => self::PACKAGE_NAME,
                 'repository' => self::REPOSITORY,
