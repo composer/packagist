@@ -12,4 +12,5 @@ Reason:
 {% else -%}
     {{ display.reason|capitalize }}
 {% endif -%}<br>
+{% if display.internalReason %}Internal reason: {{ display.internalReason }}<br>{% endif %}
 Frozen by: {{ display.actor.username }}
