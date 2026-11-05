@@ -7,6 +7,7 @@ doctrine:
             2: 1.3
         types:
             ipaddress: App\Doctrine\Type\IpAddress
+            json_ordered: App\Doctrine\Type\OrderedJson
     orm:
         validate_xml_mapping: true
         auto_mapping: true
