@@ -18,7 +18,9 @@ use App\Entity\PackageFreezeReason;
 use App\Log\AuditLogEventType;
 use App\Model\DownloadManager;
 use App\Model\PackageManager;
-use App\Package\HttpGitShadow;
+use App\Package\Git\RepositoryNotFoundException;
+use App\Package\Git\RepositoryUnavailableException;
+use App\Package\Git\UnsupportedRepositoryException;
 use App\Package\RepositoryApiCheck;
 use App\Package\RepositoryApiChecker;
 use App\Package\RepositoryApiState;
@@ -99,6 +101,64 @@ class UpdaterWorkerTest extends IntegrationTestCase
         self::assertSame(Job::STATUS_PACKAGE_GONE, $result['status']);
         self::assertSame(PackageFreezeReason::Gone, $this->reload($package)->getFreezeReason());
         self::assertStringStartsWith('git_remote_repository_not_found: RuntimeException: Failed to execute git clone', $this->lastFreezeAuditAttributes()['internalReason']);
+    }
+
+    public function testGitHttpNotFoundFreezesImmediately(): void
+    {
+        $package = $this->storePackage();
+
+        $result = $this->runWorker($package, new RepositoryNotFoundException('Failed to read '.self::REPOSITORY, 404));
+
+        self::assertSame(Job::STATUS_PACKAGE_GONE, $result['status']);
+        self::assertSame(PackageFreezeReason::Gone, $this->reload($package)->getFreezeReason());
+        self::assertStringStartsWith('git_http_not_found: App\\Package\\Git\\RepositoryNotFoundException: Failed to read', $this->lastFreezeAuditAttributes()['internalReason']);
+    }
+
+    public function testGitHttpAuthPromptSkipsTheHostForAWeekOnFirstFailure(): void
+    {
+        $package = $this->storePackage();
+
+        $result = $this->runWorker($package, new RepositoryNotFoundException('Failed to read '.self::REPOSITORY, 401));
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertNotNull($package->unreachableSince);
+        self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $package->getCrawledAt());
+    }
+
+    public function testGitHttpAuthPromptFreezesThePackageOncePersistent(): void
+    {
+        $package = $this->storePackage(new \DateTimeImmutable('-29 days'));
+
+        $result = $this->runWorker($package, new RepositoryNotFoundException('Failed to read '.self::REPOSITORY, 401));
+
+        self::assertSame(Job::STATUS_PACKAGE_GONE, $result['status']);
+        self::assertStringContainsString('(unreachable since ', $this->lastFreezeAuditAttributes()['internalReason']);
+    }
+
+    public function testGitHttpUnavailableHostIsSkippedButNeverFrozen(): void
+    {
+        $package = $this->storePackage(new \DateTimeImmutable('-60 days'));
+
+        $result = $this->runWorker($package, new RepositoryUnavailableException('Failed to read '.self::REPOSITORY, 503));
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $package->getCrawledAt());
+    }
+
+    public function testUnsupportedGitServerFailsTheUpdateOnly(): void
+    {
+        $package = $this->storePackage();
+
+        $result = $this->runWorker($package, new UnsupportedRepositoryException('The server at '.self::REPOSITORY.' only supports the dumb HTTP protocol, which is not supported. Enable smart HTTP on your git server.'));
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertNull($package->unreachableSince);
     }
 
     public function testPrivateHostSkipsTheHostForAWeekOnFirstFailure(): void
@@ -360,7 +420,6 @@ class UpdaterWorkerTest extends IntegrationTestCase
             self::getService(FallbackGitHubAuthProvider::class),
             new ArrayAdapter(),
             '',
-            self::getService(HttpGitShadow::class),
             $apiChecker,
         );
 

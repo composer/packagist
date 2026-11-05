@@ -19,7 +19,6 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\Version;
 use App\Model\DownloadManager;
 use App\Model\PackageManager;
-use App\Package\HttpGitShadow;
 use App\Package\RepositoryApiChecker;
 use App\Package\RepositoryApiState;
 use App\Package\UpdateFailureClassifier;
@@ -81,7 +80,6 @@ class UpdaterWorker
         private readonly FallbackGitHubAuthProvider $fallbackGitHubAuthProvider,
         CacheItemPoolInterface $cache,
         private readonly string $updaterWorkerCacheDir,
-        private readonly HttpGitShadow $httpGitShadow,
         private readonly RepositoryApiChecker $repositoryApiChecker,
     ) {
         $this->cache = new Psr16Cache($cache);
@@ -243,7 +241,7 @@ class UpdaterWorker
             }
 
             // prepare repository
-            $repository = VcsRepositoryFactory::create($package->getRepository(), $io, $config, $httpDownloader, $versionCache, ['retry-auth-failure' => false]);
+            $repository = VcsRepositoryFactory::create($package->getRepository(), $io, $config, $httpDownloader, $versionCache, ['retry-auth-failure' => false], $versionCache?->getKnownReferences() ?? []);
             $repository->setLoader($loader);
 
             // perform the actual update (fetch and re-scan the repository's source)
@@ -252,11 +250,6 @@ class UpdaterWorker
             $emptyRefCache->setEmptyReferences($repository->getEmptyReferences());
             $em->persist($emptyRefCache);
             $em->flush();
-
-            $driver = $repository->getDriver();
-            if ($driver) {
-                $this->httpGitShadow->compareWithUpdate($package, $driver, $versionCache, $config, $httpDownloader);
-            }
         } catch (\Throwable $e) {
             $e = VcsRepositoryFactory::unwrapDisabledGitFallback($e);
             $output = $this->cleanupOutput($io->getOutput());

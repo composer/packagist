@@ -12,6 +12,7 @@
 
 namespace App\Tests\Package\Vcs;
 
+use App\Entity\Package;
 use App\Package\Git\LimitExceededException;
 use App\Package\Git\PktLine;
 use App\Package\Git\ProtocolException;
@@ -26,6 +27,8 @@ use App\Package\Vcs\GitBitbucketDriver;
 use App\Package\Vcs\GitHubDriver;
 use App\Package\Vcs\GitLabDriver;
 use App\Package\Vcs\HttpGitDriver;
+use App\Package\VcsRepositoryFactory;
+use App\Service\VersionCache;
 use App\Tests\Package\Git\GitHttpBackendDownloader;
 use App\Tests\Package\Git\GitRepositoryBuilder;
 use Composer\Config;
@@ -33,6 +36,7 @@ use Composer\Downloader\TransportException;
 use Composer\IO\NullIO;
 use Composer\Repository\Vcs\VcsDriver;
 use Composer\Repository\VcsRepository;
+use Composer\Util\Platform;
 use Composer\Util\ProcessExecutor;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -89,6 +93,12 @@ class HttpGitDriverTest extends TestCase
         $builder->git('tag', '-a', '-m', 'blob', 'tag-of-blob', 'HEAD:notes.txt');
         $builder->git('tag', '-a', '-m', 'tree', 'tag-of-tree', 'HEAD^{tree}');
         $builder->publish(self::$projectRoot, 'odd-refs.git');
+    }
+
+    protected function tearDown(): void
+    {
+        // set by VcsRepositoryFactory
+        Platform::clearEnv('GIT_ALLOW_PROTOCOL');
     }
 
     public static function tearDownAfterClass(): void
@@ -412,8 +422,7 @@ class HttpGitDriverTest extends TestCase
 
     public function testWorksThroughVcsRepository(): void
     {
-        $drivers = ['github' => GitHubDriver::class, 'gitlab' => GitLabDriver::class, 'git-bitbucket' => GitBitbucketDriver::class, 'forgejo' => ForgejoDriver::class, 'git' => HttpGitDriver::class];
-        $repository = new VcsRepository(['url' => GitHttpBackendDownloader::BASE_URL.'foo-sha1.git'], new NullIO(), $this->createConfig(), new GitHttpBackendDownloader(self::$projectRoot), null, null, $drivers);
+        $repository = VcsRepositoryFactory::create(GitHttpBackendDownloader::BASE_URL.'foo-sha1.git', new NullIO(), $this->createConfig(), new GitHttpBackendDownloader(self::$projectRoot));
 
         $versions = array_map(static fn ($package) => $package->getPrettyVersion(), $repository->getPackages());
         sort($versions);
@@ -421,6 +430,27 @@ class HttpGitDriverTest extends TestCase
         self::assertInstanceOf(HttpGitDriver::class, $repository->getDriver());
         // 9999999-dev is the alias Composer adds for the default branch
         self::assertSame(['9999999-dev', 'dev-feature', 'dev-main', 'v1.0.0', 'v1.1.0'], $versions);
+    }
+
+    public function testCommitsKnownToTheVersionCacheAreNotFetched(): void
+    {
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $versions = [];
+        foreach (['v1.0.0' => '1.0.0.0', 'v1.1.0' => '1.1.0.0'] as $tag => $normalized) {
+            $versions[] = ['version' => $tag, 'normalizedVersion' => $normalized, 'source' => ['type' => 'git', 'url' => '', 'reference' => self::$expected['sha1']['tags'][$tag]], 'defaultBranch' => 0];
+        }
+        foreach (self::$expected['sha1']['branches'] as $branch => $commit) {
+            $versions[] = ['version' => 'dev-'.$branch, 'normalizedVersion' => 'dev-'.$branch, 'source' => ['type' => 'git', 'url' => '', 'reference' => $commit], 'defaultBranch' => (int) ($branch === 'main')];
+        }
+
+        $versionCache = new VersionCache(new Package(), $versions, []);
+        $repository = VcsRepositoryFactory::create(GitHttpBackendDownloader::BASE_URL.'foo-sha1.git', new NullIO(), $this->createConfig(), $downloader, $versionCache, [], $versionCache->getKnownReferences());
+
+        self::assertCount(5, $repository->getPackages());
+        // ref listing, then VcsRepository reads the package name from the default branch
+        self::assertSame(['GET', 'POST', 'POST'], array_column($downloader->requests, 'method'));
+        preg_match_all('{want ([0-9a-f]+)}', (string) $downloader->requests[2]['body'], $wants);
+        self::assertSame([self::$expected['sha1']['branches']['main']], $wants[1]);
     }
 
     /**
