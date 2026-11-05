@@ -13,6 +13,7 @@
 namespace App\Tests\Package;
 
 use App\Package\PrivateRepositoryHostException;
+use App\Package\Vcs\HttpGitDriver;
 use App\Package\VcsRepositoryFactory;
 use App\Tests\Package\Git\GitHttpBackendDownloader;
 use Composer\Config;
@@ -95,6 +96,36 @@ class VcsRepositoryFactoryTest extends TestCase
     public function testPublicHostsAreAccepted(): void
     {
         self::assertSame('https://8.8.8.8/acme/foo.git', $this->createRepository('https://8.8.8.8/acme/foo.git')->getRepoConfig()['url']);
+    }
+
+    public function testGitRepositoriesAreNotReadWithTheGitBinary(): void
+    {
+        $composerDrivers = [
+            'github' => GitHubDriver::class,
+            'gitlab' => \Composer\Repository\Vcs\GitLabDriver::class,
+            'git-bitbucket' => \Composer\Repository\Vcs\GitBitbucketDriver::class,
+            'forgejo' => \Composer\Repository\Vcs\ForgejoDriver::class,
+            'git' => \Composer\Repository\Vcs\GitDriver::class,
+        ];
+
+        self::assertSame(array_keys($composerDrivers), array_keys(VcsRepositoryFactory::DRIVERS));
+        foreach (VcsRepositoryFactory::DRIVERS as $type => $class) {
+            self::assertNotSame($composerDrivers[$type], $class);
+            // the Updater checks drivers against Composer's classes
+            self::assertTrue(is_a($class, $composerDrivers[$type], true), $class.' must stay a '.$composerDrivers[$type]);
+        }
+        self::assertSame(HttpGitDriver::class, VcsRepositoryFactory::DRIVERS['git']);
+    }
+
+    public function testKnownReferencesAreGivenToTheDriver(): void
+    {
+        $io = new NullIO();
+        $config = VcsRepositoryFactory::createConfig();
+
+        $repository = VcsRepositoryFactory::create('https://8.8.8.8/acme/foo.git', $io, $config, new HttpDownloader($io, $config), knownReferences: ['aaaa']);
+
+        self::assertSame(['aaaa'], $repository->getRepoConfig()['known-references']);
+        self::assertArrayNotHasKey('known-references', $this->createRepository()->getRepoConfig(), 'reads stay lazy unless asked for');
     }
 
     public function testUrlsWithoutHostAreRefused(): void

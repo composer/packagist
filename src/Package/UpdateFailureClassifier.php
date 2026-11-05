@@ -12,6 +12,9 @@
 
 namespace App\Package;
 
+use App\Package\Git\GitException;
+use App\Package\Git\RepositoryNotFoundException;
+use App\Package\Git\RepositoryUnavailableException;
 use Composer\Downloader\TransportException;
 use Composer\Pcre\Preg;
 use Composer\Util\Url;
@@ -29,6 +32,10 @@ final class UpdateFailureClassifier
         if ($e instanceof PrivateRepositoryHostException) {
             // a single DNS lookup from the worker, a sinkholed or briefly misconfigured domain must not freeze right away
             return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'private_host', escalatesToGone: true);
+        }
+
+        if ($e instanceof GitException) {
+            return self::classifyGitException($e);
         }
 
         $msg = $e->getMessage();
@@ -140,6 +147,27 @@ final class UpdateFailureClassifier
     public static function isGitHubIpAllowListResponse(string $response): bool
     {
         return str_contains($response, 'has an IP allow list enabled');
+    }
+
+    /**
+     * Failures of HttpGitDriver, which reads repositories hosted outside of the API-backed hosts
+     */
+    private static function classifyGitException(GitException $e): ?UpdateFailureVerdict
+    {
+        if ($e instanceof RepositoryNotFoundException) {
+            if (\in_array($e->getStatusCode(), [404, 410], true)) {
+                return self::gone('git_http_not_found');
+            }
+
+            // an auth prompt or a login page may be a repository made private by accident
+            return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'git_http_not_public', escalatesToGone: true);
+        }
+        if ($e instanceof RepositoryUnavailableException) {
+            return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'git_http_unavailable');
+        }
+
+        // unsupported servers and protocol errors are reported as a failed update
+        return null;
     }
 
     private static function gone(string $code): UpdateFailureVerdict
