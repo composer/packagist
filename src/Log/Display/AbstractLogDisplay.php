@@ -12,18 +12,22 @@
 
 namespace App\Log\Display;
 
-use App\Log\AuditLogEventType;
-
+/**
+ * Every log row carries a timestamp and an actor; the rest is per-event detail added by the leaf
+ * classes in {@see Event}.
+ */
 abstract readonly class AbstractLogDisplay implements LogDisplayInterface
 {
     public function __construct(
         public \DateTimeImmutable $datetime,
         public ActorDisplay $actor,
-        public ?string $ip,
+        /**
+         * Only the audit log records an IP, and only auditors see it. Rows projected into the
+         * transparency log have none (`package_transparency_log` has no such column).
+         */
+        public ?string $ip = null,
     ) {
     }
-
-    abstract public function getType(): AuditLogEventType;
 
     public function getDateTime(): \DateTimeImmutable
     {
@@ -37,6 +41,21 @@ abstract readonly class AbstractLogDisplay implements LogDisplayInterface
 
     public function getTypeTranslationKey(): string
     {
-        return 'audit_log.type.'.$this->getType()->value;
+        return 'log.type.'.$this->getType()->value;
+    }
+
+    /**
+     * Translation key for a reason label, or null if we have no label for the stored value, so the
+     * row shows nothing instead of a raw enum value.
+     *
+     * @param class-string<\BackedEnum> $reasonEnum
+     */
+    protected function reasonTranslationKey(?string $reason, string $reasonEnum, string $group): ?string
+    {
+        if ($reason === null || $reasonEnum::tryFrom($reason) === null) {
+            return null;
+        }
+
+        return 'log.'.$group.'.'.$reason;
     }
 }

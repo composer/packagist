@@ -1,16 +1,10 @@
 {% import 'log/macros.html.twig' as log %}
 
 <strong>{{ log.packageLink(display.packageName) }}</strong><br>
-Repository: {{ display.repository }}<br>
-Reason:
-{% if display.reason == 'spam' -%}
-    Spam
-{% elseif display.reason == 'remote_id' -%}
-    Remote ID mismatch
-{% elseif display.reason == 'gone' -%}
-    Repository gone
-{% else -%}
-    {{ display.reason|capitalize }}
-{% endif -%}<br>
+{% if display.repository %}Repository: {{ display.repository }}<br>{% endif %}
+{# raw value when it has no label #}
+{% if display.reasonTranslationKey %}Reason: {{ display.reasonTranslationKey|trans }}<br>
+{% elseif display.reason %}Reason: {{ display.reason }}<br>{% endif %}
+{## transparency log never has an internal reason ##}
 {% if display.internalReason %}Internal reason: {{ display.internalReason }}<br>{% endif %}
-Frozen by: {{ display.actor.username }}
+Frozen by: {{ log.user(display.actor) }}
