@@ -30,14 +30,20 @@ final readonly class SecondFactorProofs
         return new self($this->userId, $this->sessionBuster, $times);
     }
 
-    public function latestVerificationAt(int $now, ?string $method = null): ?int
+    public function hasVerificationAfter(?int $after, int $now, ?string $method = null): bool
     {
         $times = $this->verificationTimesAt($now);
         if ($method !== null) {
-            return $times[$method] ?? null;
+            $times = isset($times[$method]) ? [$times[$method]] : [];
         }
 
-        return $times === [] ? null : max($times);
+        foreach ($times as $authenticatedAt) {
+            if ($after === null || $authenticatedAt > $after) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @return array<string, int> */

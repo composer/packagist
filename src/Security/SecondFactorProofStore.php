@@ -38,16 +38,15 @@ class SecondFactorProofStore
 
     public function hasProof(User $user, ?string $method = null): bool
     {
-        return $this->getProofs($user)?->latestVerificationAt($this->clock->now()->getTimestamp(), $method) !== null;
+        return $this->getProofs($user)?->hasVerificationAfter(null, $this->clock->now()->getTimestamp(), $method) ?? false;
     }
 
     public function hasRecentProof(User $user, ?string $method = null): bool
     {
         $now = $this->clock->now()->getTimestamp();
-        $authenticatedAt = $this->getProofs($user)?->latestVerificationAt($now, $method);
+        $after = $now - self::RECENT_AUTHENTICATION_LIFETIME;
 
-        return $authenticatedAt !== null
-            && $authenticatedAt > $now - self::RECENT_AUTHENTICATION_LIFETIME;
+        return $this->getProofs($user)?->hasVerificationAfter($after, $now, $method) ?? false;
     }
 
     public function clear(): void
