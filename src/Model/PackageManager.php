@@ -211,6 +211,39 @@ class PackageManager
 
     public function notifyUpdateFailure(Package $package, \Exception $e, ?string $details = null): bool
     {
+        return $this->notifyFailureOnce($package, $package->getName().' failed to update, invalid composer.json data', function () use ($package, $e, $details): string {
+            $details = strip_tags($details ?? '');
+            $details = Preg::replace('{(?<=\n|^)Found cached composer\.json .*\n}', '', $details);
+            $details = Preg::replace('{(?<=\n|^)Reading composer\.json .*\n}', '', $details);
+            $details = Preg::replace('{(?<=\n|^)Importing (tag|branch) .*\n}', '', $details);
+
+            return $this->twig->render('email/update_failed.txt.twig', [
+                'package' => $package,
+                'exception' => $e::class,
+                'exceptionMessage' => $e->getMessage(),
+                'details' => $details,
+            ]);
+        });
+    }
+
+    /**
+     * For when git cannot read a repository that the host's API says exists
+     */
+    public function notifyRepositoryUnreadable(Package $package): bool
+    {
+        return $this->notifyFailureOnce($package, $package->getName().' failed to update, repository could not be read', fn (): string => $this->twig->render('email/repository_unreadable.txt.twig', [
+            'package' => $package,
+            'packageUrl' => $this->urlGenerator->generate('view_package', ['name' => $package->getName()], UrlGeneratorInterface::ABSOLUTE_URL),
+        ]));
+    }
+
+    /**
+     * Mails the maintainers once until the next successful update, and records the failed crawl
+     *
+     * @param callable(): string $renderBody
+     */
+    private function notifyFailureOnce(Package $package, string $subject, callable $renderBody): bool
+    {
         if (!$package->isUpdateFailureNotified()) {
             $recipients = [];
             foreach ($package->getMaintainers() as $maintainer) {
@@ -221,23 +254,11 @@ class PackageManager
             }
 
             if ($recipients) {
-                $details = strip_tags($details ?? '');
-                $details = Preg::replace('{(?<=\n|^)Found cached composer\.json .*\n}', '', $details);
-                $details = Preg::replace('{(?<=\n|^)Reading composer\.json .*\n}', '', $details);
-                $details = Preg::replace('{(?<=\n|^)Importing (tag|branch) .*\n}', '', $details);
-
-                $body = $this->twig->render('email/update_failed.txt.twig', [
-                    'package' => $package,
-                    'exception' => $e::class,
-                    'exceptionMessage' => $e->getMessage(),
-                    'details' => $details,
-                ]);
-
                 $message = new Email()
-                    ->subject($package->getName().' failed to update, invalid composer.json data')
+                    ->subject($subject)
                     ->from(new Address($this->options['from'], $this->options['fromName']))
                     ->to(...array_values($recipients))
-                    ->text($body)
+                    ->text($renderBody())
                 ;
 
                 $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');

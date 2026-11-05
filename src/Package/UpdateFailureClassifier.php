@@ -49,7 +49,7 @@ final class UpdateFailureClassifier
                 if (\in_array($status, [404, 451], true) && str_contains($msg, '" file could not be downloaded (HTTP/2 '.$status.' )')) {
                     return self::gone('github_api_'.$status);
                 }
-                if ($status === 403 && str_contains((string) $e->getResponse(), 'Repository access blocked')) {
+                if ($status === 403 && self::isGitHubAccessBlockedResponse((string) $e->getResponse())) {
                     return self::gone('github_api_access_blocked');
                 }
                 if ($status === 403 && self::isGitHubIpAllowListResponse((string) $e->getResponse())) {
@@ -127,6 +127,14 @@ final class UpdateFailureClassifier
         $description = $verdict->code.': '.$e::class.': '.Url::sanitize(trim($e->getMessage()));
 
         return mb_strimwidth($description, 0, self::MAX_DESCRIPTION_LENGTH, '…');
+    }
+
+    /**
+     * GitHub answers 403 for repositories blocked by staff, e.g. for terms of service violations
+     */
+    public static function isGitHubAccessBlockedResponse(string $response): bool
+    {
+        return str_contains($response, 'Repository access blocked');
     }
 
     public static function isGitHubIpAllowListResponse(string $response): bool
