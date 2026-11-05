@@ -36,7 +36,7 @@ use App\Log\Display\Event\PackageUnfrozenDisplay;
 use App\Log\Display\Event\SecurityAdvisoryCreatedDisplay;
 use App\Log\Display\Event\SecurityAdvisoryEditedDisplay;
 use App\Log\Display\Event\SecurityAdvisoryWithdrawnDisplay;
-use App\Log\Display\Event\TwoFaDeactivatedDisplay;
+use App\Log\Display\Event\TotpDeactivatedDisplay;
 use App\Log\Display\Event\UserFreezeDisplay;
 use App\Log\Display\Event\UserVerifiedDisplay;
 use App\Log\Display\Event\VersionDeletedDisplay;
@@ -523,10 +523,10 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('admin', $display->actor->username);
     }
 
-    public function testBuildTwoFaActivated(): void
+    public function testBuildTotpActivated(): void
     {
         $auditRecord = $this->createAuditRecord(
-            AuditLogEventType::TwoFaAuthenticationActivated,
+            AuditLogEventType::TotpAuthenticationActivated,
             [
                 'user' => ['id' => 1234, 'username' => 'testuser1234'],
                 'actor' => ['id' => 123, 'username' => 'testuser'],
@@ -539,13 +539,13 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('testuser1234', $display->username);
         self::assertSame(123, $display->actor->id);
         self::assertSame('testuser', $display->actor->username);
-        self::assertSame(AuditLogEventType::TwoFaAuthenticationActivated, $display->getType());
+        self::assertSame(AuditLogEventType::TotpAuthenticationActivated, $display->getType());
     }
 
-    public function testBuildTwoFaDeactivated(): void
+    public function testBuildTotpDeactivated(): void
     {
         $auditRecord = $this->createAuditRecord(
-            AuditLogEventType::TwoFaAuthenticationDeactivated,
+            AuditLogEventType::TotpAuthenticationDeactivated,
             [
                 'user' => ['id' => 1234, 'username' => 'testuser1234'],
                 'reason' => 'Manually disabled',
@@ -555,13 +555,13 @@ class AuditLogDisplayFactoryTest extends TestCase
 
         $display = $this->factory->buildSingle($auditRecord);
 
-        self::assertInstanceOf(TwoFaDeactivatedDisplay::class, $display);
+        self::assertInstanceOf(TotpDeactivatedDisplay::class, $display);
         self::assertSame('testuser1234', $display->username);
         self::assertSame('Manually disabled', $display->reason);
         self::assertSame(123, $display->actor->id);
         self::assertSame('testuser', $display->actor->username);
-        self::assertSame(AuditLogEventType::TwoFaAuthenticationDeactivated, $display->getType());
-        self::assertSame('log/display/two_fa_deactivated.html.twig', $display->getTemplateName());
+        self::assertSame(AuditLogEventType::TotpAuthenticationDeactivated, $display->getType());
+        self::assertSame('log/display/totp_deactivated.html.twig', $display->getTemplateName());
     }
 
     public function testBuildFilterListEntryAdded(): void

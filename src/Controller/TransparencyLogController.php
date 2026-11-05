@@ -59,11 +59,11 @@ class TransparencyLogController extends Controller
             $filter->filter($qb);
         }
 
-        // Don't display 2FA events in the result list initially
+        // Don't display TOTP events in the result list initially
         $qb->andWhere('a.type NOT IN (:hidden_types)')
             ->setParameter('hidden_types', [
-                AuditLogEventType::TwoFaAuthenticationActivated->value,
-                AuditLogEventType::TwoFaAuthenticationDeactivated->value,
+                AuditLogEventType::TotpAuthenticationActivated->value,
+                AuditLogEventType::TotpAuthenticationDeactivated->value,
             ]);
 
         $auditLogs = new Pagerfanta(new QueryAdapter($qb, false, false));
@@ -80,8 +80,8 @@ class TransparencyLogController extends Controller
         $categoryOrder = ['ownership', 'package', 'version', 'user', 'filterlist', 'advisory', 'organization'];
         $groupedTypes = [];
         foreach (AuditLogEventType::cases() as $type) {
-            // Don't display 2FA events in the type filter initially
-            if ($type === AuditLogEventType::TwoFaAuthenticationActivated || $type === AuditLogEventType::TwoFaAuthenticationDeactivated) {
+            // Don't display TOTP events in the type filter initially
+            if ($type === AuditLogEventType::TotpAuthenticationActivated || $type === AuditLogEventType::TotpAuthenticationDeactivated) {
                 continue;
             }
             $groupedTypes[$type->category()][] = $type;

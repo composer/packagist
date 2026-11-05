@@ -51,7 +51,7 @@ use App\Log\Display\Event\PackageUnfrozenDisplay;
 use App\Log\Display\Event\SecurityAdvisoryCreatedDisplay;
 use App\Log\Display\Event\SecurityAdvisoryEditedDisplay;
 use App\Log\Display\Event\SecurityAdvisoryWithdrawnDisplay;
-use App\Log\Display\Event\TwoFaDeactivatedDisplay;
+use App\Log\Display\Event\TotpDeactivatedDisplay;
 use App\Log\Display\Event\UserCreatedDisplay;
 use App\Log\Display\Event\UserDeletedDisplay;
 use App\Log\Display\Event\UserFreezeDisplay;
@@ -223,14 +223,14 @@ class AuditLogDisplayFactory
                 $this->buildActor('self'),
                 $record->ip,
             ),
-            AuditLogEventType::TwoFaAuthenticationActivated => new GenericUserDisplay(
+            AuditLogEventType::TotpAuthenticationActivated => new GenericUserDisplay(
                 $record->type,
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
-            AuditLogEventType::TwoFaAuthenticationDeactivated => new TwoFaDeactivatedDisplay(
+            AuditLogEventType::TotpAuthenticationDeactivated => new TotpDeactivatedDisplay(
                 $record->datetime,
                 $record->attributes['user']['username'],
                 $record->attributes['reason'],

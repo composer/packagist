@@ -12,17 +12,17 @@
 
 namespace App\EventListener;
 
-use App\Security\Passport\Badge\ResolvedTwoFactorCodeCredentials;
+use App\Security\Passport\Badge\ResolvedTotpCodeCredentials;
 use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Security\Http\Event\AuthenticationTokenCreatedEvent;
 
-class ResolvedTwoFactorCodeCredentialsListener
+class ResolvedTotpCodeCredentialsListener
 {
     #[AsEventListener(event: AuthenticationTokenCreatedEvent::class, priority: 512)]
     public function onAuthenticationTokenCreated(AuthenticationTokenCreatedEvent $event): void
     {
-        if ($event->getPassport()->getBadge(ResolvedTwoFactorCodeCredentials::class)) {
+        if ($event->getPassport()->getBadge(ResolvedTotpCodeCredentials::class)) {
             $event->getAuthenticatedToken()->setAttribute(TwoFactorAuthenticator::FLAG_2FA_COMPLETE, true);
         }
     }

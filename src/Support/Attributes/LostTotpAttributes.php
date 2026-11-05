@@ -14,7 +14,7 @@ namespace App\Support\Attributes;
 
 use App\Support\SupportRequestType;
 
-final readonly class LostTwoFactorAttributes implements SupportRequestAttributes
+final readonly class LostTotpAttributes implements SupportRequestAttributes
 {
     public function __construct(
         /**
@@ -34,7 +34,7 @@ final readonly class LostTwoFactorAttributes implements SupportRequestAttributes
 
     public function type(): SupportRequestType
     {
-        return SupportRequestType::LostTwoFactor;
+        return SupportRequestType::LostTotp;
     }
 
     /** Hashes the raw token; only the hash is ever stored. */

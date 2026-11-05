@@ -24,7 +24,7 @@ use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 /**
  * @author Colin O'Dell <colinodell@gmail.com>
  */
-class TwoFactorAuthManager implements BackupCodeManagerInterface
+class TotpAuthManager implements BackupCodeManagerInterface
 {
     public function __construct(
         private ManagerRegistry $doctrine,
@@ -35,43 +35,43 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
     }
 
     /**
-     * Enable two-factor auth on the given user account and send confirmation email.
+     * Enable TOTP authentication on the given user account and send a confirmation email.
      *
      * @param non-empty-string $secret
      */
-    public function enableTwoFactorAuth(User $user, User $actor, string $secret): void
+    public function enableTotpAuthentication(User $user, User $actor, string $secret): void
     {
         $user->setTotpSecret($secret);
         $this->doctrine->getManager()->flush();
 
-        $this->auditRecordRepository->insert(AuditRecord::twoFactorAuthenticationActivated($user, $actor));
+        $this->auditRecordRepository->insert(AuditRecord::totpAuthenticationActivated($user, $actor));
 
         $this->userNotifier->notifyChange(
             $user->getEmail(),
-            template: 'email/two_factor_enabled.txt.twig',
-            subject: 'Two-factor authentication enabled on Packagist.org',
+            template: 'email/totp_enabled.txt.twig',
+            subject: 'Authenticator app enabled on Packagist.org',
             username: $user->getUsername()
         );
     }
 
     /**
-     * Disable two-factor auth on the given user account and send confirmation email.
+     * Disable TOTP authentication on the given user account and send confirmation email.
      *
      * $supportReset adds a "if you did not ask for this" warning to that email, for the one path
-     * where the account owner may not be the person who asked: an approved lost-2FA support request.
+     * where the account owner may not be the person who asked: an approved TOTP reset request.
      */
-    public function disableTwoFactorAuth(User $user, User $actor, string $reason, bool $supportReset = false): void
+    public function disableTotpAuthentication(User $user, User $actor, string $reason, bool $supportReset = false): void
     {
         $user->setTotpSecret(null);
         $user->invalidateAllBackupCodes();
         $this->doctrine->getManager()->flush();
 
-        $this->auditRecordRepository->insert(AuditRecord::twoFactorAuthenticationDeactivated($user, $actor, $reason));
+        $this->auditRecordRepository->insert(AuditRecord::totpAuthenticationDeactivated($user, $actor, $reason));
 
         $this->userNotifier->notifyChange(
             $user->getEmail(),
-            template: 'email/two_factor_disabled.txt.twig',
-            subject: 'Two-factor authentication disabled on Packagist.org',
+            template: 'email/totp_disabled.txt.twig',
+            subject: 'Authenticator app removed on Packagist.org',
             username: $user->getUsername(),
             reason: $reason,
             supportReset: $supportReset,
@@ -118,7 +118,7 @@ class TwoFactorAuthManager implements BackupCodeManagerInterface
             return;
         }
 
-        $this->disableTwoFactorAuth($user, $user, 'Backup code used');
+        $this->disableTotpAuthentication($user, $user, 'Backup code used');
         $session = $this->requestStack->getCurrentRequest()?->getSession();
 
         if (null === $session) {

@@ -1,11 +1,11 @@
 {% extends "layout.html.twig" %}
 
-{% block title %}Request a two-factor reset - {{ parent() }}{% endblock %}
+{% block title %}Request an authenticator app reset - {{ parent() }}{% endblock %}
 
 {% block head_additions %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block content %}
-    <h2 class="title">Request a two-factor reset</h2>
+    <h2 class="title">Request an authenticator app reset</h2>
 
     <section class="row">
         <div class="col-lg-8">
@@ -32,14 +32,14 @@
             {% else %}
                 <p>
                     Your password has been accepted, so we know this request comes from your account.
-                    An admin still has to review it by hand before two-factor authentication can be
-                    switched off, and we will reply to the email address on the account.
+                    An admin still has to review it by hand before your authenticator app can be
+                    removed, and we will reply to the email address on the account.
                 </p>
 
                 <p>
                     Still have your backup code? You do not need this form - enter the backup
-                    code in place of the authentication code and two-factor authentication will be
-                    disabled straight away.
+                    code in place of the authentication code and your authenticator app will be
+                    removed straight away.
                 </p>
 
                 <div class="alert alert-warning">

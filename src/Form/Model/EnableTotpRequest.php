@@ -14,12 +14,18 @@ namespace App\Form\Model;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * The account is identified by the two-factor token in the session, never by anything submitted
- * here, so this carries nothing but an optional note.
- */
-class LostTwoFactorSupportRequest
+class EnableTotpRequest
 {
-    #[Assert\Length(max: 2000)]
-    public ?string $description = null;
+    #[Assert\NotBlank]
+    protected ?string $code = null;
+
+    public function getCode(): ?string
+    {
+        return $this->code;
+    }
+
+    public function setCode(string $code): void
+    {
+        $this->code = $code;
+    }
 }

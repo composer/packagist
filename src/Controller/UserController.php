@@ -16,17 +16,18 @@ use App\Attribute\VarName;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
-use App\Entity\TemporaryTwoFactorUser;
+use App\Entity\TemporaryTotpUser;
 use App\Entity\User;
-use App\Form\Model\EnableTwoFactorRequest;
+use App\Form\Model\EnableTotpRequest;
 use App\Form\Model\FreezeRequest;
 use App\Form\Model\UnfreezeRequest;
-use App\Form\Type\EnableTwoFactorAuthType;
+use App\Form\Type\EnableTotpAuthType;
 use App\Form\Type\FreezeType;
 use App\Form\Type\UnfreezeType;
 use App\Model\FavoriteManager;
 use App\Model\RedisAdapter;
-use App\Security\TwoFactorAuthManager;
+use App\Security\SecondFactorProofStore;
+use App\Security\TotpAuthManager;
 use App\Service\Scheduler;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
@@ -38,12 +39,12 @@ use Predis\Client as RedisClient;
 use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
@@ -288,8 +289,8 @@ class UserController extends Controller
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/users/{name}/2fa/', name: 'user_2fa_configure', methods: ['GET'])]
-    public function configureTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser): Response
+    #[Route(path: '/users/{name}/totp/', name: 'user_totp_configure', methods: ['GET'])]
+    public function configureTotpAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser): Response
     {
         if ($user->getId() === $loggedUser->getId()) {
             return $this->redirectToRoute('security_overview');
@@ -300,7 +301,7 @@ class UserController extends Controller
         }
 
         return $this->render(
-            'user/configure_two_factor_auth.html.twig',
+            'user/configure_totp_auth.html.twig',
             ['user' => $user, 'backup_code' => null]
         );
     }
@@ -310,7 +311,7 @@ class UserController extends Controller
     public function securityOverview(Request $req, #[CurrentUser] User $user): Response
     {
         return $this->render(
-            'user/configure_two_factor_auth.html.twig',
+            'user/configure_totp_auth.html.twig',
             ['user' => $user, 'backup_code' => $req->getSession()->remove('backup_code')]
         );
     }
@@ -323,8 +324,15 @@ class UserController extends Controller
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/users/{name}/2fa/enable', name: 'user_2fa_enable', methods: ['GET', 'POST'])]
-    public function enableTwoFactorAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, TotpAuthenticatorInterface $authenticator, TwoFactorAuthManager $authManager): Response
+    #[Route(path: '/users/{name}/totp/enable', name: 'user_totp_enable', methods: ['GET', 'POST'])]
+    public function enableTotpAuthAction(
+        Request $req,
+        #[VarName('name')] User $user,
+        #[CurrentUser] User $loggedUser,
+        TotpAuthenticatorInterface $authenticator,
+        TotpAuthManager $authManager,
+        SecondFactorProofStore $secondFactorProofStore,
+    ): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
@@ -334,33 +342,39 @@ class UserController extends Controller
             throw $this->createAccessDeniedException('Two-factor authentication is already enabled');
         }
 
-        $secret = (string) $req->getSession()->get('2fa_secret') ?: $authenticator->generateSecret();
-        // An empty secret would leave isTotpAuthenticationEnabled() reporting 2FA off while one is set.
+        $secret = (string) $req->getSession()->get('totp_secret') ?: $authenticator->generateSecret();
+        // An empty secret would leave isTotpAuthenticationEnabled() reporting TOTP off while one is set.
         Assert::stringNotEmpty($secret);
         // Temporarily store this code on the user, as we'll need it there to generate the
         // QR code and to check the confirmation code.  We won't actually save this change
         // until we've confirmed the code
-        $temporary2faUser = new TemporaryTwoFactorUser($user, $secret);
+        $temporaryTotpUser = new TemporaryTotpUser($user, $secret);
 
-        $enableRequest = new EnableTwoFactorRequest();
-        $form = $this->createForm(EnableTwoFactorAuthType::class, $enableRequest, ['user' => $temporary2faUser])
+        $enableRequest = new EnableTotpRequest();
+        $form = $this->createForm(EnableTotpAuthType::class, $enableRequest, ['user' => $temporaryTotpUser])
             ->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $user->setTotpSecret($secret);
-            $req->getSession()->remove('2fa_secret');
-            $authManager->enableTwoFactorAuth($user, $loggedUser, $secret);
+            $req->getSession()->remove('totp_secret');
+            $authManager->enableTotpAuthentication($user, $loggedUser, $secret);
             $backupCode = $authManager->generateAndSaveNewBackupCode($user);
 
+            $secondFactorProofStore->record($user, SecondFactorProofStore::TOTP);
             $this->addFlash('success', 'Authenticator app enabled.');
             $req->getSession()->set('backup_code', $backupCode);
 
-            return $this->redirectToRoute('user_2fa_confirm', ['name' => $user->getUsername()]);
+            return $this->redirectToRoute('user_totp_confirm', ['name' => $user->getUsername()]);
         }
 
-        $req->getSession()->set('2fa_secret', $secret);
-        $qrContent = $authenticator->getQRContent($temporary2faUser);
+        $req->getSession()->set('totp_secret', $secret);
 
+        return $this->renderTotpSetup($user, $temporaryTotpUser, $form, $authenticator->getQRContent($temporaryTotpUser));
+    }
+
+    /** @param FormInterface<EnableTotpRequest> $form */
+    private function renderTotpSetup(User $user, TemporaryTotpUser $temporaryTotpUser, FormInterface $form, string $qrContent): Response
+    {
         $qrCode = new Builder(
             writer: new SvgWriter(),
             writerOptions: [],
@@ -373,19 +387,19 @@ class UserController extends Controller
         );
 
         return $this->render(
-            'user/enable_two_factor_auth.html.twig',
+            'user/enable_totp_auth.html.twig',
             [
                 'user' => $user,
                 'form' => $form,
-                'tfaConfig' => $temporary2faUser->getTotpAuthenticationConfiguration(),
+                'tfaConfig' => $temporaryTotpUser->getTotpAuthenticationConfiguration(),
                 'qrCode' => $qrCode->build()->getDataUri(),
             ]
         );
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/users/{name}/2fa/confirm', name: 'user_2fa_confirm', methods: ['GET'])]
-    public function confirmTwoFactorAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req): Response
+    #[Route(path: '/users/{name}/totp/confirm', name: 'user_totp_confirm', methods: ['GET'])]
+    public function confirmTotpAuthAction(#[VarName('name')] User $user, #[CurrentUser] User $loggedUser, Request $req): Response
     {
         if ($user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
@@ -398,29 +412,29 @@ class UserController extends Controller
         }
 
         return $this->render(
-            'user/confirm_two_factor_auth.html.twig',
+            'user/confirm_totp_auth.html.twig',
             ['user' => $user, 'backup_code' => $backupCode]
         );
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/users/{name}/2fa/disable', name: 'user_2fa_disable', methods: ['GET'])]
-    public function disableTwoFactorAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, CsrfTokenManagerInterface $csrfTokenManager, TwoFactorAuthManager $authManager): Response
+    #[Route(path: '/users/{name}/totp/disable', name: 'user_totp_disable', methods: ['GET'])]
+    public function disableTotpAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, TotpAuthManager $authManager): Response
     {
         if (!$this->isGranted('ROLE_DISABLE_2FA') && $user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
-        if ($this->isCsrfTokenValid('disable_2fa', $req->query->getString('token'))) {
-            $authManager->disableTwoFactorAuth($user, $loggedUser, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
+        if ($this->isCsrfTokenValid('disable_totp', $req->query->getString('token'))) {
+            $authManager->disableTotpAuthentication($user, $loggedUser, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
 
             $this->addFlash('success', 'Authenticator app removed.');
 
-            return $this->redirectToRoute('user_2fa_configure', ['name' => $user->getUsername()]);
+            return $this->redirectToRoute('user_totp_configure', ['name' => $user->getUsername()]);
         }
 
         return $this->render(
-            'user/disable_two_factor_auth.html.twig',
+            'user/disable_totp_auth.html.twig',
             ['user' => $user]
         );
     }

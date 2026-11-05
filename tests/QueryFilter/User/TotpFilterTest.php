@@ -13,14 +13,14 @@
 namespace App\Tests\QueryFilter\User;
 
 use App\Entity\User;
-use App\QueryFilter\User\TwoFactorFilter;
+use App\QueryFilter\User\TotpFilter;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class TwoFactorFilterTest extends TestCase
+class TotpFilterTest extends TestCase
 {
     private function queryBuilder(): QueryBuilder
     {
@@ -32,10 +32,10 @@ class TwoFactorFilterTest extends TestCase
     public function testEmptyValueDoesNotFilter(): void
     {
         $qb = $this->queryBuilder();
-        $filter = TwoFactorFilter::fromQuery(new InputBag([]));
+        $filter = TotpFilter::fromQuery(new InputBag([]));
         $filter->filter($qb);
 
-        self::assertSame('twofa', $filter->getKey());
+        self::assertSame('totp', $filter->getKey());
         self::assertSame('', $filter->getSelectedValue());
         self::assertNull($qb->getDQLPart('where'));
     }
@@ -43,7 +43,7 @@ class TwoFactorFilterTest extends TestCase
     public function testEnabledMatchesRowsWithASecret(): void
     {
         $qb = $this->queryBuilder();
-        TwoFactorFilter::fromQuery(new InputBag(['twofa' => 'enabled']))->filter($qb);
+        TotpFilter::fromQuery(new InputBag(['totp' => 'enabled']))->filter($qb);
 
         self::assertStringContainsString('u.totpSecret IS NOT NULL', (string) $qb->getDQLPart('where'));
     }
@@ -51,7 +51,7 @@ class TwoFactorFilterTest extends TestCase
     public function testDisabledMatchesRowsWithoutASecret(): void
     {
         $qb = $this->queryBuilder();
-        TwoFactorFilter::fromQuery(new InputBag(['twofa' => 'disabled']))->filter($qb);
+        TotpFilter::fromQuery(new InputBag(['totp' => 'disabled']))->filter($qb);
 
         self::assertStringContainsString('u.totpSecret IS NULL', (string) $qb->getDQLPart('where'));
     }
@@ -59,6 +59,6 @@ class TwoFactorFilterTest extends TestCase
     public function testUnknownValueIsRejected(): void
     {
         $this->expectException(BadRequestHttpException::class);
-        TwoFactorFilter::fromQuery(new InputBag(['twofa' => 'on']));
+        TotpFilter::fromQuery(new InputBag(['totp' => 'on']));
     }
 }

@@ -33,7 +33,7 @@ class SupportControllerTest extends IntegrationTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertStringContainsString('contact@packagist.org', $crawler->filter('body')->html());
-        $this->assertCount(1, $crawler->filter('#lost-2fa'));
+        $this->assertCount(1, $crawler->filter('#lost-totp'));
         $this->assertCount(1, $crawler->filter('#package-transfer'));
         $this->assertCount(1, $crawler->filter('#vendor-claim'));
         $this->assertCount(1, $crawler->filter('#delete-account'));
@@ -46,43 +46,43 @@ class SupportControllerTest extends IntegrationTestCase
     }
 
     /**
-     * The gate on /2fa/lost must be the token TYPE, not merely "some user is present". A fully
+     * The gate on /totp/lost must be the token TYPE, not merely "some user is present". A fully
      * authenticated session has a User too, so if this ever starts passing the endpoint has become
      * an account-takeover primitive.
      */
-    public function testLostTwoFactorIsUnreachableWhenFullyAuthenticated(): void
+    public function testLostTotpIsUnreachableWhenFullyAuthenticated(): void
     {
         $user = self::createUser('someone', 'someone@example.org');
         $this->store($user);
 
         $this->client->loginUser($user);
-        $this->client->request('GET', '/2fa/lost');
+        $this->client->request('GET', '/totp/lost');
 
         $this->assertResponseStatusCodeSame(403);
     }
 
-    public function testLostTwoFactorIsUnreachableWhenLoggedOut(): void
+    public function testLostTotpIsUnreachableWhenLoggedOut(): void
     {
-        $this->client->request('GET', '/2fa/lost');
+        $this->client->request('GET', '/totp/lost');
 
         $this->assertResponseStatusCodeSame(302);
         $this->assertStringContainsString('/login/', (string) $this->client->getResponse()->headers->get('Location'));
     }
 
-    public function testLostTwoFactorRequestIsCreatedFromTheTwoFactorPrompt(): void
+    public function testLostTotpRequestIsCreatedFromTheTwoFactorPrompt(): void
     {
         $user = $this->createTwoFactorUser();
 
         $this->startTwoFactorLogin($user);
 
-        $crawler = $this->client->request('GET', '/2fa/lost');
+        $crawler = $this->client->request('GET', '/totp/lost');
         $this->assertResponseIsSuccessful();
 
         $this->client->enableProfiler();
         $this->client->submit($crawler->selectButton('Request a reset')->form());
         $this->assertResponseIsSuccessful();
 
-        $request = $this->findRequest($user, SupportRequestType::LostTwoFactor);
+        $request = $this->findRequest($user, SupportRequestType::LostTotp);
         self::assertNotNull($request);
         self::assertSame(SupportRequestStatus::Open, $request->status);
 
@@ -91,7 +91,7 @@ class SupportControllerTest extends IntegrationTestCase
         $messages = $this->getMailerMessages();
         $this->assertSame([$user->getEmail()], array_map(static fn ($a) => $a->getAddress(), $messages[0]->getTo()));
         $this->assertStringContainsString($request->publicId, $messages[0]->getTextBody());
-        $this->assertStringContainsString('cancel-2fa-request', $messages[0]->getTextBody());
+        $this->assertStringContainsString('cancel-totp-request', $messages[0]->getTextBody());
     }
 
     /** The owner alert goes out over our address, so it must never carry the requester's prose. */
@@ -100,9 +100,9 @@ class SupportControllerTest extends IntegrationTestCase
         $user = $this->createTwoFactorUser();
         $this->startTwoFactorLogin($user);
 
-        $crawler = $this->client->request('GET', '/2fa/lost');
+        $crawler = $this->client->request('GET', '/totp/lost');
         $form = $crawler->selectButton('Request a reset')->form();
-        $form->setValues(['lost_two_factor_request[description]' => 'PLEASE-CLICK-MY-PHISHING-LINK']);
+        $form->setValues(['lost_totp_request[description]' => 'PLEASE-CLICK-MY-PHISHING-LINK']);
 
         $this->client->enableProfiler();
         $this->client->submit($form);
@@ -112,19 +112,19 @@ class SupportControllerTest extends IntegrationTestCase
     }
 
     /** support_request_open_uniq must make a resubmit a no-op rather than a second row and mail. */
-    public function testLostTwoFactorRequestIsDedupedWhileOneIsOpen(): void
+    public function testLostTotpRequestIsDedupedWhileOneIsOpen(): void
     {
         $user = $this->createTwoFactorUser();
         $this->startTwoFactorLogin($user);
 
-        $crawler = $this->client->request('GET', '/2fa/lost');
+        $crawler = $this->client->request('GET', '/totp/lost');
         $this->client->submit($crawler->selectButton('Request a reset')->form());
 
-        $first = $this->findRequest($user, SupportRequestType::LostTwoFactor);
+        $first = $this->findRequest($user, SupportRequestType::LostTotp);
         self::assertNotNull($first);
 
         $this->client->enableProfiler();
-        $crawler = $this->client->request('GET', '/2fa/lost');
+        $crawler = $this->client->request('GET', '/totp/lost');
 
         $this->assertResponseIsSuccessful();
         $this->assertStringContainsString($first->publicId, $crawler->filter('body')->html());
@@ -147,14 +147,14 @@ class SupportControllerTest extends IntegrationTestCase
         $managed->freeze(UserFreezeReason::Temporary);
         $em->flush();
 
-        $this->client->request('GET', '/2fa/lost');
+        $this->client->request('GET', '/totp/lost');
 
         // Freezing invalidates the half-authenticated session (User::isEqualTo compares the freeze
         // reason), so the request is bounced before it reaches the controller. Asserting the outcome
         // rather than which layer produces it; the controller keeps its own isFrozen() guard behind
         // this in case a future change makes the session survive.
         $this->assertResponseStatusCodeSame(302);
-        self::assertNull($this->findRequest($user, SupportRequestType::LostTwoFactor));
+        self::assertNull($this->findRequest($user, SupportRequestType::LostTotp));
     }
 
     public function testCancelLinkClosesTheRequestAndDropsSessions(): void
@@ -162,7 +162,7 @@ class SupportControllerTest extends IntegrationTestCase
         $user = $this->createTwoFactorUser();
         $this->startTwoFactorLogin($user);
 
-        $crawler = $this->client->request('GET', '/2fa/lost');
+        $crawler = $this->client->request('GET', '/totp/lost');
         $this->client->enableProfiler();
         $this->client->submit($crawler->selectButton('Request a reset')->form());
 
@@ -174,6 +174,8 @@ class SupportControllerTest extends IntegrationTestCase
         // The owner clicks this from their inbox, not from the half-logged-in browser: scheb blocks
         // every other route while two-factor authentication is in progress.
         $this->client->getCookieJar()->clear();
+        $this->client->request('GET', str_replace('/cancel-totp-request/', '/cancel-2fa-request/', $cancelUrl));
+        $this->assertResponseIsSuccessful();
         $crawler = $this->client->request('GET', $cancelUrl);
         $this->assertResponseIsSuccessful();
 
@@ -203,7 +205,7 @@ class SupportControllerTest extends IntegrationTestCase
         $user = $this->createTwoFactorUser();
         $this->startTwoFactorLogin($user);
 
-        $crawler = $this->client->request('GET', '/2fa/lost');
+        $crawler = $this->client->request('GET', '/totp/lost');
         $this->client->enableProfiler();
         $this->client->submit($crawler->selectButton('Request a reset')->form());
 
@@ -255,7 +257,7 @@ class SupportControllerTest extends IntegrationTestCase
         $user = $this->createTwoFactorUser();
         $this->startTwoFactorLogin($user);
 
-        $crawler = $this->client->request('GET', '/2fa/lost');
+        $crawler = $this->client->request('GET', '/totp/lost');
         $this->client->enableProfiler();
         $this->client->submit($crawler->selectButton('Request a reset')->form());
 
@@ -289,7 +291,7 @@ class SupportControllerTest extends IntegrationTestCase
         $user = $this->createTwoFactorUser();
         $this->startTwoFactorLogin($user);
 
-        $crawler = $this->client->request('GET', '/2fa/lost');
+        $crawler = $this->client->request('GET', '/totp/lost');
         $this->client->enableProfiler();
         $this->client->submit($crawler->selectButton('Request a reset')->form());
 
@@ -316,14 +318,14 @@ class SupportControllerTest extends IntegrationTestCase
         $user = $this->createTwoFactorUser();
         $this->startTwoFactorLogin($user);
 
-        $crawler = $this->client->request('GET', '/2fa/lost');
+        $crawler = $this->client->request('GET', '/totp/lost');
         $this->client->submit($crawler->selectButton('Request a reset')->form());
 
-        $request = $this->findRequest($user, SupportRequestType::LostTwoFactor);
+        $request = $this->findRequest($user, SupportRequestType::LostTotp);
         self::assertNotNull($request);
 
         $this->client->getCookieJar()->clear();
-        $this->client->request('GET', '/contact/cancel-2fa-request/'.$request->publicId.'?token=wrong');
+        $this->client->request('GET', '/contact/cancel-totp-request/'.$request->publicId.'?token=wrong');
         $this->assertResponseStatusCodeSame(404);
     }
 
@@ -504,20 +506,20 @@ class SupportControllerTest extends IntegrationTestCase
         }
 
         $this->assertResponseIsSuccessful();
-        $this->assertStringContainsString('Two-Factor Authentication', (string) $this->client->getResponse()->getContent());
+        $this->assertStringContainsString('Authenticator app', (string) $this->client->getResponse()->getContent());
     }
 
     private function cancelUrlFromOwnerAlert(): string
     {
         $ownerAlert = $this->getMailerMessages()[0];
-        self::assertSame(1, preg_match('{(/contact/cancel-2fa-request/\S+)}', $ownerAlert->getTextBody(), $match));
+        self::assertSame(1, preg_match('{(/contact/cancel-totp-request/\S+)}', $ownerAlert->getTextBody(), $match));
 
         return $match[1];
     }
 
     private function reloadRequest(): SupportRequest
     {
-        $request = self::getEM()->getRepository(SupportRequest::class)->findOneBy(['type' => SupportRequestType::LostTwoFactor->value]);
+        $request = self::getEM()->getRepository(SupportRequest::class)->findOneBy(['type' => SupportRequestType::LostTotp->value]);
         self::assertNotNull($request);
 
         return $request;

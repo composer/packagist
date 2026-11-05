@@ -54,7 +54,7 @@ class OrganizationInvitationController extends Controller
             'invitation' => $invitation,
             'token' => $token,
             'alreadyMember' => $this->organizationMemberRepo->findOneByOrgAndUser($organization->id, $user->getId()) !== null,
-            'needsTwoFactor' => $targetsOwners && !$user->isTotpAuthenticationEnabled(),
+            'needsTwoFactor' => $targetsOwners && !$user->hasSecondFactorAuthenticationEnabled(),
             'acceptForm' => $this->createForm(InvitationConfirmType::class)->createView(),
             'declineForm' => $this->createForm(InvitationConfirmType::class)->createView(),
         ]);

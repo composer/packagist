@@ -22,7 +22,7 @@ use App\Model\DownloadManager;
 use Predis\PredisException;
 
 /**
- * Works out how much damage an approved lost-2FA reset could do to a given account.
+ * Works out how much damage an approved TOTP reset could do to a given account.
  *
  * Two uses, deliberately separated: {@see isHighValue()} runs once at request time to decide the
  * cooling-off period, and its answer is frozen onto the request so a later download spike cannot
@@ -54,7 +54,7 @@ class SupportRiskAssessor
     }
 
     /**
-     * Whether a lost-2FA reset on this account warrants a cooling-off period.
+     * Whether a TOTP reset on this account warrants a cooling-off period.
      *
      * Organization membership counts on its own: an org owner can publish under the org's packages
      * without maintaining anything personally, so package downloads alone would let the highest-value
@@ -111,7 +111,7 @@ class SupportRiskAssessor
             packages: $packages,
             totalDownloads: array_sum(array_map(static fn (SupportRiskPackage $p): int => $p->downloads, $packages)),
             organizationCount: $this->organizationCount($user),
-            twoFactorEnabledAt: $this->twoFactorEnabledAt($user),
+            totpEnabledAt: $this->totpEnabledAt($user),
             recentSecurityEvents: $securityEvents,
             hasRecentCredentialChange: $this->hasRecentCredentialChange($securityEvents),
             knownIps: $this->knownIps($securityEvents),
@@ -130,13 +130,13 @@ class SupportRiskAssessor
     }
 
     /**
-     * When 2FA was last switched on. An authenticator "lost" days after it was set up is a very
+     * When TOTP was last enabled. An authenticator "lost" days after it was set up is a very
      * different story from one lost after two years. Unknown if it was enabled under a previous
      * username, see {@see AuditRecordRepository::findForUser()}.
      */
-    private function twoFactorEnabledAt(User $user): ?\DateTimeImmutable
+    private function totpEnabledAt(User $user): ?\DateTimeImmutable
     {
-        $records = $this->auditRecords->findForUser($user, [AuditLogEventType::TwoFaAuthenticationActivated], limit: 1);
+        $records = $this->auditRecords->findForUser($user, [AuditLogEventType::TotpAuthenticationActivated], limit: 1);
 
         return $records[0]->datetime ?? null;
     }
@@ -206,8 +206,8 @@ class SupportRiskAssessor
             AuditLogEventType::UsernameChanged,
             AuditLogEventType::GitHubLinkedWithUser,
             AuditLogEventType::GitHubDisconnectedFromUser,
-            AuditLogEventType::TwoFaAuthenticationActivated,
-            AuditLogEventType::TwoFaAuthenticationDeactivated,
+            AuditLogEventType::TotpAuthenticationActivated,
+            AuditLogEventType::TotpAuthenticationDeactivated,
             AuditLogEventType::UserFrozen,
             AuditLogEventType::UserUnfrozen,
         ];

@@ -219,8 +219,8 @@ audit_log:
         password_changed: Password changed
         password_reset: Password reset
         password_reset_requested: Password reset requested
-        two_fa_activated: 2FA activated
-        two_fa_deactivated: 2FA deactivated
+        totp_activated: Authenticator app enabled
+        totp_deactivated: Authenticator app removed
         user_created: User created
         user_verified: User verified
         user_deleted: User deleted

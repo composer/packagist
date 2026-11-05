@@ -15,7 +15,7 @@ services:
         alias: App\Search\AlgoliaPackageIndex
         public: true
 
-    # stub to replace 2FA code generation
+    # stub to replace TOTP code generation
     App\Tests\Mock\TotpAuthenticatorStub:
         arguments:
             $totpFactory: '@scheb_two_factor.security.totp_factory'

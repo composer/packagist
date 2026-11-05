@@ -22,9 +22,9 @@ use App\Log\Display\AuditLogDisplayFactory;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Model\PackageManager;
-use App\Security\TwoFactorAuthManager;
+use App\Security\TotpAuthManager;
 use App\Security\Voter\PackageActions;
-use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\LostTotpAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\SupportNotifier;
@@ -107,7 +107,7 @@ class SupportController extends Controller
                 array_filter($rows, static function (SupportRequest $r) use ($now): bool {
                     $attributes = $r->attributes;
 
-                    return $r->isOpen() && $attributes instanceof LostTwoFactorAttributes && !$attributes->isApprovable($now);
+                    return $r->isOpen() && $attributes instanceof LostTotpAttributes && !$attributes->isApprovable($now);
                 }),
             )),
             'visibleTypes' => $visibleTypes,
@@ -136,13 +136,13 @@ class SupportController extends Controller
             $context['vendors'] = $this->resolveRequestVendors($request, $favMgr, $dlMgr);
         }
 
-        if ($request->type === SupportRequestType::LostTwoFactor) {
+        if ($request->type === SupportRequestType::LostTotp) {
             $profile = $riskAssessor->assess($request->user);
             $context['risk'] = $profile;
             $context['riskAuditDisplays'] = $displayFactory->build($profile->recentSecurityEvents);
             $context['previousRequests'] = $this->supportRequests->findPreviousTwoFactorRequests($request);
             // Resolved here rather than in Twig, whose date() hands back a DateTime.
-            $context['coolingOffElapsed'] = $request->attributesOf(LostTwoFactorAttributes::class)->isApprovable(new \DateTimeImmutable());
+            $context['coolingOffElapsed'] = $request->attributesOf(LostTotpAttributes::class)->isApprovable(new \DateTimeImmutable());
         }
 
         if ($request->type === SupportRequestType::VendorClaim) {
@@ -296,11 +296,11 @@ class SupportController extends Controller
     }
 
     /**
-     * Disables two-factor authentication, tells the requester it was granted, and closes the task in
+     * Disables TOTP authentication, tells the requester it was granted, and closes the task in
      * one POST.
      */
-    #[Route(path: '/admin/support/{publicId}/grant-2fa-reset', name: 'admin_support_request_grant_2fa_reset', methods: ['POST'])]
-    public function grantTwoFactorReset(Request $req, string $publicId, #[CurrentUser] User $actor, TwoFactorAuthManager $authManager): RedirectResponse
+    #[Route(path: '/admin/support/{publicId}/grant-totp-reset', name: 'admin_support_request_grant_totp_reset', methods: ['POST'])]
+    public function grantTotpReset(Request $req, string $publicId, #[CurrentUser] User $actor, TotpAuthManager $authManager): RedirectResponse
     {
         // Seeing the queue is not enough; this is the capability that actually hands out access.
         // Checked before the token so a missing role reports as denied rather than as a bad token.
@@ -310,7 +310,7 @@ class SupportController extends Controller
         $request = $this->findRequest($publicId);
         $redirect = $this->redirectToRoute('admin_support_request', ['publicId' => $publicId]);
 
-        if ($request->type !== SupportRequestType::LostTwoFactor) {
+        if ($request->type !== SupportRequestType::LostTotp) {
             throw new BadRequestHttpException('Not a two-factor reset request');
         }
 
@@ -321,7 +321,7 @@ class SupportController extends Controller
         }
 
         $now = new \DateTimeImmutable();
-        $attributes = $request->attributesOf(LostTwoFactorAttributes::class);
+        $attributes = $request->attributesOf(LostTotpAttributes::class);
         if (!$attributes->isApprovable($now)) {
             $this->addFlash('warning', 'This request is held until '.$attributes->approvableAt?->format('Y-m-d H:i').' UTC so the account owner has time to object.');
 
@@ -344,12 +344,12 @@ class SupportController extends Controller
             return $redirect;
         }
 
-        // Built before the call because disableTwoFactorAuth() flushes, which persists these too.
-        $reply = SupportRequestMessage::reply($request, SupportRequestType::twoFactorGrantedReply($request), $actor);
+        // Built before the call because disableTotpAuthentication() flushes, which persists these too.
+        $reply = SupportRequestMessage::reply($request, SupportRequestType::totpResetGrantedReply($request), $actor);
         $request->resolve($now);
         $this->getEM()->persist($reply);
 
-        $authManager->disableTwoFactorAuth(
+        $authManager->disableTotpAuthentication(
             $request->user,
             $actor,
             'Reset by support, request '.$request->publicId,

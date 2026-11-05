@@ -18,15 +18,15 @@ use App\Entity\SupportRequestMessage;
 use App\Entity\SupportRequestRepository;
 use App\Entity\User;
 use App\Form\Model\AccountDeletionSupportRequest;
-use App\Form\Model\LostTwoFactorSupportRequest;
+use App\Form\Model\LostTotpSupportRequest;
 use App\Form\Model\PackageTransferSupportRequest;
 use App\Form\Model\VendorClaimSupportRequest;
 use App\Form\Type\AccountDeletionSupportType;
-use App\Form\Type\LostTwoFactorSupportType;
+use App\Form\Type\LostTotpSupportType;
 use App\Form\Type\PackageTransferSupportType;
 use App\Form\Type\VendorClaimSupportType;
 use App\Support\Attributes\AccountDeletionAttributes;
-use App\Support\Attributes\LostTwoFactorAttributes;
+use App\Support\Attributes\LostTotpAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\PackageDisposition;
@@ -70,13 +70,13 @@ class SupportController extends Controller
     }
 
     /**
-     * Lives under /2fa on purpose. The existing `^/2fa` access_control rule requires
+     * The access_control rule for /totp/lost requires
      * IS_AUTHENTICATED_2FA_IN_PROGRESS, which only a TwoFactorToken can satisfy, so the route is
      * unreachable both logged out and fully logged in. access_control has no catch-all deny, so
-     * sitting under that prefix is what gives this a second layer beyond the check below.
+     * the dedicated rule gives this a second layer beyond the check below.
      */
-    #[Route(path: '/2fa/lost', name: 'support_lost_2fa', methods: ['GET', 'POST'])]
-    public function lostTwoFactor(Request $req, TokenStorageInterface $tokenStorage, SupportRiskAssessor $riskAssessor): Response
+    #[Route(path: '/totp/lost', name: 'support_lost_totp', methods: ['GET', 'POST'])]
+    public function lostTotp(Request $req, TokenStorageInterface $tokenStorage, SupportRiskAssessor $riskAssessor): Response
     {
         $user = $this->userFromTwoFactorToken($tokenStorage);
 
@@ -87,26 +87,26 @@ class SupportController extends Controller
             throw $this->createAccessDeniedException('This account cannot request a two-factor reset.');
         }
 
-        $existing = $this->supportRequests->findOpen($user, SupportRequestType::LostTwoFactor);
+        $existing = $this->supportRequests->findOpen($user, SupportRequestType::LostTotp);
         if ($existing !== null) {
-            return $this->renderLostTwoFactor(null, $existing);
+            return $this->renderLostTotp(null, $existing);
         }
 
-        $data = new LostTwoFactorSupportRequest();
-        $form = $this->createForm(LostTwoFactorSupportType::class, $data)->handleRequest($req);
+        $data = new LostTotpSupportRequest();
+        $form = $this->createForm(LostTotpSupportType::class, $data)->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if ($this->rateLimiter->isLimited($user, SupportRequestType::LostTwoFactor, $req->getClientIp())) {
+            if ($this->rateLimiter->isLimited($user, SupportRequestType::LostTotp, $req->getClientIp())) {
                 $this->addFlash('error', 'You have submitted this request too many times recently. Please email contact@packagist.org instead.');
 
-                return $this->renderLostTwoFactor($form, null);
+                return $this->renderLostTotp($form, null);
             }
 
             $cancelToken = bin2hex(random_bytes(32));
             $request = SupportRequest::create(
                 $user,
                 $data->description,
-                LostTwoFactorAttributes::fromCancelToken($cancelToken, $riskAssessor->coolingOffUntil($user, new \DateTimeImmutable())),
+                LostTotpAttributes::fromCancelToken($cancelToken, $riskAssessor->coolingOffUntil($user, new \DateTimeImmutable())),
                 $req->getClientIp(),
             );
 
@@ -118,17 +118,17 @@ class SupportController extends Controller
             } catch (UniqueConstraintViolationException) {
                 // Lost the race against a double submit. The violation itself proves an open request
                 // exists, and the failed flush has closed the EM, so report it without reading back.
-                return $this->renderLostTwoFactor(null, null, duplicate: true);
+                return $this->renderLostTotp(null, null, duplicate: true);
             }
 
-            $this->rateLimiter->recordSubmission($user, SupportRequestType::LostTwoFactor, $req->getClientIp());
-            $this->notifier->notifyTwoFactorRequestFiled($request, $cancelToken);
+            $this->rateLimiter->recordSubmission($user, SupportRequestType::LostTotp, $req->getClientIp());
+            $this->notifier->notifyTotpResetRequested($request, $cancelToken);
             $this->notifier->notifyAdmins($request);
 
-            return $this->renderLostTwoFactor(null, $request);
+            return $this->renderLostTotp(null, $request);
         }
 
-        return $this->renderLostTwoFactor($form, null);
+        return $this->renderLostTotp($form, null);
     }
 
     /**
@@ -137,8 +137,11 @@ class SupportController extends Controller
      * keeps working after the request is actioned, so an owner who reads the email late can still
      * raise the alarm rather than getting a dead link.
      */
-    #[Route(path: '/contact/cancel-2fa-request/{publicId}', name: 'support_cancel_2fa_request', methods: ['GET', 'POST'])]
-    public function cancelTwoFactorRequest(Request $req, string $publicId): Response
+    #[Route(path: '/contact/cancel-totp-request/{publicId}', name: 'support_cancel_totp_request', methods: ['GET', 'POST'])]
+    // Keep cancellation links in emails sent before the TOTP route rename working.
+    // TODO: Revisit removing this route in January 2027 once those links are no longer needed.
+    #[Route(path: '/contact/cancel-2fa-request/{publicId}', name: 'support_cancel_2fa_request_legacy', methods: ['GET', 'POST'])]
+    public function cancelTotpResetRequest(Request $req, string $publicId): Response
     {
         // The token travels in the query on the GET and in the body on the POST, so read both.
         $token = $req->isMethod('POST') ? $req->request->getString('token') : $req->query->getString('token');
@@ -147,7 +150,7 @@ class SupportController extends Controller
         // instanceof rather than a type comparison: it both rejects other request types and narrows
         // the payload, so a wrong link is a 404 instead of an exception out of the token check.
         $attributes = $request?->attributes;
-        if ($request === null || !$attributes instanceof LostTwoFactorAttributes || !$attributes->matchesCancelToken($token)) {
+        if ($request === null || !$attributes instanceof LostTotpAttributes || !$attributes->matchesCancelToken($token)) {
             throw new NotFoundHttpException('Unknown or expired cancellation link');
         }
 
@@ -166,7 +169,7 @@ class SupportController extends Controller
 
         // Claimed with a conditional UPDATE rather than a read-then-write: if an admin grants the
         // reset in the same moment, losing that race would overwrite the grant and tell the owner
-        // they are safe while their 2FA is in fact off. Not refreshed afterwards -- that cascades
+        // they are safe while their authenticator app has been removed. Not refreshed afterwards -- that cascades
         // and would discard the session invalidation below.
         $claimed = $em->createQuery(
             'UPDATE App\Entity\SupportRequest r
@@ -359,11 +362,11 @@ class SupportController extends Controller
     }
 
     /**
-     * @param FormInterface<LostTwoFactorSupportRequest>|null $form
+     * @param FormInterface<LostTotpSupportRequest>|null $form
      */
-    private function renderLostTwoFactor(?FormInterface $form, ?SupportRequest $existing, bool $duplicate = false): Response
+    private function renderLostTotp(?FormInterface $form, ?SupportRequest $existing, bool $duplicate = false): Response
     {
-        return $this->render('support/lost_two_factor.html.twig', [
+        return $this->render('support/lost_totp.html.twig', [
             'form' => $form?->createView(),
             'existingRequest' => $existing,
             // Set when we know a request exists but cannot name it, after a lost insert race.
@@ -403,7 +406,7 @@ class SupportController extends Controller
 
         // Identity comes from the token, but its User was deserialized from the session and can be
         // stale -- an account frozen since login still looks fine on it. Reload so the freeze and
-        // 2FA checks below see current state.
+        // TOTP enrollment checks see current state.
         $user = $this->getEM()->getRepository(User::class)->find($tokenUser->getId());
         if ($user === null) {
             throw $this->createAccessDeniedException('Not in a two-factor authentication process.');

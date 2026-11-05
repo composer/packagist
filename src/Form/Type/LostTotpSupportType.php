@@ -12,16 +12,16 @@
 
 namespace App\Form\Type;
 
-use App\Form\Model\LostTwoFactorSupportRequest;
+use App\Form\Model\LostTotpSupportRequest;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * @extends AbstractType<LostTwoFactorSupportRequest>
+ * @extends AbstractType<LostTotpSupportRequest>
  */
-class LostTwoFactorSupportType extends AbstractType
+class LostTotpSupportType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -36,13 +36,13 @@ class LostTwoFactorSupportType extends AbstractType
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class' => LostTwoFactorSupportRequest::class,
-            'csrf_token_id' => 'lost_2fa_request',
+            'data_class' => LostTotpSupportRequest::class,
+            'csrf_token_id' => 'lost_totp_request',
         ]);
     }
 
     public function getBlockPrefix(): string
     {
-        return 'lost_two_factor_request';
+        return 'lost_totp_request';
     }
 }

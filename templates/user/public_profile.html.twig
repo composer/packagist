@@ -74,9 +74,9 @@
 
                 <dt>2FA:</dt>
                 <dd>
-                    {% if user.totpAuthenticationEnabled() %}
+                    {% if user.hasSecondFactorAuthenticationEnabled() %}
                         <span class="badge bg-success">Yes</span>
-                        - <a href="{{ path('user_2fa_configure', {name: user.username}) }}">Manage</a>
+                        - <a href="{{ path('user_totp_configure', {name: user.username}) }}">Manage</a>
                     {% else %}
                         <span class="badge bg-secondary">No</span>
                     {% endif %}

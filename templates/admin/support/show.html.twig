@@ -14,8 +14,8 @@
                 <p>
                     From <a href="{{ path('user_profile', {name: supportRequest.user.username}) }}">{{ supportRequest.user.username }}</a>
                     on {{ supportRequest.createdAt|date('Y-m-d H:i') }} UTC.
-                    {% if supportRequest.type.value == 'lost_2fa' %}
-                        <a href="{{ path('user_2fa_configure', {name: supportRequest.user.username}) }}">Inspect their two-factor settings</a>
+                    {% if supportRequest.type.value == 'lost_totp' %}
+                        <a href="{{ path('user_totp_configure', {name: supportRequest.user.username}) }}">Inspect their authenticator app settings</a>
                         - look only; resetting from there skips the hold, the reply and closing this task.
                     {% endif %}
                 </p>
@@ -182,7 +182,7 @@
         </div>
 
         <div class="col-lg-5">
-            {% if supportRequest.type.value == 'lost_2fa' %}
+            {% if supportRequest.type.value == 'lost_totp' %}
                 <h3>Risk</h3>
 
                 {% if risk.isHighRisk %}
@@ -210,8 +210,8 @@
                 <ul class="list-unstyled">
                     <li>Account created {{ supportRequest.user.createdAt|date('Y-m-d') }}</li>
                     {% if supportRequest.user.lastLogin %}<li>Last login {{ supportRequest.user.lastLogin|date('Y-m-d') }}</li>{% endif %}
-                    {% if risk.twoFactorEnabledAt %}
-                        <li>2FA enabled {{ risk.twoFactorEnabledAt|date('Y-m-d') }}</li>
+                    {% if risk.totpEnabledAt %}
+                        <li>Authenticator app enabled {{ risk.totpEnabledAt|date('Y-m-d') }}</li>
                     {% endif %}
                     {% set ipKnown = risk.requestIpIsKnown(supportRequest.ip) %}
                     {% if ipKnown is not null %}
@@ -263,13 +263,13 @@
                         request was filed.
                     </div>
                 {% else %}
-                    <form method="post" action="{{ path('admin_support_request_grant_2fa_reset', {publicId: supportRequest.publicId}) }}"
+                    <form method="post" action="{{ path('admin_support_request_grant_totp_reset', {publicId: supportRequest.publicId}) }}"
                           onsubmit="return confirm('Disable two-factor authentication on {{ supportRequest.user.username }} and tell them it was granted?')">
                         <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
-                        <button type="submit" class="btn btn-danger">Disable 2FA and resolve</button>
+                        <button type="submit" class="btn btn-danger">Remove authenticator app and resolve</button>
                     </form>
                     <p class="form-text">
-                        Disables 2FA, signs the account out everywhere, emails them the standard granted
+                        Removes the authenticator app, signs the account out everywhere, emails them the standard granted
                         response, and closes this task.
                     </p>
                 {% endif %}

@@ -171,7 +171,7 @@ class SupportRequestRepository extends ServiceEntityRepository
     }
 
     /**
-     * Prior lost-2FA requests for this account, newest first, excluding the one being reviewed.
+     * Prior TOTP reset requests for this account, newest first, excluding the one being reviewed.
      * A repeat requester — especially one whose earlier request the owner cancelled — is a signal.
      *
      * @return list<SupportRequest>
@@ -184,7 +184,7 @@ class SupportRequestRepository extends ServiceEntityRepository
             ->andWhere('r.type = :type')
             ->andWhere('r.id != :current')
             ->setParameter('user', $current->user)
-            ->setParameter('type', SupportRequestType::LostTwoFactor->value)
+            ->setParameter('type', SupportRequestType::LostTotp->value)
             ->setParameter('current', $current->id, 'ulid')
             ->orderBy('r.createdAt', \SortDirection::Descending)
             ->setMaxResults(10)

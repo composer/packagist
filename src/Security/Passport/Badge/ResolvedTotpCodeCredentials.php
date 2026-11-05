@@ -14,7 +14,7 @@ namespace App\Security\Passport\Badge;
 
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\BadgeInterface;
 
-class ResolvedTwoFactorCodeCredentials implements BadgeInterface
+class ResolvedTotpCodeCredentials implements BadgeInterface
 {
     public function isResolved(): bool
     {

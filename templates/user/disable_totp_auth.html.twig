@@ -11,10 +11,10 @@
 
     <div class="row">
         <div class="col-lg-6">
-            <a class="btn btn-lg btn-inverse" href="{{ path('user_2fa_configure', {name: user.username}) }}">Keep authenticator app</a>
+            <a class="btn btn-lg btn-inverse" href="{{ path('user_totp_configure', {name: user.username}) }}">Keep authenticator app</a>
         </div>
         <div class="col-lg-6">
-            <a href="{{ path('user_2fa_disable', {token: csrf_token('disable_2fa'), name: user.username}) }}" class="btn w-100 btn-danger btn-lg">
+            <a href="{{ path('user_totp_disable', {token: csrf_token('disable_totp'), name: user.username}) }}" class="btn w-100 btn-danger btn-lg">
                 <span class="icon-lock-open"></span>
                 Remove authenticator app
             </a>

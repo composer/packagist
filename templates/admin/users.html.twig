@@ -45,11 +45,11 @@
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="form-group">
-                        <label for="twofa-filter">2FA</label>
-                        <select name="twofa" id="twofa-filter" class="form-select">
-                            <option value=""{{ selectedFilters.twofa == '' ? ' selected' : '' }}>All</option>
-                            <option value="enabled"{{ selectedFilters.twofa == 'enabled' ? ' selected' : '' }}>Enabled</option>
-                            <option value="disabled"{{ selectedFilters.twofa == 'disabled' ? ' selected' : '' }}>Disabled</option>
+                        <label for="totp-filter">Authenticator app</label>
+                        <select name="totp" id="totp-filter" class="form-select">
+                            <option value=""{{ selectedFilters.totp == '' ? ' selected' : '' }}>All</option>
+                            <option value="enabled"{{ selectedFilters.totp == 'enabled' ? ' selected' : '' }}>Enabled</option>
+                            <option value="disabled"{{ selectedFilters.totp == 'disabled' ? ' selected' : '' }}>Disabled</option>
                         </select>
                     </div>
                 </div>
@@ -145,7 +145,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if user.totpAuthenticationEnabled %}
+                                    {% if user.hasSecondFactorAuthenticationEnabled %}
                                         <span class="badge bg-success">Yes</span>
                                     {% else %}
                                         <span class="badge bg-secondary">No</span>
