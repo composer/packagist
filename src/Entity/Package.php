@@ -277,7 +277,7 @@ class Package
     public ?string $auditActorFallback = null;
 
     /**
-     * Transient (not persisted): admin-only explanation of an automated freeze, e.g. the update error
+     * Transient (not persisted): admin-only explanation of a freeze, e.g. the update error or a moderator's notes
      */
     public ?string $auditFreezeInternalReason = null;
 

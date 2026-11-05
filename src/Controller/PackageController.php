@@ -560,7 +560,8 @@ class PackageController extends Controller
             return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
         }
 
-        $this->packageManager->freeze($package, $reason, $user->getId());
+        $internalReason = trim($req->request->getString('internalReason')) ?: null;
+        $this->packageManager->freeze($package, $reason, $user->getId(), $internalReason);
         $this->addFlash('success', $package->getName().' has been frozen.');
 
         return $this->redirectToRoute('view_package', ['name' => $package->getName()]);

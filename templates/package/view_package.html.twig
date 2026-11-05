@@ -452,6 +452,10 @@
                             A <strong>gone</strong> or <strong>temporary</strong> freeze keeps its metadata served but stops updates -
                             use <strong>gone</strong> when the canonical repository no longer exists.
                         </p>
+                        <div class="form-group">
+                            <label for="freeze-package-internal-reason" class="form-label">Internal reason <small class="text-muted">(optional — admin-only, <strong>not shown publicly</strong>, may contain private notes/PII)</small></label>
+                            <textarea name="internalReason" id="freeze-package-internal-reason" class="form-control" rows="2"></textarea>
+                        </div>
                         <input type="hidden" name="token" value="{{ freezeCsrfToken }}" />
                     </div>
                     <div class="modal-footer">
