@@ -22,6 +22,7 @@ use App\Model\PackageManager;
 use App\Package\HttpGitShadow;
 use App\Package\UpdateFailureClassifier;
 use App\Package\UpdateFailureKind;
+use App\Package\UpdateFailureVerdict;
 use App\Package\Updater;
 use App\Package\VcsRepositoryFactory;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
@@ -52,6 +53,8 @@ use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
 class UpdaterWorker
 {
     use DoctrineTrait;
+
+    private const string GONE_AFTER_UNREACHABLE_FOR = '4 weeks';
 
     private LoggerInterface $logger;
     private ManagerRegistry $doctrine;
@@ -292,6 +295,15 @@ class UpdaterWorker
                 if (Preg::isMatchStrictGroups('{https://gitlab.com/([^/]+/.+)$}i', $package->getRepository(), $match)) {
                     if ($result = $this->checkForDeadGitLabPackage($package, $match[1], $httpDownloader, $output, $internalReason)) {
                         return $result;
+                    }
+                }
+
+                if ($verdict->escalatesToGone) {
+                    $now = new \DateTimeImmutable();
+                    $package->unreachableSince ??= $now;
+                    if ($package->unreachableSince <= $now->modify('-'.self::GONE_AFTER_UNREACHABLE_FOR)) {
+                        $internalReason .= ' (unreachable since '.$package->unreachableSince->format(\DATE_ATOM).')';
+                        $verdict = new UpdateFailureVerdict(UpdateFailureKind::Gone, $verdict->code);
                     }
                 }
 

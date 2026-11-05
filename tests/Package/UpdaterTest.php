@@ -16,6 +16,7 @@ use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Package;
+use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\RequireLink;
 use App\Entity\Version;
@@ -100,6 +101,34 @@ class UpdaterTest extends IntegrationTestCase
     {
         parent::tearDown();
         unset($this->updater);
+    }
+
+    public function testEstablishedDriverClearsUnreachableSince(): void
+    {
+        $this->repositoryMock->method('getDriver')->willReturn($this->createStub(GitDriver::class));
+        $this->package->unreachableSince = new \DateTimeImmutable('-20 days');
+        // frozen so update() returns right after the driver check
+        $this->package->freeze(PackageFreezeReason::Gone);
+
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+
+        self::assertNull($this->package->unreachableSince);
+    }
+
+    public function testMissingDriverKeepsUnreachableSince(): void
+    {
+        $this->repositoryMock->method('getDriver')->willReturn(null);
+        $since = new \DateTimeImmutable('-20 days');
+        $this->package->unreachableSince = $since;
+
+        try {
+            $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+            self::fail('Expected the update to fail without a driver');
+        } catch (\RuntimeException $e) {
+            self::assertStringStartsWith('Driver could not be established', $e->getMessage());
+        }
+
+        self::assertSame($since, $this->package->unreachableSince);
     }
 
     public function testUpdatesTheReadme(): void

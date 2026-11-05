@@ -87,7 +87,8 @@ final class UpdateFailureClassifier
             return self::gone('git_authentication_failed');
         }
         if (Preg::isMatch('{Driver could not be established for package}i', $msg)) {
-            return self::gone('no_driver');
+            // every driver rejected the url, for a self-hosted git that is any git ls-remote failure, transient ones included
+            return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'no_driver', escalatesToGone: true);
         }
         if (
             Preg::isMatch('{fatal: could not read Username for \'[^\']+\': No such device or address\n}i', $msg)
