@@ -32,7 +32,6 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
-use Symfony\Component\Security\Http\Event\SwitchUserEvent;
 
 class SecondFactorAuthenticationListenerTest extends TestCase
 {
@@ -105,13 +104,10 @@ class SecondFactorAuthenticationListenerTest extends TestCase
         self::assertTrue($this->secondFactorProofStore->hasRecentProof($this->user));
     }
 
-    public function testLogoutAndImpersonationClearEvidence(): void
+    public function testLogoutClearsEvidence(): void
     {
         $this->secondFactorProofStore->record($this->user, 'totp');
         $this->listener->loggedOut(new LogoutEvent($this->request, $this->authenticated));
-        self::assertFalse($this->secondFactorProofStore->hasRecentProof($this->user));
-        $this->secondFactorProofStore->record($this->user, 'totp');
-        $this->listener->switchedUser(new SwitchUserEvent($this->request, $this->user));
         self::assertFalse($this->secondFactorProofStore->hasRecentProof($this->user));
     }
 

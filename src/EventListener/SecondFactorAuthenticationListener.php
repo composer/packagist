@@ -25,7 +25,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
-use Symfony\Component\Security\Http\Event\SwitchUserEvent;
 
 class SecondFactorAuthenticationListener
 {
@@ -78,12 +77,6 @@ class SecondFactorAuthenticationListener
             && $event->getPassport()->hasBadge(ResolvedTotpCodeCredentials::class)) {
             $this->secondFactorProofStore->record($user, SecondFactorProofStore::TOTP);
         }
-    }
-
-    #[AsEventListener(dispatcher: 'security.event_dispatcher.main')]
-    public function switchedUser(SwitchUserEvent $event): void
-    {
-        $this->secondFactorProofStore->clear();
     }
 
     #[AsEventListener(dispatcher: 'security.event_dispatcher.main')]

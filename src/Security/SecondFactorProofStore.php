@@ -70,8 +70,8 @@ class SecondFactorProofStore
             return null;
         }
 
-        // Session data can survive a user switch or remain stored after the account's sessions
-        // are revoked. The user ID binds proof to the account and the session buster revokes it.
+        // The user ID binds the proof to the account and the session buster revokes it together
+        // with the account's other sessions.
         if ($proof->userId !== $user->getId() || $proof->sessionBuster !== $user->getSessionBuster()) {
             return null;
         }
