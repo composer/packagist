@@ -15,6 +15,7 @@ namespace App\Entity;
 use App\Audit\VersionDeletionReason;
 use App\Model\VersionIdCache;
 use App\Service\Scheduler;
+use Composer\Semver\VersionParser;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Cache\QueryCacheProfile;
@@ -98,6 +99,16 @@ class VersionRepository extends ServiceEntityRepository
             $record = AuditRecord::versionDeleted($version, $user instanceof User ? $user : null);
             $em->persist($record);
         }
+    }
+
+    /**
+     * Finds the dev version tracking a VCS branch, named the way Composer's VcsRepository names it
+     */
+    public function findForBranch(Package $package, string $branch): ?Version
+    {
+        $normalizedVersion = str_replace('#', '+', new VersionParser()->normalizeBranch($branch));
+
+        return $this->findOneBy(['package' => $package, 'normalizedVersion' => $normalizedVersion, 'development' => true]);
     }
 
     /**
