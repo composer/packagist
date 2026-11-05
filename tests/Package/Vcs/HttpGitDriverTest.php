@@ -151,6 +151,21 @@ class HttpGitDriverTest extends TestCase
         }
     }
 
+    public function testReadsFromServersOmittingLineFeeds(): void
+    {
+        foreach (self::SERVERS as $name => [$protocolV2, $serverConfig]) {
+            $downloader = new GitHttpBackendDownloader(self::$projectRoot, $protocolV2, $serverConfig);
+            $downloader->omitLineFeeds = true;
+            $driver = $this->createDriver($downloader, 'foo-sha1.git', []);
+            $expected = self::$expected['sha1'];
+
+            self::assertSame($expected['tags'], $driver->getTags(), $name);
+            self::assertSame($expected['branches'], $driver->getBranches(), $name);
+            self::assertSame('main', $driver->getRootIdentifier(), $name);
+            self::assertSame('feature', $driver->getComposerInformation($expected['branches']['feature'])['description'] ?? null, $name);
+        }
+    }
+
     public function testUsesTheCheapestFetchTheServerAllows(): void
     {
         $filters = static function (GitHttpBackendDownloader $downloader): array {

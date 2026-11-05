@@ -12,6 +12,8 @@
 
 namespace App\Tests\Package\Git;
 
+use App\Package\Git\PktLine;
+use App\Package\Git\PktSpecial;
 use Composer\Config;
 use Composer\Downloader\MaxFileSizeExceededException;
 use Composer\Downloader\TransportException;
@@ -35,6 +37,8 @@ final class GitHttpBackendDownloader extends HttpDownloader
     public ?\Closure $interceptor = null;
     /** @var array<string, string> URL prefix => prefix it redirects to */
     public array $redirects = [];
+    /** drop the optional trailing LF of text packets, as JGit does for some */
+    public bool $omitLineFeeds = false;
 
     /**
      * @param array<string, string> $serverConfig git config of the server, e.g. uploadpack.allowFilter
@@ -133,6 +137,30 @@ final class GitHttpBackendDownloader extends HttpDownloader
             }
         }
 
+        if ($this->omitLineFeeds && $status === 200) {
+            $responseBody = self::omitLineFeeds($responseBody);
+        }
+
         return new CurlResponse(['url' => $url], $status, $responseHeaders, $responseBody, ['url' => $url]);
+    }
+
+    private static function omitLineFeeds(string $body): string
+    {
+        $result = '';
+        foreach (PktLine::decode($body) as $packet) {
+            if ($packet instanceof PktSpecial) {
+                $result .= match ($packet) {
+                    PktSpecial::Flush => PktLine::FLUSH,
+                    PktSpecial::Delim => PktLine::DELIM,
+                    PktSpecial::ResponseEnd => PktLine::RESPONSE_END,
+                };
+                continue;
+            }
+            // side-band packets carry binary pack data
+            $isSideBand = \in_array($packet[0], ["\1", "\2", "\3"], true);
+            $result .= PktLine::encode($isSideBand || $packet === "\n" ? $packet : rtrim($packet, "\n"));
+        }
+
+        return $result;
     }
 }

@@ -167,10 +167,12 @@ final class SmartHttpClient
             PktLine::assertNotError($packets[0]);
         }
 
-        if (($packets[0] ?? null) === "version 2\n") {
+        // the trailing LF of text packets is optional, JGit leaves it out of some
+        $firstLine = \is_string($packets[0] ?? null) ? rtrim($packets[0], "\n") : null;
+        if ($firstLine === 'version 2') {
             $this->parseV2Capabilities(\array_slice($packets, 1));
         } else {
-            if (($packets[0] ?? null) === "version 1\n") {
+            if ($firstLine === 'version 1') {
                 array_shift($packets);
             }
             $this->parseV0Advertisement($packets);
@@ -262,7 +264,7 @@ final class SmartHttpClient
         $packets = PktLine::decode($this->post($this->buildV2Command('fetch', $args)));
         foreach ($packets as $index => $packet) {
             PktLine::assertNotError($packet);
-            if ($packet === "packfile\n") {
+            if (\is_string($packet) && rtrim($packet, "\n") === 'packfile') {
                 return $this->extractPack(\array_slice($packets, $index + 1));
             }
         }
