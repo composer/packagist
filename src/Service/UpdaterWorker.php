@@ -55,6 +55,7 @@ class UpdaterWorker
     use DoctrineTrait;
 
     private const string GONE_AFTER_UNREACHABLE_FOR = '4 weeks';
+    private const int IP_ALLOW_LIST_SKIP_TTL = 7 * 86400;
 
     private LoggerInterface $logger;
     private ManagerRegistry $doctrine;
@@ -142,7 +143,8 @@ class UpdaterWorker
         }
 
         $usesPackagistToken = false;
-        if (Preg::isMatch('{^https://github\.com/(?P<repo>[^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $matches)) {
+        $maintainerTokenAllowListKey = null;
+        if (Preg::isMatchStrictGroups('{^https://github\.com/(?P<repo>(?P<owner>[^/]+)/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $matches)) {
             $usesPackagistToken = true;
 
             foreach ($package->getMaintainers() as $maintainer) {
@@ -150,6 +152,12 @@ class UpdaterWorker
                     continue;
                 }
                 if (!($newGithubToken = $maintainer->getGithubToken())) {
+                    continue;
+                }
+
+                // an org IP allow list applies to its members' tokens, another token may still read a public repo
+                $allowListKey = 'github_ip_allow_list_'.$maintainer->getUsernameCanonical().'_'.strtolower($matches['owner']);
+                if ('1' === $this->cache->get($allowListKey)) {
                     continue;
                 }
 
@@ -162,6 +170,10 @@ class UpdaterWorker
                     $rateResponse = json_decode((string) @file_get_contents('https://api.github.com/repos/'.$matches['repo'].'/git/refs/heads?per_page=1', false, $context), true);
                     // invalid/outdated token, wipe it so we don't try it again
                     if (!$rateResponse || (isset($http_response_header[0]) && Preg::isMatch('{HTTP/\s+ 4[0-9][0-9] }', $http_response_header[0]))) {
+                        if (str_contains($http_response_header[0], '403') && \is_array($rateResponse) && \is_string($rateResponse['message'] ?? null) && UpdateFailureClassifier::isGitHubIpAllowListResponse($rateResponse['message'])) {
+                            $this->cache->set($allowListKey, '1', self::IP_ALLOW_LIST_SKIP_TTL);
+                            continue;
+                        }
                         if (str_contains($http_response_header[0], '403') || str_contains($http_response_header[0], '401')) {
                             $this->logger->error('Invalid token check response for '.$maintainer->getUsernameCanonical().' on '.$matches['repo'], ['headers' => $http_response_header, 'response' => $rateResponse]);
                             $maintainer->setGithubToken(null);
@@ -175,6 +187,7 @@ class UpdaterWorker
                 $this->cache->set('is_token_valid_'.$maintainer->getUsernameCanonical(), '1', 86400);
 
                 $usesPackagistToken = false;
+                $maintainerTokenAllowListKey = $allowListKey;
                 $io->setAuthentication('github.com', $newGithubToken, 'x-oauth-basic');
                 break;
             }
@@ -283,6 +296,19 @@ class UpdaterWorker
             $verdict = UpdateFailureClassifier::classify($e);
             if ($verdict !== null) {
                 $internalReason = UpdateFailureClassifier::describe($verdict, $e);
+
+                if ($verdict->code === UpdateFailureClassifier::GITHUB_IP_ALLOW_LIST && $maintainerTokenAllowListKey !== null) {
+                    // the maintainer's token was refused, the next update retries with another one before this counts against the package
+                    $this->cache->set($maintainerTokenAllowListKey, '1', self::IP_ALLOW_LIST_SKIP_TTL);
+
+                    return [
+                        'status' => Job::STATUS_FAILED,
+                        'message' => 'Update of '.$packageName.' failed, the GitHub organization IP allow list refused the maintainer\'s token. The next update will use another token.',
+                        'details' => '<pre>'.$output.'</pre>',
+                        'exception' => $e,
+                        'vendor' => $packageVendor,
+                    ];
+                }
 
                 // github 404'ed, check through API whether the package still exists and delete if not
                 if (Preg::isMatchStrictGroups('{[@/]github.com[:/]([^/]+/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $match)) {

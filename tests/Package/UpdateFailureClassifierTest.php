@@ -118,14 +118,14 @@ class UpdateFailureClassifierTest extends TestCase
 
         yield 'github api org ip allow list' => [
             self::transport('The "https://api.github.com/repos/acme/lib" file could not be downloaded (HTTP/2 403 )', 403, '{"message":"Although you appear to have the correct authorization credentials, the `acme` organization has an IP allow list enabled, and your IP address is not permitted to access this resource.","documentation_url":"https://docs.github.com/rest","status":"403"}'),
-            $gone, 'github_api_ip_allow_list',
+            $unreachable, 'github_api_ip_allow_list',
         ];
         yield 'private host' => [
-            new PrivateRepositoryHostException('The repository host gitlab.iqianggou.com resolves to a private or reserved IP address, only publicly reachable repositories are supported'),
-            $gone, 'private_host',
+            new PrivateRepositoryHostException('The repository host git.example.org resolves to a private or reserved IP address, only publicly reachable repositories are supported'),
+            $unreachable, 'private_host',
         ];
         yield 'private host message on a plain exception' => [
-            new \RuntimeException('The repository host gitlab.iqianggou.com resolves to a private or reserved IP address, only publicly reachable repositories are supported'),
+            new \RuntimeException('The repository host git.example.org resolves to a private or reserved IP address, only publicly reachable repositories are supported'),
             null, null,
         ];
 
@@ -171,6 +171,16 @@ class UpdateFailureClassifierTest extends TestCase
             new \LogicException('remote: Repository not found'),
             null, null,
         ];
+    }
+
+    public function testOnlyFailuresThatMayClearUpEscalateToGone(): void
+    {
+        $allowList = self::transport('The "https://api.github.com/repos/acme/lib" file could not be downloaded (HTTP/2 403 )', 403, '{"message":"the `acme` organization has an IP allow list enabled"}');
+
+        self::assertTrue(UpdateFailureClassifier::classify($allowList)?->escalatesToGone);
+        self::assertTrue(UpdateFailureClassifier::classify(new PrivateRepositoryHostException('The repository host git.example.org resolves to a private or reserved IP address'))?->escalatesToGone);
+        self::assertTrue(UpdateFailureClassifier::classify(new \RuntimeException('Driver could not be established for package acme/lib (https://git.example.org/acme/lib)'))?->escalatesToGone);
+        self::assertFalse(UpdateFailureClassifier::classify(self::gitFailure("fatal: unable to access 'https://git.example.org/acme/lib.git/': Could not resolve host: git.example.org"))?->escalatesToGone);
     }
 
     public function testDescribeSanitizesCredentialsAndTruncates(): void
