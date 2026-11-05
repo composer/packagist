@@ -665,6 +665,53 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertNull($em->getRepository(Job::class)->findOneBy(['type' => 'package:purge']), 'no purge should be scheduled for a gentle freeze');
     }
 
+    public function testFreezePackageRecordsTheInternalReason(): void
+    {
+        $mod = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($mod, $package);
+        $packageId = $package->getId();
+
+        $this->client->loginUser($mod);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $form = $crawler->filter('#freeze-package-modal form')->form();
+        $form['reason'] = 'gone';
+        $form['internalReason'] = "  Owner confirmed by email that the repo moved to a private host\n";
+        $this->client->submit($form);
+        self::assertResponseStatusCodeSame(302);
+
+        $em = self::getEM();
+        $em->clear();
+        self::assertSame(PackageFreezeReason::Gone, $em->find(Package::class, $packageId)->getFreezeReason());
+
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::PackageFrozen->value, 'packageId' => $packageId]);
+        self::assertNotNull($record, 'a PackageFrozen audit record should be created');
+        self::assertSame('Owner confirmed by email that the repo moved to a private host', $record->attributes['internalReason']);
+    }
+
+    public function testFreezePackageWithBlankInternalReasonRecordsNone(): void
+    {
+        $mod = self::createUser('mod', 'mod@example.org', roles: ['ROLE_DISABLE_PACKAGES']);
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($mod, $package);
+        $packageId = $package->getId();
+
+        $this->client->loginUser($mod);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $form = $crawler->filter('#freeze-package-modal form')->form();
+        $form['reason'] = 'spam';
+        $form['internalReason'] = " \n ";
+        $this->client->submit($form);
+        self::assertResponseStatusCodeSame(302);
+
+        $em = self::getEM();
+        $em->clear();
+        $record = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::PackageFrozen->value, 'packageId' => $packageId]);
+        self::assertNotNull($record, 'a PackageFrozen audit record should be created');
+        self::assertArrayHasKey('internalReason', $record->attributes);
+        self::assertNull($record->attributes['internalReason']);
+    }
+
     public function testFreezePackageDeniedWithoutRole(): void
     {
         $user = self::createUser('bob', 'bob@example.org');

@@ -70,11 +70,12 @@ class PackageManager
      * Freezes a package. Freezing goes through the entity so PackageListener records the PackageFrozen
      * audit and Package::freeze() drops suppressed packages from the search index. Suppressing reasons
      * (spam/malware) additionally schedule a background purge of the package's published artifacts;
-     * $actorId, when given, is recorded as the actor of the resulting version soft-deletes.
+     * $actorId, when given, is recorded as the actor of the resulting version soft-deletes, and
+     * $internalReason is kept on the audit entry for auditors only.
      */
-    public function freeze(Package $package, PackageFreezeReason $reason, ?int $actorId = null): void
+    public function freeze(Package $package, PackageFreezeReason $reason, ?int $actorId = null, ?string $internalReason = null): void
     {
-        $package->freeze($reason);
+        $package->freeze($reason, $internalReason);
 
         $em = $this->doctrine->getManager();
         $em->persist($package);
