@@ -73,7 +73,7 @@ final class UpdateFailureClassifier
         if (str_contains($msg, '@gitlab.com/') && str_contains($msg, 'You are not allowed to download code from this project')) {
             return self::gone('gitlab_git_download_forbidden');
         }
-        if (Preg::isMatch('{git@(?:ssh\.)?bitbucket\.org}', $msg) && (str_contains($msg, 'Please make sure you have the correct access rights') || str_contains($msg, "transport 'ssh' not allowed"))) {
+        if (Preg::isMatch('{@(?:ssh\.)?bitbucket\.org[:/]}', $msg) && (str_contains($msg, 'Please make sure you have the correct access rights') || str_contains($msg, "transport 'ssh' not allowed"))) {
             // bitbucket denies access for 404s, ssh being disallowed means we got here once https failed
             return self::gone('bitbucket_git_no_access');
         }

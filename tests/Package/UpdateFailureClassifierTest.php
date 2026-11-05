@@ -67,6 +67,14 @@ class UpdateFailureClassifierTest extends TestCase
             self::gitFailure("Cloning into bare repository '/tmp/x.git'...\nfatal: transport 'ssh' not allowed", 'git@bitbucket.org:acme/lib.git'),
             $gone, 'bitbucket_git_no_access',
         ];
+        yield 'bitbucket https clone falling back to ssh' => [
+            self::gitFailure("Cloning into bare repository '/tmp/x.git'...\nfatal: transport 'ssh' not allowed\n", 'https://x-b...uth:***@bitbucket.org/acme/lib.git'),
+            $gone, 'bitbucket_git_no_access',
+        ];
+        yield 'transport ssh not allowed on another host' => [
+            self::gitFailure("Cloning into bare repository '/tmp/x.git'...\nfatal: transport 'ssh' not allowed\n", 'https://x:***@git.example.org/bitbucket.org/lib.git'),
+            null, null,
+        ];
         yield 'bitbucket api 404' => [
             self::transport('The "https://api.bitbucket.org/2.0/repositories/acme/lib?fields=-project" file could not be downloaded (HTTP/2 404 )', 404),
             $gone, 'bitbucket_api_404',
