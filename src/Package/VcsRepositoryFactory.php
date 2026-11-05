@@ -74,7 +74,7 @@ final class VcsRepositoryFactory
      *
      * This does not cover DNS rebinding or redirects, it only keeps obviously internal hosts away from git.
      *
-     * @throws \RuntimeException if the host resolves to a private or reserved address
+     * @throws PrivateRepositoryHostException if the host resolves to a private or reserved address
      */
     private static function assertPublicHost(string $url): void
     {
@@ -103,7 +103,7 @@ final class VcsRepositoryFactory
     {
         foreach ($ips as $ip) {
             if (IpUtils::isPrivateIp($ip)) {
-                throw new \RuntimeException('The repository host '.$host.' resolves to a private or reserved IP address, only publicly reachable repositories are supported');
+                throw new PrivateRepositoryHostException('The repository host '.$host.' resolves to a private or reserved IP address, only publicly reachable repositories are supported');
             }
         }
     }

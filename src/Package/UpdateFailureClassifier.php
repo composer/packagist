@@ -22,9 +22,15 @@ use Composer\Util\Url;
 final class UpdateFailureClassifier
 {
     private const int MAX_DESCRIPTION_LENGTH = 1000;
+    public const string GITHUB_IP_ALLOW_LIST = 'github_api_ip_allow_list';
 
     public static function classify(\Throwable $e): ?UpdateFailureVerdict
     {
+        if ($e instanceof PrivateRepositoryHostException) {
+            // a single DNS lookup from the worker, a sinkholed or briefly misconfigured domain must not freeze right away
+            return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'private_host', escalatesToGone: true);
+        }
+
         $msg = $e->getMessage();
 
         if ($e instanceof TransportException) {
@@ -45,6 +51,10 @@ final class UpdateFailureClassifier
                 }
                 if ($status === 403 && str_contains((string) $e->getResponse(), 'Repository access blocked')) {
                     return self::gone('github_api_access_blocked');
+                }
+                if ($status === 403 && self::isGitHubIpAllowListResponse((string) $e->getResponse())) {
+                    // depends on the worker IP and the token's org membership, so it may clear up without the repo changing
+                    return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, self::GITHUB_IP_ALLOW_LIST, escalatesToGone: true);
                 }
             }
         }
@@ -117,6 +127,11 @@ final class UpdateFailureClassifier
         $description = $verdict->code.': '.$e::class.': '.Url::sanitize(trim($e->getMessage()));
 
         return mb_strimwidth($description, 0, self::MAX_DESCRIPTION_LENGTH, '…');
+    }
+
+    public static function isGitHubIpAllowListResponse(string $response): bool
+    {
+        return str_contains($response, 'has an IP allow list enabled');
     }
 
     private static function gone(string $code): UpdateFailureVerdict

@@ -96,6 +96,30 @@ class UpdaterWorkerTest extends IntegrationTestCase
         self::assertStringStartsWith('git_remote_repository_not_found: RuntimeException: Failed to execute git clone', $this->lastFreezeAuditAttributes()['internalReason']);
     }
 
+    public function testPrivateHostSkipsTheHostForAWeekOnFirstFailure(): void
+    {
+        $package = $this->storePackage(repository: 'https://127.0.0.1/acme/private.git');
+
+        $result = $this->runWorker($package, new \LogicException('the update must not be attempted'));
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        $package = $this->reload($package);
+        self::assertFalse($package->isFrozen());
+        self::assertNotNull($package->unreachableSince);
+        self::assertGreaterThan(new \DateTimeImmutable('+6 days'), $package->getCrawledAt());
+    }
+
+    public function testPrivateHostFreezesThePackageOncePersistent(): void
+    {
+        $package = $this->storePackage(new \DateTimeImmutable('-29 days'), 'https://127.0.0.1/acme/private.git');
+
+        $result = $this->runWorker($package, new \LogicException('the update must not be attempted'));
+
+        self::assertSame(Job::STATUS_PACKAGE_GONE, $result['status']);
+        self::assertSame(PackageFreezeReason::Gone, $this->reload($package)->getFreezeReason());
+        self::assertStringStartsWith('private_host: App\\Package\\PrivateRepositoryHostException: The repository host 127.0.0.1 resolves', $this->lastFreezeAuditAttributes()['internalReason']);
+    }
+
     public function testChangingTheRepositoryClearsUnreachableSince(): void
     {
         $package = $this->storePackage(new \DateTimeImmutable('-20 days'));
@@ -126,9 +150,9 @@ class UpdaterWorkerTest extends IntegrationTestCase
         self::assertNull($package->unreachableSince);
     }
 
-    private function storePackage(?\DateTimeImmutable $unreachableSince = null): Package
+    private function storePackage(?\DateTimeImmutable $unreachableSince = null, string $repository = self::REPOSITORY): Package
     {
-        $package = self::createPackage('acme/lib', self::REPOSITORY);
+        $package = self::createPackage('acme/lib', $repository);
         $package->unreachableSince = $unreachableSince;
         $this->store($package);
 
