@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Package\Git\RepositoryNotFoundException;
 use App\Package\VcsRepositoryFactory;
 use App\Util\HttpDownloaderOptionsFactory;
 use App\Validator\Copyright;
@@ -643,6 +644,8 @@ class Package
             if ($this->isFrozen() && $this->getFreezeReason() === PackageFreezeReason::Gone) {
                 $this->unfreeze();
             }
+        } catch (RepositoryNotFoundException) {
+            // reported as no valid repository found, like a URL no driver supports
         } catch (\Exception $e) {
             $e = VcsRepositoryFactory::unwrapDisabledGitFallback($e);
             $this->vcsDriverError = '['.$e::class.'] '.$e->getMessage();
