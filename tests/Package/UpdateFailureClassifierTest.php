@@ -12,9 +12,11 @@
 
 namespace App\Tests\Package;
 
+use App\Package\Git\LimitExceededException;
 use App\Package\Git\ProtocolException;
 use App\Package\Git\RepositoryNotFoundException;
 use App\Package\Git\RepositoryUnavailableException;
+use App\Package\Git\ServerRefusedException;
 use App\Package\Git\UnsupportedRepositoryException;
 use App\Package\PrivateRepositoryHostException;
 use App\Package\UpdateFailureClassifier;
@@ -181,7 +183,7 @@ class UpdateFailureClassifierTest extends TestCase
         ];
         yield 'git http forbidden' => [
             new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 403),
-            $unreachable, 'git_http_not_public',
+            $unreachable, 'git_http_forbidden',
         ];
         yield 'git http login page' => [
             new RepositoryNotFoundException('No git repository found at https://git.example.org/acme/lib.git (got text/html instead of a git ref advertisement)'),
@@ -195,6 +197,14 @@ class UpdateFailureClassifierTest extends TestCase
         yield 'git http connection failure' => [
             new RepositoryUnavailableException('Failed to read https://git.example.org/acme/lib.git: Failed to connect to git.example.org port 443 after 57 ms: Couldn\'t connect to server'),
             $unreachable, 'git_http_unavailable',
+        ];
+        yield 'git http fetch refused' => [
+            new ServerRefusedException('Failed to read https://git.example.org/acme/lib.git', 401),
+            $unreachable, 'git_http_refused',
+        ];
+        yield 'git http repository too large' => [
+            new LimitExceededException('The repository data exceeds the limit of 268435456 bytes'),
+            $unreachable, 'git_http_too_large',
         ];
         yield 'git http dumb server' => [
             new UnsupportedRepositoryException('The server at https://git.example.org/acme/lib.git only supports the dumb HTTP protocol, which is not supported. Enable smart HTTP on your git server.'),
@@ -225,6 +235,9 @@ class UpdateFailureClassifierTest extends TestCase
         self::assertFalse(UpdateFailureClassifier::classify(self::gitFailure("fatal: unable to access 'https://git.example.org/acme/lib.git/': Could not resolve host: git.example.org"))?->escalatesToGone);
         self::assertTrue(UpdateFailureClassifier::classify(new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 401))?->escalatesToGone);
         self::assertFalse(UpdateFailureClassifier::classify(new RepositoryUnavailableException('Failed to read https://git.example.org/acme/lib.git', 503))?->escalatesToGone);
+        self::assertFalse(UpdateFailureClassifier::classify(new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 403))?->escalatesToGone);
+        self::assertFalse(UpdateFailureClassifier::classify(new ServerRefusedException('Failed to read https://git.example.org/acme/lib.git', 404))?->escalatesToGone);
+        self::assertFalse(UpdateFailureClassifier::classify(new LimitExceededException('The repository data exceeds the limit of 268435456 bytes'))?->escalatesToGone);
     }
 
     public function testDescribeSanitizesCredentialsAndTruncates(): void
