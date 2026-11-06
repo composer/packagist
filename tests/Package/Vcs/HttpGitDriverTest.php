@@ -376,7 +376,7 @@ class HttpGitDriverTest extends TestCase
     public static function provideUrls(): iterable
     {
         yield 'https .git' => ['https://example.org/acme/foo.git', true, 'https://example.org/acme/foo.git'];
-        yield 'https without .git needs a deep check' => ['https://example.org/acme/foo', false, 'https://example.org/acme/foo'];
+        yield 'https without .git' => ['https://example.org/acme/foo', true, 'https://example.org/acme/foo'];
         yield 'scp style from API driver fallbacks' => ['git@github.com:acme/foo.git', true, 'https://github.com/acme/foo.git'];
         yield 'ssh with port' => ['ssh://git@example.org:2222/acme/foo.git', true, 'https://example.org/acme/foo.git'];
         yield 'http' => ['http://example.org/acme/foo.git', false, null];
@@ -430,6 +430,21 @@ class HttpGitDriverTest extends TestCase
         self::assertInstanceOf(HttpGitDriver::class, $repository->getDriver());
         // 9999999-dev is the alias Composer adds for the default branch
         self::assertSame(['9999999-dev', 'dev-feature', 'dev-main', 'v1.0.0', 'v1.1.0'], $versions);
+    }
+
+    public function testMissingRepositoryWithoutGitSuffixFailsWithTheDiscoveryError(): void
+    {
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $downloader->interceptor = static fn () => GitHttpBackendDownloader::response(404, 'text/plain', 'not found');
+        $repository = VcsRepositoryFactory::create(GitHttpBackendDownloader::BASE_URL.'acme/missing', new NullIO(), $this->createConfig(), $downloader);
+
+        try {
+            $repository->getDriver();
+            self::fail('Expected the missing repository to fail the driver initialization');
+        } catch (RepositoryNotFoundException $e) {
+            self::assertSame(404, $e->getStatusCode());
+        }
+        self::assertCount(1, $downloader->requests, 'no separate probe before the driver reads the refs');
     }
 
     public function testCommitsKnownToTheVersionCacheAreNotFetched(): void

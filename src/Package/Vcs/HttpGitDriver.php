@@ -13,15 +13,12 @@
 namespace App\Package\Vcs;
 
 use App\Package\Git\RemoteRepository;
-use App\Package\Git\RepositoryNotFoundException;
 use App\Package\Git\SmartHttpClient;
 use App\Package\Git\UnsupportedRepositoryException;
-use App\Util\HttpDownloaderOptionsFactory;
 use Composer\Config;
 use Composer\IO\IOInterface;
 use Composer\Pcre\Preg;
 use Composer\Repository\Vcs\GitDriver;
-use Composer\Util\HttpDownloader;
 
 /**
  * Reads git repositories over smart HTTP in PHP, without the git binary
@@ -96,28 +93,12 @@ class HttpGitDriver extends GitDriver
         return $this->branches;
     }
 
+    /**
+     * Claims every URL it can read without probing it, so a broken repository fails the update with the actual git error
+     */
     public static function supports(IOInterface $io, Config $config, string $url, bool $deep = false): bool
     {
-        $httpsUrl = self::toHttpsUrl($url);
-        if ($httpsUrl === null) {
-            return false;
-        }
-
-        if (Preg::isMatch('#(\.git/?$|git(?:olite)?@|//git\.|//github.com/)#i', $url)) {
-            return true;
-        }
-
-        if (!$deep) {
-            return false;
-        }
-
-        try {
-            new SmartHttpClient(new HttpDownloader($io, $config, HttpDownloaderOptionsFactory::getOptions()), $httpsUrl)->getObjectFormat();
-        } catch (RepositoryNotFoundException) {
-            return false;
-        }
-
-        return true;
+        return self::toHttpsUrl($url) !== null;
     }
 
     /**
