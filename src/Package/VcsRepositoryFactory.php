@@ -35,6 +35,34 @@ final class VcsRepositoryFactory
         'git' => 'Composer\Repository\Vcs\GitDriver',
     ];
 
+    /**
+     * Branches that are commonly short-lived or not meant to be published, skipped before their composer.json is read.
+     * Agent branches (copilot/, codex/, claude/, ...) stay, as they carry real changes people may want to try out.
+     */
+    public const array EXCLUDED_BRANCHES = [
+        // dependency bots
+        'dependabot/*',
+        'dependabot-*',
+        'renovate/*',
+        'snyk-*',
+        'deps/*',
+        'deps-*',
+        'conductor-*',
+        // merge queues, backports and release automation
+        'gh-readonly-queue/*',
+        'merge-up/*',
+        'mergify/*',
+        'backport/*',
+        'backport-*',
+        'release-please--*',
+        'revert-*',
+        // bot housekeeping
+        'analysis-*',
+        'repo-sync/*',
+        'gh-pages',
+        'gitattributes',
+    ];
+
     public static function createConfig(): Config
     {
         $config = Factory::createConfig();
@@ -54,7 +82,7 @@ final class VcsRepositoryFactory
         self::assertPublicHost($url);
 
         // a GitHub API failure fails the update instead of switching to a git clone, which lacks the repo data and readme
-        return new VcsRepository(['url' => $url, 'allow-git-fallback' => false, 'options' => $options], $io, $config, $httpDownloader, null, null, self::DRIVERS, $versionCache);
+        return new VcsRepository(['url' => $url, 'allow-git-fallback' => false, 'exclude-branches' => self::EXCLUDED_BRANCHES, 'options' => $options], $io, $config, $httpDownloader, null, null, self::DRIVERS, $versionCache);
     }
 
     /**

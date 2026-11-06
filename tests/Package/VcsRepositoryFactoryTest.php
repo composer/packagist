@@ -18,6 +18,8 @@ use App\Tests\Package\Git\GitHttpBackendDownloader;
 use Composer\Config;
 use Composer\Downloader\TransportException;
 use Composer\IO\NullIO;
+use Composer\Package\PackageInterface;
+use Composer\Repository\Vcs\GitDriver;
 use Composer\Repository\Vcs\GitHubDriver;
 use Composer\Repository\VcsRepository;
 use Composer\Util\Http\Response;
@@ -110,6 +112,28 @@ class VcsRepositoryFactoryTest extends TestCase
         self::assertFalse($this->createRepository()->getRepoConfig()['allow-git-fallback']);
     }
 
+    public function testShortLivedAutomatedBranchesAreNotRead(): void
+    {
+        self::assertSame(VcsRepositoryFactory::EXCLUDED_BRANCHES, $this->createRepository()->getRepoConfig()['exclude-branches']);
+
+        $io = new NullIO();
+        $config = VcsRepositoryFactory::createConfig();
+        $repository = new VcsRepository(
+            ['url' => 'https://8.8.8.8/acme/foo.git', 'type' => 'git', 'exclude-branches' => VcsRepositoryFactory::EXCLUDED_BRANCHES],
+            $io,
+            $config,
+            new HttpDownloader($io, $config),
+            null,
+            null,
+            ['git' => FakeGitDriver::class],
+        );
+        $versions = array_map(static fn (PackageInterface $package): string => $package->getPrettyVersion(), $repository->getPackages());
+        sort($versions);
+
+        // exact names and anchored prefixes only: lookalikes and agent branches stay (9999999-dev is the default branch alias)
+        self::assertSame(['9999999-dev', 'dev-copilot/fix-tests', 'dev-dependabot', 'dev-feature/renovate-ish', 'dev-main'], $versions);
+    }
+
     /**
      * 404 is what GitHub answers for deleted or private repos, 403 for rate limits and blocked repos
      */
@@ -158,5 +182,33 @@ class VcsRepositoryFactoryTest extends TestCase
         $config = VcsRepositoryFactory::createConfig();
 
         return VcsRepositoryFactory::create($url, $io, $config, new HttpDownloader($io, $config));
+    }
+}
+
+/**
+ * Mimics a repository full of bot branches without running git
+ */
+class FakeGitDriver extends GitDriver
+{
+    public const array BRANCHES = [
+        'main', 'copilot/fix-tests', 'feature/renovate-ish', 'dependabot',
+        'dependabot/bar', 'dependabot-20260708', 'renovate/foo', 'snyk-fix-1a2b3c', 'deps/2026-10-26', 'deps-bump',
+        'gh-readonly-queue/main/pr-1', 'merge-up/1.x', 'mergify/bp/2.x/pr-7', 'backport/1.x/pr-3', 'backport-1001-to-v24', 'release-please--branches--main--components--foo', 'revert-1-main',
+        'analysis-0p2Bw4', 'repo-sync/apis/default', 'conductor-abc', 'gh-pages', 'gitattributes',
+    ];
+
+    public function initialize(): void
+    {
+        $this->rootIdentifier = 'main';
+        $this->tags = [];
+        $this->branches = [];
+        foreach (self::BRANCHES as $branch) {
+            $this->branches[$branch] = sha1($branch);
+        }
+    }
+
+    public function getComposerInformation(string $identifier): ?array
+    {
+        return ['name' => 'acme/foo'];
     }
 }
