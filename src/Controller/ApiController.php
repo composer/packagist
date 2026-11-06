@@ -19,6 +19,8 @@ use App\Entity\Vendor;
 use App\Model\DownloadManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
+use App\Package\BranchDeletionHandler;
+use App\Package\BranchDeletionOutcome;
 use App\Service\FallbackGitHubAuthProvider;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
@@ -64,6 +66,7 @@ class ApiController extends Controller
         private LoggerInterface $logger,
         private HttpClientInterface $httpClient,
         private readonly FallbackGitHubAuthProvider $fallbackGitHubAuthProvider,
+        private readonly BranchDeletionHandler $branchDeletionHandler,
     ) {
     }
 
@@ -203,6 +206,8 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Missing payload parameter'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
+        $deletedBranch = self::getDeletedBranch($event, $payload);
+
         if (isset($payload['project']['git_http_url'])) { // gitlab event payload
             $urlRegex = self::REGEXES['gitlab'];
             $url = $payload['project']['git_http_url'];
@@ -231,7 +236,29 @@ class ApiController extends Controller
 
         $url = str_replace('https://api.github.com/repos', 'https://github.com', $url);
 
-        return $this->receiveUpdateRequest($request, $url, $urlRegex, $remoteId, $githubWebhookSecret, $statsd);
+        return $this->receiveUpdateRequest($request, $url, $urlRegex, $remoteId, $githubWebhookSecret, $statsd, $deletedBranch);
+    }
+
+    /**
+     * The branch a GitHub push or delete event reports as deleted, if any. Tag deletions are left
+     * to a regular update as stable versions are only ever soft-deleted.
+     *
+     * @param array<mixed> $payload
+     */
+    private static function getDeletedBranch(?string $event, array $payload): ?string
+    {
+        $ref = $payload['ref'] ?? null;
+        if (!\is_string($ref)) {
+            return null;
+        }
+
+        if ('push' === $event && true === ($payload['deleted'] ?? false) && str_starts_with($ref, 'refs/heads/')) {
+            $ref = substr($ref, \strlen('refs/heads/'));
+        } elseif ('delete' !== $event || 'branch' !== ($payload['ref_type'] ?? null)) {
+            return null;
+        }
+
+        return '' === $ref ? null : $ref;
     }
 
     #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'json'], methods: ['PUT'])]
@@ -451,7 +478,7 @@ class ApiController extends Controller
      * @param string                  $url      the repository's URL (deducted from the request)
      * @param value-of<self::REGEXES> $urlRegex the regex used to split the user packages into domain and path
      */
-    protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret, StatsDClient $statsd): JsonResponse
+    protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret, StatsDClient $statsd, ?string $deletedBranch = null): JsonResponse
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!Preg::isMatchStrictGroups($urlRegex, $url, $match)) {
@@ -477,11 +504,16 @@ class ApiController extends Controller
                 $sig = Preg::isMatch('{^sha256=(?P<hex>[0-9a-f]{64})$}i', $sig, $sigMatch) ? strtolower($sigMatch['hex']) : '';
                 $expected = hash_hmac('sha256', $request->getContent(), $user->getApiToken());
                 $source = 'manual_github_hook';
-                if (hash_equals($expected, $sig) || hash_equals(hash_hmac('sha256', $request->getContent(), $user->getSafeApiToken()), $sig)) {
+                $mainTokenMatches = hash_equals($expected, $sig);
+                if ($mainTokenMatches || hash_equals(hash_hmac('sha256', $request->getContent(), $user->getSafeApiToken()), $sig)) {
                     $packages = $this->findGitHubPackagesByRepository($match['path'], (string) $remoteId, $source, $user);
                     $autoUpdated = Package::AUTO_GITHUB_HOOK;
                     $receiveType = 'github_user_secret';
                     $statsd->increment('update_pkg_api.success', tags: ['mode' => 'github_user_secret']);
+                    // the safe token is documented as leak-tolerant, so it may schedule a crawl but never delete
+                    if (!$mainTokenMatches) {
+                        $deletedBranch = null;
+                    }
                 } else {
                     $statsd->increment('update_pkg_api.failed', tags: ['reason' => 'invalid_user_sig']);
 
@@ -497,6 +529,10 @@ class ApiController extends Controller
             $user = $this->findUser($request, ApiType::Safe);
             if ($user) {
                 $source = 'manual_hook ('.$user->getUsername().' @ '.$request->getPathInfo().')';
+                // safe token: crawl only, as above
+                if (null !== $deletedBranch && null === $this->findUser($request, ApiType::Unsafe)) {
+                    $deletedBranch = null;
+                }
             }
         }
 
@@ -542,6 +578,7 @@ class ApiController extends Controller
 
         $jobs = [];
         $skipped = [];
+        $branchDeletions = [];
 
         /** @var Package $package */
         foreach ($packages as $package) {
@@ -554,6 +591,15 @@ class ApiController extends Controller
 
             $package->setAutoUpdated($autoUpdated);
 
+            if (null !== $deletedBranch) {
+                $outcome = $this->branchDeletionHandler->apply($package, $deletedBranch);
+                $statsd->increment('update_pkg_api.branch_deletion', tags: ['outcome' => $outcome->value]);
+                if (BranchDeletionOutcome::Deferred !== $outcome) {
+                    $branchDeletions[$package->getName()] = $outcome->value;
+                    continue;
+                }
+            }
+
             $job = $this->scheduler->scheduleUpdate($package, $source);
             $jobs[] = $job->getId();
         }
@@ -565,6 +611,10 @@ class ApiController extends Controller
             $statsd->increment('update_pkg_api.skipped', \count($skipped), tags: ['reason' => 'frozen']);
             $response['skipped'] = $skipped;
             $response['message'] = 'Frozen packages are not updated: '.implode(', ', $skipped);
+        }
+        if ($branchDeletions) {
+            ksort($branchDeletions);
+            $response['branchDeletion'] = ['branch' => $deletedBranch, 'packages' => $branchDeletions];
         }
 
         return new JsonResponse($response, Response::HTTP_ACCEPTED);

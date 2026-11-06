@@ -12,14 +12,20 @@
 
 namespace App\Tests\Controller;
 
+use App\Audit\VersionDeletionReason;
+use App\Entity\AuditRecord;
+use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
+use App\Entity\Version;
+use App\Log\AuditLogEventType;
 use App\Model\VersionIdCache;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\SecurityAdvisory\Severity;
 use App\Service\Scheduler;
 use App\Tests\IntegrationTestCase;
+use Doctrine\DBAL\DriverManager;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -155,6 +161,322 @@ class ApiControllerTest extends IntegrationTestCase
         $body = json_decode((string) $this->client->getResponse()->getContent(), true);
         $this->assertSame([], $body['jobs']);
         $this->assertSame([$package->getName()], $body['skipped']);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    #[TestWith(['push', ['ref' => 'refs/heads/feature/foo', 'deleted' => true], 'feature/foo', 'dev-feature/foo', 'dev-feature/foo'])]
+    #[TestWith(['push', ['ref' => 'refs/heads/2.x', 'deleted' => true], '2.x', '2.x-dev', '2.9999999.9999999.9999999-dev'])]
+    #[TestWith(['push', ['ref' => 'refs/heads/v1.5', 'deleted' => true], 'v1.5', 'v1.5.x-dev', '1.5.9999999.9999999-dev'])]
+    #[TestWith(['delete', ['ref' => 'feature/foo', 'ref_type' => 'branch'], 'feature/foo', 'dev-feature/foo', 'dev-feature/foo'])]
+    public function testGithubHookBranchDeletionRemovesTheDevVersionWithoutACrawl(string $event, array $payload, string $branch, string $version, string $normalizedVersion): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $package->setDumpedAtV2(new \DateTimeImmutable('-1 hour'));
+        $devVersion = self::createDevVersion($package, $version, $normalizedVersion);
+        $this->store($user, $package, $devVersion, self::createDevVersion($package, 'dev-main', 'dev-main', isDefaultBranch: true));
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->never())->method('scheduleUpdate');
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $this->sendGitHubEvent($event, $payload);
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertSame([], $body['jobs']);
+        $this->assertSame(['branch' => $branch, 'packages' => [$package->getName() => 'removed']], $body['branchDeletion']);
+
+        $em = self::getEM();
+        $em->clear();
+        $this->assertNull($em->getRepository(Version::class)->find($versionId), 'Version should be hard-deleted');
+        $this->assertTrue($em->getRepository(Package::class)->find($package->getId())->isDumpRequested(), 'Package should be marked for dump');
+        $this->assertNotNull($em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::VersionDeleted->value, 'packageId' => $package->getId()]), 'Deletion should be audited');
+    }
+
+    public function testGithubHookBranchDeletionPurgesAnAutoSoftDeletedVersionWithoutRedumping(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $package->setDumpedAtV2(new \DateTimeImmutable('-1 hour'));
+        $devVersion = self::createDevVersion($package, 'dev-feature', 'dev-feature');
+        $devVersion->setSoftDeletedAt(new \DateTimeImmutable('-2 hours'));
+        $devVersion->setDeletionReason(VersionDeletionReason::AutoDeletedMissing);
+        $this->store($user, $package, $devVersion, self::createDevVersion($package, 'dev-main', 'dev-main', isDefaultBranch: true));
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->never())->method('scheduleUpdate');
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $this->sendGitHubEvent('push', ['ref' => 'refs/heads/feature', 'deleted' => true]);
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertSame([$package->getName() => 'removed'], $body['branchDeletion']['packages']);
+
+        $em = self::getEM();
+        $em->clear();
+        $this->assertNull($em->getRepository(Version::class)->find($versionId), 'Version should be hard-deleted');
+        $this->assertFalse($em->getRepository(Package::class)->find($package->getId())->isDumpRequested(), 'A soft-deleted version was already out of the dump');
+    }
+
+    #[TestWith([VersionDeletionReason::DeletedByMaintainer])]
+    #[TestWith([VersionDeletionReason::DeletedByAdmin])]
+    #[TestWith([VersionDeletionReason::Hidden])]
+    public function testGithubHookBranchDeletionLeavesPulledVersionsAlone(VersionDeletionReason $reason): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $devVersion = self::createDevVersion($package, 'dev-feature', 'dev-feature');
+        $devVersion->setSoftDeletedAt(new \DateTimeImmutable('-2 hours'));
+        $devVersion->setDeletionReason($reason);
+        $this->store($user, $package, $devVersion, self::createDevVersion($package, 'dev-main', 'dev-main', isDefaultBranch: true));
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->never())->method('scheduleUpdate');
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $this->sendGitHubEvent('push', ['ref' => 'refs/heads/feature', 'deleted' => true]);
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertSame([$package->getName() => 'nothing_to_remove'], $body['branchDeletion']['packages']);
+
+        self::getEM()->clear();
+        $this->assertNotNull(self::getEM()->getRepository(Version::class)->find($versionId), 'A pulled version must stay as the record of the takedown');
+    }
+
+    public function testGithubHookBranchDeletionWithoutAVersionSchedulesNothing(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $this->store($user, $package);
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->never())->method('scheduleUpdate');
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $this->sendGitHubEvent('push', ['ref' => 'refs/heads/dependabot/composer/foo-1.2.3', 'deleted' => true]);
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertSame([], $body['jobs']);
+        $this->assertSame([$package->getName() => 'nothing_to_remove'], $body['branchDeletion']['packages']);
+    }
+
+    public function testGithubHookBranchDeletionSchedulesAnUpdateWhileThePackageIsLocked(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $devVersion = self::createDevVersion($package, 'dev-feature', 'dev-feature');
+        $this->store($user, $package, $devVersion);
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->once())->method('scheduleUpdate')->with($package);
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        // an updater holds the package lock from its own connection while it crawls
+        $updater = DriverManager::getConnection(self::getEM()->getConnection()->getParams());
+        try {
+            $this->assertSame(1, (int) $updater->fetchOne('SELECT GET_LOCK(?, 0)', ['package_update_'.$package->getId()]));
+            $this->sendGitHubEvent('push', ['ref' => 'refs/heads/feature', 'deleted' => true]);
+        } finally {
+            $updater->close();
+        }
+
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertArrayNotHasKey('branchDeletion', $body);
+
+        self::getEM()->clear();
+        $this->assertNotNull(self::getEM()->getRepository(Version::class)->find($versionId), 'The running update owns the version');
+    }
+
+    public function testGithubHookDefaultBranchDeletionSchedulesAnUpdate(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $devVersion = self::createDevVersion($package, 'dev-main', 'dev-main');
+        $devVersion->setIsDefaultBranch(true);
+        $this->store($user, $package, $devVersion);
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->once())->method('scheduleUpdate')->with($package);
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $this->sendGitHubEvent('push', ['ref' => 'refs/heads/main', 'deleted' => true]);
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertArrayNotHasKey('branchDeletion', $body);
+
+        self::getEM()->clear();
+        $this->assertNotNull(self::getEM()->getRepository(Version::class)->find($versionId), 'Dependents and readme derive from the default branch, so the crawl must sort it out');
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    #[TestWith(['push', ['ref' => 'refs/tags/v1.0.0', 'deleted' => true]])]
+    #[TestWith(['delete', ['ref' => 'v1.0.0', 'ref_type' => 'tag']])]
+    #[TestWith(['push', ['ref' => 'refs/heads/feature', 'deleted' => false, 'created' => true]])]
+    #[TestWith(['push', ['ref' => 'refs/heads/feature', 'deleted' => false]])]
+    public function testGithubHookPushesThatDoNotDeleteABranchScheduleAnUpdate(string $event, array $payload): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $devVersion = self::createDevVersion($package, 'dev-feature', 'dev-feature');
+        $this->store($user, $package, $devVersion);
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->once())->method('scheduleUpdate')->with($package);
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $this->sendGitHubEvent($event, $payload);
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertArrayNotHasKey('branchDeletion', $body);
+
+        self::getEM()->clear();
+        $this->assertNotNull(self::getEM()->getRepository(Version::class)->find($versionId));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function sendGitHubEvent(string $event, array $payload): void
+    {
+        $payload += ['repository' => ['url' => 'https://github.com/acme/widget']];
+        $this->client->request('POST', '/api/github?username=test&apiToken=api-token', ['payload' => json_encode($payload, \JSON_THROW_ON_ERROR)], [], ['HTTP_X-GitHub-Event' => $event]);
+    }
+
+    private static function createDevVersion(Package $package, string $version, string $normalizedVersion, bool $isDefaultBranch = false): Version
+    {
+        $devVersion = new Version();
+        $devVersion->setPackage($package);
+        $devVersion->setName($package->getName());
+        $devVersion->setVersion($version);
+        $devVersion->setNormalizedVersion($normalizedVersion);
+        $devVersion->setDevelopment(true);
+        $devVersion->setIsDefaultBranch($isDefaultBranch);
+        $devVersion->setLicense([]);
+        $devVersion->setAutoload([]);
+        $package->getVersions()->add($devVersion);
+
+        return $devVersion;
+    }
+
+    public function testGithubHookBranchDeletionWithoutALiveDefaultBranchSchedulesAnUpdate(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $devVersion = self::createDevVersion($package, 'dev-feature', 'dev-feature');
+        $hiddenMain = self::createDevVersion($package, 'dev-main', 'dev-main', isDefaultBranch: true);
+        $hiddenMain->setSoftDeletedAt(new \DateTimeImmutable('-2 hours'));
+        $hiddenMain->setDeletionReason(VersionDeletionReason::Hidden);
+        $this->store($user, $package, $devVersion, $hiddenMain);
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->once())->method('scheduleUpdate')->with($package);
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $this->sendGitHubEvent('push', ['ref' => 'refs/heads/feature', 'deleted' => true]);
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertArrayNotHasKey('branchDeletion', $body);
+
+        self::getEM()->clear();
+        $this->assertNotNull(self::getEM()->getRepository(Version::class)->find($versionId), 'With no live default branch the deleted version may be the dependents source, so the crawl must recompute them');
+    }
+
+    public function testGithubHookBranchDeletionIgnoresACaseVariantOfATrackedBranch(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $devVersion = self::createDevVersion($package, 'dev-release', 'dev-release');
+        $this->store($user, $package, $devVersion, self::createDevVersion($package, 'dev-main', 'dev-main', isDefaultBranch: true));
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->never())->method('scheduleUpdate');
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $this->sendGitHubEvent('push', ['ref' => 'refs/heads/Release', 'deleted' => true]);
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertSame([$package->getName() => 'nothing_to_remove'], $body['branchDeletion']['packages']);
+
+        self::getEM()->clear();
+        $this->assertNotNull(self::getEM()->getRepository(Version::class)->find($versionId), 'The unique index is case-insensitive, the row tracks the live `release` branch');
+    }
+
+    public function testGithubHookBranchDeletionWithTheSafeTokenSchedulesAnUpdate(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $devVersion = self::createDevVersion($package, 'dev-feature', 'dev-feature');
+        $this->store($user, $package, $devVersion, self::createDevVersion($package, 'dev-main', 'dev-main', isDefaultBranch: true));
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($this->once())->method('scheduleUpdate')->with($package);
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $payload = ['ref' => 'refs/heads/feature', 'deleted' => true, 'repository' => ['url' => 'https://github.com/acme/widget']];
+        $this->client->request('POST', '/api/github?username=test&apiToken=safe-api-token', ['payload' => json_encode($payload, \JSON_THROW_ON_ERROR)], [], ['HTTP_X-GitHub-Event' => 'push']);
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertArrayNotHasKey('branchDeletion', $body);
+
+        self::getEM()->clear();
+        $this->assertNotNull(self::getEM()->getRepository(Version::class)->find($versionId), 'The leak-tolerant safe token must not be able to delete');
+    }
+
+    #[TestWith(['api-token', true])]
+    #[TestWith(['safe-api-token', false])]
+    public function testGithubHookUserSignedBranchDeletionNeedsTheMainToken(string $secret, bool $expectRemoval): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/'.bin2hex(random_bytes(10)), 'https://github.com/acme/widget', maintainers: [$user]);
+        $devVersion = self::createDevVersion($package, 'dev-feature', 'dev-feature');
+        $this->store($user, $package, $devVersion, self::createDevVersion($package, 'dev-main', 'dev-main', isDefaultBranch: true));
+        $versionId = $devVersion->getId();
+
+        $scheduler = $this->createMock(Scheduler::class);
+        $scheduler->expects($expectRemoval ? $this->never() : $this->once())->method('scheduleUpdate');
+        static::$kernel->getContainer()->set('doctrine.orm.entity_manager', self::getEM());
+        static::$kernel->getContainer()->set(Scheduler::class, $scheduler);
+
+        $payload = json_encode(['ref' => 'refs/heads/feature', 'deleted' => true, 'repository' => ['url' => 'https://github.com/acme/widget']], \JSON_THROW_ON_ERROR);
+        $this->client->request(
+            'POST',
+            '/api/github?username=test',
+            [],
+            [],
+            ['HTTP_X-GitHub-Event' => 'push', 'HTTP_X-Hub-Signature-256' => 'sha256='.hash_hmac('sha256', $payload, $secret), 'CONTENT_TYPE' => 'application/json'],
+            $payload
+        );
+        $this->assertEquals(Response::HTTP_ACCEPTED, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
+        $body = json_decode((string) $this->client->getResponse()->getContent(), true);
+        $this->assertSame('github_user_secret', $body['type']);
+        $this->assertSame($expectRemoval, isset($body['branchDeletion']));
+
+        self::getEM()->clear();
+        $this->assertSame(!$expectRemoval, null !== self::getEM()->getRepository(Version::class)->find($versionId));
     }
 
     public function testUnsafeApiRejectsSafeApiToken(): void
