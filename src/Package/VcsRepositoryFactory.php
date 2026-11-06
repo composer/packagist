@@ -78,7 +78,7 @@ final class VcsRepositoryFactory
      */
     public static function create(string $url, IOInterface $io, Config $config, HttpDownloader $httpDownloader, ?VersionCacheInterface $versionCache = null, array $options = [], ?array $knownReferences = null): VcsRepository
     {
-        // git otherwise allows every transport but ext::, e.g. ftp:// or any installed git-remote-* helper
+        // no driver runs the git binary anymore, this keeps it to https should one start doing so again
         Platform::putEnv('GIT_ALLOW_PROTOCOL', 'https');
 
         self::assertPublicHost($url);

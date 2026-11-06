@@ -13,8 +13,10 @@
 namespace App\Package;
 
 use App\Package\Git\GitException;
+use App\Package\Git\LimitExceededException;
 use App\Package\Git\RepositoryNotFoundException;
 use App\Package\Git\RepositoryUnavailableException;
+use App\Package\Git\ServerRefusedException;
 use Composer\Downloader\TransportException;
 use Composer\Pcre\Preg;
 use Composer\Util\Url;
@@ -70,6 +72,8 @@ final class UpdateFailureClassifier
             return null;
         }
 
+        // git binary errors, which nothing produces since HttpGitDriver replaced it, kept for reference until that has settled
+
         if (str_contains($msg, 'remote: Repository not found')) {
             return self::gone('git_remote_repository_not_found');
         }
@@ -104,7 +108,7 @@ final class UpdateFailureClassifier
             return self::gone('git_authentication_failed');
         }
         if (Preg::isMatch('{Driver could not be established for package}i', $msg)) {
-            // every driver rejected the url, for a self-hosted git that is any git ls-remote failure, transient ones included
+            // no driver can read the url at all, e.g. one that is not https
             return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'no_driver', escalatesToGone: true);
         }
         if (
@@ -158,12 +162,22 @@ final class UpdateFailureClassifier
             if (\in_array($e->getStatusCode(), [404, 410], true)) {
                 return self::gone('git_http_not_found');
             }
+            if ($e->getStatusCode() === 403) {
+                // often a firewall blocking the worker rather than the repository going away
+                return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'git_http_forbidden');
+            }
 
             // an auth prompt or a login page may be a repository made private by accident
             return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'git_http_not_public', escalatesToGone: true);
         }
         if ($e instanceof RepositoryUnavailableException) {
             return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'git_http_unavailable');
+        }
+        if ($e instanceof ServerRefusedException) {
+            return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'git_http_refused');
+        }
+        if ($e instanceof LimitExceededException) {
+            return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'git_http_too_large');
         }
 
         // unsupported servers and protocol errors are reported as a failed update
