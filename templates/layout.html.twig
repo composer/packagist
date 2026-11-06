@@ -17,7 +17,7 @@
 
         <link rel="shortcut icon" href="{{ asset('favicon.ico') }}" />
 
-        <link rel="stylesheet" href="{{ asset('build/app.css') }}" />
+        <link rel="stylesheet" href="{{ asset('build/app.css') }}{% if app.debug %}&amp;dev={{ 'now'|date('U') }}{% endif %}" />
         {% block stylesheets %}{% endblock %}
 
         {% block head_feeds %}
@@ -124,8 +124,8 @@
                                             {%- endif %}
 
                                             <div class="signin-box-buttons">
-                                                <a href="{{ path('login_github_start') }}" class="float-end btn btn-primary btn-github"><span class="icon-github"></span>Use Github</a>
-                                                <button type="submit" class="btn btn-success" id="_submit_mini" name="_submit">Log in</button>
+                                                <a href="{{ path('login_github_start') }}" class="float-end btn btn-github"><span class="icon-github"></span>Use Github</a>
+                                                <button type="submit" class="btn btn-primary" id="_submit_mini" name="_submit">Log in</button>
                                             </div>
                                         </form>
 

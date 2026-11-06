@@ -45,7 +45,7 @@
 
         <button type="submit" class="btn btn-secondary">Filter</button>
 
-        <a class="btn btn-success ms-auto" href="{{ path('admin_filter_list_new') }}">Add entry</a>
+        <a class="btn btn-primary ms-auto" href="{{ path('admin_filter_list_new') }}">Add entry</a>
     </form>
 
     <hr>
@@ -56,7 +56,7 @@
         <div class="btn-toolbar" style="margin-bottom: 10px">
             <div class="btn-group">
                 <button type="submit" name="action" value="disable" class="btn btn-warning btn-sm">Disable selected</button>
-                <button type="submit" name="action" value="enable" class="btn btn-success btn-sm">Re-enable selected</button>
+                <button type="submit" name="action" value="enable" class="btn btn-primary btn-sm">Re-enable selected</button>
             </div>
         </div>
 
@@ -104,7 +104,7 @@
                         <td class="text-end text-nowrap">
                             <a class="btn btn-secondary btn-xs" href="{{ path('admin_filter_list_edit', {publicId: entry.publicId}) }}">Edit</a>
                             {% if entry.disabled %}
-                                <button type="submit" formaction="{{ path('admin_filter_list_enable', {publicId: entry.publicId}) }}" class="btn btn-success btn-xs">Re-enable</button>
+                                <button type="submit" formaction="{{ path('admin_filter_list_enable', {publicId: entry.publicId}) }}" class="btn btn-primary btn-xs">Re-enable</button>
                             {% else %}
                                 <button type="submit" formaction="{{ path('admin_filter_list_disable', {publicId: entry.publicId}) }}" class="btn btn-warning btn-xs">Disable</button>
                             {% endif %}

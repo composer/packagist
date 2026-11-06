@@ -5,7 +5,7 @@
 {% block security_content %}
     <h3>Save your backup code</h3>
 
-    <div class="p-4 bg-body-secondary border rounded">
+    <div class="account-form p-4 bg-body-secondary border rounded">
         <p>A backup code lets you sign in if you lose access to your authenticator app. Save this one-time code somewhere safe:</p>
 
         <kbd class="two-factor-backup-code">{{ backup_code }}</kbd>
@@ -20,10 +20,10 @@
         </p>
     </div>
 
-    <p>
-        <a href="{{path('security_overview')}}" class="btn btn-success btn-lg">
+    <div class="account-form form-actions">
+        <a href="{{ path('security_overview') }}" class="btn btn-primary">
             <span class="icon-check"></span>
             I have saved the backup code
         </a>
-    </p>
+    </div>
 {% endblock %}

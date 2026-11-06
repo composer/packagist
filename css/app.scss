@@ -533,7 +533,7 @@ strong {
     vertical-align: middle;
 }
 
-.nav-user .btn-success {
+.nav-user #_submit_mini {
     width: 42%;
 }
 
@@ -555,8 +555,12 @@ strong {
 
 /* overrides for dropdown menu on mobile */
 @media (max-width: 767px) {
+    .navbar .nav {
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    }
     .navbar .nav > li {
-        height: 57px;
+        min-height: 57px;
+        height: auto;
     }
     .navbar-collapse.show {
         overflow-y: visible;
@@ -587,6 +591,9 @@ strong {
     }
     .mobile-account-menu li a {
         padding-left: 44px;
+    }
+    .mobile-account-menu .menu-logout a {
+        padding: 18px 20px 19px;
     }
     .mobile-account-menu a:hover, .mobile-account-menu a:focus {
         background: rgba(255, 255, 255, 0.1);
@@ -1096,7 +1103,7 @@ button {
     padding: 5px 11px 7px 9px;
 }
 
-input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:focus {
+input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid {
     box-shadow: none;
 }
 
@@ -1129,11 +1136,11 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     color: #52a8ec;
 }
 
-.input-group .form-control:invalid:focus {
+.input-group .form-control:user-invalid:focus {
     border-color: #fa3a15;
 }
 
-.input-group:has(.form-control:invalid:focus) .input-group-text {
+.input-group:has(.form-control:user-invalid:focus) .input-group-text {
     border-width: 2px;
     padding: 5px 12px 5px 11px;
     border-color: #fa3a15;
@@ -1141,24 +1148,31 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .api-token-group {
-    display: block;
-    margin-bottom: 5px;
+    display: flex;
+    margin-bottom: 16px;
 }
 .api-token-group .api-token {
-  width: 85%;
-  float: right;
-  right: 0;
-  margin: 0 0 6px;
-  text-align: center;
+    min-width: 0;
+    width: 1%;
+    flex: 1 1 auto;
+    text-align: left;
 }
 .api-token-group .btn-show-api-token {
-  width: 185px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 10;
-  white-space: nowrap;
-  font-size: 13px;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+@media (max-width: 575.98px) {
+    .api-token-group {
+        gap: 8px;
+    }
+
+    .api-token-group > .api-token,
+    .api-token-group > .btn-show-api-token {
+        width: 100%;
+        border-radius: var(--bs-border-radius) !important;
+        margin-left: 0 !important;
+    }
 }
 
 .packages {
@@ -1248,6 +1262,25 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 .nav-tabs>li{
   margin-bottom: 0;
+}
+
+.account-form {
+    width: 100%;
+    max-width: 36rem;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+@media (max-width: 575.98px) {
+    .form-actions > .btn,
+    .account-form > .btn-github {
+        width: 100%;
+    }
 }
 
 .security-settings {
@@ -1352,12 +1385,18 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .btn-secondary {
+    --bs-btn-color: var(--color-text-dark);
+    --bs-btn-hover-color: var(--color-text-dark);
+    --bs-btn-active-color: var(--color-text-dark);
     background: var(--color-secondary);
     border-bottom-color: var(--color-secondary-dark);
-    color: #fff;
+    color: var(--color-text-dark);
+}
+.btn-secondary:hover {
+    color: var(--color-text-dark);
 }
 .btn-secondary:focus, .btn-secondary:active {
-  color: #fff;
+  color: var(--color-text-dark);
   background: var(--color-secondary-dark);
   border-bottom-color: var(--color-secondary);
 }
@@ -1428,16 +1467,35 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .btn-github {
-    line-height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #24292f;
+    border-bottom-color: #101418;
+    --bs-btn-focus-shadow-rgb: 36, 41, 47;
+    line-height: 1.5;
     font-weight: 600;
     color: #fff;
     text-align: center;
 }
 
+.btn-github:hover,
+.btn-github:focus-visible {
+    background: #32383f;
+    border-bottom-color: #24292f;
+    color: #fff;
+}
+
+.btn-github:active {
+    background: #101418;
+    border-bottom-color: #24292f;
+    color: #fff;
+}
+
 .btn-github span {
-    margin: 0 15px 0 0;
-    vertical-align: text-top;
-    font-size: 22px;
+    margin: 0 12px 0 0;
+    font-size: 20px;
+    line-height: 1;
 }
 
 /* Search */
@@ -2125,8 +2183,7 @@ h2.title .php-ext-link {
 
 
 .edit_profile .failure-notifications {
-    margin: 10px 0;
-    float: left;
+    margin: 16px 0;
 }
 
 
@@ -2231,13 +2288,42 @@ svg {
     margin-top: 40px;
 }
 
+.authenticator-setup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 200px;
+    grid-template-areas: "instructions qr" "form qr";
+    gap: 24px;
+    align-items: start;
+}
+.authenticator-instructions {
+    grid-area: instructions;
+}
+.authenticator-instructions ol {
+    margin-bottom: 0;
+}
+.authenticator-code-form {
+    grid-area: form;
+}
 .two-factor-key {
+    grid-area: qr;
     max-width: 200px;
+    margin: 0;
     text-align: center;
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 .two-factor-backup-code {
-    font-size: 3em;
+    display: inline-block;
+    max-width: 100%;
+    margin: 8px 0 16px;
+    font-size: clamp(1.5rem, 6vw, 2.25rem);
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 767.98px) {
+    .authenticator-setup {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "instructions" "qr" "form";
+    }
 }
 
 html,

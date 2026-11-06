@@ -1,7 +1,10 @@
 {% extends "user/layout.html.twig" %}
 
+{% block title %}Settings - {{ parent() }}{% endblock %}
+
 {% block user_content %}
-    {{ form_start(form, { 'action': path('edit_profile'), 'attr': { 'class': 'edit_profile col-lg-6', 'id': 'edit_profile' } }) }}
+<section class="col-lg-9">
+    {{ form_start(form, { 'action': path('edit_profile'), 'attr': { 'class': 'edit_profile account-form', 'id': 'edit_profile' } }) }}
         {{ form_errors(form) }}
 
         <div class="form-group clearfix">
@@ -40,12 +43,16 @@
 
         {{ form_rest(form) }}
 
-        <input type="submit" class="btn w-100 btn-success btn-lg" value="Update" id="_edit_profile_submit" />
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="_edit_profile_submit">Update</button>
+            <a href="{{ path('my_profile') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    {{ form_end(form) }}
 
-        <hr>
-
-        <h5>Using GitHub:</h5>
-        <a href="{{ app.user.githubId ? '#' : path('connect_github_start') }}" class="btn w-100 btn-github btn-lg {{ app.user.githubId ? 'disabled' : 'btn-primary' }}">
+    <section class="account-form mt-4" aria-labelledby="github-heading">
+        <h3 class="h5" id="github-heading">GitHub account</h3>
+        <p>{{ app.user.githubId ? 'Use your connected GitHub account to sign in.' : 'Connect your account to sign in with GitHub.' }}</p>
+        <a href="{{ app.user.githubId ? '#' : path('connect_github_start') }}" class="btn btn-github {{ app.user.githubId ? 'disabled' : '' }}"{% if app.user.githubId %} aria-disabled="true" tabindex="-1"{% endif %}>
             <span class="icon-github"></span>
             {% set ghUser = app.user.githubUsername %}
             {% if app.user.githubId %}
@@ -62,8 +69,6 @@
                 <p><a href="{{ path('user_github_disconnect', {token: csrf_token('unlink_github')}) }}">Disconnect your GitHub account</a> to connect another one.</p>
             {% endif %}
         {% endif %}
-    {{ form_end(form) }}
-
-    <div class="col-lg-2">
-    </div>
+    </section>
+</section>
 {% endblock user_content %}

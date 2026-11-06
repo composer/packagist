@@ -6,9 +6,13 @@
     <p>Use a time-based code from your authenticator app as your second factor when signing in.</p>
     {% if user.totpAuthenticationEnabled %}
         <p class="alert alert-success">Your authenticator app is enabled.</p>
-        <a class="text-danger" href="{{ path('user_totp_disable', {name: user.username}) }}">Remove authenticator app</a>
+        <div class="form-actions">
+            <a class="btn btn-danger" href="{{ path('user_totp_disable', {name: user.username}) }}">Remove authenticator app</a>
+        </div>
     {% else %}
         <p class="text-body-secondary">No authenticator app is set up for your account.</p>
-        <a class="btn btn-primary" href="{{ path('user_totp_enable', {name: user.username}) }}">Set up an authenticator app</a>
+        <div class="form-actions">
+            <a class="btn btn-primary" href="{{ path('user_totp_enable', {name: user.username}) }}">Set up an authenticator app</a>
+        </div>
     {% endif %}
 {% endblock %}

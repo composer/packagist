@@ -13,7 +13,7 @@
     <h3 class="title clearfix">
         Teams
         {% if canCreateTeam %}
-            <a class="btn btn-success btn-sm float-end" href="{{ path('organization_team_create', { organization: organization.slug }) }}">Create team</a>
+            <a class="btn btn-primary btn-sm float-end" href="{{ path('organization_team_create', { organization: organization.slug }) }}">Create team</a>
         {% endif %}
     </h3>
 

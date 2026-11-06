@@ -419,7 +419,7 @@ class UserController extends Controller
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/users/{name}/totp/disable', name: 'user_totp_disable', methods: ['GET'])]
+    #[Route(path: '/users/{name}/totp/disable', name: 'user_totp_disable', methods: ['GET', 'POST'])]
     public function disableTotpAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, TotpAuthManager $authManager): Response
     {
         if (!$this->isGranted('ROLE_DISABLE_2FA') && $user->getId() !== $loggedUser->getId()) {
@@ -432,7 +432,11 @@ class UserController extends Controller
             return $this->redirectToRoute('user_verify_totp');
         }
 
-        if ($this->isCsrfTokenValid('disable_totp', $req->query->getString('token'))) {
+        if ($req->isMethod('POST')) {
+            if (!$this->isCsrfTokenValid('disable_totp', $req->request->getString('token'))) {
+                throw $this->createAccessDeniedException('Invalid CSRF token.');
+            }
+
             $authManager->disableTotpAuthentication($user, $loggedUser, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
 
             $this->addFlash('success', 'Authenticator app removed.');
