@@ -36,16 +36,30 @@ final class VcsRepositoryFactory
     ];
 
     /**
-     * Branches that are commonly short-lived or not meant to be published, skipped before their composer.json is read
+     * Branches that are commonly short-lived or not meant to be published, skipped before their composer.json is read.
+     * Agent branches (copilot/, codex/, claude/, ...) stay, as they carry real changes people may want to try out.
      */
     public const array EXCLUDED_BRANCHES = [
-        'gh-readonly-queue/*',
-        'renovate/*',
+        // dependency bots
         'dependabot/*',
+        'dependabot-*',
+        'renovate/*',
+        'snyk-*',
+        'deps/*',
+        'deps-*',
         'conductor-*',
+        // merge queues, backports and release automation
+        'gh-readonly-queue/*',
         'merge-up/*',
+        'mergify/*',
+        'backport/*',
+        'backport-*',
+        'release-please--*',
+        'revert-*',
+        // bot housekeeping
+        'analysis-*',
+        'repo-sync/*',
         'gh-pages',
-        'release-please--branches--main',
         'gitattributes',
     ];
 

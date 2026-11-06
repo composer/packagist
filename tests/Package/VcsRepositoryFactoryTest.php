@@ -130,8 +130,8 @@ class VcsRepositoryFactoryTest extends TestCase
         $versions = array_map(static fn (PackageInterface $package): string => $package->getPrettyVersion(), $repository->getPackages());
         sort($versions);
 
-        // exact names and anchored prefixes only, lookalikes stay (9999999-dev is the default branch alias)
-        self::assertSame(['9999999-dev', 'dev-dependabot', 'dev-feature/renovate-ish', 'dev-main'], $versions);
+        // exact names and anchored prefixes only: lookalikes and agent branches stay (9999999-dev is the default branch alias)
+        self::assertSame(['9999999-dev', 'dev-copilot/fix-tests', 'dev-dependabot', 'dev-feature/renovate-ish', 'dev-main'], $versions);
     }
 
     /**
@@ -190,7 +190,12 @@ class VcsRepositoryFactoryTest extends TestCase
  */
 class FakeGitDriver extends GitDriver
 {
-    public const array BRANCHES = ['main', 'renovate/foo', 'dependabot/bar', 'dependabot', 'gh-readonly-queue/main/pr-1', 'conductor-abc', 'merge-up/1.x', 'gh-pages', 'release-please--branches--main', 'gitattributes', 'feature/renovate-ish'];
+    public const array BRANCHES = [
+        'main', 'copilot/fix-tests', 'feature/renovate-ish', 'dependabot',
+        'dependabot/bar', 'dependabot-20260708', 'renovate/foo', 'snyk-fix-1a2b3c', 'deps/2026-10-26', 'deps-bump',
+        'gh-readonly-queue/main/pr-1', 'merge-up/1.x', 'mergify/bp/2.x/pr-7', 'backport/1.x/pr-3', 'backport-1001-to-v24', 'release-please--branches--main--components--foo', 'revert-1-main',
+        'analysis-0p2Bw4', 'repo-sync/apis/default', 'conductor-abc', 'gh-pages', 'gitattributes',
+    ];
 
     public function initialize(): void
     {
