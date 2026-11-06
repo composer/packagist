@@ -178,7 +178,7 @@ class SecurityNavigationTest extends IntegrationTestCase
         $this->client->click($crawler->selectLink('Remove authenticator app')->link());
         self::assertResponseRedirects('/profile/security/verify-totp');
         $crawler = $this->client->followRedirect();
-        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
         $crawler = $this->client->followRedirect();
         self::assertSame('Authenticator app', $crawler->filter('.security-tabs a[aria-current="page"]')->text());
         self::assertTrue($this->user->isTotpAuthenticationEnabled());

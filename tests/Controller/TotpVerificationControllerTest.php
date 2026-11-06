@@ -57,10 +57,10 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertCount(1, $crawler->selectButton('Confirm identity'));
         self::assertCount(0, $crawler->filter('input[type="password"]'));
-        $crawler = $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['code' => '123456']);
+        $crawler = $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => '123456']);
         self::assertResponseStatusCodeSame(422);
         $this->assertRemovalRequiresVerification();
-        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
         self::assertResponseRedirects('/users/verify/totp/disable');
         $crawler = $this->client->followRedirect();
         self::assertResponseIsSuccessful();
@@ -112,16 +112,26 @@ class TotpVerificationControllerTest extends IntegrationTestCase
     public function testInvalidAndBackupCodesDoNotGrantProof(string $code): void
     {
         $crawler = $this->client->request('GET', '/profile/security/verify-totp');
-        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['code' => $code]);
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => $code]);
         self::assertResponseStatusCodeSame(422);
-        self::assertSelectorTextContains('#totp-error', 'The authenticator code is invalid.');
+        self::assertSelectorTextContains('form[name="verify_totp"]', 'Invalid authenticator code');
         $this->assertRemovalRequiresVerification();
+    }
+
+    public function testCodeWithSpacesIsAccepted(): void
+    {
+        $crawler = $this->client->request('GET', '/profile/security/verify-totp');
+        $field = $crawler->filter('#verify_totp_code');
+        self::assertNull($field->attr('pattern'));
+        self::assertNull($field->attr('maxlength'));
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => '999 999']);
+        self::assertResponseRedirects('/users/verify/totp/disable');
     }
 
     public function testInvalidCsrfTokenDoesNotGrantProofOrCountAsACodeFailure(): void
     {
-        $this->client->request('POST', '/profile/security/verify-totp', ['code' => TotpAuthenticatorStub::MOCKED_VALID_CODE, '_token' => 'invalid']);
-        self::assertResponseStatusCodeSame(403);
+        $this->client->request('POST', '/profile/security/verify-totp', ['verify_totp' => ['code' => TotpAuthenticatorStub::MOCKED_VALID_CODE, '_token' => 'invalid']]);
+        self::assertResponseStatusCodeSame(422);
         self::assertNull(self::redisCache()->get('2fa-failures:verify'));
         $this->assertRemovalRequiresVerification();
     }
@@ -130,10 +140,10 @@ class TotpVerificationControllerTest extends IntegrationTestCase
     {
         $crawler = $this->client->request('GET', '/profile/security/verify-totp');
         self::redisCache()->set('2fa-failures:verify', '4');
-        $crawler = $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['code' => '123456']);
+        $crawler = $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => '123456']);
         self::assertResponseStatusCodeSame(422);
         self::assertSame('5', self::redisCache()->get('2fa-failures:verify'));
-        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
         self::assertResponseStatusCodeSame(429);
         self::assertResponseHeaderSame('Retry-After', '900');
         $this->assertRemovalRequiresVerification();
@@ -170,7 +180,7 @@ class TotpVerificationControllerTest extends IntegrationTestCase
     private function verify(): Crawler
     {
         $crawler = $this->client->request('GET', '/profile/security/verify-totp');
-        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
         self::assertResponseRedirects('/users/verify/totp/disable');
 
         return $this->client->followRedirect();

@@ -101,7 +101,7 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         $this->assertAuthenticationChecks(false, false);
         self::assertInstanceOf(RememberMeToken::class, self::getContainer()->get('security.token_storage')->getToken());
         $crawler = $this->client->request('GET', '/profile/security/verify-totp');
-        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
         self::assertResponseRedirects('/users/verify/totp/disable');
         $this->assertAuthenticationChecks(true, true);
     }
