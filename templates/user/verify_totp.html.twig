@@ -1,0 +1,24 @@
+{% extends 'user/security_layout.html.twig' %}
+
+{% block title %}Confirm authenticator app - {{ parent() }}{% endblock %}
+
+{% block security_content %}
+    <h3>Confirm your identity</h3>
+    <p>Enter a code from your authenticator app before removing it from your account.</p>
+
+    {{ form_start(form, {'attr': {'class': 'col-lg-6'}}) }}
+        {{ form_errors(form) }}
+
+        <div class="form-group">
+            {{ form_label(form.code) }}
+            <div class="input-group">
+                <span class="input-group-text"><span class="icon-key"></span></span>
+                {{ form_widget(form.code) }}
+            </div>
+            {{ form_errors(form.code) }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Confirm identity</button>
+        <a href="{{ path('security_authenticator') }}" class="btn btn-secondary">Cancel</a>
+    {{ form_end(form) }}
+{% endblock %}

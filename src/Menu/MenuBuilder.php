@@ -275,6 +275,7 @@ class MenuBuilder
                 ['route' => 'user_totp_enable'],
                 ['route' => 'user_totp_confirm'],
                 ['route' => 'user_totp_disable'],
+                ['route' => 'user_verify_totp'],
             ]],
         ]);
     }

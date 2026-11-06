@@ -28,7 +28,7 @@ class TotpAuthenticatorStub implements TotpAuthenticatorInterface
 
     public function checkCode(TwoFactorInterface $user, string $code): bool
     {
-        return $code === self::MOCKED_VALID_CODE;
+        return str_replace(' ', '', $code) === self::MOCKED_VALID_CODE;
     }
 
     public function getQRContent(TwoFactorInterface $user): string
