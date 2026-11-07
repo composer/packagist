@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use App\Organization\Domain\InvitationStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Ulid;
 
@@ -70,7 +71,7 @@ class OrganizationInvitationRepository extends ServiceEntityRepository
     public function findOneByOrgSlugAndId(string $slug, Ulid $invitationId): ?OrganizationInvitation
     {
         return $this->createQueryBuilder('i')
-            ->innerJoin(Organization::class, 'o', 'WITH', 'o.id = i.orgId')
+            ->innerJoin(Organization::class, 'o', Join::ON, 'o.id = i.orgId')
             ->where('o.slug = :slug')
             ->andWhere('i.id = :id')
             ->setParameter('slug', $slug)

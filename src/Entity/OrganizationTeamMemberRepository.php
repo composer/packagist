@@ -37,7 +37,7 @@ class OrganizationTeamMemberRepository extends ServiceEntityRepository
         return $this->getEntityManager()->createQueryBuilder()
             ->select('u')
             ->from(User::class, 'u')
-            ->innerJoin(OrganizationTeamMember::class, 'm', Join::WITH, 'm.userId = u.id')
+            ->innerJoin(OrganizationTeamMember::class, 'm', Join::ON, 'm.userId = u.id')
             ->where('m.teamId = :teamId')
             ->andWhere('u.usernameCanonical = :username')
             ->setParameter('teamId', $teamId, 'ulid')
