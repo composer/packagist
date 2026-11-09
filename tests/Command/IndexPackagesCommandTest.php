@@ -67,6 +67,43 @@ class IndexPackagesCommandTest extends IntegrationTestCase
         self::assertArrayNotHasKey('virtual:psr/log-implementation', $records, 'a tagged release must not contribute virtual packages');
     }
 
+    public function testMarkupIsStrippedFromIndexedFields(): void
+    {
+        $package = $this->packageWith('acme/abandoned', ['<b>tag</b>'], ['acme/<i>virtual</i>']);
+        $package->setDescription('<script>x</script>a description');
+        $package->setLanguage('<b>PHP</b>');
+        $package->setAbandoned(true);
+        $package->setReplacementPackage('<a href="https://example.org">acme/new</a>');
+        $this->store($package);
+
+        $records = $this->runIndexer();
+
+        $record = $records['acme/abandoned'];
+        self::assertSame('xa description', $record['description']);
+        self::assertSame('PHP', $record['language']);
+        self::assertSame('acme/new', $record['replacementPackage']);
+        self::assertSame(['tag'], $record['tags']);
+        self::assertArrayHasKey('virtual:acme/virtual', $records);
+        self::assertSame('acme/virtual', $records['virtual:acme/virtual']['name']);
+    }
+
+    public function testCleanFieldsAreIndexedUnchanged(): void
+    {
+        $package = $this->packageWith('acme/plain', ['http client'], []);
+        $package->setDescription('An HTTP client for a < b && c > d');
+        $package->setLanguage('PHP');
+        $package->setAbandoned(true);
+        $package->setReplacementPackage('https://example.org/acme/new?a=1&b=2');
+        $this->store($package);
+
+        $record = $this->runIndexer()['acme/plain'];
+
+        self::assertSame('An HTTP client for a < b && c > d', $record['description']);
+        self::assertSame('PHP', $record['language']);
+        self::assertSame('https://example.org/acme/new?a=1&b=2', $record['replacementPackage']);
+        self::assertSame(['http client'], $record['tags']);
+    }
+
     /**
      * @param list<string> $tags
      * @param list<string> $provides
