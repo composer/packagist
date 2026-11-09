@@ -217,6 +217,20 @@ function escapeHtml(value) {
     });
 }
 
+// value is escaped HTML with <mark> highlights, so a cut must not split a tag or an entity
+function truncateHighlight(html, maxLength) {
+    if (html.length <= maxLength) {
+        return html;
+    }
+
+    var truncated = html.substring(0, maxLength).replace(/<[^>]*$/, '').replace(/&[#a-z0-9]*$/i, '');
+    if ((truncated.match(/<mark>/g) || []).length > (truncated.match(/<\/mark>/g) || []).length) {
+        truncated += '</mark>';
+    }
+
+    return truncated;
+}
+
 var customCurrentRefinements = connectCurrentRefinements(function (renderOptions) {
     var items = renderOptions.items;
     var refine = renderOptions.refine;
@@ -275,8 +289,8 @@ search.addWidgets([
                     hit.url = '/providers/' + hit.name;
                 }
 
-                if (hit._highlightResult && hit._highlightResult.description && hit._highlightResult.description.value && hit._highlightResult.description.value.length > 200) {
-                    hit._highlightResult.description.value = hit._highlightResult.description.value.substring(0, 200).replace(/<[a-z ]+$/, '');
+                if (hit._highlightResult && hit._highlightResult.description && hit._highlightResult.description.value) {
+                    hit._highlightResult.description.value = truncateHighlight(hit._highlightResult.description.value, 200);
                 }
 
                 hit.replacementPackageUrl = null;
