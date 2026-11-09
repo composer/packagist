@@ -204,10 +204,10 @@ class IndexPackagesCommand extends Command
             'name' => $package->getName(),
             'package_organisation' => $package->getVendor(),
             'package_name' => $package->getPackageName(),
-            'description' => self::stripHtml($package->getDescription()),
+            'description' => self::stripHtml($package->getDescription()) ?? '',
             'type' => $package->getType(),
             'repository' => $package->getRepository(),
-            'language' => $package->getLanguage() !== null ? self::stripHtml($package->getLanguage()) : null,
+            'language' => self::stripHtml($package->getLanguage()),
             // log10 of downloads over the last 7days
             'trendiness' => $trendiness > 0 ? log($trendiness, 10) : 0,
             // log10 of downloads + gh stars
@@ -222,7 +222,7 @@ class IndexPackagesCommand extends Command
 
         if ($package->isAbandoned()) {
             $record['abandoned'] = 1;
-            $record['replacementPackage'] = self::stripHtml($package->getReplacementPackage());
+            $record['replacementPackage'] = self::stripHtml($package->getReplacementPackage()) ?? '';
         } else {
             $record['abandoned'] = 0;
             $record['replacementPackage'] = '';
@@ -233,7 +233,7 @@ class IndexPackagesCommand extends Command
             $latestVersion = $this->getEM()->getRepository(Version::class)->getQueryBuilderForLatestVersionWithPackage(package: $package->getName())
                 ->getQuery()->setMaxResults(1)->getOneOrNullResult();
             if ($latestVersion) {
-                $record['extensionName'] = $latestVersion->getPieName() !== null ? self::stripHtml($latestVersion->getPieName()) : null;
+                $record['extensionName'] = self::stripHtml($latestVersion->getPieName());
             }
         }
 
@@ -247,8 +247,6 @@ class IndexPackagesCommand extends Command
      */
     private function createSearchableProvider(string $provided): array
     {
-        $provided = self::stripHtml($provided);
-
         return [
             'id' => $provided,
             'objectID' => 'virtual:'.$provided,
@@ -321,7 +319,7 @@ class IndexPackagesCommand extends Command
 
         $tagsById = [];
         foreach ($rows as $row) {
-            $tagsById[(int) $row['packageId']][] = Preg::replace('{[\s-]+}u', ' ', mb_strtolower(self::stripHtml((string) $row['name']), 'UTF-8'));
+            $tagsById[(int) $row['packageId']][] = Preg::replace('{[\s-]+}u', ' ', mb_strtolower(Preg::replace('{[\x00-\x1f]+}u', '', (string) $row['name']), 'UTF-8'));
         }
 
         // deduped after normalizing, so tags differing only in case or spacing collapse together
@@ -330,11 +328,15 @@ class IndexPackagesCommand extends Command
 
     /**
      * The frontend escapes hits too, this is a second layer so the index never carries markup
-     * from package metadata.
+     * from free-text metadata. Tags and provide names are already restricted by Composer's validation.
      */
-    private static function stripHtml(?string $value): string
+    private static function stripHtml(?string $value): ?string
     {
-        return Preg::replace('{[\x00-\x1f]+}u', '', strip_tags((string) $value));
+        if (null === $value) {
+            return null;
+        }
+
+        return Preg::replace('{[\x00-\x1f]+}u', '', strip_tags($value));
     }
 
     /**

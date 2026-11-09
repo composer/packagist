@@ -69,7 +69,7 @@ class IndexPackagesCommandTest extends IntegrationTestCase
 
     public function testMarkupIsStrippedFromIndexedFields(): void
     {
-        $package = $this->packageWith('acme/abandoned', ['<b>tag</b>'], ['acme/<i>virtual</i>']);
+        $package = $this->packageWith('acme/abandoned', [], []);
         $package->setDescription('<script>x</script>a description');
         $package->setLanguage('<b>PHP</b>');
         $package->setAbandoned(true);
@@ -82,9 +82,6 @@ class IndexPackagesCommandTest extends IntegrationTestCase
         self::assertSame('xa description', $record['description']);
         self::assertSame('PHP', $record['language']);
         self::assertSame('acme/new', $record['replacementPackage']);
-        self::assertSame(['tag'], $record['tags']);
-        self::assertArrayHasKey('virtual:acme/virtual', $records);
-        self::assertSame('acme/virtual', $records['virtual:acme/virtual']['name']);
     }
 
     public function testCleanFieldsAreIndexedUnchanged(): void
