@@ -52,7 +52,7 @@ class OrganizationMemberRepository extends ServiceEntityRepository
         return $this->getEntityManager()->createQueryBuilder()
             ->select('u')
             ->from(User::class, 'u')
-            ->innerJoin(OrganizationMember::class, 'm', Join::WITH, 'm.userId = u.id')
+            ->innerJoin(OrganizationMember::class, 'm', Join::ON, 'm.userId = u.id')
             ->where('m.orgId = :orgId')
             ->andWhere('u.usernameCanonical = :username')
             ->setParameter('orgId', $orgId, 'ulid')

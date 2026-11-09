@@ -43,7 +43,7 @@ class OrganizationRepository extends ServiceEntityRepository
             ->innerJoin(
                 OrganizationTeamMember::class,
                 'm',
-                Join::WITH,
+                Join::ON,
                 'm.orgId = o.id AND m.teamId = o.ownersTeamId AND m.userId = :userId',
             )
             ->where('o.deletedAt IS NULL')
