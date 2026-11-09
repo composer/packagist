@@ -80,6 +80,91 @@ class WordPressSecurityAdvisoriesSourceTest extends TestCase
         $this->assertSame(Severity::MEDIUM, $advisories[1]->severity);
     }
 
+    public function testWithPagination(): void
+    {
+        $nextPage = 'https://api.github.com/repos/WordPress/wordpress-develop/security-advisories?per_page=100&page=2';
+        $counter = 0;
+        $responseFactory = function (string $method, string $url, array $options) use (&$counter, $nextPage) {
+            $this->assertSame('GET', $method);
+            $counter++;
+
+            if ($counter === 1) {
+                $this->assertStringStartsWith('https://api.github.com/repos/WordPress/wordpress-develop/security-advisories', $url);
+
+                return new MockResponse(json_encode([
+                    $this->apiPackageNode('GHSA-first-aaaa-aaaa', '= 1.0.0', 'CVE-2021-35210', 'First advisory', '2021-07-01T17:00:04Z'),
+                ]), [
+                    'http_code' => 200,
+                    'response_headers' => [
+                        'Content-Type' => 'application/json; charset=utf-8',
+                        'Link' => '<'.$nextPage.'>; rel="next", <https://api.github.com/repos/WordPress/wordpress-develop/security-advisories?page=3>; rel="last"',
+                    ],
+                ]);
+            }
+
+            $this->assertSame($nextPage, $url);
+
+            return new MockResponse(json_encode([
+                $this->apiPackageNode('GHSA-second-bbbb-bbbb', '= 2.0.0', 'CVE-2020-25768', 'Second advisory', '2020-09-24T16:23:54Z'),
+            ]), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+        };
+        $client = new MockHttpClient($responseFactory);
+        $source = new WordPressSecurityAdvisoriesSource($client, new NullLogger(), $this->providerManager, [], $this->doctrine);
+
+        $advisoryCollection = $source->getAdvisories(new BufferIO());
+
+        $this->assertNotNull($advisoryCollection);
+        $this->assertSame(2, $client->getRequestsCount());
+        $this->assertSame(
+            ['GHSA-first-aaaa-aaaa', 'GHSA-second-bbbb-bbbb'],
+            array_map(
+                static fn ($advisory) => $advisory->id,
+                $advisoryCollection->getAdvisoriesForPackageName('wordpress/core-implementation'),
+            ),
+        );
+    }
+
+    public function testWithdrawnAdvisoryDoesNotSuppressLiveAdvisoryForSameCve(): void
+    {
+        $responseFactory = fn (string $method, string $url, array $options) => new MockResponse(json_encode([
+            $this->apiPackageNode('GHSA-withdrawn-aaaa', '= 1.0.0', 'CVE-2020-25768', 'Withdrawn advisory', '2020-09-24T16:23:54Z', '2021-01-01T00:00:00Z'),
+            $this->apiPackageNode('GHSA-live-bbbb-bbbb', '= 2.0.0', 'CVE-2020-25768', 'Live advisory', '2021-07-01T17:00:04Z'),
+        ]), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+        $source = new WordPressSecurityAdvisoriesSource(new MockHttpClient($responseFactory), new NullLogger(), $this->providerManager, [], $this->doctrine);
+
+        $advisoryCollection = $source->getAdvisories(new BufferIO());
+
+        $this->assertNotNull($advisoryCollection);
+        $advisories = $advisoryCollection->getAdvisoriesForPackageName('wordpress/core-implementation');
+        $this->assertCount(1, $advisories);
+        $this->assertSame('GHSA-live-bbbb-bbbb', $advisories[0]->id);
+        $this->assertTrue($advisoryCollection->isWithdrawn('roots/wordpress-no-content', 'GHSA-withdrawn-aaaa'));
+        $this->assertSame([
+            'wordpress/core-implementation',
+            'roots/wordpress-full',
+            'roots/wordpress-no-content',
+            'johnpbloch/wordpress-core',
+        ], $advisoryCollection->getWithdrawnPackageNames());
+    }
+
+    public function testSameRemoteIdWithdrawnAndLiveIsTreatedAsLive(): void
+    {
+        $responseFactory = fn (string $method, string $url, array $options) => new MockResponse(json_encode([
+            $this->apiPackageNode('GHSA-same-cccc-dddd', '< 1.0.0', 'CVE-2021-35210', 'Advisory', '2021-07-01T17:00:04Z', '2021-01-01T00:00:00Z'),
+            $this->apiPackageNode('GHSA-same-cccc-dddd', '= 2.0.0', 'CVE-2021-35210', 'Advisory', '2021-07-01T17:00:04Z'),
+        ]), ['http_code' => 200, 'response_headers' => ['Content-Type' => 'application/json; charset=utf-8']]);
+        $source = new WordPressSecurityAdvisoriesSource(new MockHttpClient($responseFactory), new NullLogger(), $this->providerManager, [], $this->doctrine);
+
+        $advisoryCollection = $source->getAdvisories(new BufferIO());
+
+        $this->assertNotNull($advisoryCollection);
+        $advisories = $advisoryCollection->getAdvisoriesForPackageName('wordpress/core-implementation');
+        $this->assertCount(1, $advisories);
+        $this->assertSame('=2.0.0|7.1.0-7.1', $advisories[0]->affectedVersions);
+        $this->assertFalse($advisoryCollection->isWithdrawn('roots/wordpress-no-content', 'GHSA-same-cccc-dddd'));
+        $this->assertSame([], $advisoryCollection->getWithdrawnPackageNames());
+    }
+
     private function getPackage(): Package
     {
         $package = new Package();

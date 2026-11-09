@@ -14,9 +14,6 @@ namespace App\SecurityAdvisory;
 
 class WordPressRemoteSecurityAdvisoryCollection extends RemoteSecurityAdvisoryCollection
 {
-    /** @var array<string, list<RemoteSecurityAdvisory>> */
-    private array $groupedSecurityAdvisories = [];
-
     public const WORDPRESS_CORE_PROVIDER = 'wordpress/core-implementation';
 
     /**
@@ -36,7 +33,7 @@ class WordPressRemoteSecurityAdvisoryCollection extends RemoteSecurityAdvisoryCo
     public function getAdvisoriesForPackageName(string $packageName): array
     {
         if (in_array($packageName, self::WORDPRESS_CORE_PACKAGES)) {
-            return $this->groupedSecurityAdvisories[self::WORDPRESS_CORE_PROVIDER] ?? [];
+            return parent::getAdvisoriesForPackageName(self::WORDPRESS_CORE_PROVIDER);
         }
 
         return [];
@@ -56,7 +53,7 @@ class WordPressRemoteSecurityAdvisoryCollection extends RemoteSecurityAdvisoryCo
     public function isWithdrawn(string $packageName, string $remoteId): bool
     {
         if (in_array($packageName, self::WORDPRESS_CORE_PACKAGES)) {
-            return isset($this->withdrawnAdvisories[self::WORDPRESS_CORE_PROVIDER][$remoteId]);
+            return parent::isWithdrawn(self::WORDPRESS_CORE_PROVIDER, $remoteId);
         }
 
         return false;
@@ -67,6 +64,6 @@ class WordPressRemoteSecurityAdvisoryCollection extends RemoteSecurityAdvisoryCo
      */
     public function getWithdrawnPackageNames(): array
     {
-        return empty($this->withdrawnAdvisories[self::WORDPRESS_CORE_PROVIDER]) ? [] : self::WORDPRESS_CORE_PACKAGES;
+        return in_array(self::WORDPRESS_CORE_PROVIDER, parent::getWithdrawnPackageNames(), true) ? self::WORDPRESS_CORE_PACKAGES : [];
     }
 }

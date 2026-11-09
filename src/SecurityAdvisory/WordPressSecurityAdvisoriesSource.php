@@ -134,8 +134,10 @@ class WordPressSecurityAdvisoriesSource implements SecurityAdvisorySourceInterfa
 
                 $versionRange = '';
                 foreach ($node['vulnerabilities'] as $vulnerability) {
-                    if ($vulnerability['package'] === 'wordpress' || $vulnerability['package']['name'] === 'WordPress') {
-                        $versionRange = implode('|', [$versionRange, $vulnerability['vulnerable_version_range']]);
+                    if ($vulnerability['package']['ecosystem'] === 'wordpress' || $vulnerability['package']['name'] === 'WordPress') {
+                        $versionRange = '' === $versionRange
+                            ? $vulnerability['vulnerable_version_range']
+                            : $versionRange.'|'.$vulnerability['vulnerable_version_range'];
                     }
                 }
                 // GitHub adds spaces everywhere e.g. > 1.0, adjust to be able to match other advisories
