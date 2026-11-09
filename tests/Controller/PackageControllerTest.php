@@ -101,6 +101,44 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
     }
 
+    #[DataProvider('provideReplacementLinks')]
+    public function testAbandonedReplacementOnlyLinksHttpUrlsAndExistingPackages(string $replacement, ?string $expectedHref): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $package->setAbandoned(true);
+        $package->setReplacementPackage($replacement);
+        $existing = self::createPackage('test/new', 'https://example.com/test/new');
+        $this->store($package, $existing);
+        self::getService(ProviderManager::class)->insertPackage($existing);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        $notice = $crawler->filter('.alert-danger')->reduce(static fn ($node) => str_contains($node->text(), 'abandoned'));
+        self::assertCount(1, $notice);
+        self::assertStringContainsString($replacement, $notice->text());
+        $links = $notice->filter('a')->reduce(static fn ($node) => $node->text() === $replacement);
+        if ($expectedHref === null) {
+            self::assertCount(0, $links);
+        } else {
+            self::assertCount(1, $links);
+            self::assertSame($expectedHref, $links->attr('href'));
+        }
+    }
+
+    /**
+     * @return iterable<array{string, string|null}>
+     */
+    public static function provideReplacementLinks(): iterable
+    {
+        yield 'existing package' => ['test/new', '/packages/test/new'];
+        yield 'unknown package' => ['test/missing', null];
+        yield 'https url' => ['https://example.org/new', 'https://example.org/new'];
+        yield 'uppercase http url' => ['HTTP://example.org/new', 'HTTP://example.org/new'];
+        yield 'javascript url' => ['javascript://%0aalert(1)', null];
+        yield 'data url' => ['data://text/html,x', null];
+    }
+
     public function testVersionListMakesTheWholeVersionNumberCellALink(): void
     {
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');

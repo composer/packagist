@@ -28,6 +28,22 @@ class SecurityHeadersTest extends IntegrationTestCase
         self::assertResponseHasHeader('Content-Security-Policy');
     }
 
+    public function testCspRestrictsFormTargetsAndEval(): void
+    {
+        $this->client->request('GET', '/login/');
+
+        self::assertResponseIsSuccessful();
+        $directives = [];
+        foreach (explode(';', (string) $this->client->getResponse()->headers->get('Content-Security-Policy')) as $directive) {
+            $parts = preg_split('{\s+}', trim($directive)) ?: [];
+            $directives[array_shift($parts)] = $parts;
+        }
+
+        self::assertSame(["'self'"], $directives['form-action'] ?? null);
+        self::assertContains("'strict-dynamic'", $directives['script-src']);
+        self::assertNotContains("'unsafe-eval'", $directives['script-src']);
+    }
+
     public function testJsonApiResponsesSkipTheDocumentSecurityHeaders(): void
     {
         // Neither header does anything for a non-document response, and these endpoints carry

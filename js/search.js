@@ -217,6 +217,20 @@ function escapeHtml(value) {
     });
 }
 
+// value is escaped HTML with <mark> highlights, so a cut must not split a tag or an entity
+function truncateHighlight(html, maxLength) {
+    if (html.length <= maxLength) {
+        return html;
+    }
+
+    var truncated = html.substring(0, maxLength).replace(/<[^>]*$/, '').replace(/&[#a-z0-9]*$/i, '');
+    if ((truncated.match(/<mark>/g) || []).length > (truncated.match(/<\/mark>/g) || []).length) {
+        truncated += '</mark>';
+    }
+
+    return truncated;
+}
+
 var customCurrentRefinements = connectCurrentRefinements(function (renderOptions) {
     var items = renderOptions.items;
     var refine = renderOptions.refine;
@@ -275,13 +289,17 @@ search.addWidgets([
                     hit.url = '/providers/' + hit.name;
                 }
 
-                if (hit._highlightResult && hit._highlightResult.description && hit._highlightResult.description.value && hit._highlightResult.description.value.length > 200) {
-                    hit._highlightResult.description.value = hit._highlightResult.description.value.substring(0, 200).replace(/<[a-z ]+$/, '');
+                if (hit._highlightResult && hit._highlightResult.description && hit._highlightResult.description.value) {
+                    hit._highlightResult.description.value = truncateHighlight(hit._highlightResult.description.value, 200);
                 }
 
                 hit.replacementPackageUrl = null;
                 if (hit.replacementPackage) {
-                    hit.replacementPackageUrl = hit.replacementPackage.indexOf('://') !== -1 ? hit.replacementPackage : ('/packages/' + hit.replacementPackage);
+                    if (/^https?:\/\//i.test(hit.replacementPackage)) {
+                        hit.replacementPackageUrl = hit.replacementPackage;
+                    } else if (/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(hit.replacementPackage)) {
+                        hit.replacementPackageUrl = '/packages/' + hit.replacementPackage;
+                    }
                 }
 
                 return hit;
@@ -293,8 +311,10 @@ search.addWidgets([
                 var abandonedHtml = '';
                 if (hit.abandoned) {
                     var replacementHtml = '';
-                    if (hit.replacementPackage) {
-                        replacementHtml = ` See <a href="${hit.replacementPackageUrl}" rel="nofollow noindex">${hit.replacementPackage}</a>`;
+                    if (hit.replacementPackageUrl) {
+                        replacementHtml = ` See <a href="${escapeHtml(hit.replacementPackageUrl)}" rel="nofollow noindex">${escapeHtml(hit.replacementPackage)}</a>`;
+                    } else if (hit.replacementPackage) {
+                        replacementHtml = ` See ${escapeHtml(hit.replacementPackage)}`;
                     }
                     abandonedHtml = `<p class="abandoned"><i class="bi bi-exclamation-circle-fill"></i> Abandoned!${replacementHtml}</p>`;
                 }
@@ -305,20 +325,21 @@ search.addWidgets([
                 var metaHtml = '';
                 if (hit.meta) {
                     metaHtml = `<p class="metadata">
-                        <span class="metadata-block"><i class="bi bi-download"></i> ${hit.meta.downloads_formatted}</span>
-                        <span class="metadata-block"><i class="bi bi-star-fill"></i> ${hit.meta.favers_formatted}</span>
+                        <span class="metadata-block"><i class="bi bi-download"></i> ${escapeHtml(hit.meta.downloads_formatted)}</span>
+                        <span class="metadata-block"><i class="bi bi-star-fill"></i> ${escapeHtml(hit.meta.favers_formatted)}</span>
                     </p>`;
                 }
 
-                var nameHighlight = hit._highlightResult && hit._highlightResult.name ? hit._highlightResult.name.value : hit.name;
-                var descHighlight = hit._highlightResult && hit._highlightResult.description ? hit._highlightResult.description.value : (hit.description || '');
+                // _highlightResult is already escaped by instantsearch (escapeHTML), raw hit fields are not
+                var nameHighlight = hit._highlightResult && hit._highlightResult.name ? hit._highlightResult.name.value : escapeHtml(hit.name);
+                var descHighlight = hit._highlightResult && hit._highlightResult.description ? hit._highlightResult.description.value : escapeHtml(hit.description || '');
 
-                return `<div data-url="${hit.url}" class="col-12 package-item">
+                return `<div data-url="${escapeHtml(hit.url)}" class="col-12 package-item">
                     <div class="row">
                         <div class="col-md-9 col-xl-10">
-                            <p class="float-end language">${hit.language || ''}</p>
+                            <p class="float-end language">${escapeHtml(hit.language || '')}</p>
                             <h4 class="font-bold">
-                                <a href="${hit.url}" tabindex="2" rel="nofollow noindex">${nameHighlight}</a>${extensionHtml}
+                                <a href="${escapeHtml(hit.url)}" tabindex="2" rel="nofollow noindex">${nameHighlight}</a>${extensionHtml}
                                 ${virtualHtml}
                             </h4>
                             <p>${descHighlight}</p>
