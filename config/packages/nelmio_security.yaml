@@ -22,8 +22,7 @@ nelmio_security:
             default-src:
                 - 'self'
             script-src:
-                - 'unsafe-eval' # TODO get rid of this, but it requires getting rid of hogan (part of instantsearch, maybe upgrade to v4 will fix this)
-                - 'https://www.gstatic.com/recaptcha/' # TODO could be replaced by simply 'https:' for simplicity's sake once strict-dynamic support is more broadly available 75% in early 2022 per https://caniuse.com/?search=csp%20strict-dynamic
+                - 'https:' # only a fallback for browsers without strict-dynamic, which ignore it otherwise
                 - 'strict-dynamic'
             connect-src:
                 - 'self'
@@ -44,4 +43,7 @@ nelmio_security:
                 - 'https://www.google.com/recaptcha/'
             base-uri:
                 - 'none'
+            # not covered by default-src
+            form-action:
+                - 'self'
             block-all-mixed-content: true # defaults to false, blocks HTTP content over HTTPS transport
