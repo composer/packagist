@@ -457,9 +457,10 @@ class Updater
 
             // First-time soft-mark only. Re-stamping softDeletedAt on every crawl would reset the
             // 1-day grace window for dev rows and is meaningless noise for stable rows.
+            // Unflags the default branch too, as not every reader skips soft-deleted rows.
             if (null === $version['softDeletedAt']) {
                 $em->getConnection()->executeStatement(
-                    'UPDATE package_version SET softDeletedAt = :now, deletionReason = :reason WHERE id = :id',
+                    'UPDATE package_version SET softDeletedAt = :now, deletionReason = :reason, defaultBranch = 0 WHERE id = :id',
                     ['now' => date('Y-m-d H:i:s'), 'reason' => VersionDeletionReason::AutoDeletedMissing->value, 'id' => $version['id']]
                 );
                 // a version disappeared upstream and is now excluded from the dump => dumpable change
@@ -789,6 +790,9 @@ class Updater
                 }
                 $versionId = $version->getId();
                 $version->setIsDefaultBranch($data->isDefaultBranch());
+                // returning VersionUpdatedResult skips the auto-recovery query, so recover here
+                $version->setSoftDeletedAt(null);
+                $version->setDeletionReason(null);
                 $em->persist($version);
 
                 return new VersionUpdatedResult(
