@@ -56,6 +56,8 @@ class HttpGitDriverTest extends TestCase
     private static string $projectRoot;
     /** @var array<string, array{tags: array<string, string>, branches: array<string, string>, times: array<string, int>}> */
     private static array $expected = [];
+    /** @var array<string, string> commit ids by ref name */
+    private static array $skippedRefs = [];
 
     public static function setUpBeforeClass(): void
     {
@@ -93,6 +95,20 @@ class HttpGitDriverTest extends TestCase
         $builder->git('tag', '-a', '-m', 'blob', 'tag-of-blob', 'HEAD:notes.txt');
         $builder->git('tag', '-a', '-m', 'tree', 'tag-of-tree', 'HEAD^{tree}');
         $builder->publish(self::$projectRoot, 'odd-refs.git');
+
+        $builder = new GitRepositoryBuilder(self::$projectRoot.'/work-skipped-refs');
+        self::$skippedRefs['v1.0.0'] = $builder->commit(['composer.json' => '{"name":"acme/skipped"}']);
+        $builder->tag('v1.0.0');
+        self::$skippedRefs['nightly-build'] = $builder->commit(['composer.json' => '{"name":"acme/skipped","description":"nightly"}']);
+        $builder->tag('nightly-build');
+        self::$skippedRefs['main'] = $builder->commit(['composer.json' => '{"name":"acme/skipped","description":"main"}']);
+        $builder->checkout('feature', true);
+        self::$skippedRefs['feature'] = $builder->commit(['composer.json' => '{"name":"acme/skipped","description":"feature"}']);
+        $builder->checkout('main');
+        $builder->checkout('dependabot/composer/acme/bar-2.0', true);
+        self::$skippedRefs['dependabot/composer/acme/bar-2.0'] = $builder->commit(['composer.json' => '{"name":"acme/skipped","description":"bump"}']);
+        $builder->checkout('main');
+        $builder->publish(self::$projectRoot, 'skipped-refs.git');
     }
 
     protected function tearDown(): void
@@ -466,6 +482,25 @@ class HttpGitDriverTest extends TestCase
         self::assertSame(['GET', 'POST', 'POST'], array_column($downloader->requests, 'method'));
         preg_match_all('{want ([0-9a-f]+)}', (string) $downloader->requests[2]['body'], $wants);
         self::assertSame([self::$expected['sha1']['branches']['main']], $wants[1]);
+    }
+
+    public function testRefsVcsRepositorySkipsAreNotPrefetched(): void
+    {
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $repository = VcsRepositoryFactory::create(GitHttpBackendDownloader::BASE_URL.'skipped-refs.git', new NullIO(), $this->createConfig(), $downloader, null, [], []);
+
+        $versions = array_map(static fn ($package) => $package->getPrettyVersion(), $repository->getPackages());
+        sort($versions);
+        self::assertSame(['9999999-dev', 'dev-feature', 'dev-main', 'v1.0.0'], $versions);
+
+        preg_match_all('{want ([0-9a-f]{40})}', implode("\n", array_map(static fn ($request) => (string) $request['body'], $downloader->requests)), $wants);
+        foreach (['main', 'feature', 'v1.0.0'] as $ref) {
+            self::assertContains(self::$skippedRefs[$ref], $wants[1], $ref.' is fetched');
+        }
+        // excluded by VcsRepositoryFactory::EXCLUDED_BRANCHES, and not a valid version
+        foreach (['dependabot/composer/acme/bar-2.0', 'nightly-build'] as $ref) {
+            self::assertNotContains(self::$skippedRefs[$ref], $wants[1], $ref.' is not fetched');
+        }
     }
 
     /**

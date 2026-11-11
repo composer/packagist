@@ -17,6 +17,8 @@ use App\Package\Git\SmartHttpClient;
 use App\Package\Git\UnsupportedRepositoryException;
 use Composer\Config;
 use Composer\IO\IOInterface;
+use Composer\Package\BasePackage;
+use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
 use Composer\Repository\Vcs\GitDriver;
 
@@ -140,19 +142,71 @@ class HttpGitDriver extends GitDriver
         $this->prefetched = true;
 
         $known = array_flip(array_filter($this->repoConfig['known-references'], \is_string(...)));
+        $versionParser = new VersionParser();
+        $rootBranch = $this->getRootIdentifier();
+        $onlyBranches = $this->createBranchFilterRegex('only-branches');
+        $excludedBranches = $this->createBranchFilterRegex('exclude-branches');
+
+        // skips the refs VcsRepository drops without reading them, as they never end up in the known references
         $commits = [];
-        foreach ([...array_values($this->branches), ...array_values($this->tags)] as $commit) {
-            if (!isset($known[$commit])) {
+        foreach ($this->branches as $branch => $commit) {
+            $branch = (string) $branch;
+            if ($branch === $rootBranch) {
+                $commits[$commit] = true;
+            } elseif (
+                !isset($known[$commit])
+                && ($onlyBranches === null || Preg::isMatch($onlyBranches, $branch))
+                && ($excludedBranches === null || !Preg::isMatch($excludedBranches, $branch))
+                && self::isValidBranch($versionParser, $branch)
+            ) {
                 $commits[$commit] = true;
             }
         }
-        $root = $this->branches[$this->getRootIdentifier()] ?? null;
-        if ($root !== null) {
-            $commits[$root] = true;
+        foreach ($this->tags as $tag => $commit) {
+            if (!isset($known[$commit]) && self::isValidTag($versionParser, (string) $tag)) {
+                $commits[$commit] = true;
+            }
         }
 
         if ($commits !== []) {
             $this->remote->prefetch(array_keys($commits), self::PREFETCHED_FILES);
+        }
+    }
+
+    /**
+     * Same matching as VcsRepository's only-branches/exclude-branches filters
+     *
+     * @return ?non-empty-string
+     */
+    private function createBranchFilterRegex(string $key): ?string
+    {
+        if (!isset($this->repoConfig[$key]) || !\is_array($this->repoConfig[$key])) {
+            return null;
+        }
+        $regex = BasePackage::packageNamesToRegexp(array_filter($this->repoConfig[$key], \is_string(...)), '{^(?:%s)$}D');
+
+        return $regex !== '' ? $regex : null;
+    }
+
+    private static function isValidBranch(VersionParser $versionParser, string $branch): bool
+    {
+        try {
+            $versionParser->parseConstraints($versionParser->normalizeBranch($branch));
+
+            return true;
+        } catch (\Exception) {
+            return false;
+        }
+    }
+
+    private static function isValidTag(VersionParser $versionParser, string $tag): bool
+    {
+        try {
+            $versionParser->normalize($tag);
+
+            return true;
+        } catch (\Exception) {
+            return false;
         }
     }
 }
