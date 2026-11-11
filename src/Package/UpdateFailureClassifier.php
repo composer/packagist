@@ -12,6 +12,7 @@
 
 namespace App\Package;
 
+use App\Package\Git\BlockedHostException;
 use App\Package\Git\GitException;
 use App\Package\Git\LimitExceededException;
 use App\Package\Git\RepositoryNotFoundException;
@@ -31,7 +32,7 @@ final class UpdateFailureClassifier
 
     public static function classify(\Throwable $e): ?UpdateFailureVerdict
     {
-        if ($e instanceof PrivateRepositoryHostException) {
+        if ($e instanceof PrivateRepositoryHostException || $e instanceof BlockedHostException) {
             // a single DNS lookup from the worker, a sinkholed or briefly misconfigured domain must not freeze right away
             return new UpdateFailureVerdict(UpdateFailureKind::Unreachable, 'private_host', escalatesToGone: true);
         }

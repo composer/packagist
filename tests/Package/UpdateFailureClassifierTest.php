@@ -12,6 +12,7 @@
 
 namespace App\Tests\Package;
 
+use App\Package\Git\BlockedHostException;
 use App\Package\Git\LimitExceededException;
 use App\Package\Git\ProtocolException;
 use App\Package\Git\RepositoryNotFoundException;
@@ -206,6 +207,10 @@ class UpdateFailureClassifierTest extends TestCase
             new LimitExceededException('The repository data exceeds the limit of 268435456 bytes'),
             $unreachable, 'git_http_too_large',
         ];
+        yield 'git http redirect to a private ip' => [
+            new BlockedHostException('Failed to read https://git.example.org/acme/lib.git: IP "10.0.0.1" is blocked for "https://git.example.org/acme/lib.git/info/refs?service=git-upload-pack".'),
+            $unreachable, 'private_host',
+        ];
         yield 'git http dumb server' => [
             new UnsupportedRepositoryException('The server at https://git.example.org/acme/lib.git only supports the dumb HTTP protocol, which is not supported. Enable smart HTTP on your git server.'),
             null, null,
@@ -234,6 +239,7 @@ class UpdateFailureClassifierTest extends TestCase
         self::assertTrue(UpdateFailureClassifier::classify(new \RuntimeException('Driver could not be established for package acme/lib (https://git.example.org/acme/lib)'))?->escalatesToGone);
         self::assertFalse(UpdateFailureClassifier::classify(self::gitFailure("fatal: unable to access 'https://git.example.org/acme/lib.git/': Could not resolve host: git.example.org"))?->escalatesToGone);
         self::assertTrue(UpdateFailureClassifier::classify(new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 401))?->escalatesToGone);
+        self::assertTrue(UpdateFailureClassifier::classify(new BlockedHostException('Failed to read https://git.example.org/acme/lib.git: IP "10.0.0.1" is blocked'))?->escalatesToGone);
         self::assertFalse(UpdateFailureClassifier::classify(new RepositoryUnavailableException('Failed to read https://git.example.org/acme/lib.git', 503))?->escalatesToGone);
         self::assertFalse(UpdateFailureClassifier::classify(new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 403))?->escalatesToGone);
         self::assertFalse(UpdateFailureClassifier::classify(new ServerRefusedException('Failed to read https://git.example.org/acme/lib.git', 404))?->escalatesToGone);

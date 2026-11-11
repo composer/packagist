@@ -13,6 +13,7 @@
 namespace App\Tests\Package\Vcs;
 
 use App\Entity\Package;
+use App\Package\Git\BlockedHostException;
 use App\Package\Git\LimitExceededException;
 use App\Package\Git\PktLine;
 use App\Package\Git\ProtocolException;
@@ -339,7 +340,7 @@ class HttpGitDriverTest extends TestCase
         yield '503' => [$status(503), RepositoryUnavailableException::class, 'HTTP 503'];
         yield '429' => [$status(429), RepositoryUnavailableException::class, 'HTTP 429'];
         yield 'dns failure' => [$throw('curl error 6 while downloading: Could not resolve host: git.example.org'), RepositoryUnavailableException::class, 'Could not resolve host'];
-        yield 'private ip' => [$throw('IP "10.0.0.1" is blocked for "https://git.example.org/foo.git/info/refs?service=git-upload-pack".'), UnsupportedRepositoryException::class, 'is blocked'];
+        yield 'private ip' => [$throw('IP "10.0.0.1" is blocked for "https://git.example.org/foo.git/info/refs?service=git-upload-pack".'), BlockedHostException::class, 'is blocked'];
         yield 'server error packet' => [static fn () => GitHttpBackendDownloader::response(200, 'application/x-git-upload-pack-advertisement', PktLine::encode("# service=git-upload-pack\n").PktLine::FLUSH.PktLine::encode("ERR access denied\n"), GitHttpBackendDownloader::BASE_URL.'foo-sha1.git/info/refs?service=git-upload-pack'), ServerRefusedException::class, 'access denied'];
     }
 
@@ -530,6 +531,9 @@ class HttpGitDriverTest extends TestCase
         yield 'timeout' => [static function (): never {
             throw new TransportException('curl error 28 while downloading: Operation timed out', 0);
         }, RepositoryUnavailableException::class];
+        yield 'host now resolving to a private ip' => [static function (): never {
+            throw new TransportException('IP "10.0.0.1" is blocked for "https://git.example.org/foo.git/git-upload-pack".', 0);
+        }, BlockedHostException::class];
         yield 'garbage instead of a pack' => [static fn () => GitHttpBackendDownloader::response(200, 'application/x-git-upload-pack-result', 'not a pkt-line'), ProtocolException::class];
         yield 'refused' => [static fn () => GitHttpBackendDownloader::response(200, 'application/x-git-upload-pack-result', PktLine::encode("ERR upload-pack: not our ref\n")), ServerRefusedException::class];
     }
