@@ -34,6 +34,8 @@ use App\Log\Display\Event\TotpDeactivatedDisplay;
 use App\Log\Display\Event\UserFreezeDisplay;
 use App\Log\Display\Event\UserVerifiedDisplay;
 use App\Log\Display\Event\VersionDeletedDisplay;
+use App\Log\Display\Event\WebAuthnCredentialDisplay;
+use App\Security\WebAuthn\CredentialType;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\FilterList\FilterLists;
@@ -43,6 +45,8 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Uid\Ulid;
+use Twig\Environment;
+use Twig\Loader\FilesystemLoader;
 
 class AuditLogDisplayFactoryTest extends TestCase
 {
@@ -53,6 +57,43 @@ class AuditLogDisplayFactoryTest extends TestCase
     {
         $this->security = $this->createStub(Security::class);
         $this->factory = new AuditLogDisplayFactory($this->security);
+    }
+
+    #[TestWith([null, null])]
+    #[TestWith(['regular', null])]
+    #[TestWith(['hardware', 'YubiKey <5>'])]
+    public function testWebAuthnDetailsIncludeAvailableTypeAndModel(?string $type, ?string $model): void
+    {
+        $attributes = [
+            'user' => ['username' => 'alice'],
+            'actor' => ['id' => 123, 'username' => 'alice'],
+            'credentialName' => 'My key',
+        ];
+
+        if ($type !== null) {
+            $attributes['credentialType'] = $type;
+            $attributes['authenticatorDescription'] = $model;
+        }
+
+        $display = $this->factory->buildSingle($this->createAuditRecord(AuditLogEventType::WebAuthnCredentialAdded, $attributes));
+        self::assertInstanceOf(WebAuthnCredentialDisplay::class, $display);
+        self::assertSame($type === null ? null : CredentialType::from($type), $display->credentialType);
+        self::assertSame($model, $display->authenticatorDescription);
+        $twig = new Environment(new FilesystemLoader(__DIR__.'/../../../templates'), ['strict_variables' => true]);
+        $html = $twig->render($display->getTemplateName(), ['display' => $display]);
+        self::assertStringContainsString('My key', $html);
+
+        if ($type === null) {
+            self::assertStringNotContainsString('Type:', $html);
+        } else {
+            self::assertStringContainsString('Type: '.CredentialType::from($type)->label(), $html);
+        }
+
+        if ($model === null) {
+            self::assertStringNotContainsString('Model:', $html);
+        } else {
+            self::assertStringContainsString('Model: YubiKey &lt;5&gt;', $html);
+        }
     }
 
     public function testBuildPackageCreatedWithUserActor(): void

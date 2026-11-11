@@ -201,6 +201,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         mds_repository?: scalar|Param|null, // The Metadata Statement repository.
  *         status_report_repository?: scalar|Param|null, // The Status Report repository.
  *         certificate_chain_checker?: scalar|Param|null, // A Certificate Chain checker. // Default: "Webauthn\\MetadataService\\CertificateChain\\PhpCertificateChainValidator"
+ *         tpm_acknowledge_insecure_algorithm?: bool|Param, // Acknowledge that RS1 (RSASSA-PKCS1-v1_5 with SHA-1) is insecure and verify the TPM attestation statements signed with it. Without this acknowledgement, verifying such a statement emits a warning, which the Symfony error handler turns into an exception in debug mode and which cose-lib v5 will replace with an exception. Enable it only when the application has to keep registering these TPMs, for instance to pass the platform attestation tests of the FIDO Conformance Tools. // Default: false
  *     },
  *     controllers?: bool|array{
  *         enabled?: bool|Param, // Default: false

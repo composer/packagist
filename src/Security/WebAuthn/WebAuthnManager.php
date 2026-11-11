@@ -31,12 +31,12 @@ use Webauthn\AuthenticatorAssertionResponseValidator;
 use Webauthn\AuthenticatorAttestationResponse;
 use Webauthn\AuthenticatorAttestationResponseValidator;
 use Webauthn\Bundle\Security\Storage\Item;
-use Webauthn\Bundle\Security\Storage\OptionsStorage;
 use Webauthn\Bundle\Service\PublicKeyCredentialCreationOptionsFactory;
 use Webauthn\Bundle\Service\PublicKeyCredentialRequestOptionsFactory;
 use Webauthn\CredentialRecord;
 use Webauthn\PublicKeyCredential;
 use Webauthn\PublicKeyCredentialCreationOptions;
+use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\PublicKeyCredentialRequestOptions;
 use Webauthn\PublicKeyCredentialUserEntity;
 
@@ -47,21 +47,22 @@ class WebAuthnManager
         private readonly AuthenticatorAssertionResponseValidator $assertionValidator,
         private PublicKeyCredentialCreationOptionsFactory $creationOptions,
         private PublicKeyCredentialRequestOptionsFactory $requestOptions,
-        #[Autowire(service: ExpiringOptionsStorage::class)] private OptionsStorage $optionsStorage,
+        private ExpiringOptionsStorage $optionsStorage,
         private readonly SerializerInterface $serializer,
         private EntityManagerInterface $em,
         private UserNotifier $notifier,
         private EventDispatcherInterface $eventDispatcher,
         private SecondFactorManager $secondFactors,
+        private AttestationPolicy $attestation,
         #[Autowire('%env(WEBAUTHN_RP_ID)%')] private readonly string $rpId,
     ) {
     }
 
-    public function startRegistration(User $user, string $name): string
+    public function startRegistration(User $user, string $name, CredentialType $credentialType = CredentialType::Regular): string
     {
         WebAuthnCredential::normalizeName($name);
-        $options = $this->registrationOptions($user);
-        $this->optionsStorage->store(Item::create($options, $options->user));
+        $options = $this->registrationOptions($user, $credentialType);
+        $this->optionsStorage->store(Item::create($options, $options->user), $credentialType);
 
         return $this->serializer->serialize($options, 'json');
     }
@@ -69,23 +70,7 @@ class WebAuthnManager
     public function register(User $user, string $response, string $name): ?string
     {
         $name = WebAuthnCredential::normalizeName($name);
-
-        try {
-            $key = $this->decodeCredential($response);
-            $options = $this->optionsStorage->get($key->response->clientDataJSON->challenge)->getPublicKeyCredentialOptions();
-
-            if (!$options instanceof PublicKeyCredentialCreationOptions || !hash_equals($user->getWebAuthnUserHandle(), $options->user->id)) {
-                throw new \UnexpectedValueException('Registration options do not match the account.');
-            }
-
-            $record = $this->validateRegistration($key, $options);
-        } catch (ExpiredWebAuthnChallengeException $e) {
-            throw $e;
-        } catch (\Throwable $e) {
-            throw new BadCredentialsException('webauthn.error.invalid_registration', previous: $e);
-        }
-
-        $credential = new WebAuthnCredential($user, $record);
+        $credential = $this->registrationCredential($user, $response);
 
         $backupCode = $this->secondFactors->withAccountLock($user, function () use ($user, $credential, $name): ?string {
             if ($this->em->find(WebAuthnCredential::class, $credential->id) !== null) {
@@ -118,9 +103,9 @@ class WebAuthnManager
         return $this->serializer->serialize($options, 'json');
     }
 
-    public function authenticate(User $user, string $response): void
+    public function authenticate(User $user, string $response): WebAuthnCredential
     {
-        $this->secondFactors->withAccountLock($user, function () use ($user, $response): void {
+        return $this->secondFactors->withAccountLock($user, function () use ($user, $response): WebAuthnCredential {
             try {
                 $assertion = $this->decodeCredential($response);
                 $options = $this->optionsStorage->get($assertion->response->clientDataJSON->challenge)->getPublicKeyCredentialOptions();
@@ -146,6 +131,8 @@ class WebAuthnManager
 
             $credential->recordAuthentication($record);
             $this->em->flush();
+
+            return $credential;
         });
     }
 
@@ -206,10 +193,10 @@ class WebAuthnManager
         $this->notifier->notifyChange($credential->user->getEmail(), template: 'email/webauthn_changed.txt.twig', subject: 'Passkeys and security keys changed on Packagist.org', username: $credential->user->getUsername());
     }
 
-    private function registrationOptions(User $user): PublicKeyCredentialCreationOptions
+    private function registrationOptions(User $user, CredentialType $credentialType): PublicKeyCredentialCreationOptions
     {
         return $this->creationOptions->create(
-            'without_attestation',
+            $credentialType->creationProfile(),
             new PublicKeyCredentialUserEntity($user->getUsername(), $user->getWebAuthnUserHandle(), $user->getUsername()),
             $this->descriptors($user),
         );
@@ -218,6 +205,43 @@ class WebAuthnManager
     private function assertionOptions(User $user): PublicKeyCredentialRequestOptions
     {
         return $this->requestOptions->create('packagist', $this->descriptors($user));
+    }
+
+    private function registrationCredential(User $user, string $response): WebAuthnCredential
+    {
+        $credentialType = CredentialType::Regular;
+
+        try {
+            $key = $this->decodeCredential($response);
+            // Use the server-stored enrollment choice, never a flag supplied with the response
+            $challenge = $key->response->clientDataJSON->challenge;
+            $credentialType = $this->optionsStorage->getCredentialType($challenge);
+            $options = $this->optionsStorage->get($challenge)->getPublicKeyCredentialOptions();
+
+            if (!$options instanceof PublicKeyCredentialCreationOptions || !hash_equals($user->getWebAuthnUserHandle(), $options->user->id)) {
+                throw new \UnexpectedValueException('Registration options do not match the account.');
+            }
+
+            $record = $this->validateRegistration($key, $options);
+
+            $credential = new WebAuthnCredential($user, $record);
+
+            if ($credentialType->requiresAttestation()) {
+                $description = $this->attestation->verify(
+                    $record,
+                    $credentialType->credentialRequirements(),
+                    $credentialType->authenticatorRequirements(),
+                );
+                $credential->recordAttestation($credentialType, $description);
+            }
+
+            return $credential;
+        } catch (ExpiredWebAuthnChallengeException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new BadCredentialsException($credentialType === CredentialType::Regular
+                ? 'webauthn.error.invalid_registration' : 'webauthn.error.invalid_attestation', previous: $e);
+        }
     }
 
     private function validateRegistration(PublicKeyCredential $key, PublicKeyCredentialCreationOptions $options): CredentialRecord
@@ -254,7 +278,7 @@ class WebAuthnManager
         return $this->serializer->deserialize($response, PublicKeyCredential::class, 'json');
     }
 
-    /** @return list<\Webauthn\PublicKeyCredentialDescriptor> */
+    /** @return list<PublicKeyCredentialDescriptor> */
     private function descriptors(User $user): array
     {
         return array_map(

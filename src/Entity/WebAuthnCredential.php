@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Security\WebAuthn\CredentialType;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 use Webauthn\CredentialRecord;
@@ -86,6 +87,13 @@ class WebAuthnCredential
     #[ORM\Column(nullable: true)]
     private ?bool $uvInitialized;
 
+    #[ORM\Column(length: 32, enumType: CredentialType::class, options: ['default' => 'regular'])]
+    private CredentialType $credentialType = CredentialType::Regular;
+
+    // Human-readable model name from verified FIDO metadata
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $authenticatorDescription = null;
+
     public function __construct(User $user, CredentialRecord $record)
     {
         $this->publicKeyCredentialId = $record->publicKeyCredentialId;
@@ -127,6 +135,26 @@ class WebAuthnCredential
     public function getPublicKeyCredentialDescriptor(): PublicKeyCredentialDescriptor
     {
         return PublicKeyCredentialDescriptor::create($this->type, $this->publicKeyCredentialId, $this->transports);
+    }
+
+    public function recordAttestation(CredentialType $credentialType, string $description): void
+    {
+        if ($credentialType === CredentialType::Regular) {
+            throw new \InvalidArgumentException('Regular enrollment does not verify attestation');
+        }
+
+        $this->credentialType = $credentialType;
+        $this->authenticatorDescription = $description;
+    }
+
+    public function getCredentialType(): CredentialType
+    {
+        return $this->credentialType;
+    }
+
+    public function getAuthenticatorDescription(): ?string
+    {
+        return $this->authenticatorDescription;
     }
 
     public function getName(): string

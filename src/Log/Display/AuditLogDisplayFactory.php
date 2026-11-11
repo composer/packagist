@@ -18,6 +18,7 @@ use App\Entity\User;
 use App\FilterList\FilterLists;
 use App\FilterList\FilterSources;
 use App\Log\AuditLogEventType;
+use App\Security\WebAuthn\CredentialType;
 use Symfony\Bundle\SecurityBundle\Security;
 
 class AuditLogDisplayFactory extends AbstractLogDisplayFactory
@@ -183,6 +184,8 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
                 $record->attributes['previousCredentialName'] ?? null,
+                CredentialType::tryFrom($record->attributes['credentialType'] ?? ''),
+                $record->attributes['authenticatorDescription'] ?? null,
             ),
             AuditLogEventType::TotpAuthenticationActivated => new Event\GenericUserDisplay(
                 $record->type,

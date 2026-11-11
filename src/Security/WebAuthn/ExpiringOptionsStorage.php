@@ -31,7 +31,7 @@ final class ExpiringOptionsStorage implements OptionsStorage
     ) {
     }
 
-    public function store(Item $item): void
+    public function store(Item $item, ?CredentialType $credentialType = null): void
     {
         $options = $item->getPublicKeyCredentialOptions();
         $session = $this->requests->getSession();
@@ -51,8 +51,19 @@ final class ExpiringOptionsStorage implements OptionsStorage
         }
 
         $this->storage->store($item);
-        $pending[$options::class] = ['challenge' => $options->challenge, 'expires' => $now + self::LIFETIME];
+        $pending[$options::class] = ['challenge' => $options->challenge, 'expires' => $now + self::LIFETIME, 'credentialType' => $credentialType];
         $session->set(self::SESSION_KEY, $pending);
+    }
+
+    public function getCredentialType(string $challenge): CredentialType
+    {
+        foreach ($this->requests->getSession()->get(self::SESSION_KEY, []) as $entry) {
+            if ($entry['challenge'] === $challenge && ($entry['credentialType'] ?? null) instanceof CredentialType) {
+                return $entry['credentialType'];
+            }
+        }
+
+        throw new ExpiredWebAuthnChallengeException();
     }
 
     public function get(string $challenge): Item

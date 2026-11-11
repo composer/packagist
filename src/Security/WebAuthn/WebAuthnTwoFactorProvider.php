@@ -18,6 +18,7 @@ use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\DefaultTwoFactorFormRender
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\TwoFactorFormRendererInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\TwoFactorProviderInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
@@ -26,7 +27,9 @@ use Twig\Environment;
 #[AutoconfigureTag('scheb_two_factor.provider', ['alias' => 'webauthn'])]
 class WebAuthnTwoFactorProvider implements TwoFactorProviderInterface
 {
-    public function __construct(private WebAuthnManager $webauthn, private Environment $twig)
+    public const string AUTHENTICATED_CREDENTIAL = '_security.authenticated_webauthn_credential';
+
+    public function __construct(private WebAuthnManager $webauthn, private Environment $twig, private RequestStack $requests)
     {
     }
 
@@ -48,11 +51,14 @@ class WebAuthnTwoFactorProvider implements TwoFactorProviderInterface
 
     public function validateAuthenticationCode(object $user, string $authenticationCode): bool
     {
+        $this->requests->getCurrentRequest()?->attributes->remove(self::AUTHENTICATED_CREDENTIAL);
+
         if (!$user instanceof User) {
             return false;
         }
         try {
-            $this->webauthn->authenticate($user, $authenticationCode);
+            $credential = $this->webauthn->authenticate($user, $authenticationCode);
+            $this->requests->getCurrentRequest()?->attributes->set(self::AUTHENTICATED_CREDENTIAL, $credential->id);
 
             return true;
         } catch (ExpiredWebAuthnChallengeException|ServiceUnavailableHttpException $e) {

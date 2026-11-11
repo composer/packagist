@@ -15,6 +15,7 @@ namespace App\Tests\Security\Voter;
 use App\Entity\User;
 use App\Security\SecondFactorProofStore;
 use App\Security\Voter\SecondFactorVoter;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorToken;
 use Symfony\Component\Clock\MockClock;
@@ -127,6 +128,29 @@ class SecondFactorVoterTest extends TestCase
         $this->secondFactorProofStore->record($this->user, 'totp');
         self::assertFalse($this->authorization->isGranted('UNKNOWN_ATTRIBUTE'));
         self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_2FA_RECENTLY', 600));
+    }
+
+    #[TestWith([SecondFactorProofStore::WEBAUTHN, false])]
+    #[TestWith([SecondFactorProofStore::HARDWARE_KEY, true])]
+    public function testGeneralAndHardwareChecksHaveIndependentLifetimes(string $method, bool $hardware): void
+    {
+        $this->secondFactorProofStore->record($this->user, SecondFactorProofStore::WEBAUTHN);
+        $this->secondFactorProofStore->record($this->user, $method);
+        self::assertTrue($this->authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA));
+        self::assertTrue($this->authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY));
+        self::assertSame($hardware, $this->authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_HARDWARE_KEY));
+        self::assertSame($hardware, $this->authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_HARDWARE_KEY_RECENTLY));
+        $this->clock->sleep(600);
+        $this->secondFactorProofStore->record($this->user, SecondFactorProofStore::WEBAUTHN);
+        self::assertTrue($this->authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY));
+        self::assertSame($hardware, $this->authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_HARDWARE_KEY));
+        self::assertFalse($this->authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_HARDWARE_KEY_RECENTLY));
+
+        $this->tokens->setToken(new TwoFactorToken(new UsernamePasswordToken($this->user, 'main', ['ROLE_USER']), null, 'main', ['webauthn']));
+        self::assertFalse($this->authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA));
+        self::assertFalse($this->authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_HARDWARE_KEY));
+        $this->secondFactorProofStore->clear();
+        $this->assertAllChecks(false);
     }
 
     private function assertAllChecks(bool $expected): void

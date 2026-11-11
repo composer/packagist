@@ -15,6 +15,7 @@ namespace App\EventListener;
 use App\Entity\User;
 use App\Security\Passport\Badge\ResolvedTotpCodeCredentials;
 use App\Security\SecondFactorProofStore;
+use App\Security\WebAuthn\WebAuthnTwoFactorProvider;
 use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorTokenInterface;
 use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Event\TwoFactorAuthenticationEvent;
@@ -73,7 +74,17 @@ class SecondFactorAuthenticationListener
             && \in_array($method, [SecondFactorProofStore::TOTP, SecondFactorProofStore::WEBAUTHN], true)
             && $event->getRequest()->attributes->get(self::VALIDATED_USER) === $user->getId()
         ) {
-            $this->secondFactorProofStore->record($user, $method);
+            if ($method === SecondFactorProofStore::WEBAUTHN) {
+                $credentialId = $event->getRequest()->attributes->get(WebAuthnTwoFactorProvider::AUTHENTICATED_CREDENTIAL);
+                $credential = \is_string($credentialId) ? $user->findWebAuthnCredential($credentialId) : null;
+
+                // Record no proof if the key can't be resolved, as every WebAuthn proof must be tied to a known key
+                if ($credential !== null) {
+                    $this->secondFactorProofStore->recordWebAuthn($credential);
+                }
+            } else {
+                $this->secondFactorProofStore->record($user, $method);
+            }
         }
     }
 

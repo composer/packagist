@@ -46,6 +46,11 @@ final readonly class SecondFactorProofs
         return false;
     }
 
+    public function getVerificationTime(string $method, int $now): ?int
+    {
+        return $this->verificationTimesAt($now)[$method] ?? null;
+    }
+
     /** @return array<string, int> */
     private function verificationTimesAt(int $now): array
     {

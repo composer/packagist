@@ -26,6 +26,11 @@ class SecondFactorVoter extends Voter
     public const string IS_AUTHENTICATED_2FA = 'IS_AUTHENTICATED_2FA';
     public const string IS_AUTHENTICATED_2FA_RECENTLY = 'IS_AUTHENTICATED_2FA_RECENTLY';
 
+    // Groundwork for actions that will require a verified hardware key
+    // No actions check these attributes yet
+    public const string IS_AUTHENTICATED_HARDWARE_KEY = 'IS_AUTHENTICATED_HARDWARE_KEY';
+    public const string IS_AUTHENTICATED_HARDWARE_KEY_RECENTLY = 'IS_AUTHENTICATED_HARDWARE_KEY_RECENTLY';
+
     public function __construct(private SecondFactorProofStore $secondFactorProofStore)
     {
     }
@@ -34,6 +39,7 @@ class SecondFactorVoter extends Voter
     {
         return $subject === null && \in_array($attribute, [
             self::IS_AUTHENTICATED_2FA, self::IS_AUTHENTICATED_2FA_RECENTLY,
+            self::IS_AUTHENTICATED_HARDWARE_KEY, self::IS_AUTHENTICATED_HARDWARE_KEY_RECENTLY,
         ], true);
     }
 
@@ -47,6 +53,8 @@ class SecondFactorVoter extends Voter
         return match ($attribute) {
             self::IS_AUTHENTICATED_2FA => $this->secondFactorProofStore->hasProof($user),
             self::IS_AUTHENTICATED_2FA_RECENTLY => $this->secondFactorProofStore->hasRecentProof($user),
+            self::IS_AUTHENTICATED_HARDWARE_KEY => $this->secondFactorProofStore->hasProof($user, SecondFactorProofStore::HARDWARE_KEY),
+            self::IS_AUTHENTICATED_HARDWARE_KEY_RECENTLY => $this->secondFactorProofStore->hasRecentProof($user, SecondFactorProofStore::HARDWARE_KEY),
             default => false,
         };
     }

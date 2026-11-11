@@ -15,6 +15,7 @@ namespace App\Log\Display\Event;
 use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Security\WebAuthn\CredentialType;
 
 readonly class WebAuthnCredentialDisplay extends AbstractLogDisplay
 {
@@ -26,6 +27,8 @@ readonly class WebAuthnCredentialDisplay extends AbstractLogDisplay
         ActorDisplay $actor,
         ?string $ip,
         public ?string $previousCredentialName = null,
+        public ?CredentialType $credentialType = null,
+        public ?string $authenticatorDescription = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }
