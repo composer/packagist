@@ -47,6 +47,8 @@
     --color-success-dark: #69ad21;
     --color-secondary: #bbbfc4;
     --color-secondary-dark: #a5aab0;
+    --color-slate: #e3e6ea;
+    --color-slate-dark: #c3c8cf;
 
     --color-muted: #999;
     --color-text-dark: #333;
@@ -1417,20 +1419,32 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
 }
 
 .btn-secondary {
-    --bs-btn-color: var(--color-text-dark);
-    --bs-btn-hover-color: var(--color-text-dark);
-    --bs-btn-active-color: var(--color-text-dark);
-    background: var(--color-secondary);
-    border-bottom-color: var(--color-secondary-dark);
-    color: var(--color-text-dark);
+    --bs-btn-color: var(--color-brand-dark);
+    --bs-btn-bg: var(--color-slate);
+    --bs-btn-border-color: var(--color-slate-dark);
+    --bs-btn-hover-color: var(--color-brand-dark);
+    --bs-btn-hover-bg: color-mix(in srgb, var(--color-slate), var(--color-slate-dark));
+    --bs-btn-hover-border-color: var(--color-slate-dark);
+    --bs-btn-focus-shadow-rgb: 195, 200, 207;
+    --bs-btn-active-color: var(--color-brand-dark);
+    --bs-btn-active-bg: var(--color-slate-dark);
+    --bs-btn-active-border-color: var(--color-slate);
+    --bs-btn-disabled-color: var(--color-brand-dark);
+    --bs-btn-disabled-bg: var(--color-slate);
+    --bs-btn-disabled-border-color: var(--color-slate-dark);
+    color: var(--bs-btn-color);
+    background: var(--bs-btn-bg);
+    border-bottom-color: var(--bs-btn-border-color);
 }
 .btn-secondary:hover {
-    color: var(--color-text-dark);
+    color: var(--bs-btn-hover-color);
+    background: var(--bs-btn-hover-bg);
+    border-bottom-color: var(--bs-btn-hover-border-color);
 }
 .btn-secondary:focus, .btn-secondary:active {
-  color: var(--color-text-dark);
-  background: var(--color-secondary-dark);
-  border-bottom-color: var(--color-secondary);
+    color: var(--bs-btn-active-color);
+    background: var(--bs-btn-active-bg);
+    border-bottom-color: var(--bs-btn-active-border-color);
 }
 
 .btn.disabled {
@@ -2752,12 +2766,6 @@ body {
 
             .bi {
                 margin-right: 6px;
-            }
-        }
-
-        .btn-secondary {
-            &:hover {
-                background-color: #e6e6e6;
             }
         }
     }
