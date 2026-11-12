@@ -29,7 +29,7 @@ class VerifyTotpType extends AbstractType
     {
         $builder->add('code', TextType::class, [
             'label' => 'Authentication code:',
-            'attr' => ['autocomplete' => 'off', 'autofocus' => true],
+            'attr' => ['autocomplete' => 'one-time-code', 'autofocus' => true],
             'constraints' => [new NotBlank(), new TotpCode($options['user'])],
         ]);
     }
