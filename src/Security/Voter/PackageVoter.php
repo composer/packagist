@@ -57,7 +57,8 @@ class PackageVoter extends Voter
             PackageActions::HideVersion => $this->canAdministerVersion(),
             PackageActions::AdminSubmit => $this->canSubmitForOtherUsers(),
             PackageActions::Edit => $this->canEdit($package, $user),
-            PackageActions::AddMaintainer, PackageActions::TransferPackage => $this->canAddMaintainers($package, $user),
+            PackageActions::ManageMaintainers, PackageActions::TransferPackage => $this->canManageMaintainers($package, $user),
+            PackageActions::AddMaintainer => $this->canAddMaintainers($package, $user),
             PackageActions::RemoveMaintainer => $this->canRemoveMaintainers($package, $user),
             PackageActions::Update => $package->isMaintainer($user) || $this->security->isGranted('ROLE_UPDATE_PACKAGES'),
         };
@@ -133,7 +134,7 @@ class PackageVoter extends Voter
         return true;
     }
 
-    private function canAddMaintainers(Package $package, User $user): bool
+    private function canManageMaintainers(Package $package, User $user): bool
     {
         if ($this->security->isGranted('ROLE_EDIT_PACKAGES')) {
             return true;
@@ -143,7 +144,16 @@ class PackageVoter extends Voter
             return false;
         }
 
-        return true;
+        return !$package->getFreezeReason()?->suppressesPackage();
+    }
+
+    private function canAddMaintainers(Package $package, User $user): bool
+    {
+        if ($package->getMaintainers()->count() >= Package::MAX_MAINTAINERS) {
+            return false;
+        }
+
+        return $this->canManageMaintainers($package, $user);
     }
 
     private function canRemoveMaintainers(Package $package, User $user): bool
@@ -153,7 +163,7 @@ class PackageVoter extends Voter
             return false;
         }
 
-        return $this->canAddMaintainers($package, $user);
+        return $this->canManageMaintainers($package, $user);
     }
 
     public function supportsAttribute(string $attribute): bool
