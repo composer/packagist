@@ -42,6 +42,12 @@ framework:
     property_info:
         with_constructor_extractor: true
 
+when@dev:
+    framework:
+        assets:
+            version: ~
+            version_strategy: App\Asset\MtimeVersionStrategy
+
 when@test:
     framework:
         test: true

@@ -419,20 +419,28 @@ class UserController extends Controller
     }
 
     #[IsGranted('ROLE_USER')]
-    #[Route(path: '/users/{name}/totp/disable', name: 'user_totp_disable', methods: ['GET'])]
+    #[Route(path: '/users/{name}/totp/disable', name: 'user_totp_disable', methods: ['GET', 'POST'])]
     public function disableTotpAuthAction(Request $req, #[VarName('name')] User $user, #[CurrentUser] User $loggedUser, TotpAuthManager $authManager): Response
     {
         if (!$this->isGranted('ROLE_DISABLE_2FA') && $user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
+        if (!$user->isTotpAuthenticationEnabled()) {
+            return $this->redirectToRoute('user_totp_configure', ['name' => $user->getUsername()]);
+        }
+
         // Removing your own authenticator requires TOTP authentication or verification within the last 10 minutes.
         // Admin and support removal of another user's authenticator follows the separate permission check above.
-        if ($user->getId() === $loggedUser->getId() && $user->isTotpAuthenticationEnabled() && !$this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP_RECENTLY)) {
+        if ($user->getId() === $loggedUser->getId() && !$this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP_RECENTLY)) {
             return $this->redirectToRoute('user_verify_totp');
         }
 
-        if ($this->isCsrfTokenValid('disable_totp', $req->query->getString('token'))) {
+        if ($req->isMethod('POST')) {
+            if (!$this->isCsrfTokenValid('disable_totp', $req->request->getString('token'))) {
+                throw $this->createAccessDeniedException('Invalid CSRF token.');
+            }
+
             $authManager->disableTotpAuthentication($user, $loggedUser, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
 
             $this->addFlash('success', 'Authenticator app removed.');

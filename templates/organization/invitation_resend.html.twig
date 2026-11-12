@@ -14,7 +14,7 @@
 
     {{ form_start(form, { 'attr': { 'class': 'organization_invitation_resend' } }) }}
         {{ form_errors(form) }}
-        <input class="btn btn-success" type="submit" value="Resend invitation" />
+        <input class="btn btn-primary" type="submit" value="Resend invitation" />
         <a class="btn btn-secondary" href="{{ path('organization_members', { organization: organization.slug }) }}">Cancel</a>
     {{ form_end(form) }}
 {% endblock %}

@@ -12,7 +12,9 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\AuditRecord;
 use App\Entity\User;
+use App\Log\AuditLogEventType;
 use App\Security\SecondFactorProofStore;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
@@ -64,12 +66,12 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertResponseRedirects('/users/verify/totp/disable');
         $crawler = $this->client->followRedirect();
         self::assertResponseIsSuccessful();
-        $link = $crawler->selectLink('Remove authenticator app')->link();
+        $form = $crawler->selectButton('Remove authenticator app')->form();
         $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
-        $this->client->click($link);
+        $this->client->submit($form);
         self::assertResponseRedirects('/profile/security/verify-totp');
         $crawler = $this->verify();
-        $this->client->click($crawler->selectLink('Remove authenticator app')->link());
+        $this->client->submit($crawler->selectButton('Remove authenticator app')->form());
         self::assertResponseRedirects('/users/verify/totp/');
         $user = self::getEM()->find(User::class, $this->user->getId());
         self::assertNotNull($user);
@@ -81,7 +83,7 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         $crawler = $this->verify();
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
         self::assertTrue($this->user->isBackupCode('abc12345'));
-        $this->client->click($crawler->selectLink('Remove authenticator app')->link());
+        $this->client->submit($crawler->selectButton('Remove authenticator app')->form());
         self::assertResponseRedirects('/users/verify/totp/');
         $user = self::getEM()->find(User::class, $this->user->getId());
         self::assertNotNull($user);
@@ -89,22 +91,34 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertFalse($user->isBackupCode('abc12345'));
     }
 
-    public function testExpiredProofCannotBeUsedWithAnExistingRemovalLink(): void
+    public function testExpiredProofCannotBeUsedWithAnExistingRemovalForm(): void
     {
         $crawler = $this->verify();
-        $link = $crawler->selectLink('Remove authenticator app')->link();
+        $form = $crawler->selectButton('Remove authenticator app')->form();
         $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
-        $this->client->click($link);
+        $this->client->submit($form);
         self::assertResponseRedirects('/profile/security/verify-totp');
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
     }
 
-    public function testRecentProofStillRequiresRemovalCsrfToken(): void
+    #[TestWith(['invalid'])]
+    #[TestWith([''])]
+    public function testRecentProofStillRequiresRemovalCsrfToken(string $token): void
     {
         $this->verify();
-        $this->client->request('GET', '/users/verify/totp/disable?token=invalid');
+        $this->client->request('POST', '/users/verify/totp/disable', ['token' => $token]);
+        self::assertResponseStatusCodeSame(403);
+        self::assertTrue($this->user->isTotpAuthenticationEnabled());
+    }
+
+    public function testGetRequestWithValidTokenCannotRemoveAuthenticator(): void
+    {
+        $crawler = $this->verify();
+        $token = $crawler->selectButton('Remove authenticator app')->form()['token']->getValue();
+        $this->client->request('GET', '/users/verify/totp/disable', ['token' => $token]);
         self::assertResponseIsSuccessful();
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
+        self::assertTrue($this->user->isBackupCode('abc12345'));
     }
 
     #[TestWith(['123456'])]
@@ -166,6 +180,17 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         $this->client->request('GET', '/users/other/totp/disable');
         self::assertResponseStatusCodeSame(403);
         self::assertTrue($other->isTotpAuthenticationEnabled());
+    }
+
+    public function testResubmittedRemovalFormDoesNotRemoveTwice(): void
+    {
+        $form = $this->verify()->selectButton('Remove authenticator app')->form();
+        $this->client->submit($form);
+        self::assertResponseRedirects('/users/verify/totp/');
+
+        $this->client->submit($form);
+        self::assertResponseRedirects('/users/verify/totp/');
+        self::assertCount(1, self::getEM()->getRepository(AuditRecord::class)->findBy(['type' => AuditLogEventType::TotpAuthenticationDeactivated]));
     }
 
     public function testAccountWithoutTotpReturnsToAuthenticatorSettings(): void

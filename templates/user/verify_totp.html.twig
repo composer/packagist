@@ -6,19 +6,21 @@
     <h3>Confirm your identity</h3>
     <p>Enter a code from your authenticator app before removing it from your account.</p>
 
-    {{ form_start(form, {'attr': {'class': 'col-lg-6'}}) }}
+    {{ form_start(form, {'attr': {'class': 'account-form'}}) }}
         {{ form_errors(form) }}
 
         <div class="form-group">
             {{ form_label(form.code) }}
             <div class="input-group">
-                <span class="input-group-text"><span class="icon-key"></span></span>
+                <span class="input-group-text"><span class="icon-key" aria-hidden="true"></span></span>
                 {{ form_widget(form.code) }}
             </div>
             {{ form_errors(form.code) }}
         </div>
 
-        <button type="submit" class="btn btn-primary">Confirm identity</button>
-        <a href="{{ path('security_authenticator') }}" class="btn btn-secondary">Cancel</a>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Confirm identity</button>
+            <a href="{{ path('security_authenticator') }}" class="btn btn-secondary">Cancel</a>
+        </div>
     {{ form_end(form) }}
 {% endblock %}

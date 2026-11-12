@@ -9,20 +9,20 @@
 
         <p>The main API token can be used to talk to all APIs (e.g. package creation, edit, update) and should be only used in places where it can be kept secret.</p>
         <div class="input-group api-token-group clearfix">
-            <input type="text" class="api-token form-control" value="" data-api-token="{{ app.user.apiToken }}" readonly="readonly">
-            <button class="btn btn-success btn-show-api-token" type="button">Show Main API Token</button>
+            <input type="text" class="api-token form-control" value="" placeholder="Hidden until revealed" aria-label="Main API token" data-api-token="{{ app.user.apiToken }}" readonly="readonly">
+            <button class="btn btn-secondary btn-show-api-token" type="button">Show Main API Token</button>
         </div>
 
         <p>The safe API token can only be used to talk to safe APIs (e.g. package update) and is not very sensitive if leaked.</p>
         <div class="input-group api-token-group clearfix">
-            <input type="text" class="api-token form-control" value="" data-api-token="{{ app.user.safeApiToken }}" readonly="readonly">
-            <button class="btn btn-success btn-show-api-token" type="button">Show Safe API Token</button>
+            <input type="text" class="api-token form-control" value="" placeholder="Hidden until revealed" aria-label="Safe API token" data-api-token="{{ app.user.safeApiToken }}" readonly="readonly">
+            <button class="btn btn-secondary btn-show-api-token" type="button">Show Safe API Token</button>
         </div>
 
         <p>Read more <a href="{{ path('api_doc') }}#create-package">about the API</a>.</p>
         <p>You can rotate your API tokens and generate new ones at any time.</p>
-        <form class="rotate action" action="{{ path('rotate_token') }}" method="POST">
-            <input class="btn btn-inverse btn-rotate-api-token" type="submit" value="Rotate API Tokens" />
+        <form class="rotate action form-actions" action="{{ path('rotate_token') }}" method="POST">
+            <input class="btn btn-danger btn-rotate-api-token" type="submit" value="Rotate API Tokens" />
             <input type="hidden" name="token" value="{{ rotateApiCsrfToken }}" />
         </form>
 
@@ -57,10 +57,14 @@
     {% endembed %}
 
     {%- if deleteForm is defined %}
-        <form class="delete action" action="{{ path('user_delete', {name: user.username}) }}" method="POST">
-            {{ form_widget(deleteForm._token) }}
-            <input class="btn btn-danger" type="submit" value="Delete Account Permanently" onclick="return confirm('Are you sure? There is no way back..');" />
-        </form>
+        <section class="mt-4 border-top pt-3" aria-labelledby="delete-account-heading">
+            <h3 class="h5" id="delete-account-heading">Delete account</h3>
+            <p>Deleting your account is permanent and cannot be undone.</p>
+            <form class="delete action form-actions" action="{{ path('user_delete', {name: user.username}) }}" method="POST">
+                {{ form_widget(deleteForm._token) }}
+                <input class="btn btn-danger" type="submit" value="Delete Account Permanently" onclick="return confirm('Are you sure? There is no way back..');" />
+            </form>
+        </section>
     {%- endif %}
 </section>
 {% endblock %}

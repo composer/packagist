@@ -13,7 +13,7 @@
             {{ form_widget(form.name) }}
             {{ form_help(form.name) }}
         </div>
-        <input class="btn btn-success" type="submit" value="Rename team" />
+        <input class="btn btn-primary" type="submit" value="Rename team" />
         <a class="btn btn-secondary" href="{{ path('organization_teams', { organization: organization.slug }) }}">Cancel</a>
     {{ form_end(form) }}
 {% endblock %}

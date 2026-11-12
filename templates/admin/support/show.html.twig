@@ -280,7 +280,7 @@
                 <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
                 <div class="btn-group">
                     {% if supportRequest.status.value == 'open' %}
-                        <button type="submit" name="status" value="resolved" class="btn btn-success">Resolve</button>
+                        <button type="submit" name="status" value="resolved" class="btn btn-primary">Resolve</button>
                         <button type="submit" name="status" value="closed" class="btn btn-secondary">Close without action</button>
                     {% else %}
                         <button type="submit" name="status" value="open" class="btn btn-warning">Reopen</button>

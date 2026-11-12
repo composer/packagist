@@ -50,7 +50,7 @@
                 {{ form_start(form) }}
                     {{ form_errors(form) }}
                     {{ form_widget(form) }}
-                    <input class="btn btn-success" type="submit" value="Request a reset" />
+                    <input class="btn btn-primary" type="submit" value="Request a reset" />
                     <a class="btn btn-secondary" href="{{ path('2fa_login') }}">Back to the code prompt</a>
                 {{ form_end(form) }}
             {% endif %}

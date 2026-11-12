@@ -11,7 +11,9 @@
     {{ form_start(form, { attr: { class: 'col-md-6' } }) }}
         {{ form_widget(form) }}
 
-        <input class="btn w-100 btn-secondary btn-lg" type="submit" value="{{ 'abandon.submit'|trans }}" />
+        <div class="form-actions">
+            <input class="btn btn-warning" type="submit" value="{{ 'abandon.submit'|trans }}" />
+        </div>
     {{ form_end(form) }}
 
     <div class="col-md-6">

@@ -28,6 +28,7 @@ class EnableTotpAuthType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('code', TextType::class, [
+            'attr' => ['inputmode' => 'numeric', 'autocomplete' => 'one-time-code'],
             'constraints' => [new TotpCode($options['user'])],
         ]);
     }

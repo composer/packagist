@@ -1,13 +1,15 @@
-{% extends "layout.html.twig" %}
+{% extends "user/layout.html.twig" %}
 
 {% block title %}{{ 'menu.my_organizations'|trans }} - {{ parent() }}{% endblock %}
 
-{% block content %}
-    <h2 class="title">{{ 'menu.my_organizations'|trans }}</h2>
+{% block user_content %}
+<section class="col-lg-9">
+    <h3 class="font-normal profile-title">{{ 'menu.my_organizations'|trans }}</h3>
 
     {% if organizations is empty %}
-        <p>You do not belong to any organizations yet.</p>
+        <p class="p-3 bg-body-secondary border rounded text-body-secondary">You do not belong to any organizations yet.</p>
     {% else %}
+        <div class="table-responsive">
         <table class="table">
             <thead>
                 <tr>
@@ -38,5 +40,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% endif %}
+</section>
 {% endblock %}

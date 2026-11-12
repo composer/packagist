@@ -11,7 +11,7 @@
     <h3 class="title clearfix">
         Members
         {% if canInvite %}
-            <a class="btn btn-success btn-sm float-end" href="{{ path('organization_invitation_create', { organization: organization.slug }) }}">Invite a member</a>
+            <a class="btn btn-primary btn-sm float-end" href="{{ path('organization_invitation_create', { organization: organization.slug }) }}">Invite a member</a>
         {% endif %}
     </h3>
 

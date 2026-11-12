@@ -49,6 +49,7 @@ class MenuBuilder
         $menu->addChild($this->translator->trans('menu.logout'), [
             'label' => '<span class="icon-off"></span>'.$this->translator->trans('menu.logout'),
             'uri' => $this->logoutUrlGenerator->getLogoutPath(),
+            'attributes' => ['class' => 'menu-logout'],
             'extras' => ['safe_label' => true, 'translation_domain' => false],
         ]);
 

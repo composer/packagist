@@ -3,21 +3,15 @@
 {% block title %}Authenticator app - {{ parent() }}{% endblock %}
 
 {% block security_content %}
-    <h3 class="text-danger">Remove authenticator app?</h3>
+    <h3>Remove authenticator app?</h3>
 
     <p>Removing the authenticator app means you will no longer be asked for codes from this app when signing in. Its backup code will also be invalidated.</p>
 
-    <p>If you'd like to proceed anyway, simply click the button below.</p>
-
-    <div class="row">
-        <div class="col-lg-6">
-            <a class="btn btn-lg btn-inverse" href="{{ path('user_totp_configure', {name: user.username}) }}">Keep authenticator app</a>
+    <form class="account-form" method="post" action="{{ path('user_totp_disable', {name: user.username}) }}">
+        <input type="hidden" name="token" value="{{ csrf_token('disable_totp') }}">
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger">Remove authenticator app</button>
+            <a class="btn btn-secondary" href="{{ isActualUser ? path('security_authenticator') : path('user_totp_configure', {name: user.username}) }}">Keep authenticator app</a>
         </div>
-        <div class="col-lg-6">
-            <a href="{{ path('user_totp_disable', {token: csrf_token('disable_totp'), name: user.username}) }}" class="btn w-100 btn-danger btn-lg">
-                <span class="icon-lock-open"></span>
-                Remove authenticator app
-            </a>
-        </div>
-    </div>
+    </form>
 {% endblock %}

@@ -31,6 +31,39 @@
     }
 }
 
+// Themes a .btn variant through bootstrap's --bs-btn-* variables so its pressed, open and disabled
+// states don't fall back to bootstrap's palette. Our .btn/.btn:hover set colour and background
+// directly, so each state is restated from the variables too.
+@mixin btn-variant($bg, $edge, $color: #fff) {
+    --bs-btn-color: #{$color};
+    --bs-btn-bg: #{$bg};
+    --bs-btn-border-color: #{$edge};
+    --bs-btn-hover-color: #{$color};
+    --bs-btn-hover-bg: color-mix(in srgb, #{$bg}, #{$edge});
+    --bs-btn-hover-border-color: #{$edge};
+    --bs-btn-focus-box-shadow: 0 0 0 .25rem color-mix(in srgb, #{$bg} 50%, transparent);
+    --bs-btn-active-color: #{$color};
+    --bs-btn-active-bg: #{$edge};
+    --bs-btn-active-border-color: #{$bg};
+    --bs-btn-disabled-color: #{$color};
+    --bs-btn-disabled-bg: #{$bg};
+    --bs-btn-disabled-border-color: #{$edge};
+    color: var(--bs-btn-color);
+    background: var(--bs-btn-bg);
+    border-bottom-color: var(--bs-btn-border-color);
+
+    &:hover {
+        color: var(--bs-btn-hover-color);
+        background: var(--bs-btn-hover-bg);
+        border-bottom-color: var(--bs-btn-hover-border-color);
+    }
+    &:focus, &:active {
+        color: var(--bs-btn-active-color);
+        background: var(--bs-btn-active-bg);
+        border-bottom-color: var(--bs-btn-active-border-color);
+    }
+}
+
 :root {
     --font-family-name: 'Open Sans';
     --font-sans: var(--font-family-name), sans-serif;
@@ -47,13 +80,18 @@
     --color-success-dark: #69ad21;
     --color-secondary: #bbbfc4;
     --color-secondary-dark: #a5aab0;
+    --color-slate: #e3e6ea;
+    --color-slate-dark: #c3c8cf;
 
     --color-muted: #999;
     --color-text-dark: #333;
 
-    // Only affects runtime var(--bs-primary[-rgb]) consumers (.text-primary, .bg-primary); .btn-primary stays blue.
+    // Bootstrap's compiled components hardcode their blue, so this only reaches .text-primary/.bg-primary
+    // style utilities; buttons are themed through btn-variant()
     --bs-primary: var(--color-brand-orange);
     --bs-primary-rgb: 242, 141, 26;
+    --bs-focus-ring-color: rgba(242, 141, 26, 0.25);
+    --color-focus: var(--color-brand-orange-dark);
 
     // BS5 bases the page on 16px/1.5 where BS3 used 14px/1.43. Only body reads these, so component
     // sizing is untouched, but the site's copy and its fixed column widths are built for the smaller
@@ -193,6 +231,18 @@ a, .package .package-aside a {
   text-decoration: none;
 }
 a:hover, .package .package-aside a:hover {
+  color: var(--color-brand-dark);
+}
+
+// a form submit button that reads as an inline link
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: #B34E22;
+}
+.link-button:hover {
   color: var(--color-brand-dark);
 }
 
@@ -533,7 +583,7 @@ strong {
     vertical-align: middle;
 }
 
-.nav-user .btn-success {
+.nav-user #_submit_mini {
     width: 42%;
 }
 
@@ -555,8 +605,12 @@ strong {
 
 /* overrides for dropdown menu on mobile */
 @media (max-width: 767px) {
+    .navbar .nav {
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    }
     .navbar .nav > li {
-        height: 57px;
+        min-height: 57px;
+        height: auto;
     }
     .navbar-collapse.show {
         overflow-y: visible;
@@ -587,6 +641,9 @@ strong {
     }
     .mobile-account-menu li a {
         padding-left: 44px;
+    }
+    .mobile-account-menu .menu-logout a {
+        padding: 18px 20px 19px;
     }
     .mobile-account-menu a:hover, .mobile-account-menu a:focus {
         background: rgba(255, 255, 255, 0.1);
@@ -1073,6 +1130,23 @@ button {
     background: #fff;
 }
 
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--color-focus);
+}
+.form-select:focus {
+    box-shadow: none;
+}
+.form-check-input:focus {
+    box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color);
+}
+.form-check-input:checked,
+.form-check-input[type=checkbox]:indeterminate {
+    background-color: var(--color-brand-orange);
+    border-color: var(--color-brand-orange);
+}
+
 .form-control:focus {
     padding: 6px 9px 5px;
     box-shadow: none;
@@ -1096,7 +1170,7 @@ button {
     padding: 5px 11px 7px 9px;
 }
 
-input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:focus {
+input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid {
     box-shadow: none;
 }
 
@@ -1117,7 +1191,7 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .input-group .form-control:focus {
-    border-color: #52a8ec;
+    border-color: var(--color-focus);
     box-shadow: none;
     z-index: 1;
 }
@@ -1125,15 +1199,15 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 .input-group:focus-within .input-group-text {
     border-width: 2px;
     padding: 5px 12px 5px 11px;
-    border-color: #52a8ec;
-    color: #52a8ec;
+    border-color: var(--color-focus);
+    color: var(--color-focus);
 }
 
-.input-group .form-control:invalid:focus {
+.input-group .form-control:user-invalid:focus {
     border-color: #fa3a15;
 }
 
-.input-group:has(.form-control:invalid:focus) .input-group-text {
+.input-group:has(.form-control:user-invalid:focus) .input-group-text {
     border-width: 2px;
     padding: 5px 12px 5px 11px;
     border-color: #fa3a15;
@@ -1141,24 +1215,31 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 
 .api-token-group {
-    display: block;
-    margin-bottom: 5px;
+    display: flex;
+    margin-bottom: 16px;
 }
 .api-token-group .api-token {
-  width: 85%;
-  float: right;
-  right: 0;
-  margin: 0 0 6px;
-  text-align: center;
+    min-width: 0;
+    width: 1%;
+    flex: 1 1 auto;
+    text-align: left;
 }
 .api-token-group .btn-show-api-token {
-  width: 185px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 10;
-  white-space: nowrap;
-  font-size: 13px;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+@media (max-width: 575.98px) {
+    .api-token-group {
+        gap: 8px;
+    }
+
+    .api-token-group > .api-token,
+    .api-token-group > .btn-show-api-token {
+        width: 100%;
+        border-radius: var(--bs-border-radius) !important;
+        margin-left: 0 !important;
+    }
 }
 
 .packages {
@@ -1248,6 +1329,29 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
 }
 .nav-tabs>li{
   margin-bottom: 0;
+}
+
+.account-form {
+    width: 100%;
+    max-width: 36rem;
+}
+
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+}
+// reCAPTCHA injects its (fixed-position) badge wrapper next to the submit button, which would add a gap
+.form-actions > div:has(> .grecaptcha-badge) {
+    display: contents;
+}
+
+@media (max-width: 575.98px) {
+    .form-actions > .btn,
+    .account-form > .btn-github {
+        width: 100%;
+    }
 }
 
 .security-settings {
@@ -1351,16 +1455,12 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     margin-left: 10px;
 }
 
-.btn-secondary {
-    background: var(--color-secondary);
-    border-bottom-color: var(--color-secondary-dark);
-    color: #fff;
-}
-.btn-secondary:focus, .btn-secondary:active {
-  color: #fff;
-  background: var(--color-secondary-dark);
-  border-bottom-color: var(--color-secondary);
-}
+.btn-primary { @include btn-variant(var(--color-brand-orange), var(--color-brand-orange-dark)); }
+.btn-secondary { @include btn-variant(var(--color-slate), var(--color-slate-dark), var(--color-brand-dark)); }
+.btn-danger { @include btn-variant(var(--color-danger), var(--color-danger-dark)); }
+.btn-warning { @include btn-variant(var(--color-warning), var(--color-brand-orange)); }
+.btn-inverse { @include btn-variant(#454e5c, #303339); }
+.btn-github { @include btn-variant(#24292f, #101418); }
 
 .btn.disabled {
     border-bottom-color: #e1e1e8;
@@ -1371,73 +1471,18 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     color: var(--color-text-dark);
 }
 
-.btn-danger, .btn-danger:hover {
-    background: var(--color-danger);
-    border-bottom-color: var(--color-danger-dark);
-}
-.btn-danger:focus, .btn-danger:active {
-    background: var(--color-danger-dark);
-    border-bottom-color: var(--color-danger);
-}
-
-.btn-inverse, .btn-inverse:hover {
-    color: #fff;
-    background: #454e5c;
-    border-bottom-color: #303339;
-}
-.btn-inverse:focus, .btn-inverse:active {
-    color: #fff;
-    background: #303339;
-    border-bottom-color: #454e5c;
-}
-
-.btn-primary, .btn-primary:hover {
-  background: #3594e2;
-  border-bottom-color: #2f6cca;
-}
-.btn-primary:focus, .btn-primary:active {
-  background: #2f6cca;
-  border-bottom-color: #3594e2;
-}
-
-.btn-success, .btn-success:hover {
-    background: var(--color-success);
-    border-bottom-color: var(--color-success-dark);
-}
-.btn-success:focus, .btn-success:active {
-    background: var(--color-success-dark);
-    border-bottom-color: var(--color-success);
-}
-
-.btn-warning, .btn-warning:hover {
-    background: var(--color-warning);
-    border-bottom-color: var(--color-brand-orange);
-}
-.btn-warning:focus, .btn-warning:active {
-    background: var(--color-brand-orange);
-    border-bottom-color: var(--color-warning);
-}
-
-.btn-info, .btn-info:hover {
-    background: #5bc0de;
-    border-bottom-color: #31b0d5;
-}
-.btn-info:focus, .btn-info:active {
-    background: #31b0d5;
-    border-bottom-color: #5bc0de;
-}
-
 .btn-github {
-    line-height: 26px;
-    font-weight: 600;
-    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.5;
     text-align: center;
 }
 
 .btn-github span {
-    margin: 0 15px 0 0;
-    vertical-align: text-top;
-    font-size: 22px;
+    margin: 0 12px 0 0;
+    font-size: 20px;
+    line-height: 1;
 }
 
 /* Search */
@@ -1644,9 +1689,12 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     text-decoration: underline;
 }
 
-.btn-github.disabled {
-    background: #ecf0f1;
-    color: #bdc3c7;
+.btn-github.disabled,
+.btn-github.disabled:hover {
+    background: #24292f;
+    border-bottom-color: #101418;
+    color: #fff;
+    opacity: .45;
 }
 
 
@@ -1999,6 +2047,11 @@ input:focus:invalid:focus, textarea:focus:invalid:focus, select:focus:invalid:fo
     width: 77px;
 }
 
+.dropdown-menu {
+    --bs-dropdown-link-active-color: #fff;
+    --bs-dropdown-link-active-bg: var(--color-brand-orange);
+}
+
 .pagination {
     --bs-pagination-color: var(--color-text-dark);
     --bs-pagination-hover-color: var(--color-brand-dark);
@@ -2125,8 +2178,7 @@ h2.title .php-ext-link {
 
 
 .edit_profile .failure-notifications {
-    margin: 10px 0;
-    float: left;
+    margin: 16px 0;
 }
 
 
@@ -2231,13 +2283,42 @@ svg {
     margin-top: 40px;
 }
 
+.authenticator-setup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 200px;
+    grid-template-areas: "instructions qr" "form qr";
+    gap: 24px;
+    align-items: start;
+}
+.authenticator-instructions {
+    grid-area: instructions;
+}
+.authenticator-instructions ol {
+    margin-bottom: 0;
+}
+.authenticator-code-form {
+    grid-area: form;
+}
 .two-factor-key {
+    grid-area: qr;
     max-width: 200px;
+    margin: 0;
     text-align: center;
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
 }
 .two-factor-backup-code {
-    font-size: 3em;
+    display: inline-block;
+    max-width: 100%;
+    margin: 8px 0 16px;
+    font-size: clamp(1.5rem, 6vw, 2.25rem);
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 767.98px) {
+    .authenticator-setup {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: "instructions" "qr" "form";
+    }
 }
 
 html,
@@ -2290,18 +2371,6 @@ body {
 }
 
 // Sponsor page styles
-.sponsor-page {
-    .btn-primary {
-        background-color: var(--color-brand-orange);
-        border-color: #d97c10;
-
-        &:hover, &:focus {
-            background-color: #d97c10;
-            border-color: #c06e0a;
-        }
-    }
-}
-
 .sponsor-hero {
     margin-bottom: 40px;
 
@@ -2565,8 +2634,8 @@ body {
         transition: border-color 0.2s ease;
 
         &:focus {
-            border-color: #66afe9;
-            box-shadow: 0 0 0 2px rgba(102, 175, 233, 0.1);
+            border-color: var(--color-focus);
+            box-shadow: 0 0 0 2px var(--bs-focus-ring-color);
         }
     }
 
@@ -2617,22 +2686,6 @@ body {
 
             .bi {
                 margin-right: 6px;
-            }
-        }
-
-        .btn-primary {
-            background-color: #5bc0de;
-            border-color: #46b8da;
-
-            &:hover {
-                background-color: #31b0d5;
-                border-color: #269abc;
-            }
-        }
-
-        .btn-secondary {
-            &:hover {
-                background-color: #e6e6e6;
             }
         }
     }

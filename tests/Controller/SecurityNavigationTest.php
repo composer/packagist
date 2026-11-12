@@ -185,8 +185,8 @@ class SecurityNavigationTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/users/alice/totp/disable?token=invalid');
         self::assertStringStartsWith('Authenticator app - ', $crawler->filter('title')->text());
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
-        self::assertSame('/users/alice/totp/', $crawler->selectLink('Keep authenticator app')->attr('href'));
-        $this->client->click($crawler->selectLink('Remove authenticator app')->link());
+        self::assertSame('/profile/security/authenticator', $crawler->selectLink('Keep authenticator app')->attr('href'));
+        $this->client->submit($crawler->selectButton('Remove authenticator app')->form());
         self::assertResponseRedirects('/users/alice/totp/');
         $this->client->followRedirect();
         self::assertResponseRedirects('/profile/security');
@@ -211,7 +211,7 @@ class SecurityNavigationTest extends IntegrationTestCase
         self::assertCount(1, $crawler->filter('a[href="/users/bob/totp/disable"]'));
         $crawler = $this->client->click($crawler->selectLink('Remove authenticator app')->link());
         self::assertSame('/users/bob/totp/', $crawler->selectLink('Keep authenticator app')->attr('href'));
-        $this->client->click($crawler->selectLink('Remove authenticator app')->link());
+        $this->client->submit($crawler->selectButton('Remove authenticator app')->form());
         self::assertResponseRedirects('/users/bob/totp/');
         self::getEM()->clear();
         $updatedUser = self::getEM()->find(User::class, $other->getId());
