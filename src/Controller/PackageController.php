@@ -14,7 +14,6 @@ namespace App\Controller;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\VersionDeletionReason;
-use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
 use App\Entity\FilterListEntry;
@@ -1179,11 +1178,7 @@ class PackageController extends Controller
                 }
 
                 if (!empty($maintainer)) {
-                    if (!$package->isMaintainer($maintainer)) {
-                        $package->addMaintainer($maintainer);
-                        $em->persist(AuditRecord::maintainerAdded($package, $maintainer, $user));
-                        $this->packageManager->notifyNewMaintainer($maintainer, $package);
-                    }
+                    $this->packageManager->addMaintainer($package, $maintainer, $user);
 
                     $em->persist($package);
                     $em->flush();
@@ -1217,10 +1212,7 @@ class PackageController extends Controller
                 }
 
                 if (!empty($maintainer)) {
-                    if ($package->isMaintainer($maintainer)) {
-                        $package->getMaintainers()->removeElement($maintainer);
-                        $em->persist(AuditRecord::maintainerRemoved($package, $maintainer, $user));
-                    }
+                    $this->packageManager->removeMaintainer($package, $maintainer, $user);
 
                     $em->persist($package);
                     $em->flush();
