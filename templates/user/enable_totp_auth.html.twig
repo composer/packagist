@@ -37,7 +37,7 @@
                 {{ form_label(form.code, 'Authenticator code') }}
                 <div class="input-group">
                     <span class="input-group-text"><span class="icon-key"></span></span>
-                    {{ form_widget(form.code, {attr: {inputmode: 'numeric', autocomplete: 'one-time-code'}}) }}
+                    {{ form_widget(form.code) }}
                 </div>
                 {{ form_errors(form.code) }}
             </div>
