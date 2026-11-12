@@ -1431,12 +1431,12 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
 }
 
 .btn-primary, .btn-primary:hover {
-  background: #3594e2;
-  border-bottom-color: #2f6cca;
+  background: var(--bs-primary);
+  border-bottom-color: var(--bs-primary-dark);
 }
 .btn-primary:focus, .btn-primary:active {
-  background: #2f6cca;
-  border-bottom-color: #3594e2;
+  background: var(--bs-primary);
+  border-bottom-color: var(--bs-primary-darker);
 }
 
 .btn-success, .btn-success:hover {
@@ -1702,9 +1702,12 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
     text-decoration: underline;
 }
 
-.btn-github.disabled {
-    background: #ecf0f1;
-    color: #bdc3c7;
+.btn-github.disabled,
+.btn-github.disabled:hover {
+    background: #24292f;
+    border-bottom-color: #101418;
+    color: #fff;
+    opacity: .45;
 }
 
 
