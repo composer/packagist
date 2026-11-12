@@ -55,6 +55,8 @@
     // style utilities; .btn-primary is themed through its --bs-btn-* variables below
     --bs-primary: var(--color-brand-orange);
     --bs-primary-rgb: 242, 141, 26;
+    --bs-focus-ring-color: rgba(242, 141, 26, 0.25);
+    --color-focus: var(--color-brand-orange-dark);
 
     // BS5 bases the page on 16px/1.5 where BS3 used 14px/1.43. Only body reads these, so component
     // sizing is untouched, but the site's copy and its fixed column widths are built for the smaller
@@ -1093,6 +1095,23 @@ button {
     background: #fff;
 }
 
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--color-focus);
+}
+.form-select:focus {
+    box-shadow: none;
+}
+.form-check-input:focus {
+    box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color);
+}
+.form-check-input:checked,
+.form-check-input[type=checkbox]:indeterminate {
+    background-color: var(--color-brand-orange);
+    border-color: var(--color-brand-orange);
+}
+
 .form-control:focus {
     padding: 6px 9px 5px;
     box-shadow: none;
@@ -1137,7 +1156,7 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
 }
 
 .input-group .form-control:focus {
-    border-color: #52a8ec;
+    border-color: var(--color-focus);
     box-shadow: none;
     z-index: 1;
 }
@@ -1145,8 +1164,8 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
 .input-group:focus-within .input-group-text {
     border-width: 2px;
     padding: 5px 12px 5px 11px;
-    border-color: #52a8ec;
-    color: #52a8ec;
+    border-color: var(--color-focus);
+    color: var(--color-focus);
 }
 
 .input-group .form-control:user-invalid:focus {
@@ -2681,8 +2700,8 @@ body {
         transition: border-color 0.2s ease;
 
         &:focus {
-            border-color: #66afe9;
-            box-shadow: 0 0 0 2px rgba(102, 175, 233, 0.1);
+            border-color: var(--color-focus);
+            box-shadow: 0 0 0 2px var(--bs-focus-ring-color);
         }
     }
 
