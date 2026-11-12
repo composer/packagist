@@ -196,6 +196,18 @@ a:hover, .package .package-aside a:hover {
   color: var(--color-brand-dark);
 }
 
+// a form submit button that reads as an inline link
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: #B34E22;
+}
+.link-button:hover {
+  color: var(--color-brand-dark);
+}
+
 .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {
   font-weight: 500;
   line-height: 1.1;
