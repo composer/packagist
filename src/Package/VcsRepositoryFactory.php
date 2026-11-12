@@ -27,12 +27,13 @@ use Symfony\Component\HttpFoundation\IpUtils;
  */
 final class VcsRepositoryFactory
 {
+    /** git repositories are read over smart HTTP in PHP, never with the git binary */
     public const array DRIVERS = [
-        'github' => 'Composer\Repository\Vcs\GitHubDriver',
-        'gitlab' => 'Composer\Repository\Vcs\GitLabDriver',
-        'git-bitbucket' => 'Composer\Repository\Vcs\GitBitbucketDriver',
-        'forgejo' => 'Composer\Repository\Vcs\ForgejoDriver',
-        'git' => 'Composer\Repository\Vcs\GitDriver',
+        'github' => Vcs\GitHubDriver::class,
+        'gitlab' => Vcs\GitLabDriver::class,
+        'git-bitbucket' => Vcs\GitBitbucketDriver::class,
+        'forgejo' => Vcs\ForgejoDriver::class,
+        'git' => Vcs\HttpGitDriver::class,
     ];
 
     /**
@@ -73,16 +74,22 @@ final class VcsRepositoryFactory
 
     /**
      * @param array<string, mixed> $options
+     * @param ?list<string>        $knownReferences commits the caller already has data for, which makes git repositories fetch all others in a few batched requests
      */
-    public static function create(string $url, IOInterface $io, Config $config, HttpDownloader $httpDownloader, ?VersionCacheInterface $versionCache = null, array $options = []): VcsRepository
+    public static function create(string $url, IOInterface $io, Config $config, HttpDownloader $httpDownloader, ?VersionCacheInterface $versionCache = null, array $options = [], ?array $knownReferences = null): VcsRepository
     {
-        // git otherwise allows every transport but ext::, e.g. ftp:// or any installed git-remote-* helper
+        // no driver runs the git binary anymore, this keeps it to https should one start doing so again
         Platform::putEnv('GIT_ALLOW_PROTOCOL', 'https');
 
         self::assertPublicHost($url);
 
         // a GitHub API failure fails the update instead of switching to a git clone, which lacks the repo data and readme
-        return new VcsRepository(['url' => $url, 'allow-git-fallback' => false, 'exclude-branches' => self::EXCLUDED_BRANCHES, 'options' => $options], $io, $config, $httpDownloader, null, null, self::DRIVERS, $versionCache);
+        $repoConfig = ['url' => $url, 'allow-git-fallback' => false, 'exclude-branches' => self::EXCLUDED_BRANCHES, 'options' => $options];
+        if ($knownReferences !== null) {
+            $repoConfig['known-references'] = $knownReferences;
+        }
+
+        return new VcsRepository($repoConfig, $io, $config, $httpDownloader, null, null, self::DRIVERS, $versionCache);
     }
 
     /**
@@ -98,9 +105,9 @@ final class VcsRepositoryFactory
     }
 
     /**
-     * git connects on its own, bypassing the prevent_ip_access_callable of our HttpDownloader
+     * Refuses obviously internal hosts before any driver connects, with a failure the updater recognises
      *
-     * This does not cover DNS rebinding or redirects, it only keeps obviously internal hosts away from git.
+     * The HttpDownloader's prevent_ip_access_callable still guards every connection, redirects included.
      *
      * @throws PrivateRepositoryHostException if the host resolves to a private or reserved address
      */

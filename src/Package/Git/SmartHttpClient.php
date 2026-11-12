@@ -393,8 +393,11 @@ final class SmartHttpClient
         $message = 'Failed to read '.$this->url.': '.$e->getMessage();
 
         if ($status === null || $status < 400) {
-            // blocked private IPs and insecure redirects are permanent, anything else at the network level may go away
-            if (str_contains($e->getMessage(), 'is blocked for') || str_contains($e->getMessage(), 'does not allow connections to http://')) {
+            if (str_contains($e->getMessage(), 'is blocked for')) {
+                return new BlockedHostException($message, null, $e);
+            }
+            // insecure redirects are permanent, anything else at the network level may go away
+            if (str_contains($e->getMessage(), 'does not allow connections to http://')) {
                 return new UnsupportedRepositoryException($message, null, $e);
             }
 

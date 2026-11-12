@@ -12,6 +12,8 @@
 
 namespace App\Tests\Package\Vcs;
 
+use App\Entity\Package;
+use App\Package\Git\BlockedHostException;
 use App\Package\Git\LimitExceededException;
 use App\Package\Git\PktLine;
 use App\Package\Git\ProtocolException;
@@ -26,6 +28,8 @@ use App\Package\Vcs\GitBitbucketDriver;
 use App\Package\Vcs\GitHubDriver;
 use App\Package\Vcs\GitLabDriver;
 use App\Package\Vcs\HttpGitDriver;
+use App\Package\VcsRepositoryFactory;
+use App\Service\VersionCache;
 use App\Tests\Package\Git\GitHttpBackendDownloader;
 use App\Tests\Package\Git\GitRepositoryBuilder;
 use Composer\Config;
@@ -33,6 +37,7 @@ use Composer\Downloader\TransportException;
 use Composer\IO\NullIO;
 use Composer\Repository\Vcs\VcsDriver;
 use Composer\Repository\VcsRepository;
+use Composer\Util\Platform;
 use Composer\Util\ProcessExecutor;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -52,6 +57,8 @@ class HttpGitDriverTest extends TestCase
     private static string $projectRoot;
     /** @var array<string, array{tags: array<string, string>, branches: array<string, string>, times: array<string, int>}> */
     private static array $expected = [];
+    /** @var array<string, string> commit ids by ref name */
+    private static array $skippedRefs = [];
 
     public static function setUpBeforeClass(): void
     {
@@ -89,6 +96,26 @@ class HttpGitDriverTest extends TestCase
         $builder->git('tag', '-a', '-m', 'blob', 'tag-of-blob', 'HEAD:notes.txt');
         $builder->git('tag', '-a', '-m', 'tree', 'tag-of-tree', 'HEAD^{tree}');
         $builder->publish(self::$projectRoot, 'odd-refs.git');
+
+        $builder = new GitRepositoryBuilder(self::$projectRoot.'/work-skipped-refs');
+        self::$skippedRefs['v1.0.0'] = $builder->commit(['composer.json' => '{"name":"acme/skipped"}']);
+        $builder->tag('v1.0.0');
+        self::$skippedRefs['nightly-build'] = $builder->commit(['composer.json' => '{"name":"acme/skipped","description":"nightly"}']);
+        $builder->tag('nightly-build');
+        self::$skippedRefs['main'] = $builder->commit(['composer.json' => '{"name":"acme/skipped","description":"main"}']);
+        $builder->checkout('feature', true);
+        self::$skippedRefs['feature'] = $builder->commit(['composer.json' => '{"name":"acme/skipped","description":"feature"}']);
+        $builder->checkout('main');
+        $builder->checkout('dependabot/composer/acme/bar-2.0', true);
+        self::$skippedRefs['dependabot/composer/acme/bar-2.0'] = $builder->commit(['composer.json' => '{"name":"acme/skipped","description":"bump"}']);
+        $builder->checkout('main');
+        $builder->publish(self::$projectRoot, 'skipped-refs.git');
+    }
+
+    protected function tearDown(): void
+    {
+        // set by VcsRepositoryFactory
+        Platform::clearEnv('GIT_ALLOW_PROTOCOL');
     }
 
     public static function tearDownAfterClass(): void
@@ -313,7 +340,7 @@ class HttpGitDriverTest extends TestCase
         yield '503' => [$status(503), RepositoryUnavailableException::class, 'HTTP 503'];
         yield '429' => [$status(429), RepositoryUnavailableException::class, 'HTTP 429'];
         yield 'dns failure' => [$throw('curl error 6 while downloading: Could not resolve host: git.example.org'), RepositoryUnavailableException::class, 'Could not resolve host'];
-        yield 'private ip' => [$throw('IP "10.0.0.1" is blocked for "https://git.example.org/foo.git/info/refs?service=git-upload-pack".'), UnsupportedRepositoryException::class, 'is blocked'];
+        yield 'private ip' => [$throw('IP "10.0.0.1" is blocked for "https://git.example.org/foo.git/info/refs?service=git-upload-pack".'), BlockedHostException::class, 'is blocked'];
         yield 'server error packet' => [static fn () => GitHttpBackendDownloader::response(200, 'application/x-git-upload-pack-advertisement', PktLine::encode("# service=git-upload-pack\n").PktLine::FLUSH.PktLine::encode("ERR access denied\n"), GitHttpBackendDownloader::BASE_URL.'foo-sha1.git/info/refs?service=git-upload-pack'), ServerRefusedException::class, 'access denied'];
     }
 
@@ -366,7 +393,7 @@ class HttpGitDriverTest extends TestCase
     public static function provideUrls(): iterable
     {
         yield 'https .git' => ['https://example.org/acme/foo.git', true, 'https://example.org/acme/foo.git'];
-        yield 'https without .git needs a deep check' => ['https://example.org/acme/foo', false, 'https://example.org/acme/foo'];
+        yield 'https without .git' => ['https://example.org/acme/foo', true, 'https://example.org/acme/foo'];
         yield 'scp style from API driver fallbacks' => ['git@github.com:acme/foo.git', true, 'https://github.com/acme/foo.git'];
         yield 'ssh with port' => ['ssh://git@example.org:2222/acme/foo.git', true, 'https://example.org/acme/foo.git'];
         yield 'http' => ['http://example.org/acme/foo.git', false, null];
@@ -412,8 +439,7 @@ class HttpGitDriverTest extends TestCase
 
     public function testWorksThroughVcsRepository(): void
     {
-        $drivers = ['github' => GitHubDriver::class, 'gitlab' => GitLabDriver::class, 'git-bitbucket' => GitBitbucketDriver::class, 'forgejo' => ForgejoDriver::class, 'git' => HttpGitDriver::class];
-        $repository = new VcsRepository(['url' => GitHttpBackendDownloader::BASE_URL.'foo-sha1.git'], new NullIO(), $this->createConfig(), new GitHttpBackendDownloader(self::$projectRoot), null, null, $drivers);
+        $repository = VcsRepositoryFactory::create(GitHttpBackendDownloader::BASE_URL.'foo-sha1.git', new NullIO(), $this->createConfig(), new GitHttpBackendDownloader(self::$projectRoot));
 
         $versions = array_map(static fn ($package) => $package->getPrettyVersion(), $repository->getPackages());
         sort($versions);
@@ -421,6 +447,61 @@ class HttpGitDriverTest extends TestCase
         self::assertInstanceOf(HttpGitDriver::class, $repository->getDriver());
         // 9999999-dev is the alias Composer adds for the default branch
         self::assertSame(['9999999-dev', 'dev-feature', 'dev-main', 'v1.0.0', 'v1.1.0'], $versions);
+    }
+
+    public function testMissingRepositoryWithoutGitSuffixFailsWithTheDiscoveryError(): void
+    {
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $downloader->interceptor = static fn () => GitHttpBackendDownloader::response(404, 'text/plain', 'not found');
+        $repository = VcsRepositoryFactory::create(GitHttpBackendDownloader::BASE_URL.'acme/missing', new NullIO(), $this->createConfig(), $downloader);
+
+        try {
+            $repository->getDriver();
+            self::fail('Expected the missing repository to fail the driver initialization');
+        } catch (RepositoryNotFoundException $e) {
+            self::assertSame(404, $e->getStatusCode());
+        }
+        self::assertCount(1, $downloader->requests, 'no separate probe before the driver reads the refs');
+    }
+
+    public function testCommitsKnownToTheVersionCacheAreNotFetched(): void
+    {
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $versions = [];
+        foreach (['v1.0.0' => '1.0.0.0', 'v1.1.0' => '1.1.0.0'] as $tag => $normalized) {
+            $versions[] = ['version' => $tag, 'normalizedVersion' => $normalized, 'source' => ['type' => 'git', 'url' => '', 'reference' => self::$expected['sha1']['tags'][$tag]], 'defaultBranch' => 0];
+        }
+        foreach (self::$expected['sha1']['branches'] as $branch => $commit) {
+            $versions[] = ['version' => 'dev-'.$branch, 'normalizedVersion' => 'dev-'.$branch, 'source' => ['type' => 'git', 'url' => '', 'reference' => $commit], 'defaultBranch' => (int) ($branch === 'main')];
+        }
+
+        $versionCache = new VersionCache(new Package(), $versions, []);
+        $repository = VcsRepositoryFactory::create(GitHttpBackendDownloader::BASE_URL.'foo-sha1.git', new NullIO(), $this->createConfig(), $downloader, $versionCache, [], $versionCache->getKnownReferences());
+
+        self::assertCount(5, $repository->getPackages());
+        // ref listing, then VcsRepository reads the package name from the default branch
+        self::assertSame(['GET', 'POST', 'POST'], array_column($downloader->requests, 'method'));
+        preg_match_all('{want ([0-9a-f]+)}', (string) $downloader->requests[2]['body'], $wants);
+        self::assertSame([self::$expected['sha1']['branches']['main']], $wants[1]);
+    }
+
+    public function testRefsVcsRepositorySkipsAreNotPrefetched(): void
+    {
+        $downloader = new GitHttpBackendDownloader(self::$projectRoot);
+        $repository = VcsRepositoryFactory::create(GitHttpBackendDownloader::BASE_URL.'skipped-refs.git', new NullIO(), $this->createConfig(), $downloader, null, [], []);
+
+        $versions = array_map(static fn ($package) => $package->getPrettyVersion(), $repository->getPackages());
+        sort($versions);
+        self::assertSame(['9999999-dev', 'dev-feature', 'dev-main', 'v1.0.0'], $versions);
+
+        preg_match_all('{want ([0-9a-f]{40})}', implode("\n", array_map(static fn ($request) => (string) $request['body'], $downloader->requests)), $wants);
+        foreach (['main', 'feature', 'v1.0.0'] as $ref) {
+            self::assertContains(self::$skippedRefs[$ref], $wants[1], $ref.' is fetched');
+        }
+        // excluded by VcsRepositoryFactory::EXCLUDED_BRANCHES, and not a valid version
+        foreach (['dependabot/composer/acme/bar-2.0', 'nightly-build'] as $ref) {
+            self::assertNotContains(self::$skippedRefs[$ref], $wants[1], $ref.' is not fetched');
+        }
     }
 
     /**
@@ -450,6 +531,9 @@ class HttpGitDriverTest extends TestCase
         yield 'timeout' => [static function (): never {
             throw new TransportException('curl error 28 while downloading: Operation timed out', 0);
         }, RepositoryUnavailableException::class];
+        yield 'host now resolving to a private ip' => [static function (): never {
+            throw new TransportException('IP "10.0.0.1" is blocked for "https://git.example.org/foo.git/git-upload-pack".', 0);
+        }, BlockedHostException::class];
         yield 'garbage instead of a pack' => [static fn () => GitHttpBackendDownloader::response(200, 'application/x-git-upload-pack-result', 'not a pkt-line'), ProtocolException::class];
         yield 'refused' => [static fn () => GitHttpBackendDownloader::response(200, 'application/x-git-upload-pack-result', PktLine::encode("ERR upload-pack: not our ref\n")), ServerRefusedException::class];
     }

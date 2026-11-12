@@ -12,6 +12,13 @@
 
 namespace App\Tests\Package;
 
+use App\Package\Git\BlockedHostException;
+use App\Package\Git\LimitExceededException;
+use App\Package\Git\ProtocolException;
+use App\Package\Git\RepositoryNotFoundException;
+use App\Package\Git\RepositoryUnavailableException;
+use App\Package\Git\ServerRefusedException;
+use App\Package\Git\UnsupportedRepositoryException;
 use App\Package\PrivateRepositoryHostException;
 use App\Package\UpdateFailureClassifier;
 use App\Package\UpdateFailureKind;
@@ -163,6 +170,56 @@ class UpdateFailureClassifierTest extends TestCase
             self::transport('The "https://api.github.com/repos/acme/lib" file could not be downloaded (HTTP/2 403 )', 403, '{"message":"Resource protected by organization SAML enforcement. You must grant your Personal Access token access to this organization."}'),
             null, null,
         ];
+        yield 'git http 404' => [
+            new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git: The "https://git.example.org/acme/lib.git/info/refs?service=git-upload-pack" file could not be downloaded (HTTP/2 404 )', 404),
+            $gone, 'git_http_not_found',
+        ];
+        yield 'git http 410' => [
+            new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 410),
+            $gone, 'git_http_not_found',
+        ];
+        yield 'git http auth prompt' => [
+            new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 401),
+            $unreachable, 'git_http_not_public',
+        ];
+        yield 'git http forbidden' => [
+            new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 403),
+            $unreachable, 'git_http_forbidden',
+        ];
+        yield 'git http login page' => [
+            new RepositoryNotFoundException('No git repository found at https://git.example.org/acme/lib.git (got text/html instead of a git ref advertisement)'),
+            $unreachable, 'git_http_not_public',
+        ];
+        yield 'git http server error' => [
+            new RepositoryUnavailableException('Failed to read https://git.example.org/acme/lib.git', 502),
+            $unreachable, 'git_http_unavailable',
+        ];
+        // the curl message alone would match the git binary's host_unreachable
+        yield 'git http connection failure' => [
+            new RepositoryUnavailableException('Failed to read https://git.example.org/acme/lib.git: Failed to connect to git.example.org port 443 after 57 ms: Couldn\'t connect to server'),
+            $unreachable, 'git_http_unavailable',
+        ];
+        yield 'git http fetch refused' => [
+            new ServerRefusedException('Failed to read https://git.example.org/acme/lib.git', 401),
+            $unreachable, 'git_http_refused',
+        ];
+        yield 'git http repository too large' => [
+            new LimitExceededException('The repository data exceeds the limit of 268435456 bytes'),
+            $unreachable, 'git_http_too_large',
+        ];
+        yield 'git http redirect to a private ip' => [
+            new BlockedHostException('Failed to read https://git.example.org/acme/lib.git: IP "10.0.0.1" is blocked for "https://git.example.org/acme/lib.git/info/refs?service=git-upload-pack".'),
+            $unreachable, 'private_host',
+        ];
+        yield 'git http dumb server' => [
+            new UnsupportedRepositoryException('The server at https://git.example.org/acme/lib.git only supports the dumb HTTP protocol, which is not supported. Enable smart HTTP on your git server.'),
+            null, null,
+        ];
+        // a 404 status on something else than the repository lookup does not make it gone
+        yield 'git http protocol error' => [
+            new ProtocolException('The server response contained no pack', 404),
+            null, null,
+        ];
         yield 'unrelated runtime exception' => [
             new \RuntimeException('Something unexpected happened'),
             null, null,
@@ -181,6 +238,12 @@ class UpdateFailureClassifierTest extends TestCase
         self::assertTrue(UpdateFailureClassifier::classify(new PrivateRepositoryHostException('The repository host git.example.org resolves to a private or reserved IP address'))?->escalatesToGone);
         self::assertTrue(UpdateFailureClassifier::classify(new \RuntimeException('Driver could not be established for package acme/lib (https://git.example.org/acme/lib)'))?->escalatesToGone);
         self::assertFalse(UpdateFailureClassifier::classify(self::gitFailure("fatal: unable to access 'https://git.example.org/acme/lib.git/': Could not resolve host: git.example.org"))?->escalatesToGone);
+        self::assertTrue(UpdateFailureClassifier::classify(new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 401))?->escalatesToGone);
+        self::assertTrue(UpdateFailureClassifier::classify(new BlockedHostException('Failed to read https://git.example.org/acme/lib.git: IP "10.0.0.1" is blocked'))?->escalatesToGone);
+        self::assertFalse(UpdateFailureClassifier::classify(new RepositoryUnavailableException('Failed to read https://git.example.org/acme/lib.git', 503))?->escalatesToGone);
+        self::assertFalse(UpdateFailureClassifier::classify(new RepositoryNotFoundException('Failed to read https://git.example.org/acme/lib.git', 403))?->escalatesToGone);
+        self::assertFalse(UpdateFailureClassifier::classify(new ServerRefusedException('Failed to read https://git.example.org/acme/lib.git', 404))?->escalatesToGone);
+        self::assertFalse(UpdateFailureClassifier::classify(new LimitExceededException('The repository data exceeds the limit of 268435456 bytes'))?->escalatesToGone);
     }
 
     public function testDescribeSanitizesCredentialsAndTruncates(): void
