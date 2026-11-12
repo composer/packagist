@@ -31,6 +31,39 @@
     }
 }
 
+// Themes a .btn variant through bootstrap's --bs-btn-* variables so its pressed, open and disabled
+// states don't fall back to bootstrap's palette. Our .btn/.btn:hover set colour and background
+// directly, so each state is restated from the variables too.
+@mixin btn-variant($bg, $edge, $color: #fff) {
+    --bs-btn-color: #{$color};
+    --bs-btn-bg: #{$bg};
+    --bs-btn-border-color: #{$edge};
+    --bs-btn-hover-color: #{$color};
+    --bs-btn-hover-bg: color-mix(in srgb, #{$bg}, #{$edge});
+    --bs-btn-hover-border-color: #{$edge};
+    --bs-btn-focus-box-shadow: 0 0 0 .25rem color-mix(in srgb, #{$bg} 50%, transparent);
+    --bs-btn-active-color: #{$color};
+    --bs-btn-active-bg: #{$edge};
+    --bs-btn-active-border-color: #{$bg};
+    --bs-btn-disabled-color: #{$color};
+    --bs-btn-disabled-bg: #{$bg};
+    --bs-btn-disabled-border-color: #{$edge};
+    color: var(--bs-btn-color);
+    background: var(--bs-btn-bg);
+    border-bottom-color: var(--bs-btn-border-color);
+
+    &:hover {
+        color: var(--bs-btn-hover-color);
+        background: var(--bs-btn-hover-bg);
+        border-bottom-color: var(--bs-btn-hover-border-color);
+    }
+    &:focus, &:active {
+        color: var(--bs-btn-active-color);
+        background: var(--bs-btn-active-bg);
+        border-bottom-color: var(--bs-btn-active-border-color);
+    }
+}
+
 :root {
     --font-family-name: 'Open Sans';
     --font-sans: var(--font-family-name), sans-serif;
@@ -54,7 +87,7 @@
     --color-text-dark: #333;
 
     // Bootstrap's compiled components hardcode their blue, so this only reaches .text-primary/.bg-primary
-    // style utilities; .btn-primary is themed through its --bs-btn-* variables below
+    // style utilities; buttons are themed through btn-variant()
     --bs-primary: var(--color-brand-orange);
     --bs-primary-rgb: 242, 141, 26;
     --bs-focus-ring-color: rgba(242, 141, 26, 0.25);
@@ -1418,34 +1451,12 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
     margin-left: 10px;
 }
 
-.btn-secondary {
-    --bs-btn-color: var(--color-brand-dark);
-    --bs-btn-bg: var(--color-slate);
-    --bs-btn-border-color: var(--color-slate-dark);
-    --bs-btn-hover-color: var(--color-brand-dark);
-    --bs-btn-hover-bg: color-mix(in srgb, var(--color-slate), var(--color-slate-dark));
-    --bs-btn-hover-border-color: var(--color-slate-dark);
-    --bs-btn-focus-shadow-rgb: 195, 200, 207;
-    --bs-btn-active-color: var(--color-brand-dark);
-    --bs-btn-active-bg: var(--color-slate-dark);
-    --bs-btn-active-border-color: var(--color-slate);
-    --bs-btn-disabled-color: var(--color-brand-dark);
-    --bs-btn-disabled-bg: var(--color-slate);
-    --bs-btn-disabled-border-color: var(--color-slate-dark);
-    color: var(--bs-btn-color);
-    background: var(--bs-btn-bg);
-    border-bottom-color: var(--bs-btn-border-color);
-}
-.btn-secondary:hover {
-    color: var(--bs-btn-hover-color);
-    background: var(--bs-btn-hover-bg);
-    border-bottom-color: var(--bs-btn-hover-border-color);
-}
-.btn-secondary:focus, .btn-secondary:active {
-    color: var(--bs-btn-active-color);
-    background: var(--bs-btn-active-bg);
-    border-bottom-color: var(--bs-btn-active-border-color);
-}
+.btn-primary { @include btn-variant(var(--color-brand-orange), var(--color-brand-orange-dark)); }
+.btn-secondary { @include btn-variant(var(--color-slate), var(--color-slate-dark), var(--color-brand-dark)); }
+.btn-danger { @include btn-variant(var(--color-danger), var(--color-danger-dark)); }
+.btn-warning { @include btn-variant(var(--color-warning), var(--color-brand-orange)); }
+.btn-inverse { @include btn-variant(#454e5c, #303339); }
+.btn-github { @include btn-variant(#24292f, #101418); }
 
 .btn.disabled {
     border-bottom-color: #e1e1e8;
@@ -1456,112 +1467,12 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
     color: var(--color-text-dark);
 }
 
-.btn-danger {
-    background: var(--color-danger);
-    border-bottom-color: var(--color-danger-dark);
-}
-.btn-danger:hover {
-    background: color-mix(in srgb, var(--color-danger), var(--color-danger-dark));
-}
-.btn-danger:focus, .btn-danger:active {
-    background: var(--color-danger-dark);
-    border-bottom-color: var(--color-danger);
-}
-
-.btn-inverse, .btn-inverse:hover {
-    color: #fff;
-    background: #454e5c;
-    border-bottom-color: #303339;
-}
-.btn-inverse:focus, .btn-inverse:active {
-    color: #fff;
-    background: #303339;
-    border-bottom-color: #454e5c;
-}
-
-.btn-primary {
-    --bs-btn-color: #fff;
-    --bs-btn-bg: var(--color-brand-orange);
-    --bs-btn-border-color: var(--color-brand-orange-dark);
-    --bs-btn-hover-color: #fff;
-    --bs-btn-hover-bg: color-mix(in srgb, var(--color-brand-orange), var(--color-brand-orange-dark));
-    --bs-btn-hover-border-color: var(--color-brand-orange-dark);
-    --bs-btn-focus-shadow-rgb: 242, 141, 26;
-    --bs-btn-active-color: #fff;
-    --bs-btn-active-bg: var(--color-brand-orange-dark);
-    --bs-btn-active-border-color: var(--color-brand-orange);
-    --bs-btn-disabled-color: #fff;
-    --bs-btn-disabled-bg: var(--color-brand-orange);
-    --bs-btn-disabled-border-color: var(--color-brand-orange-dark);
-}
-// our .btn/.btn:hover set color and background directly, so restate them from the variables
-.btn-primary {
-    color: var(--bs-btn-color);
-    background: var(--bs-btn-bg);
-    border-bottom-color: var(--bs-btn-border-color);
-}
-.btn-primary:hover {
-    color: var(--bs-btn-hover-color);
-    background: var(--bs-btn-hover-bg);
-    border-bottom-color: var(--bs-btn-hover-border-color);
-}
-.btn-primary:focus, .btn-primary:active {
-    color: var(--bs-btn-active-color);
-    background: var(--bs-btn-active-bg);
-    border-bottom-color: var(--bs-btn-active-border-color);
-}
-
-.btn-success, .btn-success:hover {
-    background: var(--color-success);
-    border-bottom-color: var(--color-success-dark);
-}
-.btn-success:focus, .btn-success:active {
-    background: var(--color-success-dark);
-    border-bottom-color: var(--color-success);
-}
-
-.btn-warning, .btn-warning:hover {
-    background: var(--color-warning);
-    border-bottom-color: var(--color-brand-orange);
-}
-.btn-warning:focus, .btn-warning:active {
-    background: var(--color-brand-orange);
-    border-bottom-color: var(--color-warning);
-}
-
-.btn-info, .btn-info:hover {
-    background: #5bc0de;
-    border-bottom-color: #31b0d5;
-}
-.btn-info:focus, .btn-info:active {
-    background: #31b0d5;
-    border-bottom-color: #5bc0de;
-}
-
 .btn-github {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #24292f;
-    border-bottom-color: #101418;
-    --bs-btn-focus-shadow-rgb: 36, 41, 47;
     line-height: 1.5;
-    font-weight: 600;
-    color: #fff;
     text-align: center;
-}
-
-.btn-github:hover,
-.btn-github:focus-visible {
-    background: #32383f;
-    border-bottom-color: #24292f;
-    color: #fff;
-}
-
-.btn-github:active {
-    background: #101418;
-    border-bottom-color: #24292f;
-    color: #fff;
 }
 
 .btn-github span {
@@ -2043,11 +1954,6 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
 .package .version-details .source-reference {
     margin-left: 10px;
     display: inline-block;
-.dropdown-menu {
-    --bs-dropdown-link-active-color: #fff;
-    --bs-dropdown-link-active-bg: var(--color-brand-orange);
-}
-
 }
 .package .version-details .license {
   white-space: nowrap;
@@ -2135,6 +2041,11 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
 }
 #powered-by a img {
     width: 77px;
+}
+
+.dropdown-menu {
+    --bs-dropdown-link-active-color: #fff;
+    --bs-dropdown-link-active-bg: var(--color-brand-orange);
 }
 
 .pagination {
