@@ -30,6 +30,8 @@
   <li><a href="#list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }}</a></li>
   <li><a href="#create-package">{{ 'api_doc.api_create_package'|trans }}</a></li>
   <li><a href="#edit-package">Edit a package</a></li>
+  <li><a href="#add-maintainer">Add a maintainer to a package</a></li>
+  <li><a href="#remove-maintainer">Remove a maintainer from a package</a></li>
   <li><a href="#update-package">Update a package</a></li>
   <li><a href="#malware-feed">Malware feed format for third-party providers</a></li>
 </ul>
@@ -557,6 +559,45 @@ PUT https://{{ packagist_host }}/api/packages/[package name] {"repository":"[url
 </code></pre>
     <p>Working example:<br/>
         <code>curl -X PUT -H'Content-Type:application/json' -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/packages/monolog/monolog' -d '{"repository":"https://github.com/Seldaek/monolog"}'</code>
+    </p>
+
+</section>
+
+<section class="col-md-12">
+    <h3 id="add-maintainer">Add a maintainer to a package <span class="badge bg-warning">Authentication Required</span></h3>
+
+    <p>This endpoint adds a user as a maintainer of a package you maintain. The new maintainer is notified by email. Adding a user who already maintains the package changes nothing. Only the <code>PUT</code> method is allowed. No request body is needed.</p>
+    <p>A package can have at most 10 maintainers; going over that returns a <code>409</code> error. Additions are rate limited, and a <code>429</code> error means you should try again later.</p>
+    <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
+
+    <pre>
+PUT https://{{ packagist_host }}/api/packages/[package name]/maintainers/[username]
+<code>
+{
+  "status": "success"
+}
+</code></pre>
+    <p>Working example:<br/>
+        <code>curl -X PUT -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/packages/monolog/monolog/maintainers/seldaek'</code>
+    </p>
+
+</section>
+
+<section class="col-md-12">
+    <h3 id="remove-maintainer">Remove a maintainer from a package <span class="badge bg-warning">Authentication Required</span></h3>
+
+    <p>This endpoint removes a user from the maintainers of a package you maintain. A package must keep at least one maintainer, so removing the last one returns a <code>409</code> error. Removing a user who does not maintain the package changes nothing. Only the <code>DELETE</code> method is allowed.</p>
+    <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
+
+    <pre>
+DELETE https://{{ packagist_host }}/api/packages/[package name]/maintainers/[username]
+<code>
+{
+  "status": "success"
+}
+</code></pre>
+    <p>Working example:<br/>
+        <code>curl -X DELETE -H'Authorization: Bearer {{ app.user.username|default('USERNAME') }}:********' 'https://{{ packagist_host }}/api/packages/monolog/monolog/maintainers/seldaek'</code>
     </p>
 
 </section>

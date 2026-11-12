@@ -14,7 +14,6 @@ namespace App\Controller;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\VersionDeletionReason;
-use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
 use App\Entity\FilterListEntry;
@@ -45,9 +44,11 @@ use App\Form\Type\RemoveMaintainerRequestType;
 use App\Form\Type\TransferPackageRequestType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Model\MaintainerChangeException;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
+use App\Security\MaintainerAdditionRateLimiter;
 use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\GitHubUserMigrationWorker;
@@ -1165,7 +1166,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name:package}/maintainers/', name: 'add_maintainer', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
-    public function createMaintainerAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger): RedirectResponse
+    public function createMaintainerAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger, MaintainerAdditionRateLimiter $rateLimiter): RedirectResponse
     {
         $this->denyAccessUnlessGranted(PackageActions::AddMaintainer->value, $package);
 
@@ -1178,21 +1179,24 @@ class PackageController extends Controller
                     $maintainer = $em->getRepository(User::class)->findOneByUsernameOrEmail($username);
                 }
 
-                if (!empty($maintainer)) {
-                    if (!$package->isMaintainer($maintainer)) {
-                        $package->addMaintainer($maintainer);
-                        $em->persist(AuditRecord::maintainerAdded($package, $maintainer, $user));
-                        $this->packageManager->notifyNewMaintainer($maintainer, $package);
+                if (!empty($maintainer) && $maintainer->isAccountActive()) {
+                    if ($package->isMaintainer($maintainer)) {
+                        $this->addFlash('success', $maintainer->getUsername().' is already a '.$package->getName().' maintainer.');
+                    } elseif ($rateLimiter->isLimited($maintainer, $req->getClientIp())) {
+                        $this->addFlash('error', 'Too many maintainer additions, try again later.');
+                    } else {
+                        $this->packageManager->addMaintainer($package, $maintainer, $user);
+                        $em->flush();
+                        $rateLimiter->recordAddition($maintainer, $req->getClientIp());
+
+                        $this->addFlash('success', $maintainer->getUsername().' is now a '.$package->getName().' maintainer.');
                     }
-
-                    $em->persist($package);
-                    $em->flush();
-
-                    $this->addFlash('success', $maintainer->getUsername().' is now a '.$package->getName().' maintainer.');
 
                     return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
                 }
                 $this->addFlash('error', 'The user could not be found.');
+            } catch (MaintainerChangeException $e) {
+                $this->addFlash('error', $e->getMessage().'.');
             } catch (\Exception $e) {
                 $logger->critical($e->getMessage(), ['exception', $e]);
                 $this->addFlash('error', 'The maintainer could not be added.');
@@ -1217,19 +1221,18 @@ class PackageController extends Controller
                 }
 
                 if (!empty($maintainer)) {
-                    if ($package->isMaintainer($maintainer)) {
-                        $package->getMaintainers()->removeElement($maintainer);
-                        $em->persist(AuditRecord::maintainerRemoved($package, $maintainer, $user));
+                    if ($this->packageManager->removeMaintainer($package, $maintainer, $user)) {
+                        $em->flush();
+                        $this->addFlash('success', $maintainer->getUsername().' is no longer a '.$package->getName().' maintainer.');
+                    } else {
+                        $this->addFlash('error', $maintainer->getUsername().' is not a '.$package->getName().' maintainer.');
                     }
-
-                    $em->persist($package);
-                    $em->flush();
-
-                    $this->addFlash('success', $maintainer->getUsername().' is no longer a '.$package->getName().' maintainer.');
 
                     return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
                 }
                 $this->addFlash('error', 'The user could not be found.');
+            } catch (MaintainerChangeException $e) {
+                $this->addFlash('error', $e->getMessage().'.');
             } catch (\Exception $e) {
                 $logger->critical($e->getMessage(), ['exception', $e]);
                 $this->addFlash('error', 'The maintainer could not be removed.');

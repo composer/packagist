@@ -366,6 +366,48 @@ class PackageManager
     }
 
     /**
+     * @throws MaintainerChangeException
+     */
+    public function addMaintainer(Package $package, User $maintainer, ?User $actor): bool
+    {
+        if ($package->isMaintainer($maintainer)) {
+            return false;
+        }
+
+        if (!$maintainer->isAccountActive()) {
+            throw new MaintainerChangeException('Inactive accounts can not be added as maintainers');
+        }
+        if ($package->getMaintainers()->count() >= Package::MAX_MAINTAINERS) {
+            throw new MaintainerChangeException('A package can have at most '.Package::MAX_MAINTAINERS.' maintainers');
+        }
+
+        $package->addMaintainer($maintainer);
+        $this->doctrine->getManager()->persist(AuditRecord::maintainerAdded($package, $maintainer, $actor));
+        $this->notifyNewMaintainer($maintainer, $package);
+
+        return true;
+    }
+
+    /**
+     * @throws MaintainerChangeException
+     */
+    public function removeMaintainer(Package $package, User $maintainer, ?User $actor): bool
+    {
+        if (!$package->isMaintainer($maintainer)) {
+            return false;
+        }
+
+        if ($package->getMaintainers()->count() <= 1) {
+            throw new MaintainerChangeException('A package must keep at least one maintainer');
+        }
+
+        $package->getMaintainers()->removeElement($maintainer);
+        $this->doctrine->getManager()->persist(AuditRecord::maintainerRemoved($package, $maintainer, $actor));
+
+        return true;
+    }
+
+    /**
      * @param array<User> $newMaintainers
      */
     public function transferPackage(?User $actor, Package $package, array $newMaintainers, bool $notifyNewMaintainers): bool
