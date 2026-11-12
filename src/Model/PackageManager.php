@@ -365,6 +365,31 @@ class PackageManager
         return true;
     }
 
+    public function addMaintainer(Package $package, User $maintainer, ?User $actor): bool
+    {
+        if ($package->isMaintainer($maintainer)) {
+            return false;
+        }
+
+        $package->addMaintainer($maintainer);
+        $this->doctrine->getManager()->persist(AuditRecord::maintainerAdded($package, $maintainer, $actor));
+        $this->notifyNewMaintainer($maintainer, $package);
+
+        return true;
+    }
+
+    public function removeMaintainer(Package $package, User $maintainer, ?User $actor): bool
+    {
+        if (!$package->isMaintainer($maintainer)) {
+            return false;
+        }
+
+        $package->getMaintainers()->removeElement($maintainer);
+        $this->doctrine->getManager()->persist(AuditRecord::maintainerRemoved($package, $maintainer, $actor));
+
+        return true;
+    }
+
     /**
      * @param array<User> $newMaintainers
      */

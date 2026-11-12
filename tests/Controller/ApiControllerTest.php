@@ -17,6 +17,7 @@ use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
+use App\Entity\User;
 use App\Entity\Version;
 use App\Log\AuditLogEventType;
 use App\Model\VersionIdCache;
@@ -766,6 +767,198 @@ class ApiControllerTest extends IntegrationTestCase
         $body = $this->decodeResponse();
         self::assertSame('partial', $body['status']);
         self::assertStringContainsString('9999999-dev', $body['message'], 'the unresolved entry is reported back to the client');
+    }
+
+    public function testAddMaintainer(): void
+    {
+        $owner = self::createUser();
+        $newMaintainer = self::createUser('newbie', 'newbie@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        $this->store($owner, $newMaintainer, $package);
+
+        $this->client->enableProfiler();
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/newbie');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        self::assertSame(['status' => 'success'], $this->decodeResponse());
+        $this->assertEmailCount(1);
+        $email = $this->getMailerMessage();
+        $this->assertNotNull($email);
+        $this->assertEmailHeaderSame($email, 'To', 'newbie@example.org');
+
+        $em = self::getEM();
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($package->getId());
+        self::assertTrue($package->isMaintainer($em->getRepository(User::class)->find($newMaintainer->getId())));
+        self::assertNotNull($em->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditLogEventType::MaintainerAdded->value,
+            'packageId' => $package->getId(),
+            'actorId' => $owner->getId(),
+        ]));
+    }
+
+    public function testAddExistingMaintainerChangesNothing(): void
+    {
+        $owner = self::createUser();
+        $maintainer = self::createUser('existing', 'existing@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $maintainer]);
+        $this->store($owner, $maintainer, $package);
+
+        $this->client->enableProfiler();
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/existing');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        $this->assertEmailCount(0);
+        self::assertNull(self::getEM()->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditLogEventType::MaintainerAdded->value,
+            'packageId' => $package->getId(),
+        ]));
+    }
+
+    public function testAddMaintainerRequiresTheCallerToBeAMaintainer(): void
+    {
+        $caller = self::createUser();
+        $owner = self::createUser('owner', 'owner@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        $this->store($caller, $owner, $package);
+
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/test');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        self::assertSame(['status' => 'error', 'message' => 'You are not allowed to edit this package'], $this->decodeResponse());
+
+        $em = self::getEM();
+        $em->clear();
+        self::assertFalse($em->getRepository(Package::class)->find($package->getId())->isMaintainer($em->getRepository(User::class)->find($caller->getId())));
+    }
+
+    public function testAddMaintainerRejectsUnknownUser(): void
+    {
+        $owner = self::createUser();
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        $this->store($owner, $package);
+
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/nobody');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        self::assertSame(['status' => 'error', 'message' => 'User not found'], $this->decodeResponse());
+    }
+
+    public function testRemoveMaintainer(): void
+    {
+        $owner = self::createUser();
+        $maintainer = self::createUser('leaving', 'leaving@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $maintainer]);
+        $this->store($owner, $maintainer, $package);
+
+        $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/leaving');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        self::assertSame(['status' => 'success'], $this->decodeResponse());
+
+        $em = self::getEM();
+        $em->clear();
+        $package = $em->getRepository(Package::class)->find($package->getId());
+        self::assertFalse($package->isMaintainer($em->getRepository(User::class)->find($maintainer->getId())));
+        self::assertNotNull($em->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditLogEventType::MaintainerRemoved->value,
+            'packageId' => $package->getId(),
+            'actorId' => $owner->getId(),
+        ]));
+    }
+
+    public function testRemoveMaintainerKeepsTheLastMaintainer(): void
+    {
+        $owner = self::createUser();
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        $this->store($owner, $package);
+
+        $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/test');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        self::assertSame(['status' => 'error', 'message' => 'A package must keep at least one maintainer'], $this->decodeResponse());
+
+        $em = self::getEM();
+        $em->clear();
+        self::assertTrue($em->getRepository(Package::class)->find($package->getId())->isMaintainer($em->getRepository(User::class)->find($owner->getId())));
+    }
+
+    public function testRemoveNonMaintainerChangesNothing(): void
+    {
+        $owner = self::createUser();
+        $outsider = self::createUser('outsider', 'outsider@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        $this->store($owner, $outsider, $package);
+
+        $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/outsider');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        self::assertNull(self::getEM()->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditLogEventType::MaintainerRemoved->value,
+            'packageId' => $package->getId(),
+        ]));
+    }
+
+    public function testRemoveMaintainerRequiresTheCallerToBeAMaintainer(): void
+    {
+        $caller = self::createUser();
+        $owner = self::createUser('owner', 'owner@example.org');
+        $other = self::createUser('other', 'other@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $other]);
+        $this->store($caller, $owner, $other, $package);
+
+        $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/other');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        self::assertSame(['status' => 'error', 'message' => 'You are not allowed to edit this package'], $this->decodeResponse());
+
+        $em = self::getEM();
+        $em->clear();
+        self::assertTrue($em->getRepository(Package::class)->find($package->getId())->isMaintainer($em->getRepository(User::class)->find($other->getId())));
+    }
+
+    public function testRemoveMaintainerRejectsUnknownUser(): void
+    {
+        $owner = self::createUser();
+        $other = self::createUser('other', 'other@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $other]);
+        $this->store($owner, $other, $package);
+
+        $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/nobody');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        self::assertSame(['status' => 'error', 'message' => 'User not found'], $this->decodeResponse());
+    }
+
+    #[TestWith(['PUT', '/api/packages/test/pkg/maintainers/newbie', 'Bearer test:safe-api-token'])]
+    #[TestWith(['DELETE', '/api/packages/test/pkg/maintainers/other', 'Bearer test:safe-api-token'])]
+    #[TestWith(['PUT', '/api/packages/test/pkg/maintainers/newbie', 'Bearer test:wrong'])]
+    #[TestWith(['DELETE', '/api/packages/test/pkg/maintainers/other', null])]
+    public function testMaintainerEndpointsRequireTheMainApiToken(string $method, string $path, ?string $authorization): void
+    {
+        $owner = self::createUser();
+        $other = self::createUser('other', 'other@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $other]);
+        $this->store($owner, $other, $package);
+
+        $this->requestMaintainers($method, $path, $authorization);
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_ACCEPTABLE);
+        self::assertSame(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], $this->decodeResponse());
+
+        $em = self::getEM();
+        $em->clear();
+        self::assertCount(2, $em->getRepository(Package::class)->find($package->getId())->getMaintainers());
+    }
+
+    private function requestMaintainers(string $method, string $path, ?string $authorization = 'Bearer test:api-token'): void
+    {
+        $server = [];
+        if (null !== $authorization) {
+            $server['HTTP_Authorization'] = $authorization;
+        }
+
+        $this->client->request($method, $path, server: $server);
     }
 
     /**

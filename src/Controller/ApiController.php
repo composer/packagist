@@ -17,6 +17,7 @@ use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Model\DownloadManager;
+use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\BranchDeletionHandler;
@@ -300,6 +301,60 @@ class ApiController extends Controller
         $em = $this->getEM();
         $em->persist($package);
         $em->flush();
+
+        return new JsonResponse(['status' => 'success'], Response::HTTP_OK);
+    }
+
+    #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_add_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['PUT'])]
+    public function addMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd): JsonResponse
+    {
+        $user = $this->findUser($request);
+        if (!$user) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
+        }
+        if (!$package->isMaintainer($user)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
+        }
+
+        $statsd->increment('add_maintainer_api');
+
+        $maintainer = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => mb_strtolower($username)]);
+        if (!$maintainer) {
+            return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($packageManager->addMaintainer($package, $maintainer, $user)) {
+            $this->getEM()->flush();
+        }
+
+        return new JsonResponse(['status' => 'success'], Response::HTTP_OK);
+    }
+
+    #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_remove_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['DELETE'])]
+    public function removeMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd): JsonResponse
+    {
+        $user = $this->findUser($request);
+        if (!$user) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
+        }
+        if (!$package->isMaintainer($user)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
+        }
+
+        $statsd->increment('remove_maintainer_api');
+
+        $maintainer = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => mb_strtolower($username)]);
+        if (!$maintainer) {
+            return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($package->isMaintainer($maintainer) && 1 === $package->getMaintainers()->count()) {
+            return new JsonResponse(['status' => 'error', 'message' => 'A package must keep at least one maintainer'], Response::HTTP_FORBIDDEN);
+        }
+
+        if ($packageManager->removeMaintainer($package, $maintainer, $user)) {
+            $this->getEM()->flush();
+        }
 
         return new JsonResponse(['status' => 'success'], Response::HTTP_OK);
     }
