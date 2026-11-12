@@ -54,7 +54,9 @@
                     <input type="hidden" name="_target_path" value="{{ app.request.headers.get('Referer') }}" />
                 {% endif %}
 
-                <input class="btn w-100 btn-primary btn-lg recaptcha-protected" type="submit" id="_submit" name="_submit" value="Log in" />
+                <div class="form-actions">
+                    <input class="btn btn-primary recaptcha-protected" type="submit" id="_submit" name="_submit" value="Log in" />
+                </div>
             </form>
 
             <hr>
@@ -63,7 +65,9 @@
         <div class="clearfix"></div>
 
         <div class="col-lg-6">
-            <a class="btn w-100 btn-github btn-lg" href="{{ path('login_github_start') }}"><span class="icon-github"></span>Log in with GitHub</a>
+            <div class="form-actions">
+                <a class="btn btn-github" href="{{ path('login_github_start') }}"><span class="icon-github"></span>Log in with GitHub</a>
+            </div>
         </div>
     {% endif %}
 {% endblock %}

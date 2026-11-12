@@ -30,7 +30,9 @@
                     </div>
                 {% endif %}
 
-                <input type="submit" class="btn w-100 btn-primary btn-lg" value="{{ "login"|trans({}, 'SchebTwoFactorBundle') }}" />
+                <div class="form-actions">
+                    <input type="submit" class="btn btn-primary" value="{{ "login"|trans({}, 'SchebTwoFactorBundle') }}" />
+                </div>
 
                 {% if isCsrfProtectionEnabled %}
                     <input type="hidden" name="{{ csrfParameterName }}" value="{{ csrf_token(csrfTokenId) }}">

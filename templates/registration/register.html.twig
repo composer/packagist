@@ -41,6 +41,8 @@
             {{ form_errors(registrationForm.plainPassword) }}
         </div>
 
-        <button type="submit" class="btn w-100 btn-primary btn-lg" id="_register_submit">Register</button>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="_register_submit">Register</button>
+        </div>
     {{ form_end(registrationForm) }}
 {% endblock %}

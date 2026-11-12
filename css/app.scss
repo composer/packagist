@@ -1342,6 +1342,10 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
     gap: 12px;
     margin-top: 24px;
 }
+// reCAPTCHA injects its (fixed-position) badge wrapper next to the submit button, which would add a gap
+.form-actions > div:has(> .grecaptcha-badge) {
+    display: contents;
+}
 
 @media (max-width: 575.98px) {
     .form-actions > .btn,
