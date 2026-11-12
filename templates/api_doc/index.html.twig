@@ -588,7 +588,7 @@ POST https://{{ packagist_host }}/api/update-package {"repository":"[url]"}
     <ul>
       <li><code>package_name</code> (required): the package name, including the vendor, matched case-insensitively.</li>
       <li><code>version</code> (required): a Composer version constraint matching the affected versions, e.g. <code>1.2.3</code> or <code>&gt;=1.0,&lt;1.4</code>.</li>
-      <li><code>reason</code>: why the versions are reported, shown to users as free text.</li>
+      <li><code>reason</code>: why the versions are reported, shown to users as plain text, up to 16383 characters.</li>
       <li><code>url</code>: a link to the report with more details.</li>
     </ul>
 
