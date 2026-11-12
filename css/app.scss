@@ -51,7 +51,8 @@
     --color-muted: #999;
     --color-text-dark: #333;
 
-    // Only affects runtime var(--bs-primary[-rgb]) consumers (.text-primary, .bg-primary); .btn-primary stays blue.
+    // Bootstrap's compiled components hardcode their blue, so this only reaches .text-primary/.bg-primary
+    // style utilities; .btn-primary is themed through its --bs-btn-* variables below
     --bs-primary: var(--color-brand-orange);
     --bs-primary-rgb: 242, 141, 26;
 
@@ -1422,9 +1423,12 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
     color: var(--color-text-dark);
 }
 
-.btn-danger, .btn-danger:hover {
+.btn-danger {
     background: var(--color-danger);
     border-bottom-color: var(--color-danger-dark);
+}
+.btn-danger:hover {
+    background: color-mix(in srgb, var(--color-danger), var(--color-danger-dark));
 }
 .btn-danger:focus, .btn-danger:active {
     background: var(--color-danger-dark);
@@ -1442,13 +1446,36 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
     border-bottom-color: #454e5c;
 }
 
-.btn-primary, .btn-primary:hover {
-  background: var(--bs-primary);
-  border-bottom-color: var(--bs-primary-dark);
+.btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--color-brand-orange);
+    --bs-btn-border-color: var(--color-brand-orange-dark);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: color-mix(in srgb, var(--color-brand-orange), var(--color-brand-orange-dark));
+    --bs-btn-hover-border-color: var(--color-brand-orange-dark);
+    --bs-btn-focus-shadow-rgb: 242, 141, 26;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--color-brand-orange-dark);
+    --bs-btn-active-border-color: var(--color-brand-orange);
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: var(--color-brand-orange);
+    --bs-btn-disabled-border-color: var(--color-brand-orange-dark);
+}
+// our .btn/.btn:hover set color and background directly, so restate them from the variables
+.btn-primary {
+    color: var(--bs-btn-color);
+    background: var(--bs-btn-bg);
+    border-bottom-color: var(--bs-btn-border-color);
+}
+.btn-primary:hover {
+    color: var(--bs-btn-hover-color);
+    background: var(--bs-btn-hover-bg);
+    border-bottom-color: var(--bs-btn-hover-border-color);
 }
 .btn-primary:focus, .btn-primary:active {
-  background: var(--bs-primary);
-  border-bottom-color: var(--bs-primary-darker);
+    color: var(--bs-btn-active-color);
+    background: var(--bs-btn-active-bg);
+    border-bottom-color: var(--bs-btn-active-border-color);
 }
 
 .btn-success, .btn-success:hover {
@@ -2391,18 +2418,6 @@ body {
 }
 
 // Sponsor page styles
-.sponsor-page {
-    .btn-primary {
-        background-color: var(--color-brand-orange);
-        border-color: #d97c10;
-
-        &:hover, &:focus {
-            background-color: #d97c10;
-            border-color: #c06e0a;
-        }
-    }
-}
-
 .sponsor-hero {
     margin-bottom: 40px;
 
@@ -2718,16 +2733,6 @@ body {
 
             .bi {
                 margin-right: 6px;
-            }
-        }
-
-        .btn-primary {
-            background-color: #5bc0de;
-            border-color: #46b8da;
-
-            &:hover {
-                background-color: #31b0d5;
-                border-color: #269abc;
             }
         }
 
