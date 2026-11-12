@@ -14,6 +14,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\User;
 use App\Tests\IntegrationTestCase;
+use App\Tests\Mock\TotpAuthenticatorStub;
 
 class SecurityNavigationTest extends IntegrationTestCase
 {
@@ -174,7 +175,11 @@ class SecurityNavigationTest extends IntegrationTestCase
         self::getEM()->flush();
         $this->client->loginUser($this->user);
         $crawler = $this->client->request('GET', '/profile/security/authenticator');
-        $crawler = $this->client->click($crawler->selectLink('Remove authenticator app')->link());
+        $this->client->click($crawler->selectLink('Remove authenticator app')->link());
+        self::assertResponseRedirects('/profile/security/verify-totp');
+        $crawler = $this->client->followRedirect();
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $crawler = $this->client->followRedirect();
         self::assertSame('Authenticator app', $crawler->filter('.security-tabs a[aria-current="page"]')->text());
         self::assertTrue($this->user->isTotpAuthenticationEnabled());
         $crawler = $this->client->request('GET', '/users/alice/totp/disable?token=invalid');
