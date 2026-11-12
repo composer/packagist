@@ -16,15 +16,12 @@ use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\User;
-use App\Entity\UserRepository;
 use App\Log\AuditLogEventType;
+use App\Model\MaintainerChangeException;
 use App\Model\PackageManager;
-use App\Package\Updater;
 use App\Tests\IntegrationTestCase;
-use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\TestWith;
 use Predis\Client;
-use Symfony\Component\HttpFoundation\Response;
 
 class PackageManagerTest extends IntegrationTestCase
 {
@@ -78,6 +75,46 @@ class PackageManagerTest extends IntegrationTestCase
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package->getMaintainers()->toArray()));
         $this->assertAuditLogWasCreated($package, ['john', 'alice'], ['bob', 'alice']);
         $this->assertEmailCount($expectedEmailCount);
+    }
+
+    public function testAddMaintainerRefusesInactiveAccountsAndTheMaintainerLimit(): void
+    {
+        $maintainers = [];
+        for ($i = 0; $i < Package::MAX_MAINTAINERS - 1; ++$i) {
+            $maintainers[] = self::createUser('maintainer'.$i, 'maintainer'.$i.'@example.org');
+        }
+        $disabled = self::createUser('disabled', 'disabled@example.org', enabled: false);
+        $first = self::createUser('first', 'first@example.org');
+        $second = self::createUser('second', 'second@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: $maintainers);
+        $this->store($disabled, $first, $second, $package, ...$maintainers);
+
+        try {
+            $this->packageManager->addMaintainer($package, $disabled, null);
+            self::fail('Adding a disabled account must be refused');
+        } catch (MaintainerChangeException) {
+        }
+
+        self::assertTrue($this->packageManager->addMaintainer($package, $first, null));
+
+        $this->expectException(MaintainerChangeException::class);
+        $this->expectExceptionMessage('A package can have at most 10 maintainers');
+        $this->packageManager->addMaintainer($package, $second, null);
+    }
+
+    public function testRemoveMaintainerKeepsTheLastMaintainer(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice, $bob]);
+        $this->store($alice, $bob, $package);
+
+        self::assertTrue($this->packageManager->removeMaintainer($package, $bob, null));
+        self::assertFalse($this->packageManager->removeMaintainer($package, $bob, null));
+
+        $this->expectException(MaintainerChangeException::class);
+        $this->expectExceptionMessage('A package must keep at least one maintainer');
+        $this->packageManager->removeMaintainer($package, $alice, null);
     }
 
     public function testTransferPackageWithSameMaintainersDoesNothing(): void

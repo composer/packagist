@@ -566,6 +566,7 @@ PUT https://{{ packagist_host }}/api/packages/[package name] {"repository":"[url
     <h3 id="add-maintainer">Add a maintainer to a package <span class="badge bg-warning">Authentication Required</span></h3>
 
     <p>This endpoint adds a user as a maintainer of a package you maintain. The new maintainer is notified by email. Adding a user who already maintains the package changes nothing. Only the <code>PUT</code> method is allowed. No request body is needed.</p>
+    <p>A package can have at most 10 maintainers; going over that returns a <code>409</code> error. Additions are rate limited, and a <code>429</code> error means you should try again later.</p>
     <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
 
     <pre>
@@ -584,7 +585,7 @@ PUT https://{{ packagist_host }}/api/packages/[package name]/maintainers/[userna
 <section class="col-md-12">
     <h3 id="remove-maintainer">Remove a maintainer from a package <span class="badge bg-warning">Authentication Required</span></h3>
 
-    <p>This endpoint removes a user from the maintainers of a package you maintain. A package must keep at least one maintainer, so the last one cannot be removed. Removing a user who does not maintain the package changes nothing. Only the <code>DELETE</code> method is allowed.</p>
+    <p>This endpoint removes a user from the maintainers of a package you maintain. A package must keep at least one maintainer, so removing the last one returns a <code>409</code> error. Removing a user who does not maintain the package changes nothing. Only the <code>DELETE</code> method is allowed.</p>
     <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
 
     <pre>

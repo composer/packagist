@@ -18,6 +18,7 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\SecurityAdvisory;
 use App\Entity\User;
+use App\Entity\UserFreezeReason;
 use App\Entity\Version;
 use App\Log\AuditLogEventType;
 use App\Model\VersionIdCache;
@@ -875,7 +876,7 @@ class ApiControllerTest extends IntegrationTestCase
 
         $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/test');
 
-        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        self::assertResponseStatusCodeSame(Response::HTTP_CONFLICT);
         self::assertSame(['status' => 'error', 'message' => 'A package must keep at least one maintainer'], $this->decodeResponse());
 
         $em = self::getEM();
@@ -949,6 +950,144 @@ class ApiControllerTest extends IntegrationTestCase
         $em = self::getEM();
         $em->clear();
         self::assertCount(2, $em->getRepository(Package::class)->find($package->getId())->getMaintainers());
+    }
+
+    #[TestWith([false, null])]
+    #[TestWith([true, UserFreezeReason::Spam])]
+    public function testAddMaintainerRejectsInactiveUsers(bool $enabled, ?UserFreezeReason $freezeReason): void
+    {
+        $owner = self::createUser();
+        $target = self::createUser('inactive', 'inactive@example.org', enabled: $enabled);
+        if ($freezeReason) {
+            $target->freeze($freezeReason);
+        }
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        $this->store($owner, $target, $package);
+
+        $this->client->enableProfiler();
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/inactive');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
+        self::assertSame(['status' => 'error', 'message' => 'User not found'], $this->decodeResponse());
+        $this->assertEmailCount(0);
+        self::assertCount(1, $this->reloadPackage($package)->getMaintainers());
+    }
+
+    public function testRemoveMaintainerAcceptsInactiveUsers(): void
+    {
+        $owner = self::createUser();
+        $frozen = self::createUser('frozen', 'frozen@example.org');
+        $frozen->freeze(UserFreezeReason::Spam);
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $frozen]);
+        $this->store($owner, $frozen, $package);
+
+        $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/frozen');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        self::assertCount(1, $this->reloadPackage($package)->getMaintainers());
+    }
+
+    public function testAddMaintainerRefusesMoreThanTheMaximumMaintainers(): void
+    {
+        $owner = self::createUser();
+        $maintainers = [$owner];
+        for ($i = 1; $i < Package::MAX_MAINTAINERS; ++$i) {
+            $maintainers[] = self::createUser('maintainer'.$i, 'maintainer'.$i.'@example.org');
+        }
+        $newbie = self::createUser('newbie', 'newbie@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: $maintainers);
+        $this->store($newbie, $package, ...$maintainers);
+
+        $this->client->enableProfiler();
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/newbie');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_CONFLICT);
+        self::assertSame(['status' => 'error', 'message' => 'A package can have at most 10 maintainers'], $this->decodeResponse());
+        $this->assertEmailCount(0);
+        self::assertCount(Package::MAX_MAINTAINERS, $this->reloadPackage($package)->getMaintainers());
+
+        // re-adding an existing maintainer stays an idempotent no-op at the limit
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/maintainer1');
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+    }
+
+    #[TestWith(['PUT', 'newbie', PackageFreezeReason::Spam, Response::HTTP_FORBIDDEN])]
+    #[TestWith(['DELETE', 'other', PackageFreezeReason::Malware, Response::HTTP_FORBIDDEN])]
+    #[TestWith(['PUT', 'newbie', PackageFreezeReason::Gone, Response::HTTP_OK])]
+    #[TestWith(['DELETE', 'other', PackageFreezeReason::Temporary, Response::HTTP_OK])]
+    public function testMaintainerEndpointsRefuseSuppressedPackages(string $method, string $username, PackageFreezeReason $reason, int $expectedStatus): void
+    {
+        $owner = self::createUser();
+        $other = self::createUser('other', 'other@example.org');
+        $newbie = self::createUser('newbie', 'newbie@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $other]);
+        $package->freeze($reason);
+        $this->store($owner, $other, $newbie, $package);
+
+        $this->requestMaintainers($method, '/api/packages/test/pkg/maintainers/'.$username);
+
+        self::assertResponseStatusCodeSame($expectedStatus);
+        self::assertCount(Response::HTTP_OK === $expectedStatus ? ('PUT' === $method ? 3 : 1) : 2, $this->reloadPackage($package)->getMaintainers());
+    }
+
+    public function testPackageAdminsCanManageMaintainersOfPackagesTheyDoNotMaintain(): void
+    {
+        $admin = self::createUser(roles: ['ROLE_EDIT_PACKAGES']);
+        $owner = self::createUser('owner', 'owner@example.org');
+        $newbie = self::createUser('newbie', 'newbie@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        $this->store($admin, $owner, $newbie, $package);
+
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/newbie');
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/owner');
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+
+        $maintainers = array_map(static fn (User $user) => $user->getUsername(), $this->reloadPackage($package)->getMaintainers()->toArray());
+        self::assertSame(['newbie'], array_values($maintainers));
+    }
+
+    #[TestWith(['maintainer-add:user:%d'])]
+    #[TestWith(['maintainer-add:ip:127.0.0.1'])]
+    public function testAddMaintainerIsRateLimited(string $keyPattern): void
+    {
+        $owner = self::createUser();
+        $newbie = self::createUser('newbie', 'newbie@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        $this->store($owner, $newbie, $package);
+        self::redisCache()->set(\sprintf($keyPattern, $newbie->getId()), 20);
+
+        $this->client->enableProfiler();
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/newbie');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_TOO_MANY_REQUESTS);
+        $this->assertEmailCount(0);
+        self::assertCount(1, $this->reloadPackage($package)->getMaintainers());
+    }
+
+    public function testAddMaintainerCountsTowardsTheRateLimitOnlyWhenSomethingChanged(): void
+    {
+        $owner = self::createUser();
+        $newbie = self::createUser('newbie', 'newbie@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
+        $this->store($owner, $newbie, $package);
+
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/newbie');
+        $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/newbie');
+
+        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        self::assertSame('1', self::redisCache()->get('maintainer-add:user:'.$newbie->getId()));
+        self::assertSame('1', self::redisCache()->get('maintainer-add:ip:127.0.0.1'));
+    }
+
+    private function reloadPackage(Package $package): Package
+    {
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->find($package->getId());
+        self::assertNotNull($reloaded);
+
+        return $reloaded;
     }
 
     private function requestMaintainers(string $method, string $path, ?string $authorization = 'Bearer test:api-token'): void
