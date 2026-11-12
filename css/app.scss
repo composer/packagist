@@ -2043,6 +2043,11 @@ input:focus:user-invalid, textarea:focus:user-invalid, select:focus:user-invalid
 .package .version-details .source-reference {
     margin-left: 10px;
     display: inline-block;
+.dropdown-menu {
+    --bs-dropdown-link-active-color: #fff;
+    --bs-dropdown-link-active-bg: var(--color-brand-orange);
+}
+
 }
 .package .version-details .license {
   white-space: nowrap;
