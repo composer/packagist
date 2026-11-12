@@ -64,10 +64,13 @@
 
         {% if app.user.githubId %}
             {% if ghUser == false %}
-                <p>Unknown GitHub user, token is missing, log out and log in again via GitHub to fix it, or <a href="{{ path('user_github_disconnect', {token: csrf_token('unlink_github')}) }}">disconnect your GitHub account</a> entirely to connect another one.</p>
+                <p>Unknown GitHub user, token is missing, log out and log in again via GitHub to fix it, or <button type="submit" form="github-disconnect" class="btn btn-link p-0 align-baseline">disconnect your GitHub account</button> entirely to connect another one.</p>
             {% else %}
-                <p><a href="{{ path('user_github_disconnect', {token: csrf_token('unlink_github')}) }}">Disconnect your GitHub account</a> to connect another one.</p>
+                <p><button type="submit" form="github-disconnect" class="btn btn-link p-0 align-baseline">Disconnect your GitHub account</button> to connect another one.</p>
             {% endif %}
+            <form id="github-disconnect" method="post" action="{{ path('user_github_disconnect') }}">
+                <input type="hidden" name="token" value="{{ csrf_token('unlink_github') }}">
+            </form>
         {% endif %}
     </section>
 </section>

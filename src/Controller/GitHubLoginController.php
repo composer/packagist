@@ -139,10 +139,10 @@ class GitHubLoginController extends Controller
     {
     }
 
-    #[Route(path: '/oauth/github/disconnect', name: 'user_github_disconnect')]
+    #[Route(path: '/oauth/github/disconnect', name: 'user_github_disconnect', methods: ['POST'])]
     public function disconnect(Request $req, CsrfTokenManagerInterface $csrfTokenManager, UserNotifier $userNotifier, #[CurrentUser] User $user): RedirectResponse
     {
-        if (!$this->isCsrfTokenValid('unlink_github', $req->query->getString('token'))) {
+        if (!$this->isCsrfTokenValid('unlink_github', $req->request->getString('token'))) {
             throw $this->createAccessDeniedException('Invalid CSRF token');
         }
 
