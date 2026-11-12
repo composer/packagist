@@ -841,6 +841,52 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame('newref9999999999', $reloaded->getSource()['reference'] ?? null);
     }
 
+    public function testDefaultBranchMissingUpstreamLosesItsFlagAndRegainsItWhenBack(): void
+    {
+        $em = self::getEM();
+        $master = $this->seedDevVersion($this->package, 'dev-master', 'dev-master', 'aaaa');
+        $master->setIsDefaultBranch(true);
+        $em->flush();
+        $masterId = $master->getId();
+
+        $upstreamMaster = $this->buildCompletePackage('test/pkg', 'dev-master', 'dev-master', 'aaaa');
+        $upstreamMain = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'bbbb');
+        $upstreamMain->setIsDefaultBranch(true);
+        $upstream = [$upstreamMain];
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturnCallback(static function () use (&$upstream) {
+            return $upstream;
+        });
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        // master renamed to main
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+
+        $em->clear();
+        $softDeleted = $em->getRepository(Version::class)->find($masterId);
+        self::assertNotNull($softDeleted);
+        self::assertSame(VersionDeletionReason::AutoDeletedMissing, $softDeleted->getDeletionReason());
+        self::assertFalse($softDeleted->isDefaultBranch());
+        $defaults = $em->getRepository(Version::class)->findBy(['package' => $this->package->getId(), 'isDefaultBranch' => true]);
+        self::assertSame(['dev-main'], array_map(static fn (Version $v) => $v->getVersion(), $defaults));
+
+        // master comes back as the default within the grace period
+        $upstreamMain->setIsDefaultBranch(false);
+        $upstreamMaster->setIsDefaultBranch(true);
+        $upstream = [$upstreamMaster, $upstreamMain];
+        $package = $em->getRepository(Package::class)->find($this->package->getId());
+        self::assertNotNull($package);
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $package, $this->repositoryMock);
+
+        $em->clear();
+        $recovered = $em->getRepository(Version::class)->find($masterId);
+        self::assertNotNull($recovered);
+        self::assertNull($recovered->getSoftDeletedAt());
+        self::assertTrue($recovered->isDefaultBranch());
+        $defaults = $em->getRepository(Version::class)->findBy(['package' => $this->package->getId(), 'isDefaultBranch' => true]);
+        self::assertSame(['dev-master'], array_map(static fn (Version $v) => $v->getVersion(), $defaults));
+    }
+
     public function testDeleteBeforeWipesDevRowsButPreservesStableAndSoftDeletedStable(): void
     {
         // Seed three rows: an active stable, a maintainer-soft-deleted stable, and a dev branch.
