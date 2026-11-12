@@ -426,9 +426,13 @@ class UserController extends Controller
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }
 
+        if (!$user->isTotpAuthenticationEnabled()) {
+            return $this->redirectToRoute('user_totp_configure', ['name' => $user->getUsername()]);
+        }
+
         // Removing your own authenticator requires TOTP authentication or verification within the last 10 minutes.
         // Admin and support removal of another user's authenticator follows the separate permission check above.
-        if ($user->getId() === $loggedUser->getId() && $user->isTotpAuthenticationEnabled() && !$this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP_RECENTLY)) {
+        if ($user->getId() === $loggedUser->getId() && !$this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP_RECENTLY)) {
             return $this->redirectToRoute('user_verify_totp');
         }
 

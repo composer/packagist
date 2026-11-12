@@ -12,7 +12,9 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\AuditRecord;
 use App\Entity\User;
+use App\Log\AuditLogEventType;
 use App\Security\SecondFactorProofStore;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
@@ -178,6 +180,17 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         $this->client->request('GET', '/users/other/totp/disable');
         self::assertResponseStatusCodeSame(403);
         self::assertTrue($other->isTotpAuthenticationEnabled());
+    }
+
+    public function testResubmittedRemovalFormDoesNotRemoveTwice(): void
+    {
+        $form = $this->verify()->selectButton('Remove authenticator app')->form();
+        $this->client->submit($form);
+        self::assertResponseRedirects('/users/verify/totp/');
+
+        $this->client->submit($form);
+        self::assertResponseRedirects('/users/verify/totp/');
+        self::assertCount(1, self::getEM()->getRepository(AuditRecord::class)->findBy(['type' => AuditLogEventType::TotpAuthenticationDeactivated]));
     }
 
     public function testAccountWithoutTotpReturnsToAuthenticatorSettings(): void
