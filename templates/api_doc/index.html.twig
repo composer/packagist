@@ -1,4 +1,7 @@
 {% extends "layout.html.twig" %}
+
+{% macro section_link(id) %}<a class="section-link" href="#{{ id }}" aria-label="Link to this section">¶</a>{% endmacro %}
+
 {% block content %}
 
 <h2 class="title">{{ 'api_doc.title'|trans }}</h2>
@@ -36,7 +39,7 @@
 
 
 <section class="col-md-12">
-<h3 id="best-practices">Best practices when using the Packagist.org API</h3>
+<h3 id="best-practices">{{ _self.section_link('best-practices') }}Best practices when using the Packagist.org API</h3>
 <ul>
   <li>If you do scheduled jobs, <strong>avoid running things at midnight or once an hour at XX:00</strong>. Most people do so and we do see traffic peaks every hour. Pick a "random" time by hand for your cron jobs, or even better (if you can) is to make it run on a really randomized schedule.</li>
   <li><strong>Send a User-Agent header</strong> with all your requests including <code>mailto=you@example.com</code> so we can reach out to you if we have an issue with the way you use the API. If not you can leave us with no choice but to block IPs which we'd rather not do.</li>
@@ -46,7 +49,7 @@
 </section>
 
 <section class="col-md-12">
-<h3 id="authentication">Authentication</h3>
+<h3 id="authentication">{{ _self.section_link('authentication') }}Authentication</h3>
 <p>A lot of our API is accessible <span class="badge bg-success">Anonymously</span>. For API endpoints that <span class="badge bg-warning">require authentication</span>, you can authenticate using either Bearer token authorization or query/request parameters:</p>
 <ul>
     <li><strong>Bearer token:</strong> <code>Authorization: Bearer [username]:[apiToken]</code> header</li>
@@ -58,8 +61,8 @@
 </section>
 
 <section class="col-md-12">
-<h3 id="list-packages">{{ 'api_doc.listing_names'|trans }} <span class="badge bg-success">Anonymous</span></h3>
-<h4 id="list-packages-all">{{ 'api_doc.all_packages'|trans }}</h4>
+<h3 id="list-packages">{{ _self.section_link('list-packages') }}{{ 'api_doc.listing_names'|trans }} <span class="badge bg-success">Anonymous</span></h3>
+<h4 id="list-packages-all">{{ _self.section_link('list-packages-all') }}{{ 'api_doc.all_packages'|trans }}</h4>
 <pre>
 GET https://{{ packagist_host }}/packages/list.json
 <code>
@@ -72,7 +75,7 @@ GET https://{{ packagist_host }}/packages/list.json
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json">https://{{ packagist_host }}/packages/list.json</a></code></p>
 
-<h4 id="list-packages-by-organization">{{ 'api_doc.list_by_organization'|trans }}</h4>
+<h4 id="list-packages-by-organization">{{ _self.section_link('list-packages-by-organization') }}{{ 'api_doc.list_by_organization'|trans }}</h4>
 <pre>
 GET https://{{ packagist_host }}/packages/list.json?vendor=[vendor]
 <code>
@@ -85,7 +88,7 @@ GET https://{{ packagist_host }}/packages/list.json?vendor=[vendor]
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?vendor=composer">https://{{ packagist_host }}/packages/list.json?vendor=composer</a></code></p>
 
-<h4 id="list-packages-by-type">{{ 'api_doc.list_by_type'|trans }}</h4>
+<h4 id="list-packages-by-type">{{ _self.section_link('list-packages-by-type') }}{{ 'api_doc.list_by_type'|trans }}</h4>
 <pre>
 GET https://{{ packagist_host }}/packages/list.json?type=[type]
 <code>
@@ -98,7 +101,7 @@ GET https://{{ packagist_host }}/packages/list.json?type=[type]
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/packages/list.json?type=composer-plugin">https://{{ packagist_host }}/packages/list.json?type=composer-plugin</a></code></p>
 
-<h4 id="list-packages-with-fields">Retrieving additional data if the name is not enough</h4>
+<h4 id="list-packages-with-fields">{{ _self.section_link('list-packages-with-fields') }}Retrieving additional data if the name is not enough</h4>
 <p>If you need more than just package names you can additionally request one or more fields to be returned with every package. Currently supported fields are: <code>repository</code>, <code>type</code>, and <code>abandoned</code>.</p>
 
 <p>Note that when requesting fields, the response structure is different.</p>
@@ -123,7 +126,7 @@ GET https://{{ packagist_host }}/packages/list.json?vendor=[type]&amp;fields[]=t
 
 
 <section class="col-md-12">
-<h3 id="list-popular-packages">List popular packages <span class="badge bg-success">Anonymous</span></h3>
+<h3 id="list-popular-packages">{{ _self.section_link('list-popular-packages') }}List popular packages <span class="badge bg-success">Anonymous</span></h3>
     <p>If you need to retrieve the most popular (this is sorted by downloads over the last week, not overall downloads to ensure we demote formerly-popular packages) packages please use this endpoint to avoid having to request the download stats for all of our 300K+ packages individually. This also includes faver count (github stars + packagist.org favorites) and downloads count. The API is paginated if you need more than 100.</p>
 <pre>
 GET https://{{ packagist_host }}/explore/popular.json?per_page=100
@@ -149,11 +152,11 @@ GET https://{{ packagist_host }}/explore/popular.json?per_page=100
 
 
 <section class="col-md-12">
-<h3 id="search-packages">{{ 'api_doc.searching'|trans }} <span class="badge bg-success">Anonymous</span></h3>
+<h3 id="search-packages">{{ _self.section_link('search-packages') }}{{ 'api_doc.searching'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
 <p>Search results are paginated and you can change the pagination step by using the per_page parameter. For example <code>https://{{ packagist_host }}/search.json?q=[query]&amp;per_page=5</code></p>
 
-<h4 id="search-packages-by-name">{{ 'api_doc.search_by_name'|trans }}</h4>
+<h4 id="search-packages-by-name">{{ _self.section_link('search-packages-by-name') }}{{ 'api_doc.search_by_name'|trans }}</h4>
 <pre>
 GET https://{{ packagist_host }}/search.json?q=[query]
 <code>
@@ -175,7 +178,7 @@ GET https://{{ packagist_host }}/search.json?q=[query]
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/search.json?q=monolog">https://{{ packagist_host }}/search.json?q=monolog</a></code></p>
 
-<h4 id="search-packages-by-tag">{{ 'api_doc.search_by_tag'|trans }}</h4>
+<h4 id="search-packages-by-tag">{{ _self.section_link('search-packages-by-tag') }}{{ 'api_doc.search_by_tag'|trans }}</h4>
 <pre>
 GET https://{{ packagist_host }}/search.json?tags=[tag]
 <code>
@@ -196,7 +199,7 @@ GET https://{{ packagist_host }}/search.json?tags=[tag]
 </code></pre>
 <p>Working example: <code><a href="https://{{ packagist_host }}/search.json?q=monolog&amp;tags=psr-3">https://{{ packagist_host }}/search.json?q=monolog&amp;tags=psr-3</a></code></p>
 
-<h4 id="search-packages-by-type">{{ 'api_doc.search_by_type'|trans }}</h4>
+<h4 id="search-packages-by-type">{{ _self.section_link('search-packages-by-type') }}{{ 'api_doc.search_by_type'|trans }}</h4>
 <pre>
 GET https://{{ packagist_host }}/search.json?q=[query]&amp;type=symfony-bundle
 <code>
@@ -221,9 +224,9 @@ GET https://{{ packagist_host }}/search.json?q=[query]&amp;type=symfony-bundle
 
 
 <section class="col-md-12">
-<h3 id="get-package-data">{{ 'api_doc.get_package_data'|trans }} <span class="badge bg-success">Anonymous</span></h3>
+<h3 id="get-package-data">{{ _self.section_link('get-package-data') }}{{ 'api_doc.get_package_data'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
-<h4 id="get-package-metadata-v2">Using the Composer v2 metadata</h4>
+<h4 id="get-package-metadata-v2">{{ _self.section_link('get-package-metadata-v2') }}Using the Composer v2 metadata</h4>
 
 <p>This is the preferred way to access the data as it is always up to date, and dumped to static files so it is very efficient on our end.</p>
 
@@ -271,7 +274,7 @@ GET https://repo.{{ packagist_host }}/p2/[vendor]/[package].json
 <p>Looking to remain up to date and know when packages updated? See the <a href="#track-package-updates">Track package updates</a> API.</p>
 
 {% if 'now'|date('Ymd') < '20251001' %}
-<h4 id="get-package-metadata-v1">Using the Composer v1 metadata (<a href="https://blog.packagist.com/shutting-down-packagist-org-support-for-composer-1-x/">DEPRECATED</a>, not updated anymore as of February 1st 2025, will be inaccessible from August 1st 2025)</h4>
+<h4 id="get-package-metadata-v1">{{ _self.section_link('get-package-metadata-v1') }}Using the Composer v1 metadata (<a href="https://blog.packagist.com/shutting-down-packagist-org-support-for-composer-1-x/">DEPRECATED</a>, not updated anymore as of February 1st 2025, will be inaccessible from August 1st 2025)</h4>
 
 <p>You can also send <code>If-Modified-Since</code> headers to limit your bandwidth usage and cache the files on your end with the proper filemtime set according to our <code>Last-Modified</code> header.</p>
 
@@ -306,7 +309,7 @@ GET https://repo.{{ packagist_host }}/p/[vendor]/[package].json
 <p>Working example: <code><a href="https://repo.{{ packagist_host }}/p/monolog/monolog.json">https://repo.{{ packagist_host }}/p/monolog/monolog.json</a></code></p>
 {% endif %}
 
-<h4 id="get-package-by-name">Using the API</h4>
+<h4 id="get-package-by-name">{{ _self.section_link('get-package-by-name') }}Using the API</h4>
 
 <p>The JSON API for packages gives you all the infos we have including downloads, dependents count, github info, etc. However it is generated dynamically so for performance reason we cache the responses for twelve hours. As such if the static file endpoint described above is enough please use it instead.</p>
 
@@ -336,7 +339,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package].json
 </section>
 
 <section class="col-md-12">
-<h3 id="get-package-stats">Get package download stats <span class="badge bg-success">Anonymous</span></h3>
+<h3 id="get-package-stats">{{ _self.section_link('get-package-stats') }}Get package download stats <span class="badge bg-success">Anonymous</span></h3>
 <p>If you need complete package information and use <a href="#get-package-by-name">the JSON API</a> already then please use the <code>downloads</code> key to retrieve stats from that response.</p>
 
 <p>However if you are only interested in download stats for a set of package names, you can use the stats endpoint which includes overall download stats + the faver count (github stars + packagist.org favorites):</p>
@@ -362,7 +365,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package]/stats.json
 
 
 <section class="col-md-12">
-<h3 id="list-dependents">List the dependents of a package <span class="badge bg-success">Anonymous</span></h3>
+<h3 id="list-dependents">{{ _self.section_link('list-dependents') }}List the dependents of a package <span class="badge bg-success">Anonymous</span></h3>
 
 <pre>
 GET https://{{ packagist_host }}/packages/[vendor]/[package]/dependents.json?order_by=none
@@ -390,7 +393,7 @@ GET https://{{ packagist_host }}/packages/[vendor]/[package]/dependents.json?ord
 
 
 <section class="col-md-12">
-<h3 id="track-package-updates">Track package updates <span class="badge bg-success">Anonymous</span></h3>
+<h3 id="track-package-updates">{{ _self.section_link('track-package-updates') }}Track package updates <span class="badge bg-success">Anonymous</span></h3>
 
 <p>This endpoint provides you with a feed of metadata changes you can poll to know what packages you need to update.</p>
 
@@ -461,7 +464,7 @@ GET https://{{ packagist_host }}/metadata/changes.json?since=16140636710498
 
 
 <section class="col-md-12">
-    <h3 id="get-statistics">{{ 'api_doc.get_statistics'|trans }} <span class="badge bg-success">Anonymous</span></h3>
+    <h3 id="get-statistics">{{ _self.section_link('get-statistics') }}{{ 'api_doc.get_statistics'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
     <p>This endpoint provides basic some statistics.</p>
 
@@ -479,7 +482,7 @@ GET https://{{ packagist_host }}/statistics.json
 </section>
 
 <section class="col-md-12">
-    <h3 id="list-security-advisories">{{ 'api_doc.list_security_advisory'|trans }} <span class="badge bg-success">Anonymous</span></h3>
+    <h3 id="list-security-advisories">{{ _self.section_link('list-security-advisories') }}{{ 'api_doc.list_security_advisory'|trans }} <span class="badge bg-success">Anonymous</span></h3>
 
     <p>This endpoint provides a list of security advisories. Either a list of packages as query or request parameter OR a timestamp as updatedSince query parameter needs to be passed.</p>
 
@@ -524,7 +527,7 @@ GET https://{{ packagist_host }}/api/security-advisories/?packages[]=[vendor/pac
 
 
 <section class="col-md-12">
-    <h3 id="create-package">{{ 'api_doc.api_create_package'|trans }} <span class="badge bg-warning">Authentication Required</span></h3>
+    <h3 id="create-package">{{ _self.section_link('create-package') }}{{ 'api_doc.api_create_package'|trans }} <span class="badge bg-warning">Authentication Required</span></h3>
 
     <p>This endpoint creates a package for a specific repo. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
     <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
@@ -543,7 +546,7 @@ POST https://{{ packagist_host }}/api/create-package {"repository":"[url]"}
 </section>
 
 <section class="col-md-12">
-    <h3 id="edit-package">Edit a package <span class="badge bg-warning">Authentication Required</span></h3>
+    <h3 id="edit-package">{{ _self.section_link('edit-package') }}Edit a package <span class="badge bg-warning">Authentication Required</span></h3>
 
     <p>This endpoint allows you to edit a package URL. Only the <code>PUT</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
     <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
@@ -562,7 +565,7 @@ PUT https://{{ packagist_host }}/api/packages/[package name] {"repository":"[url
 </section>
 
 <section class="col-md-12">
-    <h3 id="update-package">Update a package <span class="badge bg-warning">Authentication Required</span></h3>
+    <h3 id="update-package">{{ _self.section_link('update-package') }}Update a package <span class="badge bg-warning">Authentication Required</span></h3>
 
     <p>This endpoint updates a package by canonical repository URL or packagist.org package URL. Only the <code>POST</code> method is allowed. The <code>content-type: application/json</code> header is required.</p>
     <p>This endpoint is considered SAFE and allows either your main or safe <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
@@ -583,7 +586,7 @@ POST https://{{ packagist_host }}/api/update-package {"repository":"[url]"}
 </section>
 
 <section class="col-md-12">
-    <h3 id="malware-feed">Malware feed format for third-party providers</h3>
+    <h3 id="malware-feed">{{ _self.section_link('malware-feed') }}Malware feed format for third-party providers</h3>
 
     <p>This is not an endpoint of Packagist. It describes the format a third party can use to provide a feed of package versions reported as malware, for Packagist to ingest. The feed is a JSON array with one object per affected package, described by the <a href="https://{{ packagist_host }}/schema/malware-feed.json">malware feed JSON schema</a>.</p>
 

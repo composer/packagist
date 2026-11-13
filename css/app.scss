@@ -290,6 +290,47 @@ strong {
     font-weight: 600;
 }
 
+// Pilcrow in the gutter left of an anchored heading; app.js copies its URL on click.
+// Absolute with no offsets keeps it where it would sit inline, so the margin pulls it out.
+.section-link {
+    position: absolute;
+    width: 1.25em;
+    margin-left: -1.25em;
+    color: var(--color-muted);
+    font-weight: normal;
+    text-align: center;
+    text-decoration: none;
+    opacity: 0;
+
+    &:hover, &:focus-visible {
+        color: var(--color-brand-orange-dark);
+    }
+}
+:hover > .section-link, .section-link:focus-visible {
+    opacity: 1;
+}
+[id]:has(> .section-link) {
+    // clears the fixed header when jumping to the heading
+    scroll-margin-top: 65px;
+}
+// Flashes the heading a link points at, as a target near the page bottom can't scroll to the top.
+// The hold covers bootstrap's smooth scroll, which takes ~1.7s to reach the bottom of the API doc.
+:target:has(> .section-link) {
+    border-radius: var(--bs-border-radius);
+    animation: section-highlight 3s ease-in;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation-timing-function: step-end;
+    }
+}
+@keyframes section-highlight {
+    $highlight: color-mix(in srgb, var(--color-brand-orange) 25%, transparent);
+    from, 50% {
+        background-color: $highlight;
+        box-shadow: 0 0 0 6px $highlight;
+    }
+}
+
 .no-padding {
     padding: 0;
 }

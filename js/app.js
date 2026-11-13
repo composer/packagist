@@ -40,12 +40,14 @@ document.querySelectorAll('.btn-rotate-api-token').forEach(function (el) {
     });
 });
 
-document.querySelectorAll('.toc a').forEach(function (el) {
-    el.addEventListener('click', function (e) {
-        setTimeout(function () {
-            const target = document.getElementById(e.target.getAttribute('href').substring(1));
-            scrollTo(0, target.getBoundingClientRect().top + window.scrollY - 65);
-        }, 0);
+// not prevented, so the link still navigates to its heading
+document.querySelectorAll('.section-link').forEach(function (el) {
+    el.addEventListener('click', function () {
+        navigator.clipboard?.writeText(el.href).then(function () {
+            const tooltip = Tooltip.getOrCreateInstance(el, { title: 'Link copied', trigger: 'manual' });
+            tooltip.show();
+            setTimeout(() => tooltip.hide(), 1500);
+        }, () => {});
     });
 });
 
