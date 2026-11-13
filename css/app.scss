@@ -574,6 +574,11 @@ strong {
     font-size: 20px;
 }
 
+.nav-user .nav-user-menu span.icon-star:before {
+    position: relative;
+    top: 4px;
+}
+
 .nav-user .nav-user-menu span.normal {
     float: none;
 }
