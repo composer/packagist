@@ -105,3 +105,9 @@ To setup the search index, run:
 bin/console algolia:configure
 bin/console packagist:index
 ```
+
+### Passkeys and security keys
+
+Use a trusted HTTPS certificate for `https://packagist.wip`. For a different local
+host, set `WEBAUTHN_RP_ID` to the hostname and `WEBAUTHN_ORIGIN` to the exact
+origin, including any port.

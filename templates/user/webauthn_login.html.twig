@@ -1,0 +1,52 @@
+{% extends 'layout.html.twig' %}
+
+{% block content %}
+    <h2 class="title">Passkeys and security keys</h2>
+    <p>Use one of your registered passkeys or security keys to finish signing in.</p>
+    <div class="account-form">
+        {% if authenticationError %}
+            {% set errorDomain = authenticationError starts with 'webauthn.' ? 'messages' : 'SchebTwoFactorBundle' %}
+            <p class="alert alert-danger">{{ authenticationError|trans(authenticationErrorData, errorDomain) }}</p>
+        {% endif %}
+        <form action="{{ path('2fa_login_check') }}" method="post" data-webauthn="login" data-options="{{ path('webauthn_login_options') }}" data-code-name="{{ authCodeParameterName }}">
+            <input type="hidden" name="{{ authCodeParameterName }}" value="">
+            <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
+            <input type="hidden" name="{{ csrfParameterName }}" value="{{ csrf_token(csrfTokenId) }}">
+            {% if displayTrustedOption %}
+                <div class="form-group">
+                    <div class="form-check">
+                        <input class="form-check-input" id="_trusted" type="checkbox" name="{{ trustedParameterName }}">
+                        <label class="form-check-label" for="_trusted">Trust this computer for 30 days</label>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Use passkey or security key</button>
+            </div>
+            {{ include('user/_webauthn_error.html.twig') }}
+        </form>
+        {% if 'totp' in availableTwoFactorProviders %}
+            <p><a href="{{ path('2fa_login', {preferProvider: 'totp'}) }}">Use authenticator app instead</a></p>
+        {% endif %}
+        <details class="mb-3">
+            <summary>Lost access? Use your backup code</summary>
+            <p>Using your backup code disables your configured second factors.</p>
+            <form action="{{ path('2fa_login_check') }}" method="post">
+                <input type="hidden" name="{{ csrfParameterName }}" value="{{ csrf_token(csrfTokenId) }}">
+                <div class="form-group">
+                    <label for="backup-code">Backup code</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><span class="icon-key" aria-hidden="true"></span></span>
+                        <input class="form-control" id="backup-code" name="{{ authCodeParameterName }}" autocomplete="off" required>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Use backup code</button>
+                </div>
+            </form>
+        </details>
+        <p>No backup code? <a href="{{ path('support_lost_totp') }}">Request a reset</a>.</p>
+        <hr>
+        <a href="{{ logout_path() }}">Cancel</a>
+    </div>
+{% endblock %}

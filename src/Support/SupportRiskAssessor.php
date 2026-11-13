@@ -208,6 +208,7 @@ class SupportRiskAssessor
             AuditLogEventType::GitHubDisconnectedFromUser,
             AuditLogEventType::TotpAuthenticationActivated,
             AuditLogEventType::TotpAuthenticationDeactivated,
+            AuditLogEventType::WebAuthnCredentialChanged,
             AuditLogEventType::UserFrozen,
             AuditLogEventType::UserUnfrozen,
         ];

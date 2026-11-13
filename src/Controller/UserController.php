@@ -44,6 +44,7 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\UriSigner;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -57,7 +58,7 @@ use Webmozart\Assert\Assert;
  */
 class UserController extends Controller
 {
-    public function __construct(private Scheduler $scheduler)
+    public function __construct(private Scheduler $scheduler, private UriSigner $uriSigner)
     {
     }
 
@@ -343,6 +344,14 @@ class UserController extends Controller
             throw $this->createAccessDeniedException('Two-factor authentication is already enabled');
         }
 
+        if ($user->getWebAuthnCredentials() !== [] && !$this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY)) {
+            $this->addFlash('info', 'Confirm your identity with a passkey or security key before setting up an authenticator app.');
+
+            return $this->redirectToRoute('user_webauthn_manage', [
+                'return_to' => $this->uriSigner->sign($this->generateUrl('user_totp_enable', ['name' => $user->getUsername()])),
+            ]);
+        }
+
         $secret = (string) $req->getSession()->get('totp_secret') ?: $authenticator->generateSecret();
         // An empty secret would leave isTotpAuthenticationEnabled() reporting TOTP off while one is set.
         Assert::stringNotEmpty($secret);
@@ -356,13 +365,16 @@ class UserController extends Controller
             ->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $user->setTotpSecret($secret);
+            $backupCode = $authManager->enableTotpAuthentication($user, $loggedUser, $secret);
             $req->getSession()->remove('totp_secret');
-            $authManager->enableTotpAuthentication($user, $loggedUser, $secret);
-            $backupCode = $authManager->generateAndSaveNewBackupCode($user);
 
             $secondFactorProofStore->record($user, SecondFactorProofStore::TOTP);
             $this->addFlash('success', 'Authenticator app enabled.');
+
+            if ($backupCode === null) {
+                return $this->redirectToRoute('security_authenticator');
+            }
+
             $req->getSession()->set('backup_code', $backupCode);
 
             return $this->redirectToRoute('user_totp_confirm', ['name' => $user->getUsername()]);
@@ -430,10 +442,13 @@ class UserController extends Controller
             return $this->redirectToRoute('user_totp_configure', ['name' => $user->getUsername()]);
         }
 
-        // Removing your own authenticator requires TOTP authentication or verification within the last 10 minutes.
-        // Admin and support removal of another user's authenticator follows the separate permission check above.
-        if ($user->getId() === $loggedUser->getId() && !$this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP_RECENTLY)) {
-            return $this->redirectToRoute('user_verify_totp');
+        // Removing your own authenticator requires second-factor authentication or verification within the last 10 minutes
+        // Admin and support removal of another user's authenticator follows the separate permission check above
+        if ($user->getId() === $loggedUser->getId() && !$this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY)) {
+            // Return to the confirmation page for this account without carrying over a removal token
+            $returnUrl = $this->generateUrl('user_totp_disable', ['name' => $user->getUsername()]);
+
+            return $this->redirectToRoute('user_verify_totp', ['return_to' => $this->uriSigner->sign($returnUrl)]);
         }
 
         if ($req->isMethod('POST')) {

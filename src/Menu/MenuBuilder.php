@@ -15,6 +15,7 @@ namespace App\Menu;
 use App\Controller\AdminController;
 use App\Entity\SupportRequestRepository;
 use App\Entity\User;
+use App\Security\Voter\WebAuthnVoter;
 use App\Support\SupportQueueAccess;
 use Knp\Menu\FactoryInterface;
 use Knp\Menu\ItemInterface;
@@ -279,5 +280,16 @@ class MenuBuilder
                 ['route' => 'user_verify_totp'],
             ]],
         ]);
+
+        if ($this->security->isGranted(WebAuthnVoter::VIEW)) {
+            $security->addChild($this->translator->trans('menu.passkeys_security_keys'), [
+                'route' => 'user_webauthn_manage',
+                'extras' => ['translation_domain' => false, 'routes' => [
+                    ['route' => 'user_webauthn_edit'],
+                    ['route' => 'user_webauthn_remove'],
+                    ['route' => 'user_webauthn_register'],
+                ]],
+            ]);
+        }
     }
 }

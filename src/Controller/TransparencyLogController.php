@@ -59,12 +59,9 @@ class TransparencyLogController extends Controller
             $filter->filter($qb);
         }
 
-        // Don't display TOTP events in the result list initially
+        $hiddenTypes = AuditLogEventType::hiddenFromTransparencyLogCases();
         $qb->andWhere('a.type NOT IN (:hidden_types)')
-            ->setParameter('hidden_types', [
-                AuditLogEventType::TotpAuthenticationActivated->value,
-                AuditLogEventType::TotpAuthenticationDeactivated->value,
-            ]);
+            ->setParameter('hidden_types', array_map(static fn (AuditLogEventType $type): string => $type->value, $hiddenTypes));
 
         $auditLogs = new Pagerfanta(new QueryAdapter($qb, false, false));
         $auditLogs->setNormalizeOutOfRangePages(true);
@@ -80,8 +77,7 @@ class TransparencyLogController extends Controller
         $categoryOrder = ['ownership', 'package', 'version', 'user', 'filterlist', 'advisory', 'organization'];
         $groupedTypes = [];
         foreach (AuditLogEventType::cases() as $type) {
-            // Don't display TOTP events in the type filter initially
-            if ($type === AuditLogEventType::TotpAuthenticationActivated || $type === AuditLogEventType::TotpAuthenticationDeactivated) {
+            if (\in_array($type, $hiddenTypes, true)) {
                 continue;
             }
             $groupedTypes[$type->category()][] = $type;

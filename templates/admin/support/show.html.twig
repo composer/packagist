@@ -266,10 +266,10 @@
                     <form method="post" action="{{ path('admin_support_request_grant_totp_reset', {publicId: supportRequest.publicId}) }}"
                           onsubmit="return confirm('Disable two-factor authentication on {{ supportRequest.user.username }} and tell them it was granted?')">
                         <input type="hidden" name="token" value="{{ csrf_token(csrfTokenId) }}" />
-                        <button type="submit" class="btn btn-danger">Remove authenticator app and resolve</button>
+                        <button type="submit" class="btn btn-danger">Remove all second factors and resolve</button>
                     </form>
                     <p class="form-text">
-                        Removes the authenticator app, signs the account out everywhere, emails them the standard granted
+                        Removes all second factors, signs the account out everywhere, emails them the standard granted
                         response, and closes this task.
                     </p>
                 {% endif %}

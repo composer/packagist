@@ -23,6 +23,7 @@ menu:
     security: Security
     security_overview: Overview
     authenticator_app: Authenticator app
+    passkeys_security_keys: Passkeys and security keys
     my_packages: My packages
     my_organizations: My organizations
     my_favorites: My favorites
@@ -219,6 +220,7 @@ audit_log:
         password_changed: Password changed
         password_reset: Password reset
         password_reset_requested: Password reset requested
+        webauthn_credential_changed: Passkeys and security keys changed
         totp_activated: Authenticator app enabled
         totp_deactivated: Authenticator app removed
         user_created: User created
@@ -261,3 +263,21 @@ audit_log:
         user-registration-method:
             form: 'Registration form'
             github-oauth: 'GitHub OAuth'
+
+webauthn:
+    error:
+        unsupported: 'This browser does not support passkeys and security keys.'
+        cancelled: 'Verification was cancelled or timed out. You can try again.'
+        failed: 'Verification failed. Refresh the page and try again.'
+        already_registered: 'This credential is already registered.'
+        no_credential: 'No passkey or security key is registered.'
+        expired_challenge: 'This passkey request expired or was replaced. Start again.'
+        invalid_assertion: 'The passkey or security key could not be verified.'
+        invalid_registration: 'The passkey or security key could not be registered.'
+        invalid_name: 'Enter a name between 1 and 100 characters.'
+        too_many_attempts: 'Too many authentication failures. Try again in %minutes% minutes.'
+
+webauthn.audit:
+    added: Passkey or security key added
+    renamed: Passkey or security key renamed
+    removed: Passkey or security key removed

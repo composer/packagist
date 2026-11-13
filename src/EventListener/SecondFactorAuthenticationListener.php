@@ -29,12 +29,13 @@ use Symfony\Component\Security\Http\Event\LogoutEvent;
 class SecondFactorAuthenticationListener
 {
     /*
-     * The goal of this listener is to record when the user completes a login challenge with TOTP
-     * so we can later check whether they authenticated with TOTP in this session and how recently.
+     * Record the method used to complete the login challenge so later authorization can distinguish
+     * TOTP from WebAuthn and check how recently the user verified that factor.
      * Scheb fires CODE_VALID before the challenge finishes, and COMPLETE also fires for backup codes.
      * We store the user ID in a request attribute at CODE_VALID so that at COMPLETE we can confirm
-     * the same user verified a TOTP code on this request before recording proof in the session.
+     * the same user verified the second factor on this request before recording proof in the session.
      */
+    private const string VALIDATED_PROVIDER = '_security.validated_second_factor_provider';
     private const string VALIDATED_USER = '_security.validated_totp_user';
 
     public function __construct(
@@ -51,11 +52,12 @@ class SecondFactorAuthenticationListener
         $user = $event->getUser();
         if (
             $token instanceof TwoFactorTokenInterface
-            && $token->getCurrentTwoFactorProvider() === SecondFactorProofStore::TOTP
+            && \in_array($token->getCurrentTwoFactorProvider(), [SecondFactorProofStore::TOTP, SecondFactorProofStore::WEBAUTHN], true)
             && $user instanceof User
             && $token->getUser() === $user
         ) {
             $this->requests->getCurrentRequest()?->attributes->set(self::VALIDATED_USER, $user->getId());
+            $this->requests->getCurrentRequest()?->attributes->set(self::VALIDATED_PROVIDER, $token->getCurrentTwoFactorProvider());
         }
     }
 
@@ -63,12 +65,15 @@ class SecondFactorAuthenticationListener
     public function completed(TwoFactorAuthenticationEvent $event): void
     {
         $user = $event->getToken()->getUser();
+        $method = $event->getRequest()->attributes->get(self::VALIDATED_PROVIDER);
+
         if (
             $user instanceof User
-            && $user->isTotpAuthenticationEnabled()
+            && $user->hasSecondFactorAuthenticationEnabled()
+            && \in_array($method, [SecondFactorProofStore::TOTP, SecondFactorProofStore::WEBAUTHN], true)
             && $event->getRequest()->attributes->get(self::VALIDATED_USER) === $user->getId()
         ) {
-            $this->secondFactorProofStore->record($user, SecondFactorProofStore::TOTP);
+            $this->secondFactorProofStore->record($user, $method);
         }
     }
 

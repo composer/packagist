@@ -4,6 +4,9 @@
     <h2 class="title">Authenticator app</h2>
 
     <p>Enter the code from your authenticator app to sign in.</p>
+    {% if 'webauthn' in availableTwoFactorProviders %}
+        <p><a href="{{ path('2fa_login', {preferProvider: 'webauthn'}) }}">Use passkey or security key instead</a></p>
+    {% endif %}
 
     <section class="row">
         <div class="col-lg-6">
@@ -40,7 +43,7 @@
             </form>
 
             <p>
-                Lost access to your authenticator? Enter the backup code in the form above to remove your authenticator app.
+                Lost access to your authenticator? Enter the backup code in the form above to disable your configured second factors.
                 No backup code either? <a href="{{ path('support_lost_totp') }}">Request a reset</a> and we
                 will review it by hand.
             </p>

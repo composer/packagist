@@ -57,6 +57,8 @@ security:
         - { path: ^/logout$, role: PUBLIC_ACCESS }
         # The login challenge and authenticator recovery require an in-progress second factor.
         - { path: ^/2fa(?:-check)?/?$, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
+        # Scheb checks the access map before the controller runs
+        - { path: ^/2fa/webauthn/options$, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
         - { path: ^/totp/lost/?$, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
         # Members only parts of the site
         # /contact itself and the token-authenticated TOTP reset cancellation link stay public, so only the

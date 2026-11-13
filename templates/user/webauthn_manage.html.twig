@@ -1,0 +1,88 @@
+{% extends 'user/security_layout.html.twig' %}
+
+{% block title %}Passkeys and security keys - {{ parent() }}{% endblock %}
+
+{% block security_content %}
+    <h3>Passkeys and security keys</h3>
+    <p>Use a passkey or security key as your second factor when signing in with your password or GitHub.</p>
+
+    {% if backup_code %}
+        <section class="account-form p-4 mb-4 bg-body-secondary border rounded" aria-labelledby="backup-code-heading">
+            <h4 class="h5" id="backup-code-heading">Save your backup code</h4>
+            <p>Keep this one-time code somewhere safe. You can use it to sign in if you lose access to your second factors.</p>
+            <kbd class="two-factor-backup-code">{{ backup_code }}</kbd>
+            <p class="mb-2"><strong>This code will not be shown again.</strong></p>
+            <p class="small text-body-secondary mb-0">Using your backup code disables all second factors on your account.</p>
+        </section>
+    {% endif %}
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-4 mb-3">
+        <div>
+            <h4 class="h6 mb-0">Registered keys</h4>
+            {% if not can_manage_keys %}
+                <p id="confirm-key-changes" class="small text-body-secondary mt-1 mb-0">{{ has_return_to ? 'Confirm your identity to continue with your security change.' : 'Confirm your identity to make changes.' }}</p>
+            {% endif %}
+        </div>
+        {% if not can_manage_keys %}
+            <div class="d-flex flex-wrap align-items-start gap-2">
+                {% if user.totpAuthenticationEnabled %}
+                    <a class="btn btn-sm btn-secondary" href="{{ totp_verification_url }}">Confirm with authenticator app</a>
+                {% endif %}
+                {% if user.webAuthnCredentials is not empty %}
+                    <form class="mb-0" action="{{ webauthn_verification_url }}" method="post" data-webauthn="verify" data-options="{{ path('user_webauthn_verify_options') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
+                        <button class="btn btn-sm btn-secondary" type="submit">Confirm with passkey or security key</button>
+                        {{ include('user/_webauthn_error.html.twig') }}
+                    </form>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <ul class="list-unstyled mt-0" aria-label="Registered keys">
+        {% for credential in user.webAuthnCredentials %}
+            <li class="bg-body rounded p-3 mb-2">
+                <div class="row g-3">
+                    <div class="col-sm-8">
+                        {% if can_manage_keys %}
+                            <form class="mb-2" method="post" action="{{ path('user_webauthn_edit', {id: credential.id}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
+                                <label class="visually-hidden" for="key-{{ credential.id }}">Key name</label>
+                                <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-2">
+                                    <input class="form-control form-control-sm" id="key-{{ credential.id }}" name="name" value="{{ credential.name }}" maxlength="100" required>
+                                    <button class="btn btn-sm btn-secondary flex-shrink-0" name="action" value="rename">Rename</button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <h5 class="h6 mb-1 text-break">{{ credential.name }}</h5>
+                        {% endif %}
+                        <div class="small text-body-secondary">
+                            <div>Added {{ credential.createdAt|date('Y-m-d') }}</div>
+                            <div>Last used {{ credential.lastUsedAt ? credential.lastUsedAt|date('Y-m-d H:i') : 'never' }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 text-sm-end">
+                        <a class="btn btn-sm btn-danger" href="{{ path('user_webauthn_remove', {id: credential.id}) }}">Remove</a>
+                    </div>
+                </div>
+            </li>
+        {% else %}
+            <li>No passkeys or security keys registered.</li>
+        {% endfor %}
+    </ul>
+
+    {% if can_enroll_keys and can_manage_keys %}
+        <h4 class="h6 mt-4">Add a passkey or security key</h4>
+        <form class="account-form" action="{{ path('user_webauthn_register') }}" method="post" data-webauthn="register" data-options="{{ path('user_webauthn_register_options') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
+            <div class="form-group">
+                <label class="form-label" for="key-name">Name</label>
+                <input class="form-control" id="key-name" name="name" placeholder="For example, my phone or spare key" maxlength="100" required>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Add passkey or security key</button>
+            </div>
+            {{ include('user/_webauthn_error.html.twig') }}
+        </form>
+    {% endif %}
+{% endblock %}

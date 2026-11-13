@@ -48,6 +48,7 @@ enum AuditLogEventType: string
     case UsernameChanged = 'username_changed';
     case GitHubLinkedWithUser = 'github_linked_with_user';
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user';
+    case WebAuthnCredentialChanged = 'webauthn_credential_changed';
     case TotpAuthenticationActivated = 'totp_activated';
     case TotpAuthenticationDeactivated = 'totp_deactivated';
 
@@ -87,6 +88,18 @@ enum AuditLogEventType: string
     /**
      * @return list<self>
      */
+    public static function hiddenFromTransparencyLogCases(): array
+    {
+        return [
+            self::TotpAuthenticationActivated,
+            self::TotpAuthenticationDeactivated,
+            self::WebAuthnCredentialChanged,
+        ];
+    }
+
+    /**
+     * @return list<self>
+     */
     public static function organizationCases(): array
     {
         return array_values(array_filter(self::cases(), static fn (self $type): bool => $type->category() === 'organization'));
@@ -105,7 +118,7 @@ enum AuditLogEventType: string
             self::PasswordResetRequested, self::PasswordReset, self::PasswordChanged,
             self::EmailChanged, self::UsernameChanged, self::GitHubLinkedWithUser,
             self::GitHubDisconnectedFromUser, self::TotpAuthenticationActivated,
-            self::TotpAuthenticationDeactivated => 'user',
+            self::TotpAuthenticationDeactivated, self::WebAuthnCredentialChanged => 'user',
             self::FilterListEntryAdded, self::FilterListEntryDeleted,
             self::FilterListEntryDisabled, self::FilterListEntryEnabled,
             self::FilterListEntryEdited => 'filterlist',

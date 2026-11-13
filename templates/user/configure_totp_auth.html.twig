@@ -5,13 +5,13 @@
 {% block security_content %}
     {% if backup_code %}
         <div class="alert alert-info">
-            <p>If you lose access to your authenticator app, you can use this one-time backup code to sign in: <code>{{ backup_code }}</code></p>
+            <p>If you lose access to your second factors, you can use this one-time backup code to sign in: <code>{{ backup_code }}</code></p>
             <p><strong>Take a moment to record this in a safe place. This code will not be shown again!</strong></p>
         </div>
     {% endif %}
 
     {% if isActualUser %}
-        <p class="text-body-secondary mb-4">Manage your password and authenticator app.</p>
+        <p class="text-body-secondary mb-4">Manage your password and second factors.</p>
 
         <section class="card mb-3" aria-labelledby="password-heading">
             <div class="card-body">
@@ -35,4 +35,18 @@
             {% endif %}
         </div>
     </section>
+    {% if not isActualUser or is_granted(constant('App\\Security\\Voter\\WebAuthnVoter::VIEW')) %}
+        <section class="card mb-3" aria-labelledby="passkeys-heading">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+                    <h4 class="h5 mb-0" id="passkeys-heading">Passkeys and security keys</h4>
+                    <span class="badge {{ user.webAuthnCredentials is not empty ? 'text-bg-success' : 'text-bg-secondary' }}">{{ user.webAuthnCredentials is not empty ? 'Enabled' : 'Not set up' }}</span>
+                </div>
+                <p>Use a passkey or security key as your second factor when signing in.</p>
+                {% if isActualUser %}
+                    <a class="btn {{ user.webAuthnCredentials is not empty ? 'btn-secondary' : 'btn-primary' }}" href="{{ path('user_webauthn_manage') }}">{{ user.webAuthnCredentials is not empty ? 'View passkeys and security keys' : 'Set up a passkey or security key' }}</a>
+                {% endif %}
+            </div>
+        </section>
+    {% endif %}
 {% endblock %}
