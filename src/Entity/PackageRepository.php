@@ -64,10 +64,6 @@ class PackageRepository extends ServiceEntityRepository
      * together, forever; the offset makes each package's period its own.
      */
     public const MONTHLY_CRAWL_STAGGER_HOURS = 744;
-
-    /** Temporary: caps crawls the stagger pulls ahead of the old -1 month rule. Delete after this date. */
-    public const MONTHLY_CRAWL_RAMP_UNTIL = '2026-11-01';
-    public const MONTHLY_CRAWL_RAMP_CAP = 100;
     // @phpstan-ignore classConstant.unused
     private const LISTING_WITH_AUTO_UPDATE_WARNINGS_FIELDS = 'id, name, description, type, gitHubStars, frozen, language, abandoned, replacementPackage, autoUpdated, repository';
 
@@ -295,15 +291,11 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * @return list<array{id: int}>
      */
-    public function getStalePackagesForUpdating(?\DateTimeImmutable $rampUntil = null, int $rampCap = self::MONTHLY_CRAWL_RAMP_CAP): array
+    public function getStalePackagesForUpdating(): array
     {
         $conn = $this->getEntityManager()->getConnection();
-        $rampUntil ??= new \DateTimeImmutable(self::MONTHLY_CRAWL_RAMP_UNTIL);
-        $ramping = new \DateTimeImmutable() < $rampUntil;
-        $staggered = 'DATE_SUB(CAST(:autocrawled AS DATETIME), INTERVAL (p.id % '.self::MONTHLY_CRAWL_STAGGER_HOURS.') HOUR)';
-        $monthAgo = date('Y-m-d H:i:s', strtotime('-1month'));
 
-        $packages = $conn->fetchAllAssociative(
+        return $conn->fetchAllAssociative(
             'SELECT p.id FROM package p
             WHERE p.abandoned = false
             AND p.frozen IS NULL
@@ -311,7 +303,7 @@ class PackageRepository extends ServiceEntityRepository
                 p.crawledAt IS NULL
                 OR (p.autoUpdated = 0 AND p.crawledAt < :recent AND p.createdAt >= :yesterday)
                 OR (p.autoUpdated = 0 AND p.crawledAt < :crawled)
-                OR (p.crawledAt < '.$staggered.' AND p.crawledAt < :uncappedBefore)
+                OR p.crawledAt < DATE_SUB(CAST(:autocrawled AS DATETIME), INTERVAL (p.id % '.self::MONTHLY_CRAWL_STAGGER_HOURS.') HOUR)
             )
             ORDER BY p.id ASC',
             [
@@ -324,33 +316,8 @@ class PackageRepository extends ServiceEntityRepository
                 // plus up to 31 days depending on the id, so packages crawled together do not come due
                 // together again (an exact -1 month did, and its month-end overflow merged the cohorts)
                 'autocrawled' => date('Y-m-d H:i:s', strtotime('-2week')),
-                'uncappedBefore' => $ramping ? $monthAgo : '9999-12-31 00:00:00',
             ]
         );
-
-        if (!$ramping) {
-            return $packages;
-        }
-
-        $backlog = $conn->fetchAllAssociative(
-            'SELECT p.id FROM package p
-            WHERE p.abandoned = false
-            AND p.frozen IS NULL
-            AND p.autoUpdated != 0
-            AND p.crawledAt >= :monthAgo
-            AND p.crawledAt < '.$staggered.'
-            ORDER BY p.crawledAt ASC
-            LIMIT '.$rampCap,
-            [
-                'monthAgo' => $monthAgo,
-                'autocrawled' => date('Y-m-d H:i:s', strtotime('-2week')),
-            ]
-        );
-
-        $ids = array_unique(array_map(static fn (array $row): int => (int) $row['id'], array_merge($packages, $backlog)));
-        sort($ids);
-
-        return array_map(static fn (int $id): array => ['id' => $id], $ids);
     }
 
     /**
