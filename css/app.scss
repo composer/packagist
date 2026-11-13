@@ -290,13 +290,15 @@ strong {
     font-weight: 600;
 }
 
-// Link symbol in the gutter left of an anchored heading; app.js copies its URL on click.
+// Pilcrow in the gutter left of an anchored heading; app.js copies its URL on click.
 // Absolute with no offsets keeps it where it would sit inline, so the margin pulls it out.
 .section-link {
     position: absolute;
     width: 1.25em;
     margin-left: -1.25em;
     color: var(--color-muted);
+    font-weight: normal;
+    text-align: center;
     text-decoration: none;
     opacity: 0;
 
