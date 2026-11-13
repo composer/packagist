@@ -46,10 +46,15 @@ class UserControllerTest extends IntegrationTestCase
 
         $this->client->submit($form);
         $this->assertResponseStatusCodeSame(302);
+        $crawler = $this->client->followRedirect();
+        $backupCode = $crawler->filter('.two-factor-backup-code')->text();
 
         $em = self::getEM();
         $em->clear();
-        $this->assertTrue($em->getRepository(User::class)->find($user->getId())->isTotpAuthenticationEnabled());
+        $storedUser = $em->getRepository(User::class)->find($user->getId());
+        self::assertNotNull($storedUser);
+        self::assertTrue($storedUser->isTotpAuthenticationEnabled());
+        self::assertTrue($storedUser->isBackupCode($backupCode));
     }
 
     #[TestWith([true])]

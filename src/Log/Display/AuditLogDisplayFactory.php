@@ -13,6 +13,7 @@
 namespace App\Log\Display;
 
 use App\Audit\UserRegistrationMethod;
+use App\Audit\WebAuthnCredentialAction;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\FilterList\FilterLists;
@@ -62,6 +63,7 @@ use App\Log\Display\Event\VersionDeletedDisplay;
 use App\Log\Display\Event\VersionRecoveredDisplay;
 use App\Log\Display\Event\VersionReferenceChangeBlockedDisplay;
 use App\Log\Display\Event\VersionSoftDeletedDisplay;
+use App\Log\Display\Event\WebAuthnCredentialChangedDisplay;
 use Symfony\Bundle\SecurityBundle\Security;
 
 class AuditLogDisplayFactory
@@ -221,6 +223,13 @@ class AuditLogDisplayFactory
                 $record->attributes['user']['username'],
                 UserRegistrationMethod::from($record->attributes['method']),
                 $this->buildActor('self'),
+                $record->ip,
+            ),
+            AuditLogEventType::WebAuthnCredentialChanged => new WebAuthnCredentialChangedDisplay(
+                $record->datetime,
+                $record->attributes['user']['username'],
+                WebAuthnCredentialAction::from($record->attributes['action']),
+                $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),
             AuditLogEventType::TotpAuthenticationActivated => new GenericUserDisplay(

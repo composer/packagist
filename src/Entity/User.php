@@ -48,6 +48,7 @@ enum UserFreezeReason: string
 
 #[ORM\Entity(repositoryClass: 'App\Entity\UserRepository')]
 #[ORM\Table(name: 'fos_user')]
+#[ORM\UniqueConstraint(name: 'user_webauthn_handle_idx', columns: ['webAuthnUserHandle'])]
 #[ORM\Index(name: 'user_frozen_idx', columns: ['frozen', 'frozenAt'])]
 #[ORM\Index(name: 'user_github_id_idx', columns: ['githubId'])]
 #[UniqueEntity(fields: ['usernameCanonical'], message: 'There is already an account with this username', errorPath: 'username')]
@@ -166,9 +167,18 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     #[ORM\Column(type: 'smallint', options: ['unsigned' => true, 'default' => 0])]
     private int $sessionBuster = 0;
 
+    /** @var Collection<int, WebAuthnCredential> */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: WebAuthnCredential::class, cascade: ['persist'])]
+    private Collection $webAuthnCredentials;
+
+    #[ORM\Column(length: 64)]
+    private string $webAuthnUserHandle;
+
     public function __construct()
     {
         $this->packages = new ArrayCollection();
+        $this->webAuthnCredentials = new ArrayCollection();
+        $this->webAuthnUserHandle = bin2hex(random_bytes(32));
         $this->createdAt = new \DateTimeImmutable();
         $this->initializeApiToken();
         $this->initializeSafeApiToken();
@@ -313,7 +323,38 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
 
     public function hasSecondFactorAuthenticationEnabled(): bool
     {
-        return $this->isTotpAuthenticationEnabled();
+        return $this->isTotpAuthenticationEnabled() || $this->getWebAuthnCredentials() !== [];
+    }
+
+    /** @return list<WebAuthnCredential> */
+    public function getWebAuthnCredentials(): array
+    {
+        return array_values($this->webAuthnCredentials->filter(static fn (WebAuthnCredential $credential) => $credential->getRevokedAt() === null)->toArray());
+    }
+
+    public function findWebAuthnCredential(string $id): ?WebAuthnCredential
+    {
+        foreach ($this->getWebAuthnCredentials() as $credential) {
+            if ($credential->id === $id) {
+                return $credential;
+            }
+        }
+
+        return null;
+    }
+
+    public function addWebAuthnCredential(WebAuthnCredential $credential): void
+    {
+        if ($credential->user !== $this) {
+            throw new \InvalidArgumentException('The credential belongs to another account.');
+        }
+        $this->webAuthnCredentials->add($credential);
+        $this->invalidateAllSessions();
+    }
+
+    public function getWebAuthnUserHandle(): string
+    {
+        return $this->webAuthnUserHandle;
     }
 
     public function getTotpAuthenticationUsername(): string

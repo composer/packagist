@@ -22,7 +22,7 @@ use App\Log\Display\AuditLogDisplayFactory;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Model\PackageManager;
-use App\Security\TotpAuthManager;
+use App\Security\BackupCodeManager;
 use App\Security\Voter\PackageActions;
 use App\Support\Attributes\LostTotpAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
@@ -37,9 +37,12 @@ use Pagerfanta\Pagerfanta;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /**
@@ -296,11 +299,11 @@ class SupportController extends Controller
     }
 
     /**
-     * Disables TOTP authentication, tells the requester it was granted, and closes the task in
+     * Disables all second factors, tells the requester it was granted, and closes the task in
      * one POST.
      */
     #[Route(path: '/admin/support/{publicId}/grant-totp-reset', name: 'admin_support_request_grant_totp_reset', methods: ['POST'])]
-    public function grantTotpReset(Request $req, string $publicId, #[CurrentUser] User $actor, TotpAuthManager $authManager): RedirectResponse
+    public function grantTotpReset(Request $req, string $publicId, #[CurrentUser] User $actor, BackupCodeManager $backupCodes): RedirectResponse
     {
         // Seeing the queue is not enough; this is the capability that actually hands out access.
         // Checked before the token so a missing role reports as denied rather than as a bad token.
@@ -328,39 +331,67 @@ class SupportController extends Controller
             return $redirect;
         }
 
-        // Re-checked here, not just at request time: freezing an account between the request and the
-        // approval must not leave a path that hands a frozen bad actor a working login.
-        if ($request->user->isFrozen()) {
-            $this->addFlash('error', 'This account is frozen, so its two-factor authentication cannot be reset.');
+        try {
+            $reply = $this->approveTotpReset($request, $actor, $backupCodes);
+        } catch (AccessDeniedHttpException $e) {
+            $this->addFlash('error', $e->getMessage());
+
+            return $redirect;
+        } catch (BadCredentialsException|ServiceUnavailableHttpException) {
+            $this->addFlash('warning', 'Account security settings are being updated or have changed. Review the request and try again.');
 
             return $redirect;
         }
 
-        if (!$request->user->isTotpAuthenticationEnabled()) {
-            $request->resolve($now);
-            $this->getEM()->flush();
+        if ($reply === false) {
+            $this->addFlash('warning', 'This request has already been dealt with.');
+
+            return $redirect;
+        }
+
+        if ($reply === null) {
             $this->addFlash('info', 'Two-factor authentication was already off on this account; the request has been resolved.');
 
             return $redirect;
         }
 
-        // Built before the call because disableTotpAuthentication() flushes, which persists these too.
-        $reply = SupportRequestMessage::reply($request, SupportRequestType::totpResetGrantedReply($request), $actor);
-        $request->resolve($now);
-        $this->getEM()->persist($reply);
-
-        $authManager->disableTotpAuthentication(
-            $request->user,
-            $actor,
-            'Reset by support, request '.$request->publicId,
-            supportReset: true,
-        );
-
+        $backupCodes->notifySupportReset($request->user);
         $this->notifier->notifyUserOfReply($request, $reply);
 
         $this->addFlash('success', 'Two-factor authentication disabled and request '.$request->publicId.' resolved.');
 
         return $redirect;
+    }
+
+    private function approveTotpReset(SupportRequest $request, User $actor, BackupCodeManager $backupCodes): SupportRequestMessage|false|null
+    {
+        return $backupCodes->withAccountLock($request->user, function () use ($request, $actor, $backupCodes): SupportRequestMessage|false|null {
+            // Check the refreshed account before claiming the request or changing any factors
+            if ($request->user->isFrozen()) {
+                throw new AccessDeniedHttpException('This account is frozen, so its two-factor authentication cannot be reset.');
+            }
+
+            return $this->getEM()->wrapInTransaction(function () use ($request, $actor, $backupCodes): SupportRequestMessage|false|null {
+                $now = new \DateTimeImmutable();
+
+                // The conditional update protects the owner's veto and rolls back with factor removal
+                if (!$this->supportRequests->transitionOpenRequest($request, SupportRequestStatus::Resolved, $now)) {
+                    return false;
+                }
+
+                $request->resolve($now);
+
+                if (!$request->user->hasSecondFactorAuthenticationEnabled()) {
+                    return null;
+                }
+
+                $backupCodes->stageSecondFactorReset($request->user, $actor, 'Reset by support, request '.$request->publicId);
+                $reply = SupportRequestMessage::reply($request, SupportRequestType::totpResetGrantedReply($request), $actor);
+                $this->getEM()->persist($reply);
+
+                return $reply;
+            });
+        });
     }
 
     /**

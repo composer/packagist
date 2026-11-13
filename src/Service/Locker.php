@@ -87,6 +87,16 @@ class Locker
         );
     }
 
+    public function lockAccountSecurity(int $userId, int $timeout = 0): bool
+    {
+        return $this->lockCommand('account_security_'.$userId, $timeout);
+    }
+
+    public function unlockAccountSecurity(int $userId): void
+    {
+        $this->unlockCommand('account_security_'.$userId);
+    }
+
     private function ensurePrimaryConnection(): void
     {
         $connection = $this->getConn();

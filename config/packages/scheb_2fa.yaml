@@ -6,7 +6,7 @@ scheb_two_factor:
 
     backup_codes:
         enabled: true
-        manager: App\Security\TotpAuthManager
+        manager: App\Security\BackupCodeManager
 
     totp:
         enabled: true

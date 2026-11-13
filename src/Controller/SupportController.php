@@ -83,7 +83,7 @@ class SupportController extends Controller
         // UserChecker rejects frozen accounts at authentication, which happens before the 2FA step,
         // so this state is not reachable through login today. Checked anyway: the whole flow hands
         // out account access, and a frozen account must never gain a recovery path.
-        if ($user->isFrozen() || !$user->isTotpAuthenticationEnabled()) {
+        if ($user->isFrozen() || !$user->hasSecondFactorAuthenticationEnabled()) {
             throw $this->createAccessDeniedException('This account cannot request a two-factor reset.');
         }
 
@@ -171,18 +171,8 @@ class SupportController extends Controller
         // reset in the same moment, losing that race would overwrite the grant and tell the owner
         // they are safe while their authenticator app has been removed. Not refreshed afterwards -- that cascades
         // and would discard the session invalidation below.
-        $claimed = $em->createQuery(
-            'UPDATE App\Entity\SupportRequest r
-             SET r.status = :closed, r.resolvedAt = :now, r.updatedAt = :now
-             WHERE r.id = :id AND r.status = :open'
-        )
-            ->setParameter('closed', SupportRequestStatus::Closed->value)
-            ->setParameter('open', SupportRequestStatus::Open->value)
-            ->setParameter('now', $now)
-            ->setParameter('id', $request->id, 'ulid')
-            ->execute();
+        $lostClaim = !$this->supportRequests->transitionOpenRequest($request, SupportRequestStatus::Closed, $now);
 
-        $lostClaim = $claimed === 0;
         if (!$lostClaim) {
             // Mirror what the UPDATE did, so the entity and the page agree.
             $request->close($now);

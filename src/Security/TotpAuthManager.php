@@ -15,22 +15,23 @@ namespace App\Security;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\User;
+use App\Event\SecondFactorsResetEvent;
+use App\Event\SecondFactorRemovedEvent;
 use Doctrine\Persistence\ManagerRegistry;
-use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
-use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @author Colin O'Dell <colinodell@gmail.com>
  */
-class TotpAuthManager implements BackupCodeManagerInterface
+class TotpAuthManager
 {
     public function __construct(
         private ManagerRegistry $doctrine,
-        private RequestStack $requestStack,
         private UserNotifier $userNotifier,
         private AuditRecordRepository $auditRecordRepository,
+        private EventDispatcherInterface $eventDispatcher,
+        private BackupCodeManager $backupCodes,
     ) {
     }
 
@@ -39,10 +40,15 @@ class TotpAuthManager implements BackupCodeManagerInterface
      *
      * @param non-empty-string $secret
      */
-    public function enableTotpAuthentication(User $user, User $actor, string $secret): void
+    public function enableTotpAuthentication(User $user, User $actor, string $secret): ?string
     {
-        $user->setTotpSecret($secret);
-        $this->doctrine->getManager()->flush();
+        $backupCode = $this->backupCodes->withAccountLock($user, function () use ($user, $secret): ?string {
+            $code = $user->hasSecondFactorAuthenticationEnabled() ? null : $this->backupCodes->generateBackupCode($user);
+            $user->setTotpSecret($secret);
+            $this->doctrine->getManager()->flush();
+
+            return $code;
+        });
 
         $this->auditRecordRepository->insert(AuditRecord::totpAuthenticationActivated($user, $actor));
 
@@ -52,80 +58,46 @@ class TotpAuthManager implements BackupCodeManagerInterface
             subject: 'Authenticator app enabled on Packagist.org',
             username: $user->getUsername()
         );
+
+        return $backupCode;
     }
 
     /**
      * Disable TOTP authentication on the given user account and send confirmation email.
-     *
-     * $supportReset adds a "if you did not ask for this" warning to that email, for the one path
-     * where the account owner may not be the person who asked: an approved TOTP reset request.
      */
-    public function disableTotpAuthentication(User $user, User $actor, string $reason, bool $supportReset = false): void
+    public function disableTotpAuthentication(User $user, User $actor, string $reason): void
     {
-        $user->setTotpSecret(null);
-        $user->invalidateAllBackupCodes();
-        $this->doctrine->getManager()->flush();
+        $this->backupCodes->withAccountLock($user, function () use ($user): void {
+            $this->removeTotpFactor($user);
+            $this->doctrine->getManager()->flush();
+        });
 
         $this->auditRecordRepository->insert(AuditRecord::totpAuthenticationDeactivated($user, $actor, $reason));
-
         $this->userNotifier->notifyChange(
             $user->getEmail(),
             template: 'email/totp_disabled.txt.twig',
             subject: 'Authenticator app removed on Packagist.org',
             username: $user->getUsername(),
             reason: $reason,
-            supportReset: $supportReset,
         );
     }
 
-    /**
-     * Generate a new backup code and save it on the given user account.
-     */
-    public function generateAndSaveNewBackupCode(User $user): string
+    #[AsEventListener]
+    public function onSecondFactorsReset(SecondFactorsResetEvent $event): void
     {
-        $code = bin2hex(random_bytes(4));
-        $user->setBackupCode($code);
+        $user = $event->user;
 
-        $this->doctrine->getManager()->flush();
-
-        return $code;
-    }
-
-    /**
-     * Check if the code is a valid backup code of the user.
-     *
-     * @param User $user
-     */
-    public function isBackupCode(object $user, string $code): bool
-    {
-        if ($user instanceof BackupCodeInterface) {
-            return $user->isBackupCode($code);
-        }
-
-        return false;
-    }
-
-    /**
-     * Invalidate a backup code from a user.
-     *
-     * This should only be called after the backup code has been confirmed and consumed.
-     *
-     * @param User $user
-     */
-    public function invalidateBackupCode(object $user, string $code): void
-    {
-        if (!$user instanceof BackupCodeInterface) {
+        if (!$user->isTotpAuthenticationEnabled()) {
             return;
         }
 
-        $this->disableTotpAuthentication($user, $user, 'Backup code used');
-        $session = $this->requestStack->getCurrentRequest()?->getSession();
+        $this->removeTotpFactor($user);
+        $this->doctrine->getManager()->persist(AuditRecord::totpAuthenticationDeactivated($user, $event->actor, $event->reason));
+    }
 
-        if (null === $session) {
-            return;
-        }
-
-        \assert($session instanceof FlashBagAwareSessionInterface);
-        $session->getFlashBag()->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
+    private function removeTotpFactor(User $user): void
+    {
+        $user->setTotpSecret(null);
+        $this->eventDispatcher->dispatch(new SecondFactorRemovedEvent($user));
     }
 }

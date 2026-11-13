@@ -8,8 +8,4 @@ Time: {{ 'now'|date('c') }}
 -------------------------------
 
 You can re-enable this at any time from your account page: {{ url('security_overview') }}
-{% if supportReset|default(false) %}
-If you did not ask us for this, somebody else has access to your account. Change your
-password now and contact contact@packagist.org immediately.
-{% endif %}
 {%- endautoescape %}

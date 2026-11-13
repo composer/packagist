@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 class SecondFactorProofStore
 {
     public const string TOTP = 'totp';
+    public const string WEBAUTHN = 'webauthn';
     public const int RECENT_AUTHENTICATION_LIFETIME = 600;
     private const string SESSION_KEY = 'security.second_factor_authentication';
 

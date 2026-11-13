@@ -144,9 +144,8 @@ services:
             'filter:update': '@App\Service\FilterListWorker'
             'package:purge': '@App\Service\PackagePurgeWorker'
 
-    App\Security\TotpAuthManager:
+    App\Security\BackupCodeManager:
         public: true
-        class: App\Security\TotpAuthManager
 
     App\Service\SecurityAdvisoryWorker:
         $sources:

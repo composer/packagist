@@ -3,6 +3,7 @@
     "dependencies": {
         "@plausible-analytics/tracker": "0.4.6",
         "@popperjs/core": "^2.11.8",
+        "@simplewebauthn/browser": "^14.0.0",
         "algoliasearch": "^5.59.0",
         "bootstrap": "^5.3.8",
         "bootstrap-icons": "^1.13.1",

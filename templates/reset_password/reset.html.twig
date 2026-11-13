@@ -9,6 +9,11 @@
         {{ form_row(resetForm.plainPassword) }}
         {% if resetForm.twoFactorCode is defined %}
             {{ form_row(resetForm.twoFactorCode) }}
+            {% if resetForm.vars.data.webAuthnCredentials is not empty %}
+                <p>Password reset requires your authenticator app code. If you no longer have the app,
+                    you can sign in with your passkey or security key using your current password or GitHub if linked,
+                    then update your password in your account settings.</p>
+            {% endif %}
         {% endif %}
         <button class="btn btn-primary" id="_reset_password_submit">Reset password</button>
     {{ form_end(resetForm) }}

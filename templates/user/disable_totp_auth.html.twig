@@ -5,7 +5,13 @@
 {% block security_content %}
     <h3>Remove authenticator app?</h3>
 
-    <p>Removing the authenticator app means you will no longer be asked for codes from this app when signing in. Its backup code will also be invalidated.</p>
+    <p>Removing the authenticator app means you will no longer be asked for codes from this app when signing in.
+        {% if user.webAuthnCredentials is not empty %}
+            Your passkeys and security keys will remain enabled, and your backup code will remain valid.
+        {% else %}
+            Its backup code will also be invalidated.
+        {% endif %}
+    </p>
 
     <form class="account-form" method="post" action="{{ path('user_totp_disable', {name: user.username}) }}">
         <input type="hidden" name="token" value="{{ csrf_token('disable_totp') }}">
