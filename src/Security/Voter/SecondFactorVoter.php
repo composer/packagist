@@ -25,8 +25,6 @@ class SecondFactorVoter extends Voter
 {
     public const string IS_AUTHENTICATED_2FA = 'IS_AUTHENTICATED_2FA';
     public const string IS_AUTHENTICATED_2FA_RECENTLY = 'IS_AUTHENTICATED_2FA_RECENTLY';
-    public const string IS_AUTHENTICATED_TOTP = 'IS_AUTHENTICATED_TOTP';
-    public const string IS_AUTHENTICATED_TOTP_RECENTLY = 'IS_AUTHENTICATED_TOTP_RECENTLY';
 
     public function __construct(private SecondFactorProofStore $secondFactorProofStore)
     {
@@ -36,7 +34,6 @@ class SecondFactorVoter extends Voter
     {
         return $subject === null && \in_array($attribute, [
             self::IS_AUTHENTICATED_2FA, self::IS_AUTHENTICATED_2FA_RECENTLY,
-            self::IS_AUTHENTICATED_TOTP, self::IS_AUTHENTICATED_TOTP_RECENTLY,
         ], true);
     }
 
@@ -50,8 +47,6 @@ class SecondFactorVoter extends Voter
         return match ($attribute) {
             self::IS_AUTHENTICATED_2FA => $this->secondFactorProofStore->hasProof($user),
             self::IS_AUTHENTICATED_2FA_RECENTLY => $this->secondFactorProofStore->hasRecentProof($user),
-            self::IS_AUTHENTICATED_TOTP => $this->secondFactorProofStore->hasProof($user, SecondFactorProofStore::TOTP),
-            self::IS_AUTHENTICATED_TOTP_RECENTLY => $this->secondFactorProofStore->hasRecentProof($user, SecondFactorProofStore::TOTP),
             default => false,
         };
     }

@@ -60,7 +60,7 @@ class SecondFactorVoterTest extends TestCase
         $this->assertAllChecks(false);
     }
 
-    public function testTotpPassesBothGeneralAndMethodSpecificChecks(): void
+    public function testTotpProofPassesSecondFactorChecks(): void
     {
         $this->secondFactorProofStore->record($this->user, 'totp');
         $this->assertAllChecks(true);
@@ -73,24 +73,17 @@ class SecondFactorVoterTest extends TestCase
         $this->assertAllChecks(true);
         $this->clock->sleep(1);
         self::assertTrue($this->authorization->isGranted('IS_AUTHENTICATED_2FA'));
-        self::assertTrue($this->authorization->isGranted('IS_AUTHENTICATED_TOTP'));
         self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_2FA_RECENTLY'));
-        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_TOTP_RECENTLY'));
     }
 
-    public function testAnotherMethodDoesNotCountAsTotpOrRefreshItsTimestamp(): void
+    public function testWebAuthnProofRefreshesSecondFactorRecency(): void
     {
-        $this->secondFactorProofStore->record($this->user, 'another_factor');
-        self::assertTrue($this->authorization->isGranted('IS_AUTHENTICATED_2FA'));
-        self::assertTrue($this->authorization->isGranted('IS_AUTHENTICATED_2FA_RECENTLY'));
-        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_TOTP'));
-        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_TOTP_RECENTLY'));
-        $this->secondFactorProofStore->record($this->user, 'totp');
-        $this->clock->sleep(600);
-        $this->secondFactorProofStore->record($this->user, 'another_factor');
-        self::assertTrue($this->authorization->isGranted('IS_AUTHENTICATED_2FA_RECENTLY'));
-        self::assertTrue($this->authorization->isGranted('IS_AUTHENTICATED_TOTP'));
-        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_TOTP_RECENTLY'));
+        $this->secondFactorProofStore->record($this->user, SecondFactorProofStore::TOTP);
+        $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
+        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_2FA_RECENTLY'));
+
+        $this->secondFactorProofStore->record($this->user, SecondFactorProofStore::WEBAUTHN);
+        $this->assertAllChecks(true);
     }
 
     public function testRememberedSessionRequiresExplicitSecondFactorProof(): void
@@ -100,8 +93,8 @@ class SecondFactorVoterTest extends TestCase
         $this->secondFactorProofStore->record($this->user, 'totp');
         $this->assertAllChecks(true);
         $this->clock->sleep(600);
-        self::assertTrue($this->authorization->isGranted('IS_AUTHENTICATED_TOTP'));
-        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_TOTP_RECENTLY'));
+        self::assertTrue($this->authorization->isGranted('IS_AUTHENTICATED_2FA'));
+        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_2FA_RECENTLY'));
     }
 
     public function testIncompleteMfaCannotReuseEvidence(): void
@@ -125,7 +118,7 @@ class SecondFactorVoterTest extends TestCase
     public function testOfflineUserChecksCannotReuseTheCurrentSessionsEvidence(): void
     {
         $this->secondFactorProofStore->record($this->user, 'totp');
-        self::assertFalse($this->authorization->isGrantedForUser($this->user, 'IS_AUTHENTICATED_TOTP'));
+        self::assertFalse($this->authorization->isGrantedForUser($this->user, 'IS_AUTHENTICATED_2FA'));
         self::assertFalse($this->authorization->isGrantedForUser($this->user, 'IS_AUTHENTICATED_2FA_RECENTLY'));
     }
 
@@ -133,12 +126,12 @@ class SecondFactorVoterTest extends TestCase
     {
         $this->secondFactorProofStore->record($this->user, 'totp');
         self::assertFalse($this->authorization->isGranted('UNKNOWN_ATTRIBUTE'));
-        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_TOTP_RECENTLY', 600));
+        self::assertFalse($this->authorization->isGranted('IS_AUTHENTICATED_2FA_RECENTLY', 600));
     }
 
     private function assertAllChecks(bool $expected): void
     {
-        foreach (['IS_AUTHENTICATED_2FA', 'IS_AUTHENTICATED_2FA_RECENTLY', 'IS_AUTHENTICATED_TOTP', 'IS_AUTHENTICATED_TOTP_RECENTLY'] as $attribute) {
+        foreach (['IS_AUTHENTICATED_2FA', 'IS_AUTHENTICATED_2FA_RECENTLY'] as $attribute) {
             self::assertSame($expected, $this->authorization->isGranted($attribute), $attribute);
         }
     }

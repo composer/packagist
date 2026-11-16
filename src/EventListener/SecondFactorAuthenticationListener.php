@@ -36,7 +36,7 @@ class SecondFactorAuthenticationListener
      * the same user verified the second factor on this request before recording proof in the session.
      */
     private const string VALIDATED_PROVIDER = '_security.validated_second_factor_provider';
-    private const string VALIDATED_USER = '_security.validated_totp_user';
+    private const string VALIDATED_USER = '_security.validated_second_factor_user';
 
     public function __construct(
         private SecondFactorProofStore $secondFactorProofStore,

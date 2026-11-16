@@ -125,9 +125,7 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         $check = static function () use ($authenticated, $recent): void {
             $authorization = self::getContainer()->get(AuthorizationCheckerInterface::class);
             self::assertSame($authenticated, $authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA));
-            self::assertSame($authenticated, $authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP));
             self::assertSame($recent, $authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY));
-            self::assertSame($recent, $authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP_RECENTLY));
         };
         $dispatcher = self::getContainer()->get('event_dispatcher');
         $dispatcher->addListener(KernelEvents::RESPONSE, $check);
