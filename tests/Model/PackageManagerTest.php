@@ -52,8 +52,8 @@ class PackageManagerTest extends IntegrationTestCase
     }
 
     #[TestWith([false, 0])]
-    #[TestWith([true, 1])]
-    public function testTransferPackageReplacesAllMaintainers(bool $notifyNewMaintainers, int $expectedEmailCount): void
+    #[TestWith([true, 2])]
+    public function testTransferPackageReplacesAllMaintainers(bool $notifyMaintainers, int $expectedEmailCount): void
     {
         $alice = self::createUser('alice', 'alice@example.org');
         $bob = self::createUser('bob', 'bob@example.org');
@@ -63,7 +63,7 @@ class PackageManagerTest extends IntegrationTestCase
         $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$john, $alice]);
         $this->store($package);
 
-        $result = $this->packageManager->transferPackage(null, $package, [$bob, $alice], $notifyNewMaintainers);
+        $result = $this->packageManager->transferPackage(null, $package, [$bob, $alice], $notifyMaintainers);
 
         $em = self::getEM();
         $em->flush();
@@ -146,6 +146,25 @@ class PackageManagerTest extends IntegrationTestCase
         self::assertTrue($this->packageManager->removeMaintainer($package, $bob, $bob));
 
         $this->assertEmailCount(0);
+    }
+
+    public function testTransferPackageNotifiesRemovedMaintainersExceptTheActor(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $john = self::createUser('john', 'john@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice, $john]);
+        $this->store($alice, $bob, $john, $package);
+
+        self::assertTrue($this->packageManager->transferPackage($alice, $package, [$bob], true));
+
+        $this->assertEmailCount(2);
+        $recipients = array_map(static fn ($email) => $email->getHeaders()->get('To')?->getBodyAsString(), $this->getMailerMessages());
+        $this->assertEqualsCanonicalizing(['bob@example.org', 'john@example.org'], $recipients);
+        $removal = $this->getMailerMessage(1);
+        $this->assertNotNull($removal);
+        $this->assertEmailHeaderSame($removal, 'To', 'john@example.org');
+        $this->assertEmailHeaderSame($removal, 'Subject', 'You have been removed from vendor/package as a maintainer');
     }
 
     public function testTransferPackageWithSameMaintainersDoesNothing(): void

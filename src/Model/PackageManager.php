@@ -439,7 +439,7 @@ class PackageManager
     /**
      * @param array<User> $newMaintainers
      */
-    public function transferPackage(?User $actor, Package $package, array $newMaintainers, bool $notifyNewMaintainers): bool
+    public function transferPackage(?User $actor, Package $package, array $newMaintainers, bool $notifyMaintainers): bool
     {
         $oldMaintainers = $package->getMaintainers()->toArray();
         $normalizedOldMaintainers = array_values(array_map(static fn (User $user) => $user->getId(), $oldMaintainers));
@@ -457,8 +457,16 @@ class PackageManager
             $isNewMaintainer = !\in_array($maintainer->getId(), $normalizedOldMaintainers);
             $package->addMaintainer($maintainer);
 
-            if ($notifyNewMaintainers && $isNewMaintainer) {
+            if ($notifyMaintainers && $isNewMaintainer) {
                 $this->notifyNewMaintainer($maintainer, $package);
+            }
+        }
+
+        if ($notifyMaintainers) {
+            foreach ($oldMaintainers as $oldMaintainer) {
+                if (!\in_array($oldMaintainer->getId(), $normalizedMaintainers, true) && $actor?->getId() !== $oldMaintainer->getId()) {
+                    $this->notifyRemovedMaintainer($oldMaintainer, $package);
+                }
             }
         }
 
