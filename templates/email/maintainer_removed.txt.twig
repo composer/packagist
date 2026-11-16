@@ -1,0 +1,11 @@
+{% autoescape false -%}
+
+You have been removed from package {{ package_name }} as a maintainer.
+
+You can see who removed you in the package's transparency log:
+{{ url('view_transparency_log', { 'package': package_name }) }}
+
+If you did not expect this, contact the other maintainers of the package
+or contact@packagist.org.
+
+{%- endautoescape %}

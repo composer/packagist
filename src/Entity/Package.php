@@ -119,6 +119,8 @@ class Package
     public const AUTO_MANUAL_HOOK = 1;
     public const AUTO_GITHUB_HOOK = 2;
 
+    public const int MAX_MAINTAINERS = 10;
+
     public const string PACKAGE_NAME_REGEX = '[a-zA-Z0-9]++(?:[_.-]?[a-zA-Z0-9]++)*+/[a-zA-Z0-9]++(?:[_.-]?[a-zA-Z0-9]++)*+';
     public const string PACKAGE_NAME_OR_EXT_REGEX = '(?:[a-zA-Z0-9]++(?:[_.-]?[a-zA-Z0-9]++)*+/[a-zA-Z0-9]++(?:[_.-]?[a-zA-Z0-9]++)*+|ext-[A-Za-z0-9_.-]+)';
     // This is needed if you have `.{_format}` or similar following the regex, as the regex above will eat up the trailing format

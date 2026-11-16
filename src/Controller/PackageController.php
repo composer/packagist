@@ -14,7 +14,6 @@ namespace App\Controller;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\VersionDeletionReason;
-use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
 use App\Entity\FilterListEntry;
@@ -45,6 +44,7 @@ use App\Form\Type\RemoveMaintainerRequestType;
 use App\Form\Type\TransferPackageRequestType;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Model\MaintainerChangeException;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
@@ -806,9 +806,10 @@ class PackageController extends Controller
             // The template renders each of these behind the matching voter grant, and building them
             // is not free - createView() on the remove-maintainer form materialises an EntityType
             // choice list with a DB query - so visitors who cannot see a form must not pay for it.
-            $data['addMaintainerForm'] = $this->isGranted(PackageActions::AddMaintainer->value, $package)
+            $maintainerCount = $package->getMaintainers()->count();
+            $data['addMaintainerForm'] = $maintainerCount < Package::MAX_MAINTAINERS && $this->isGranted(PackageActions::AddMaintainer->value, $package)
                 ? $this->createAddMaintainerForm($package)->createView() : null;
-            $data['removeMaintainerForm'] = $this->isGranted(PackageActions::RemoveMaintainer->value, $package)
+            $data['removeMaintainerForm'] = $maintainerCount > 1 && $this->isGranted(PackageActions::RemoveMaintainer->value, $package)
                 ? $this->createRemoveMaintainerForm($package)->createView() : null;
             $data['transferPackageForm'] = $this->isGranted(PackageActions::TransferPackage->value, $package)
                 ? $this->createTransferPackageForm($package)->createView() : null;
@@ -1178,21 +1179,21 @@ class PackageController extends Controller
                     $maintainer = $em->getRepository(User::class)->findOneByUsernameOrEmail($username);
                 }
 
-                if (!empty($maintainer)) {
-                    if (!$package->isMaintainer($maintainer)) {
-                        $package->addMaintainer($maintainer);
-                        $em->persist(AuditRecord::maintainerAdded($package, $maintainer, $user));
-                        $this->packageManager->notifyNewMaintainer($maintainer, $package);
+                if (!empty($maintainer) && $maintainer->isAccountActive()) {
+                    if ($package->isMaintainer($maintainer)) {
+                        $this->addFlash('success', $maintainer->getUsername().' is already a '.$package->getName().' maintainer.');
+                    } else {
+                        $this->packageManager->addMaintainer($package, $maintainer, $user);
+                        $em->flush();
+
+                        $this->addFlash('success', $maintainer->getUsername().' is now a '.$package->getName().' maintainer.');
                     }
-
-                    $em->persist($package);
-                    $em->flush();
-
-                    $this->addFlash('success', $maintainer->getUsername().' is now a '.$package->getName().' maintainer.');
 
                     return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
                 }
                 $this->addFlash('error', 'The user could not be found.');
+            } catch (MaintainerChangeException $e) {
+                $this->addFlash('error', $e->getMessage().'.');
             } catch (\Exception $e) {
                 $logger->critical($e->getMessage(), ['exception', $e]);
                 $this->addFlash('error', 'The maintainer could not be added.');
@@ -1217,19 +1218,18 @@ class PackageController extends Controller
                 }
 
                 if (!empty($maintainer)) {
-                    if ($package->isMaintainer($maintainer)) {
-                        $package->getMaintainers()->removeElement($maintainer);
-                        $em->persist(AuditRecord::maintainerRemoved($package, $maintainer, $user));
+                    if ($this->packageManager->removeMaintainer($package, $maintainer, $user)) {
+                        $em->flush();
+                        $this->addFlash('success', $maintainer->getUsername().' is no longer a '.$package->getName().' maintainer.');
+                    } else {
+                        $this->addFlash('error', $maintainer->getUsername().' is not a '.$package->getName().' maintainer.');
                     }
-
-                    $em->persist($package);
-                    $em->flush();
-
-                    $this->addFlash('success', $maintainer->getUsername().' is no longer a '.$package->getName().' maintainer.');
 
                     return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
                 }
                 $this->addFlash('error', 'The user could not be found.');
+            } catch (MaintainerChangeException $e) {
+                $this->addFlash('error', $e->getMessage().'.');
             } catch (\Exception $e) {
                 $logger->critical($e->getMessage(), ['exception', $e]);
                 $this->addFlash('error', 'The maintainer could not be removed.');
@@ -1272,6 +1272,8 @@ class PackageController extends Controller
             }
 
             return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+        } catch (MaintainerChangeException $e) {
+            $this->addFlash('error', $e->getMessage().'.');
         } catch (\Exception $e) {
             $logger->critical($e->getMessage(), ['exception', $e]);
             $this->addFlash('error', 'The package could not be transferred.');

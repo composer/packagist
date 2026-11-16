@@ -337,9 +337,11 @@ class SupportControllerTest extends IntegrationTestCase
         $this->client->submit($crawler->selectButton('Transfer to requester')->form());
         $this->assertResponseRedirects('/admin/support/'.$request->publicId);
 
-        // transferPackage() is called with notifyNewMaintainers, so the requester hears about it even
-        // if the admin never gets round to writing a reply.
-        $this->assertEmailCount(1);
+        // transferPackage() is called with notifyMaintainers, so the requester hears about it even
+        // if the admin never gets round to writing a reply, and the previous maintainer is told too.
+        $this->assertEmailCount(2);
+        $recipients = array_map(static fn ($email) => $email->getHeaders()->get('To')?->getBodyAsString(), $this->getMailerMessages());
+        self::assertEqualsCanonicalizing(['requester@example.org', 'goneaway@example.org'], $recipients);
 
         $em = self::getEM();
         $em->clear();
