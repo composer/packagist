@@ -159,18 +159,6 @@ class PackageTransparencyLogSearchRepositoryTest extends IntegrationTestCase
         self::assertSame(0, self::repository()->index([]));
     }
 
-    public function testFilterIndexedLeafIndexesReportsOnlyTheIndexedOnes(): void
-    {
-        $indexed = $this->entry(TransparencyLogEventType::MaintainerAdded, [
-            'name' => 'ptl/filtered',
-            'user' => ['id' => 11, 'username' => 'subject'],
-        ]);
-        self::repository()->index([$indexed]);
-
-        self::assertSame([$indexed->leafIndex], self::repository()->filterIndexedLeafIndexes([$indexed->leafIndex, $indexed->leafIndex + 1]));
-        self::assertSame([], self::repository()->filterIndexedLeafIndexes([]));
-    }
-
     /**
      * @param array<string, mixed> $attributes
      */

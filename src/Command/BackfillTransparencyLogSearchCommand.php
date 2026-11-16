@@ -25,7 +25,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * existed. The projector will index new entries itself. No need to run this command if the search index is deployed at
  * the same time as the transparency log projecotr.
  *
- * Entries that are already in index are skipped.
+ * Entries that are already indexed are skipped by the INSERT IGNORE in index().
  */
 class BackfillTransparencyLogSearchCommand extends Command
 {
@@ -73,33 +73,22 @@ class BackfillTransparencyLogSearchCommand extends Command
                 break;
             }
 
-            $alreadyIndexed = $this->transparencyLogSearchRepository->filterIndexedLeafIndexes(
-                array_map(static fn ($entry): int => $entry->leafIndex, $entries),
-            );
-
-            $pending = [];
-            foreach ($entries as $entry) {
-                $after = $entry->leafIndex;
-
-                if (\in_array($entry->leafIndex, $alreadyIndexed, true) || $entry->getSearchTerms() === []) {
-                    continue;
+            $after = end($entries)->leafIndex;
+            $entriesIndexed += \count($entries);
+            if ($dryRun) {
+                foreach ($entries as $entry) {
+                    $indexed += \count($entry->getSearchTerms());
                 }
-
-                $pending[] = $entry;
-                $entriesIndexed++;
-                $indexed += $dryRun ? \count($entry->getSearchTerms()) : 0;
-            }
-
-            if (!$dryRun) {
-                $indexed += $this->transparencyLogSearchRepository->index($pending);
+            } else {
+                $indexed += $this->transparencyLogSearchRepository->index($entries);
             }
 
             $em->clear();
-            $output->writeln(\sprintf('%d row(s) from %d entry/entries so far (up to leaf %d)', $indexed, $entriesIndexed, $after));
+            $output->writeln(\sprintf('%d row(s) from %d entry/entries scanned so far (up to leaf %d)', $indexed, $entriesIndexed, $after));
         } while (\count($entries) === self::BATCH_SIZE);
 
         $output->writeln(\sprintf(
-            $dryRun ? 'Done, %d row(s) would be indexed' : 'Done, %d row(s) indexed',
+            $dryRun ? 'Done, up to %d row(s) would be indexed' : 'Done, %d row(s) indexed',
             $indexed,
         ));
 

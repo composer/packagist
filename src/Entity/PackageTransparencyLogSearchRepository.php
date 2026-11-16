@@ -13,7 +13,6 @@
 namespace App\Entity;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -57,30 +56,8 @@ class PackageTransparencyLogSearchRepository extends ServiceEntityRepository
 
         return (int) $this->getEntityManager()->getConnection()->executeStatement(
             'INSERT IGNORE INTO package_transparency_log_search (type, name, leafIndex, userId, datetime, primaryRow) VALUES '
-                .implode(', ', array_fill(0, \intdiv(\count($values), 6), '(?, ?, ?, ?, ?, ?)')),
+                .implode(', ', array_fill(0, intdiv(\count($values), 6), '(?, ?, ?, ?, ?, ?)')),
             $values,
         );
-    }
-
-    /**
-     * The given leaf indexes that already have search rows, so the backfill can skip them.
-     *
-     * @param list<int> $leafIndexes
-     *
-     * @return list<int>
-     */
-    public function filterIndexedLeafIndexes(array $leafIndexes): array
-    {
-        if ($leafIndexes === []) {
-            return [];
-        }
-
-        $rows = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-            'SELECT DISTINCT leafIndex FROM package_transparency_log_search WHERE leafIndex IN (?)',
-            [$leafIndexes],
-            [ArrayParameterType::INTEGER],
-        );
-
-        return array_map('intval', $rows);
     }
 }
