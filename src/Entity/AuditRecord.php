@@ -14,10 +14,10 @@ namespace App\Entity;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\AuditLogSearchType;
-use App\Audit\UserRegistrationMethod;
-use App\Audit\VersionDeletionReason;
 use App\Log\AuditLogEventType;
 use App\Log\Display\OrganizationDisplay;
+use App\Audit\UserRegistrationMethod;
+use App\Audit\VersionDeletionReason;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;

@@ -1,10 +1,17 @@
 {% import 'log/macros.html.twig' as log %}
 
 <strong>{{ log.packageLink(display.packageName) }}</strong> {{ display.version }}<br>
-{% if display.sourceReference %}
-    Source: {{ display.sourceReference }}<br>
+{## older transparency log entries carry no metadata ##}
+{% if display.versionNormalized %}Normalized version: {{ display.versionNormalized }}<br>{% endif %}
+{% if display.sourceType or display.sourceUrl or display.sourceReference %}Source:
+    {%- if display.sourceType %} {{ display.sourceType }}{% endif %}
+    {%- if display.sourceUrl %} {{ display.sourceUrl }}{% endif %}
+    {%- if display.sourceReference %} <code>{{ display.sourceReference }}</code>{% endif %}<br>
 {% endif %}
-{% if display.distReference %}
-    Dist: {{ display.distReference }}<br>
+{% if display.distType or display.distUrl or display.distReference %}Dist:
+    {%- if display.distType %} {{ display.distType }}{% endif %}
+    {%- if display.distUrl %} {{ display.distUrl }}{% endif %}
+    {%- if display.distReference %} <code>{{ display.distReference }}</code>{% endif %}<br>
 {% endif %}
-Created by: {{ display.actor.username }}
+{% if display.distShasum %}Dist checksum: <code>{{ display.distShasum }}</code><br>{% endif %}
+Created by: {{ log.user(display.actor) }}

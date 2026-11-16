@@ -12,7 +12,9 @@
 
 namespace App\Log;
 
-enum AuditLogEventType: string
+use App\Log\LogEventType;
+
+enum AuditLogEventType: string implements LogEventType
 {
     // package ownership
     case MaintainerAdded = 'maintainer_added';
