@@ -64,7 +64,7 @@ class TransparencyLogProjector
      * Projects every queued audit record older than the safety-lag window.
      *
      * @param int                                                   $minEventAgeSeconds         safety-lag window in seconds (records younger than this stay queued for a later run)
-     * @param SignalHandler|null                                    $signal                     checked between batches for graceful shutdown
+     * @param SignalHandler|null                                    $signal                     checked between records for graceful shutdown
      * @param (callable(int $projected, int $leafIndex): void)|null $onProgress                 called after each non-empty batch
      * @param bool                                                  $suppressOutOfOrderLogging  turns off {@see self::logIfAppendedOutOfOrder()} for runs where appending out of order is expected, such as a backfill
      *
@@ -87,6 +87,10 @@ class TransparencyLogProjector
             $records = $this->auditRecordRepository->getRecordsByIds(array_map(static fn (PackageTransparencyLogQueue $queued): Ulid => $queued->auditLogId, $pending));
 
             foreach ($pending as $queued) {
+                if ($signal?->isTriggered()) {
+                    break;
+                }
+
                 $id = $after = $queued->auditLogId;
 
                 $record = $records[(string) $id] ?? null;
