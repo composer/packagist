@@ -22,7 +22,7 @@ use App\Log\Display\AuditLogDisplayFactory;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Model\PackageManager;
-use App\Security\BackupCodeManager;
+use App\Security\SecondFactorManager;
 use App\Security\Voter\PackageActions;
 use App\Support\Attributes\LostTotpAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
@@ -303,7 +303,7 @@ class SupportController extends Controller
      * one POST.
      */
     #[Route(path: '/admin/support/{publicId}/grant-totp-reset', name: 'admin_support_request_grant_totp_reset', methods: ['POST'])]
-    public function grantTotpReset(Request $req, string $publicId, #[CurrentUser] User $actor, BackupCodeManager $backupCodes): RedirectResponse
+    public function grantTotpReset(Request $req, string $publicId, #[CurrentUser] User $actor, SecondFactorManager $secondFactors): RedirectResponse
     {
         // Seeing the queue is not enough; this is the capability that actually hands out access.
         // Checked before the token so a missing role reports as denied rather than as a bad token.
@@ -332,7 +332,7 @@ class SupportController extends Controller
         }
 
         try {
-            $reply = $this->approveTotpReset($request, $actor, $backupCodes);
+            $reply = $this->approveTotpReset($request, $actor, $secondFactors);
         } catch (AccessDeniedHttpException $e) {
             $this->addFlash('error', $e->getMessage());
 
@@ -355,7 +355,7 @@ class SupportController extends Controller
             return $redirect;
         }
 
-        $backupCodes->notifySupportReset($request->user);
+        $secondFactors->notifySupportReset($request->user);
         $this->notifier->notifyUserOfReply($request, $reply);
 
         $this->addFlash('success', 'Two-factor authentication disabled and request '.$request->publicId.' resolved.');
@@ -363,15 +363,15 @@ class SupportController extends Controller
         return $redirect;
     }
 
-    private function approveTotpReset(SupportRequest $request, User $actor, BackupCodeManager $backupCodes): SupportRequestMessage|false|null
+    private function approveTotpReset(SupportRequest $request, User $actor, SecondFactorManager $secondFactors): SupportRequestMessage|false|null
     {
-        return $backupCodes->withAccountLock($request->user, function () use ($request, $actor, $backupCodes): SupportRequestMessage|false|null {
+        return $secondFactors->withAccountLock($request->user, function () use ($request, $actor, $secondFactors): SupportRequestMessage|false|null {
             // Check the refreshed account before claiming the request or changing any factors
             if ($request->user->isFrozen()) {
                 throw new AccessDeniedHttpException('This account is frozen, so its two-factor authentication cannot be reset.');
             }
 
-            return $this->getEM()->wrapInTransaction(function () use ($request, $actor, $backupCodes): SupportRequestMessage|false|null {
+            return $this->getEM()->wrapInTransaction(function () use ($request, $actor, $secondFactors): SupportRequestMessage|false|null {
                 $now = new \DateTimeImmutable();
 
                 // The conditional update protects the owner's veto and rolls back with factor removal
@@ -385,7 +385,7 @@ class SupportController extends Controller
                     return null;
                 }
 
-                $backupCodes->stageSecondFactorReset($request->user, $actor, 'Reset by support, request '.$request->publicId);
+                $secondFactors->stageSecondFactorReset($request->user, $actor, 'Reset by support, request '.$request->publicId);
                 $reply = SupportRequestMessage::reply($request, SupportRequestType::totpResetGrantedReply($request), $actor);
                 $this->getEM()->persist($reply);
 

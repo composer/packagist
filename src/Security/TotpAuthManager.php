@@ -31,7 +31,7 @@ class TotpAuthManager
         private UserNotifier $userNotifier,
         private AuditRecordRepository $auditRecordRepository,
         private EventDispatcherInterface $eventDispatcher,
-        private BackupCodeManager $backupCodes,
+        private SecondFactorManager $secondFactors,
     ) {
     }
 
@@ -42,8 +42,8 @@ class TotpAuthManager
      */
     public function enableTotpAuthentication(User $user, User $actor, string $secret): ?string
     {
-        $backupCode = $this->backupCodes->withAccountLock($user, function () use ($user, $secret): ?string {
-            $code = $user->hasSecondFactorAuthenticationEnabled() ? null : $this->backupCodes->generateBackupCode($user);
+        $backupCode = $this->secondFactors->withAccountLock($user, function () use ($user, $secret): ?string {
+            $code = $user->hasSecondFactorAuthenticationEnabled() ? null : $this->secondFactors->generateBackupCode($user);
             $user->setTotpSecret($secret);
             $this->doctrine->getManager()->flush();
 
@@ -67,7 +67,7 @@ class TotpAuthManager
      */
     public function disableTotpAuthentication(User $user, User $actor, string $reason): void
     {
-        $this->backupCodes->withAccountLock($user, function () use ($user): void {
+        $this->secondFactors->withAccountLock($user, function () use ($user): void {
             $this->removeTotpFactor($user);
             $this->doctrine->getManager()->flush();
         });

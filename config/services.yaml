@@ -144,7 +144,7 @@ services:
             'filter:update': '@App\Service\FilterListWorker'
             'package:purge': '@App\Service\PackagePurgeWorker'
 
-    App\Security\BackupCodeManager:
+    App\Security\SecondFactorManager:
         public: true
 
     App\Service\SecurityAdvisoryWorker:

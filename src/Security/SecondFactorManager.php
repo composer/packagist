@@ -27,7 +27,7 @@ use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-class BackupCodeManager implements BackupCodeManagerInterface
+class SecondFactorManager implements BackupCodeManagerInterface
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,

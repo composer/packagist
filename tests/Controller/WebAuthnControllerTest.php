@@ -18,7 +18,7 @@ use App\Entity\User;
 use App\Entity\WebAuthnCredential;
 use App\Event\SecondFactorsResetEvent;
 use App\Log\AuditLogEventType;
-use App\Security\BackupCodeManager;
+use App\Security\SecondFactorManager;
 use App\Security\SecondFactorProofStore;
 use App\Security\TotpAuthManager;
 use App\Support\SupportRequestStatus;
@@ -697,7 +697,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $em->flush();
         $em->getConnection()->update('fos_user', ['backupCode' => 'new12345'], ['id' => $user->getId()]);
 
-        $manager = self::getService(BackupCodeManager::class);
+        $manager = self::getService(SecondFactorManager::class);
         self::assertTrue($manager->isBackupCode($user, 'old12345'));
         $emailCount = count(self::getMailerMessages());
 
@@ -755,7 +755,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $emailCount = count(self::getMailerMessages());
 
         try {
-            self::getService(BackupCodeManager::class)->invalidateBackupCode($user, 'abc12345');
+            self::getService(SecondFactorManager::class)->invalidateBackupCode($user, 'abc12345');
             self::fail('Expected recovery to fail');
         } catch (\RuntimeException $exception) {
             self::assertSame($failure, $exception);

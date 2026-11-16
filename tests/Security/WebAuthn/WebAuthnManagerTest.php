@@ -173,7 +173,7 @@ class WebAuthnManagerTest extends TestCase
             $em,
             $notifier,
             $events,
-            new \App\Security\BackupCodeManager($events, $em, $requests, $notifier, $locker),
+            new \App\Security\SecondFactorManager($events, $em, $requests, $notifier, $locker),
             'packagist.wip',
         );
     }

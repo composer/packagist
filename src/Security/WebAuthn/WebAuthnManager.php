@@ -18,7 +18,7 @@ use App\Entity\User;
 use App\Entity\WebAuthnCredential;
 use App\Event\SecondFactorsResetEvent;
 use App\Event\SecondFactorRemovedEvent;
-use App\Security\BackupCodeManager;
+use App\Security\SecondFactorManager;
 use App\Security\UserNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -52,7 +52,7 @@ class WebAuthnManager
         private EntityManagerInterface $em,
         private UserNotifier $notifier,
         private EventDispatcherInterface $eventDispatcher,
-        private BackupCodeManager $backupCodes,
+        private SecondFactorManager $secondFactors,
         #[Autowire('%env(WEBAUTHN_RP_ID)%')] private readonly string $rpId,
     ) {
     }
@@ -84,13 +84,13 @@ class WebAuthnManager
 
         $credential = new WebAuthnCredential($user, $record);
 
-        $backupCode = $this->backupCodes->withAccountLock($user, function () use ($user, $credential, $name): ?string {
+        $backupCode = $this->secondFactors->withAccountLock($user, function () use ($user, $credential, $name): ?string {
             if ($this->em->find(WebAuthnCredential::class, $credential->id) !== null) {
                 throw new BadCredentialsException('webauthn.error.already_registered');
             }
 
             $credential->rename($name);
-            $code = $user->hasSecondFactorAuthenticationEnabled() ? null : $this->backupCodes->generateBackupCode($user);
+            $code = $user->hasSecondFactorAuthenticationEnabled() ? null : $this->secondFactors->generateBackupCode($user);
             $user->addWebAuthnCredential($credential);
             $this->em->persist($credential);
             $this->persistChange($credential, WebAuthnCredentialAction::Added);
@@ -117,7 +117,7 @@ class WebAuthnManager
 
     public function authenticate(User $user, string $response): void
     {
-        $this->backupCodes->withAccountLock($user, function () use ($user, $response): void {
+        $this->secondFactors->withAccountLock($user, function () use ($user, $response): void {
             try {
                 $assertion = $this->decodeCredential($response);
                 $options = $this->optionsStorage->get($assertion->response->clientDataJSON->challenge)->getPublicKeyCredentialOptions();
@@ -155,7 +155,7 @@ class WebAuthnManager
 
     public function revoke(WebAuthnCredential $credential): void
     {
-        $this->backupCodes->withAccountLock($credential->user, function () use ($credential): void {
+        $this->secondFactors->withAccountLock($credential->user, function () use ($credential): void {
             $this->stageRevocation($credential);
             $this->persistChange($credential, WebAuthnCredentialAction::Removed);
         });
