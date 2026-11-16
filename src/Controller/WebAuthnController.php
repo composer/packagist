@@ -78,7 +78,7 @@ class WebAuthnController extends Controller
 
     #[IsGranted(WebAuthnVoter::ENROLL)]
     #[Route('/profile/security/keys/register', name: 'user_webauthn_register', methods: ['POST'])]
-    public function register(Request $request, #[CurrentUser] User $user): Response
+    public function register(Request $request, #[CurrentUser] User $user, SecondFactorProofStore $proofs): Response
     {
         $this->checkCsrf($request);
 
@@ -91,6 +91,8 @@ class WebAuthnController extends Controller
         } catch (BadCredentialsException|\InvalidArgumentException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
+
+        $proofs->record($user, SecondFactorProofStore::WEBAUTHN);
 
         if ($backupCode !== null) {
             $request->getSession()->set('backup_code', $backupCode);

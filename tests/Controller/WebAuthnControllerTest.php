@@ -119,16 +119,32 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertFalse($this->freshUser()->isTotpAuthenticationEnabled());
         self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
         $crawler = $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorExists('form[data-webauthn="register"]');
+        self::assertSelectorNotExists('form[data-webauthn="verify"]');
         $backupCode = $crawler->filter('.two-factor-backup-code');
         self::assertCount(1, $backupCode);
         self::getEM()->clear();
         self::assertTrue($this->freshUser()->isBackupCode($backupCode->text()));
-        self::assertStringContainsString('My key', $crawler->text());
+        self::assertSame('My key', $crawler->filter('#key-'.$credential->id)->attr('value'));
         $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorNotExists('.two-factor-backup-code');
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::WebAuthnCredentialChanged, 'userId' => $this->user->getId()]);
         self::assertNotNull($audit);
         self::assertSame('added', $audit->attributes['action']);
+    }
+
+    public function testNewlyEnrolledKeyCanBeRenamedAndAnotherAddedWithoutConfirmation(): void
+    {
+        $credential = $this->register();
+        $this->client->request('POST', '/profile/security/keys/'.$credential->id.'/edit', [
+            '_token' => $this->csrf, 'action' => 'rename', 'name' => 'Renamed key',
+        ]);
+        self::assertResponseRedirects('/profile/security/keys');
+        self::assertSame('Renamed key', $this->freshUser()->findWebAuthnCredential($credential->id)?->getName());
+
+        $this->authenticator = new VirtualAuthenticator();
+        $this->register('Spare key');
+        self::assertCount(2, $this->freshUser()->getWebAuthnCredentials());
     }
 
     public function testEnrollmentAndVerificationKeepTheSameUserHandle(): void
@@ -247,6 +263,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testAddingTotpToAnAccountWithAKeyKeepsTheBackupCode(): void
     {
         $this->register();
+        $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
         $user = $this->freshUser();
         $user->setBackupCode('keep1234');
         self::getEM()->flush();
@@ -286,6 +303,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testVerificationRejectsAnUnsignedReturnUrl(string $method, string $path): void
     {
         $credential = $this->register();
+        $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
         $this->client->request($method, $path.'?'.http_build_query(['return_to' => 'https://attacker.test/']), ['_token' => $this->csrf]);
         self::assertResponseStatusCodeSame(403);
 
@@ -372,6 +390,13 @@ class WebAuthnControllerTest extends IntegrationTestCase
 
         $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorNotExists('.two-factor-backup-code');
+        self::assertSelectorNotExists('form[data-webauthn="verify"]');
+        self::assertSelectorExists('form[data-webauthn="register"]');
+
+        $this->authenticator = new VirtualAuthenticator();
+        $this->register('Spare key');
+        self::assertCount(2, $this->freshUser()->getWebAuthnCredentials());
+        self::assertTrue($this->freshUser()->isBackupCode('keep1234'));
     }
 
     public function testRememberedSessionCanEnrollAFirstKey(): void
@@ -420,6 +445,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testRemovalReviewRequiresProofAndReturnsAfterConfirmationWithoutRemovingTheKey(): void
     {
         $credential = $this->register();
+        $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
         $crawler = $this->client->request('GET', '/profile/security/keys');
         self::assertSame('/profile/security/keys/'.$credential->id.'/remove', $crawler->selectLink('Remove')->attr('href'));
         $this->client->click($crawler->selectLink('Remove')->link());
