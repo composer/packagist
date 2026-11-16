@@ -25,10 +25,13 @@ Check `composer.json` for exact versions.
 - Explore routes: `src/Controller/ExploreController.php`
 
 ## API authentication
-- `findUser()` in ApiController handles auth with `ApiType::Safe` vs `ApiType::Unsafe`
-- Bearer token format: `Authorization: Bearer username:apiToken`
-- Two token types: main (`apiToken`) and safe (`safeApiToken`)
-- Bearer token takes precedence over query parameters
+- `^/api/` has its own stateless firewall; `App\Security\Api\ApiTokenAuthenticator` authenticates
+  `Authorization: Bearer username:apiToken` (takes precedence) or username/apiToken parameters
+- Two token types: main (`apiToken`) and safe (`safeApiToken`). Check which one was used with
+  `isGranted(ApiType::Safe->value)` / `isGranted(ApiType::Unsafe->value)`; the safe token is
+  leak-tolerant and may only trigger updates
+- API tokens skip 2FA, so they only ever carry `ROLE_USER`: admin roles never apply to API requests
+- Failed authentication does not error out, endpoints return their own JSON errors
 
 ## Conventions
 

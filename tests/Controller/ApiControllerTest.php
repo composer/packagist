@@ -492,6 +492,47 @@ class ApiControllerTest extends IntegrationTestCase
         $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
     }
 
+    #[TestWith([false, null])]
+    #[TestWith([true, UserFreezeReason::Spam])]
+    public function testInactiveUsersCannotUseTheirApiTokens(bool $enabled, ?UserFreezeReason $freezeReason): void
+    {
+        $user = self::createUser(enabled: $enabled);
+        if ($freezeReason) {
+            $user->freeze($freezeReason);
+        }
+        $this->store($user);
+
+        $payload = json_encode(['repository' => 'https://github.com/composer/composer']);
+        $this->client->request('POST', '/api/create-package', ['payload' => $payload], server: ['HTTP_Authorization' => 'Bearer test:api-token']);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_NOT_ACCEPTABLE);
+        $this->assertSame(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], $this->decodeResponse());
+    }
+
+    public function testWebSessionsDoNotAuthenticateApiRequests(): void
+    {
+        $user = self::createUser();
+        $this->store($user);
+        $this->client->loginUser($user);
+
+        $payload = json_encode(['repository' => 'https://github.com/composer/composer']);
+        $this->client->request('POST', '/api/create-package', ['payload' => $payload]);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_NOT_ACCEPTABLE);
+    }
+
+    public function testApiRequestsDoNotStartASession(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/pkg', 'https://github.com/composer/composer', maintainers: [$user]);
+        $this->store($user, $package);
+
+        $this->client->request('POST', '/api/update-package', ['payload' => json_encode(['repository' => 'https://github.com/composer/composer'])], server: ['HTTP_Authorization' => 'Bearer test:api-token']);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_ACCEPTED);
+        $this->assertSame([], $this->client->getResponse()->headers->getCookies());
+    }
+
     public function testSafeApiAcceptsBothApiTokens(): void
     {
         $url = 'https://github.com/composer/composer';

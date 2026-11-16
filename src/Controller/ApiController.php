@@ -24,6 +24,7 @@ use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\BranchDeletionHandler;
 use App\Package\BranchDeletionOutcome;
+use App\Security\Api\ApiType;
 use App\Security\Voter\PackageActions;
 use App\Service\FallbackGitHubAuthProvider;
 use App\Service\GitHubUserMigrationWorker;
@@ -42,15 +43,8 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\RouterInterface;
-use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-
-enum ApiType
-{
-    case Safe;
-    case Unsafe;
-}
 
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
@@ -140,7 +134,7 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in payload'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
-        $user = $this->findUser($request);
+        $user = $this->getApiUser();
         if (null === $user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
@@ -269,7 +263,7 @@ class ApiController extends Controller
     #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'json'], methods: ['PUT'])]
     public function editPackageAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
     {
-        $user = $this->findUser($request);
+        $user = $this->getApiUser();
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
@@ -312,11 +306,11 @@ class ApiController extends Controller
     #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_add_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['PUT'])]
     public function addMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd): JsonResponse
     {
-        $user = $this->findUser($request);
+        $user = $this->getApiUser();
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
-        if (!$this->isGrantedForApiUser($user, PackageActions::AddMaintainer, $package)) {
+        if (!$this->isGranted(PackageActions::AddMaintainer->value, $package)) {
             return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
         }
 
@@ -343,11 +337,11 @@ class ApiController extends Controller
     #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_remove_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['DELETE'])]
     public function removeMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd): JsonResponse
     {
-        $user = $this->findUser($request);
+        $user = $this->getApiUser();
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
-        if (!$this->isGrantedForApiUser($user, PackageActions::RemoveMaintainer, $package)) {
+        if (!$this->isGranted(PackageActions::RemoveMaintainer->value, $package)) {
             return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
         }
 
@@ -591,11 +585,11 @@ class ApiController extends Controller
 
         if (!$user) {
             // find the user
-            $user = $this->findUser($request, ApiType::Safe);
+            $user = $this->getApiUser(ApiType::Safe);
             if ($user) {
                 $source = 'manual_hook ('.$user->getUsername().' @ '.$request->getPathInfo().')';
                 // safe token: crawl only, as above
-                if (null !== $deletedBranch && null === $this->findUser($request, ApiType::Unsafe)) {
+                if (null !== $deletedBranch && !$this->isGranted(ApiType::Unsafe->value)) {
                     $deletedBranch = null;
                 }
             }
@@ -685,66 +679,14 @@ class ApiController extends Controller
         return new JsonResponse($response, Response::HTTP_ACCEPTED);
     }
 
-    /**
-     * API tokens skip 2FA, so they only carry the rights a plain user has: admin roles never apply.
-     */
-    private function isGrantedForApiUser(User $user, PackageActions $action, Package $package): bool
+    private function getApiUser(ApiType $type = ApiType::Unsafe): ?User
     {
-        $tokenStorage = $this->container->get('security.token_storage');
-        $previousToken = $tokenStorage->getToken();
-        $tokenStorage->setToken(new UsernamePasswordToken($user, 'api', ['ROLE_USER']));
-
-        try {
-            return $this->isGranted($action->value, $package);
-        } finally {
-            $tokenStorage->setToken($previousToken);
-        }
-    }
-
-    /**
-     * Find a user by his username and API token
-     */
-    protected function findUser(Request $request, ApiType $apiType = ApiType::Unsafe): ?User
-    {
-        $username = $request->request->has('username')
-            ? $request->request->getString('username')
-            : $request->query->getString('username');
-
-        $apiToken = $request->request->has('apiToken')
-            ? $request->request->getString('apiToken')
-            : $request->query->getString('apiToken');
-
-        // Check for Bearer token authentication in format "username:apiToken"
-        // Bearer token takes precedence over query parameters
-        if ($request->headers->has('Authorization')) {
-            $authHeader = $request->headers->get('Authorization', '');
-            if (str_starts_with($authHeader, 'Bearer ')) {
-                $bearerToken = substr($authHeader, 7); // Remove 'Bearer ' prefix
-                if (str_contains($bearerToken, ':')) {
-                    [$bearerUsername, $bearerApiToken] = explode(':', $bearerToken, 2);
-                    $username = $bearerUsername;
-                    $apiToken = $bearerApiToken;
-                }
-            }
-        }
-
-        if (!$apiToken || !$username) {
+        if (!$this->isGranted($type->value)) {
             return null;
         }
 
-        $user = $this->getEM()->getRepository(User::class)
-            ->createQueryBuilder('u')
-            ->where('u.usernameCanonical = :username')
-            ->andWhere($apiType === ApiType::Safe ? '(u.apiToken = :apiToken OR u.safeApiToken = :apiToken)' : 'u.apiToken = :apiToken')
-            ->setParameter('username', $username)
-            ->setParameter('apiToken', $apiToken)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-
-        if ($user && !$user->isAccountActive()) {
-            return null;
-        }
+        $user = $this->getUser();
+        \assert($user instanceof User);
 
         return $user;
     }

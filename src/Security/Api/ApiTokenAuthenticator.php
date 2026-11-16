@@ -1,0 +1,99 @@
+<?php declare(strict_types=1);
+
+/*
+ * This file is part of Packagist.
+ *
+ * (c) Jordi Boggiano <j.boggiano@seld.be>
+ *     Nils Adermann <naderman@naderman.de>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace App\Security\Api;
+
+use App\Entity\User;
+use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Exception\AuthenticationException;
+use Symfony\Component\Security\Core\Exception\BadCredentialsException;
+use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
+use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
+use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+
+/**
+ * Authenticates API requests by username and API token, from a `Bearer username:apiToken` header
+ * or from username/apiToken request or query parameters.
+ */
+class ApiTokenAuthenticator extends AbstractAuthenticator
+{
+    public function __construct(private readonly ManagerRegistry $doctrine)
+    {
+    }
+
+    public function supports(Request $request): bool
+    {
+        return null !== self::getCredentials($request);
+    }
+
+    public function authenticate(Request $request): Passport
+    {
+        [$username, $apiToken] = self::getCredentials($request) ?? throw new BadCredentialsException();
+
+        $passport = new SelfValidatingPassport(new UserBadge($username, function (string $username) use ($apiToken): ?User {
+            $user = $this->doctrine->getRepository(User::class)
+                ->createQueryBuilder('u')
+                ->where('u.usernameCanonical = :username')
+                ->andWhere('(u.apiToken = :apiToken OR u.safeApiToken = :apiToken)')
+                ->setParameter('username', $username)
+                ->setParameter('apiToken', $apiToken)
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+
+            return $user instanceof User && $user->isAccountActive() ? $user : null;
+        }));
+        $passport->setAttribute('apiToken', $apiToken);
+
+        return $passport;
+    }
+
+    public function createToken(Passport $passport, string $firewallName): TokenInterface
+    {
+        $user = $passport->getUser();
+        \assert($user instanceof User);
+        $type = hash_equals((string) $user->getApiToken(), (string) $passport->getAttribute('apiToken')) ? ApiType::Unsafe : ApiType::Safe;
+
+        return new ApiToken($user, $type);
+    }
+
+    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
+    {
+        return null;
+    }
+
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
+    {
+        // the endpoints answer unauthenticated requests themselves, in their own format
+        return null;
+    }
+
+    /**
+     * @return array{string, string}|null
+     */
+    private static function getCredentials(Request $request): ?array
+    {
+        $authHeader = (string) $request->headers->get('Authorization', '');
+        if (str_starts_with($authHeader, 'Bearer ') && str_contains($authHeader, ':')) {
+            [$username, $apiToken] = explode(':', substr($authHeader, 7), 2);
+        } else {
+            $username = $request->request->has('username') ? $request->request->getString('username') : $request->query->getString('username');
+            $apiToken = $request->request->has('apiToken') ? $request->request->getString('apiToken') : $request->query->getString('apiToken');
+        }
+
+        return '' !== $username && '' !== $apiToken ? [$username, $apiToken] : null;
+    }
+}

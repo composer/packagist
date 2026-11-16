@@ -21,6 +21,12 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler|_wdt)/
             security: false
+        api:
+            pattern:      ^/api/
+            stateless:    true
+            lazy:         true
+            custom_authenticators:
+                - App\Security\Api\ApiTokenAuthenticator
         main:
             pattern:      .*
             user_checker: App\Security\UserChecker
