@@ -12,9 +12,7 @@
 
 namespace App\QueryFilter\TransparencyLog;
 
-use App\Entity\PackageTransparencyLogSearch;
 use App\QueryFilter\QueryFilterInterface;
-use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\InputBag;
 
@@ -26,6 +24,8 @@ use Symfony\Component\HttpFoundation\InputBag;
  */
 class UserIdFilter implements QueryFilterInterface
 {
+    use JoinsSearchIndex;
+
     private const KEY = 'user_id';
 
     private function __construct(
@@ -39,15 +39,11 @@ class UserIdFilter implements QueryFilterInterface
             return $qb;
         }
 
-        return $qb
-            ->join(PackageTransparencyLogSearch::class, 'userIdSearch', Join::WITH, 'userIdSearch.leafIndex = t.leafIndex')
+        return self::joinSearchIndex($qb, 'userIdSearch')
             ->andWhere('userIdSearch.userId = :userId')
             // one row per entry, also when the account is both user and actor
             ->andWhere('userIdSearch.primaryRow = true')
-            ->setParameter('userId', $this->value)
-            // order by the index columns, see AbstractSearchIndexFilter
-            ->orderBy('userIdSearch.datetime', 'DESC')
-            ->addOrderBy('userIdSearch.leafIndex', 'DESC');
+            ->setParameter('userId', $this->value);
     }
 
     public function getKey(): string
@@ -69,7 +65,7 @@ class UserIdFilter implements QueryFilterInterface
     {
         $value = $bag->get(self::KEY);
 
-        if (!\is_numeric($value) || (int) $value <= 0) {
+        if (!\is_string($value) || !ctype_digit($value) || (int) $value <= 0) {
             return new self(null);
         }
 
