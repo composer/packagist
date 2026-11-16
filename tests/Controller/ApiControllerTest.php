@@ -1035,21 +1035,26 @@ class ApiControllerTest extends IntegrationTestCase
         self::assertCount(Response::HTTP_OK === $expectedStatus ? ('PUT' === $method ? 3 : 1) : 2, $this->reloadPackage($package)->getMaintainers());
     }
 
-    public function testPackageAdminsCanManageMaintainersOfPackagesTheyDoNotMaintain(): void
+    public function testAdminRolesDoNotApplyToApiTokens(): void
     {
         $admin = self::createUser(roles: ['ROLE_EDIT_PACKAGES']);
         $owner = self::createUser('owner', 'owner@example.org');
         $newbie = self::createUser('newbie', 'newbie@example.org');
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner]);
-        $this->store($admin, $owner, $newbie, $package);
+        $frozen = self::createPackage('test/frozen', 'https://example.com/test/frozen', maintainers: [$admin, $owner]);
+        $frozen->freeze(PackageFreezeReason::Spam);
+        $this->store($admin, $owner, $newbie, $package, $frozen);
 
         $this->requestMaintainers('PUT', '/api/packages/test/pkg/maintainers/newbie');
-        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
         $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/owner');
-        self::assertResponseStatusCodeSame(Response::HTTP_OK);
+        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        $this->requestMaintainers('PUT', '/api/packages/test/frozen/maintainers/newbie');
+        self::assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
 
         $maintainers = array_map(static fn (User $user) => $user->getUsername(), $this->reloadPackage($package)->getMaintainers()->toArray());
-        self::assertSame(['newbie'], array_values($maintainers));
+        self::assertSame(['owner'], array_values($maintainers));
+        self::assertCount(2, $this->reloadPackage($frozen)->getMaintainers());
     }
 
     #[TestWith(['maintainer-add:user:%d'])]
