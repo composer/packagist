@@ -686,9 +686,6 @@ class ApiController extends Controller
     }
 
     /**
-     * Find a user by his username and API token
-     */
-    /**
      * API tokens skip 2FA, so they only carry the rights a plain user has: admin roles never apply.
      */
     private function isGrantedForApiUser(User $user, PackageActions $action, Package $package): bool
@@ -704,6 +701,9 @@ class ApiController extends Controller
         }
     }
 
+    /**
+     * Find a user by his username and API token
+     */
     protected function findUser(Request $request, ApiType $apiType = ApiType::Unsafe): ?User
     {
         $username = $request->request->has('username')
