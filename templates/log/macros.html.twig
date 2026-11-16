@@ -14,6 +14,17 @@
     {%- endif -%}
 {% endmacro %}
 
+{# usernames can be recycled, the id identifies the account #}
+{% macro userId(id) %}
+    {%- if id is not null %} <span class="text-muted">(#{{ id }})</span>{% endif -%}
+{% endmacro %}
+
+{# an {id, username} array or an ActorDisplay #}
+{% macro user(user) %}
+    {%- import _self as log -%}
+    {{ user.username }}{{ log.userId(user.id ?? null) }}
+{%- endmacro %}
+
 {% macro organizationLink(organization) %}
     {%- if organization.slug is existing_organization -%}
         <a href="{{ path('organization_show', { 'organization': organization.slug }) }}">{{ organization.displayName }}</a>

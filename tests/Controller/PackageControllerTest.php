@@ -95,10 +95,14 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertSame('composer require test/pkg', $crawler->filter('.requireme input')->attr('value'));
 
-        $auditLink = $crawler->filter('a[href*="transparency-log"]');
-        self::assertCount(1, $auditLink);
-        self::assertStringContainsString('package=test/pkg', (string) $auditLink->attr('href'));
-        self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
+        // The package page deep-links into the transparency log filtered to this package, and does not
+        // expose the admin audit log to non-auditors.
+        $transparencyLink = $crawler->filter('a[href*="transparency-log"]');
+        self::assertCount(1, $transparencyLink);
+        self::assertSame('Transparency log', trim($transparencyLink->text()));
+        self::assertStringContainsString('package=test/pkg', (string) $transparencyLink->attr('href'));
+        self::assertStringContainsString('noindex', (string) $transparencyLink->attr('rel'));
+        self::assertCount(0, $crawler->filter('a[href*="/admin/audit-log"]'));
     }
 
     #[DataProvider('provideReplacementLinks')]
@@ -876,7 +880,7 @@ class PackageControllerTest extends IntegrationTestCase
 
         $this->assertTrue($package->isMaintainer($maintainer));
 
-        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
+        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::MaintainerAdded->value,
             'packageId' => $package->getId(),
             'actorId' => $owner->getId(),
@@ -903,7 +907,13 @@ class PackageControllerTest extends IntegrationTestCase
             'remove_maintainer_form[user]' => $maintainer->getId(),
         ]);
 
+        $this->client->enableProfiler();
         $this->client->submit($form);
+
+        $this->assertEmailCount(1);
+        $email = $this->getMailerMessage();
+        $this->assertNotNull($email);
+        $this->assertEmailHeaderSame($email, 'To', $maintainer->getEmail());
 
         $this->assertResponseRedirects('/packages/test/pkg');
         $this->client->followRedirect();
@@ -917,13 +927,139 @@ class PackageControllerTest extends IntegrationTestCase
 
         $this->assertFalse($package->isMaintainer($maintainer));
 
-        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
+        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::MaintainerRemoved->value,
             'packageId' => $package->getId(),
             'actorId' => $owner->getId(),
         ]);
 
         $this->assertNotNull($auditRecord);
+    }
+
+    #[TestWith(['inactive', 'The user could not be found.', false])]
+    #[TestWith(['existing', 'existing is already a test/pkg maintainer.', false])]
+    #[TestWith(['newbie', 'Too many maintainer additions, try again later.', true])]
+    public function testCreateMaintainerRefusals(string $username, string $flash, bool $rateLimited): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $existing = self::createUser('existing', 'existing@example.org');
+        $inactive = self::createUser('inactive', 'inactive@example.org', enabled: false);
+        $newbie = self::createUser('newbie', 'newbie@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $existing]);
+        $this->store($owner, $existing, $inactive, $newbie, $package);
+        if ($rateLimited) {
+            self::redisCache()->set('maintainer-add:user:'.$newbie->getId(), 20);
+        }
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $form = $crawler->filter('[name="add_maintainer_form"]')->form();
+        $form->setValues(['add_maintainer_form[user]' => $username]);
+
+        $this->client->enableProfiler();
+        $this->client->submit($form);
+
+        $this->assertEmailCount(0);
+        $this->assertResponseRedirects('/packages/test/pkg');
+        $crawler = $this->client->followRedirect();
+        $this->assertStringContainsString($flash, $crawler->filter('.flash-container')->text());
+
+        $em = self::getEM();
+        $em->clear();
+        $this->assertCount(2, $em->getRepository(Package::class)->find($package->getId())->getMaintainers());
+    }
+
+    public function testCreateMaintainerIsHiddenAtTheMaintainerLimit(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $maintainers = [$owner];
+        for ($i = 1; $i < Package::MAX_MAINTAINERS; ++$i) {
+            $maintainers[] = self::createUser('maintainer'.$i, 'maintainer'.$i.'@example.org');
+        }
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: $maintainers);
+        $this->store($package, ...$maintainers);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $this->assertCount(0, $crawler->filter('[name="add_maintainer_form"]'));
+        $this->assertCount(1, $crawler->filter('[name="remove_maintainer_form"]'));
+    }
+
+    public function testMaintainerLimitsAreEnforcedWhenTheFormIsStale(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $other = self::createUser('other', 'other@example.org');
+        $newbie = self::createUser('newbie', 'newbie@example.org');
+        $maintainers = [$owner, $other];
+        for ($i = 2; $i < Package::MAX_MAINTAINERS - 1; ++$i) {
+            $maintainers[] = self::createUser('maintainer'.$i, 'maintainer'.$i.'@example.org');
+        }
+        $late = self::createUser('late', 'late@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: $maintainers);
+        $this->store($newbie, $late, $package, ...$maintainers);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $addForm = $crawler->filter('[name="add_maintainer_form"]')->form();
+        $addForm->setValues(['add_maintainer_form[user]' => 'newbie']);
+
+        // the package fills up between rendering the form and submitting it
+        $package = self::getEM()->getRepository(Package::class)->find($package->getId());
+        $package->addMaintainer(self::getEM()->getRepository(User::class)->find($late->getId()));
+        self::getEM()->flush();
+
+        $this->client->submit($addForm);
+        $this->assertResponseRedirects('/packages/test/pkg');
+        $crawler = $this->client->followRedirect();
+        $this->assertStringContainsString('A package can have at most 10 maintainers.', $crawler->filter('.flash-container')->text());
+
+        $em = self::getEM();
+        $em->clear();
+        $this->assertCount(Package::MAX_MAINTAINERS, $em->getRepository(Package::class)->find($package->getId())->getMaintainers());
+    }
+
+    public function testRemovingTheLastMaintainerIsRefused(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $owner = self::createUser('owner', 'owner@example.org');
+        $other = self::createUser('other', 'other@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $other]);
+        $this->store($admin, $owner, $other, $package);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $removeForm = $crawler->filter('[name="remove_maintainer_form"]')->form();
+        $removeForm->setValues(['remove_maintainer_form[user]' => (string) $owner->getId()]);
+
+        // the other maintainer leaves between rendering the form and submitting it
+        $package = self::getEM()->getRepository(Package::class)->find($package->getId());
+        $package->getMaintainers()->removeElement(self::getEM()->getRepository(User::class)->find($other->getId()));
+        self::getEM()->flush();
+
+        $this->client->submit($removeForm);
+        $this->assertResponseRedirects('/packages/test/pkg');
+        $crawler = $this->client->followRedirect();
+        $this->assertStringContainsString('A package must keep at least one maintainer.', $crawler->filter('.flash-container')->text());
+        $this->assertCount(0, $crawler->filter('[name="remove_maintainer_form"]'));
+
+        $em = self::getEM();
+        $em->clear();
+        $this->assertCount(1, $em->getRepository(Package::class)->find($package->getId())->getMaintainers());
+    }
+
+    #[TestWith(['/packages/test/pkg/maintainers/'])]
+    #[TestWith(['/packages/test/pkg/maintainers/delete'])]
+    public function testMaintainerChangesAreDeniedOnSuppressedPackages(string $path): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $other = self::createUser('other', 'other@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $other]);
+        $package->freeze(PackageFreezeReason::Spam);
+        $this->store($owner, $other, $package);
+
+        $this->client->loginUser($owner);
+        $this->client->request('POST', $path);
+        $this->assertResponseStatusCodeSame(403);
     }
 
     public function testTransferPackage(): void
@@ -972,7 +1108,7 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertContains($bob->getId(), $maintainerIds);
         $this->assertNotContains($john->getId(), $maintainerIds);
 
-        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
+        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::PackageTransferred->value,
             'packageId' => $package->getId(),
         ]);
@@ -982,13 +1118,16 @@ class PackageControllerTest extends IntegrationTestCase
 
     #[TestWith(['does_not_exist', 'value is not a valid username'])]
     #[TestWith([null, 'at least one maintainer must be specified'])]
+    #[TestWith(['carol', 'Too many maintainer additions, try again later'])]
     public function testTransferPackageReturnsValidationError(?string $value, string $message): void
     {
         $alice = self::createUser('alice', 'alice@example.org');
         $bob = self::createUser('bob', 'bob@example.org', enabled: false);
+        $carol = self::createUser('carol', 'carol@example.org');
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$alice]);
 
-        $this->store($alice, $bob, $package);
+        $this->store($alice, $bob, $carol, $package);
+        self::redisCache()->set('maintainer-add:user:'.$carol->getId(), 20);
 
         $this->client->loginUser($alice);
 
@@ -1009,6 +1148,12 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertCount(1, $elements);
         $text = $elements->text();
         $this->assertStringContainsStringIgnoringCase($message, $text);
+        $this->assertEmailCount(0);
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->find($package->getId());
+        $this->assertNotNull($reloaded);
+        $this->assertSame(['alice'], array_values(array_map(static fn (User $user) => $user->getUsername(), $reloaded->getMaintainers()->toArray())));
     }
 
     #[TestWith([null, null, 200])]

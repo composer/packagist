@@ -12,11 +12,15 @@
 
 namespace App\Log\Display;
 
-use App\Log\AuditLogEventType;
+use App\Log\LogEventType;
 
+/**
+ * One row of a log table, in whichever log rendered it. This is everything
+ * templates/log/_table.html.twig consumes, so both logs share one table.
+ */
 interface LogDisplayInterface
 {
-    public function getType(): AuditLogEventType;
+    public function getType(): LogEventType;
 
     public function getDateTime(): \DateTimeImmutable;
 

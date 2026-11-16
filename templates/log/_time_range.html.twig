@@ -1,0 +1,11 @@
+{% if dateTimeFromFilter.dateTime or dateTimeToFilter.dateTime %}
+    <div class="alert alert-info audit-log-time-range">
+        <strong>Time range:</strong>
+        {% if dateTimeFromFilter.dateTime %}
+            <span>From: {{ dateTimeFromFilter.dateTime|date('Y-m-d H:i:s') }} UTC</span>
+        {% endif %}
+        {% if dateTimeToFilter.dateTime %}
+            <span>{% if dateTimeFromFilter.dateTime %} | {% endif %}To: {{ dateTimeToFilter.dateTime|date('Y-m-d H:i:s') }} UTC</span>
+        {% endif %}
+    </div>
+{% endif %}

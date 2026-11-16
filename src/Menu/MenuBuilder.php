@@ -128,11 +128,13 @@ class MenuBuilder
                 ],
             ]);
         }
-        $menu->addChild('Transparency log', [
-            'label' => '<span class="icon-back-in-time"></span>Transparency log',
-            'route' => 'view_transparency_log',
-            'extras' => ['safe_label' => true, 'translation_domain' => false],
-        ]);
+        if ($this->security->isGranted('ROLE_AUDITOR')) {
+            $menu->addChild('Audit log', [
+                'label' => '<span class="icon-back-in-time"></span>Audit log',
+                'route' => 'admin_audit_log',
+                'extras' => ['safe_label' => true, 'translation_domain' => false],
+            ]);
+        }
 
         return $menu;
     }
@@ -242,7 +244,7 @@ class MenuBuilder
             ]);
         }
         $menu->addChild($this->translator->trans('menu.my_favorites'), [
-            'label' => '<span class="icon-leaf"></span>'.$this->translator->trans('menu.my_favorites'),
+            'label' => '<span class="icon-star"></span>'.$this->translator->trans('menu.my_favorites'),
             'route' => 'user_favorites',
             'routeParameters' => ['name' => $this->username],
             'extras' => ['safe_label' => true, 'translation_domain' => false],

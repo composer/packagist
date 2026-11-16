@@ -12,28 +12,36 @@
 
 namespace App\Log\Display\Event;
 
-use App\Log\AuditLogEventType;
+use App\Audit\VersionDeletionReason;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
+use App\Log\LogEventType;
 
 readonly class VersionSoftDeletedDisplay extends AbstractLogDisplay
 {
     public function __construct(
+        private LogEventType $type,
         \DateTimeImmutable $datetime,
         public string $packageName,
         public string $version,
         public string $reason,
         public ?string $reasonText,
-        public ?string $internalReasonText,
         ActorDisplay $actor,
-        ?string $ip,
+        // audit_log only: package_transparency_log rows are scrubbed of both at projection time
+        ?string $ip = null,
+        public ?string $internalReasonText = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }
 
-    public function getType(): AuditLogEventType
+    public function getReasonTranslationKey(): ?string
     {
-        return AuditLogEventType::VersionSoftDeleted;
+        return $this->reasonTranslationKey($this->reason, VersionDeletionReason::class, 'deletion_reason');
+    }
+
+    public function getType(): LogEventType
+    {
+        return $this->type;
     }
 
     public function getTemplateName(): string

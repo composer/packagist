@@ -12,7 +12,9 @@
 
 namespace App\Log;
 
-enum AuditLogEventType: string
+use App\Log\LogEventType;
+
+enum AuditLogEventType: string implements LogEventType
 {
     // package ownership
     case MaintainerAdded = 'maintainer_added';
@@ -84,18 +86,6 @@ enum AuditLogEventType: string
     case OrganizationInvitationAccepted = 'organization_invitation_accepted';
     case OrganizationInvitationDeclined = 'organization_invitation_declined';
     case OrganizationInvitationExpired = 'organization_invitation_expired';
-
-    /**
-     * @return list<self>
-     */
-    public static function hiddenFromTransparencyLogCases(): array
-    {
-        return [
-            self::TotpAuthenticationActivated,
-            self::TotpAuthenticationDeactivated,
-            self::WebAuthnCredentialChanged,
-        ];
-    }
 
     /**
      * @return list<self>

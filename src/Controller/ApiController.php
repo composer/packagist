@@ -17,10 +17,14 @@ use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Model\DownloadManager;
+use App\Model\MaintainerAdditionRateLimitedException;
+use App\Model\MaintainerChangeException;
+use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\BranchDeletionHandler;
 use App\Package\BranchDeletionOutcome;
+use App\Security\Voter\PackageActions;
 use App\Service\FallbackGitHubAuthProvider;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
@@ -38,6 +42,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -300,6 +305,66 @@ class ApiController extends Controller
         $em = $this->getEM();
         $em->persist($package);
         $em->flush();
+
+        return new JsonResponse(['status' => 'success'], Response::HTTP_OK);
+    }
+
+    #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_add_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['PUT'])]
+    public function addMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd): JsonResponse
+    {
+        $user = $this->findUser($request);
+        if (!$user) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
+        }
+        if (!$this->isGrantedForApiUser($user, PackageActions::AddMaintainer, $package)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
+        }
+
+        $statsd->increment('add_maintainer_api');
+
+        $maintainer = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => mb_strtolower($username)]);
+        if (!$maintainer || !$maintainer->isAccountActive()) {
+            return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        try {
+            if ($packageManager->addMaintainer($package, $maintainer, $user)) {
+                $this->getEM()->flush();
+            }
+        } catch (MaintainerAdditionRateLimitedException $e) {
+            return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], Response::HTTP_TOO_MANY_REQUESTS);
+        } catch (MaintainerChangeException $e) {
+            return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+
+        return new JsonResponse(['status' => 'success'], Response::HTTP_OK);
+    }
+
+    #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_remove_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['DELETE'])]
+    public function removeMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd): JsonResponse
+    {
+        $user = $this->findUser($request);
+        if (!$user) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
+        }
+        if (!$this->isGrantedForApiUser($user, PackageActions::RemoveMaintainer, $package)) {
+            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
+        }
+
+        $statsd->increment('remove_maintainer_api');
+
+        $maintainer = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => mb_strtolower($username)]);
+        if (!$maintainer) {
+            return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        try {
+            if ($packageManager->removeMaintainer($package, $maintainer, $user)) {
+                $this->getEM()->flush();
+            }
+        } catch (MaintainerChangeException $e) {
+            return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
 
         return new JsonResponse(['status' => 'success'], Response::HTTP_OK);
     }
@@ -618,6 +683,22 @@ class ApiController extends Controller
         }
 
         return new JsonResponse($response, Response::HTTP_ACCEPTED);
+    }
+
+    /**
+     * API tokens skip 2FA, so they only carry the rights a plain user has: admin roles never apply.
+     */
+    private function isGrantedForApiUser(User $user, PackageActions $action, Package $package): bool
+    {
+        $tokenStorage = $this->container->get('security.token_storage');
+        $previousToken = $tokenStorage->getToken();
+        $tokenStorage->setToken(new UsernamePasswordToken($user, 'api', ['ROLE_USER']));
+
+        try {
+            return $this->isGranted($action->value, $package);
+        } finally {
+            $tokenStorage->setToken($previousToken);
+        }
     }
 
     /**

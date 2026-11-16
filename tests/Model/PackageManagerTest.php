@@ -16,15 +16,12 @@ use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\User;
-use App\Entity\UserRepository;
 use App\Log\AuditLogEventType;
+use App\Model\MaintainerChangeException;
 use App\Model\PackageManager;
-use App\Package\Updater;
 use App\Tests\IntegrationTestCase;
-use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\Attributes\TestWith;
 use Predis\Client;
-use Symfony\Component\HttpFoundation\Response;
 
 class PackageManagerTest extends IntegrationTestCase
 {
@@ -55,8 +52,8 @@ class PackageManagerTest extends IntegrationTestCase
     }
 
     #[TestWith([false, 0])]
-    #[TestWith([true, 1])]
-    public function testTransferPackageReplacesAllMaintainers(bool $notifyNewMaintainers, int $expectedEmailCount): void
+    #[TestWith([true, 2])]
+    public function testTransferPackageReplacesAllMaintainers(bool $notifyMaintainers, int $expectedEmailCount): void
     {
         $alice = self::createUser('alice', 'alice@example.org');
         $bob = self::createUser('bob', 'bob@example.org');
@@ -66,7 +63,7 @@ class PackageManagerTest extends IntegrationTestCase
         $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$john, $alice]);
         $this->store($package);
 
-        $result = $this->packageManager->transferPackage(null, $package, [$bob, $alice], $notifyNewMaintainers);
+        $result = $this->packageManager->transferPackage(null, $package, [$bob, $alice], $notifyMaintainers);
 
         $em = self::getEM();
         $em->flush();
@@ -78,6 +75,141 @@ class PackageManagerTest extends IntegrationTestCase
         $this->assertEqualsCanonicalizing(['alice', 'bob'], array_map($callable, $package->getMaintainers()->toArray()));
         $this->assertAuditLogWasCreated($package, ['john', 'alice'], ['bob', 'alice']);
         $this->assertEmailCount($expectedEmailCount);
+    }
+
+    public function testAddMaintainerRefusesInactiveAccountsAndTheMaintainerLimit(): void
+    {
+        $maintainers = [];
+        for ($i = 0; $i < Package::MAX_MAINTAINERS - 1; ++$i) {
+            $maintainers[] = self::createUser('maintainer'.$i, 'maintainer'.$i.'@example.org');
+        }
+        $disabled = self::createUser('disabled', 'disabled@example.org', enabled: false);
+        $first = self::createUser('first', 'first@example.org');
+        $second = self::createUser('second', 'second@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: $maintainers);
+        $this->store($disabled, $first, $second, $package, ...$maintainers);
+
+        try {
+            $this->packageManager->addMaintainer($package, $disabled, null);
+            self::fail('Adding a disabled account must be refused');
+        } catch (MaintainerChangeException) {
+        }
+
+        self::assertTrue($this->packageManager->addMaintainer($package, $first, null));
+
+        $this->expectException(MaintainerChangeException::class);
+        $this->expectExceptionMessage('A package can have at most 10 maintainers');
+        $this->packageManager->addMaintainer($package, $second, null);
+    }
+
+    public function testRemoveMaintainerKeepsTheLastMaintainer(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice, $bob]);
+        $this->store($alice, $bob, $package);
+
+        self::assertTrue($this->packageManager->removeMaintainer($package, $bob, null));
+        self::assertFalse($this->packageManager->removeMaintainer($package, $bob, null));
+        $this->assertEmailCount(1);
+
+        $this->expectException(MaintainerChangeException::class);
+        $this->expectExceptionMessage('A package must keep at least one maintainer');
+        $this->packageManager->removeMaintainer($package, $alice, null);
+    }
+
+    public function testRemoveMaintainerNotifiesTheRemovedMaintainer(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice, $bob]);
+        $this->store($alice, $bob, $package);
+
+        self::assertTrue($this->packageManager->removeMaintainer($package, $bob, $alice));
+
+        $this->assertEmailCount(1);
+        $email = $this->getMailerMessage();
+        $this->assertNotNull($email);
+        $this->assertEmailHeaderSame($email, 'To', 'bob@example.org');
+        $this->assertEmailHeaderSame($email, 'Subject', 'You have been removed from vendor/package as a maintainer');
+        $this->assertEmailTextBodyContains($email, '/transparency-log?package=vendor/package');
+        $this->assertEmailTextBodyNotContains($email, 'alice');
+    }
+
+    public function testRemoveMaintainerDoesNotNotifyMaintainersRemovingThemselves(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice, $bob]);
+        $this->store($alice, $bob, $package);
+
+        self::assertTrue($this->packageManager->removeMaintainer($package, $bob, $bob));
+
+        $this->assertEmailCount(0);
+    }
+
+    public function testTransferPackageNotifiesRemovedMaintainersExceptTheActor(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $john = self::createUser('john', 'john@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice, $john]);
+        $this->store($alice, $bob, $john, $package);
+
+        self::assertTrue($this->packageManager->transferPackage($alice, $package, [$bob], true));
+
+        $this->assertEmailCount(2);
+        $recipients = array_map(static fn ($email) => $email->getHeaders()->get('To')?->getBodyAsString(), $this->getMailerMessages());
+        $this->assertEqualsCanonicalizing(['bob@example.org', 'john@example.org'], $recipients);
+        $removal = $this->getMailerMessage(1);
+        $this->assertNotNull($removal);
+        $this->assertEmailHeaderSame($removal, 'To', 'john@example.org');
+        $this->assertEmailHeaderSame($removal, 'Subject', 'You have been removed from vendor/package as a maintainer');
+    }
+
+    public function testTransferPackageAppliesTheAddMaintainerGuards(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $disabled = self::createUser('disabled', 'disabled@example.org', enabled: false);
+        $limited = self::createUser('limited', 'limited@example.org');
+        $others = [];
+        for ($i = 0; $i < Package::MAX_MAINTAINERS; ++$i) {
+            $others[] = self::createUser('other'.$i, 'other'.$i.'@example.org');
+        }
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice]);
+        $this->store($alice, $disabled, $limited, $package, ...$others);
+        self::redisCache()->set('maintainer-add:user:'.$limited->getId(), 20);
+
+        foreach ([
+            'Inactive accounts can not be added as maintainers' => [$alice, $disabled],
+            'Too many maintainer additions, try again later' => [$alice, $limited],
+            'A package can have at most 10 maintainers' => [$alice, ...$others],
+        ] as $message => $newMaintainers) {
+            try {
+                $this->packageManager->transferPackage($alice, $package, $newMaintainers, true);
+                self::fail('Expected the transfer to be refused: '.$message);
+            } catch (MaintainerChangeException $e) {
+                self::assertSame($message, $e->getMessage());
+            }
+            self::assertSame([$alice], $package->getMaintainers()->toArray());
+        }
+        $this->assertEmailCount(0);
+
+        // without notifications nothing is mailed, so the rate limit does not apply
+        self::assertTrue($this->packageManager->transferPackage(null, $package, [$alice, $limited], false));
+    }
+
+    public function testTransferPackageCountsTowardsTheRateLimit(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice]);
+        $this->store($alice, $bob, $package);
+
+        self::assertTrue($this->packageManager->transferPackage($alice, $package, [$alice, $bob], true));
+
+        self::assertSame('1', self::redisCache()->get('maintainer-add:user:'.$bob->getId()));
+        self::assertNull(self::redisCache()->get('maintainer-add:user:'.$alice->getId()));
     }
 
     public function testTransferPackageWithSameMaintainersDoesNothing(): void

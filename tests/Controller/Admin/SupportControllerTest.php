@@ -28,6 +28,8 @@ use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\PackageDisposition;
 use App\Support\SupportRequestStatus;
 use App\Tests\IntegrationTestCase;
+use App\Util\IpAddress;
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -487,9 +489,11 @@ class SupportControllerTest extends IntegrationTestCase
         $this->client->submit($crawler->selectButton('Transfer to requester')->form());
         $this->assertResponseRedirects('/admin/support/'.$request->publicId);
 
-        // transferPackage() is called with notifyNewMaintainers, so the requester hears about it even
-        // if the admin never gets round to writing a reply.
-        $this->assertEmailCount(1);
+        // transferPackage() is called with notifyMaintainers, so the requester hears about it even
+        // if the admin never gets round to writing a reply, and the previous maintainer is told too.
+        $this->assertEmailCount(2);
+        $recipients = array_map(static fn ($email) => $email->getHeaders()->get('To')?->getBodyAsString(), $this->getMailerMessages());
+        self::assertEqualsCanonicalizing(['requester@example.org', 'goneaway@example.org'], $recipients);
 
         $em = self::getEM();
         $em->clear();
@@ -658,6 +662,33 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertCount(0, $crawler->filter('#vendor-packages'));
     }
 
+    public function testAuditorSeesTheIpOfRecentSecurityEvents(): void
+    {
+        [$admin, $request] = $this->givenTwoFactorRequest();
+        $admin->addRole('ROLE_AUDITOR');
+        $this->store($admin);
+        $this->givenSecurityEventFrom($request->user, '203.0.113.7');
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('203.0.113.7', trim($crawler->filter('td.audit-log-ip')->text()));
+    }
+
+    public function testModeratorWithoutAuditorRoleDoesNotSeeTheIpOfRecentSecurityEvents(): void
+    {
+        [$admin, $request] = $this->givenTwoFactorRequest();
+        $this->givenSecurityEventFrom($request->user, '203.0.113.7');
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/admin/support/'.$request->publicId);
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(1, $crawler->filter('[data-test="log-type"]'));
+        self::assertStringNotContainsString('203.0.113.7', (string) $this->client->getResponse()->getContent());
+    }
+
     public function testDeleteAccountDeletesTheUserAndTheRequestAndNotifiesThem(): void
     {
         [$admin, $request, $requester] = $this->givenAccountDeletionRequest();
@@ -800,6 +831,17 @@ class SupportControllerTest extends IntegrationTestCase
         $this->store($request);
 
         return [$admin, $request, $requester];
+    }
+
+    private function givenSecurityEventFrom(User $user, string $ip): void
+    {
+        $record = AuditRecord::passwordChanged($user, $user);
+        self::getEM()->getRepository(AuditRecord::class)->insert($record);
+        // insert() takes the IP from the current request, and a test has none.
+        self::getService(Connection::class)->executeStatement(
+            'UPDATE audit_log SET ip = ? WHERE id = ?',
+            [IpAddress::stringToBinary($ip), $record->id->toBinary()],
+        );
     }
 
     private function twoFactorUser(): User
