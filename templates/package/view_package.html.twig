@@ -163,19 +163,19 @@
                                 </ul>
                             </div>
 
-                            {% if is_granted('remove_maintainer', package) or is_granted('add_maintainer', package) or is_granted('transfer_package', package) %}
+                            {% if addMaintainerForm|default(null) or removeMaintainerForm|default(null) or transferPackageForm|default(null) %}
                                 <div class="maintainer-actions dropdown">
                                     <button type="button" class="btn btn-inverse dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bi bi-people-fill"></i> Maintainers
                                     </button>
                                     <ul class="dropdown-menu">
-                                        {% if is_granted('add_maintainer', package) and addMaintainerForm is defined %}
+                                        {% if addMaintainerForm|default(null) %}
                                             <li><button type="button" class="dropdown-item" id="add-maintainer">Add maintainer</button></li>
                                         {% endif %}
-                                        {% if is_granted('remove_maintainer', package) and removeMaintainerForm is defined %}
+                                        {% if removeMaintainerForm|default(null) %}
                                             <li><button type="button" class="dropdown-item" id="remove-maintainer">Remove maintainer</button></li>
                                         {% endif %}
-                                        {% if is_granted('transfer_package', package) and transferPackageForm is defined %}
+                                        {% if transferPackageForm|default(null) %}
                                             <li><button type="button" class="dropdown-item" id="transfer-package">Transfer ownership</button></li>
                                         {% endif %}
                                     </ul>
@@ -187,7 +187,7 @@
                             <p class="alert alert-danger">{{ lastJobWarning|raw }} <br /> <a href="#" data-msg="{{ lastJobMsg }}" data-details="{{ lastJobDetails }}" class="view-log">View Last Update Log</a>{% if is_granted('ROLE_UPDATE_PACKAGES') %} &middot; <a rel="nofollow noindex" href="{{ path('view_package_update_history', {name: package.name}) }}">Update History</a>{% endif %}</p>
                         {% endif %}
 
-                        {% if is_granted('add_maintainer', package) and addMaintainerForm is defined %}
+                        {% if addMaintainerForm|default(null) %}
                             {{ form_start(addMaintainerForm, {
                                 attr: { id: 'add-maintainer-form', class: 'package-admin-form' ~ (show_add_maintainer_form|default(false) ? '' : ' d-none') },
                                 action: path('add_maintainer', { 'name': package.name })
@@ -203,7 +203,7 @@
                             {{ form_end(addMaintainerForm) }}
                         {% endif %}
 
-                        {% if is_granted('remove_maintainer', package) and removeMaintainerForm is defined %}
+                        {% if removeMaintainerForm|default(null) %}
                             {{ form_start(removeMaintainerForm, {
                                 attr: { id: 'remove-maintainer-form', class: 'package-admin-form' ~ (show_remove_maintainer_form|default(false) ? '' : ' d-none') },
                                 action: path('remove_maintainer', { 'name': package.name })
@@ -219,7 +219,7 @@
                             {{ form_end(removeMaintainerForm) }}
                         {% endif %}
 
-                        {% if is_granted('transfer_package', package) and transferPackageForm is defined %}
+                        {% if transferPackageForm|default(null) %}
                             {{ form_start(transferPackageForm, {
                                 attr: { id: 'transfer-package-form', class: 'package-admin-form' ~ (show_transfer_package_form|default(false) ? '' : ' d-none') },
                                 action: path('transfer_package', { 'name': package.name })

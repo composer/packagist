@@ -965,7 +965,7 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertCount(2, $em->getRepository(Package::class)->find($package->getId())->getMaintainers());
     }
 
-    public function testCreateMaintainerIsHiddenAndDeniedAtTheMaintainerLimit(): void
+    public function testCreateMaintainerIsHiddenAtTheMaintainerLimit(): void
     {
         $owner = self::createUser('owner', 'owner@example.org');
         $maintainers = [$owner];
@@ -979,9 +979,68 @@ class PackageControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/packages/test/pkg');
         $this->assertCount(0, $crawler->filter('[name="add_maintainer_form"]'));
         $this->assertCount(1, $crawler->filter('[name="remove_maintainer_form"]'));
+    }
 
-        $this->client->request('POST', '/packages/test/pkg/maintainers/', ['add_maintainer_form' => ['user' => 'owner']]);
-        $this->assertResponseStatusCodeSame(403);
+    public function testMaintainerLimitsAreEnforcedWhenTheFormIsStale(): void
+    {
+        $owner = self::createUser('owner', 'owner@example.org');
+        $other = self::createUser('other', 'other@example.org');
+        $newbie = self::createUser('newbie', 'newbie@example.org');
+        $maintainers = [$owner, $other];
+        for ($i = 2; $i < Package::MAX_MAINTAINERS - 1; ++$i) {
+            $maintainers[] = self::createUser('maintainer'.$i, 'maintainer'.$i.'@example.org');
+        }
+        $late = self::createUser('late', 'late@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: $maintainers);
+        $this->store($newbie, $late, $package, ...$maintainers);
+
+        $this->client->loginUser($owner);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $addForm = $crawler->filter('[name="add_maintainer_form"]')->form();
+        $addForm->setValues(['add_maintainer_form[user]' => 'newbie']);
+
+        // the package fills up between rendering the form and submitting it
+        $package = self::getEM()->getRepository(Package::class)->find($package->getId());
+        $package->addMaintainer(self::getEM()->getRepository(User::class)->find($late->getId()));
+        self::getEM()->flush();
+
+        $this->client->submit($addForm);
+        $this->assertResponseRedirects('/packages/test/pkg');
+        $crawler = $this->client->followRedirect();
+        $this->assertStringContainsString('A package can have at most 10 maintainers.', $crawler->filter('.flash-container')->text());
+
+        $em = self::getEM();
+        $em->clear();
+        $this->assertCount(Package::MAX_MAINTAINERS, $em->getRepository(Package::class)->find($package->getId())->getMaintainers());
+    }
+
+    public function testRemovingTheLastMaintainerIsRefused(): void
+    {
+        $admin = self::createUser('admin', 'admin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $owner = self::createUser('owner', 'owner@example.org');
+        $other = self::createUser('other', 'other@example.org');
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $other]);
+        $this->store($admin, $owner, $other, $package);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        $removeForm = $crawler->filter('[name="remove_maintainer_form"]')->form();
+        $removeForm->setValues(['remove_maintainer_form[user]' => (string) $owner->getId()]);
+
+        // the other maintainer leaves between rendering the form and submitting it
+        $package = self::getEM()->getRepository(Package::class)->find($package->getId());
+        $package->getMaintainers()->removeElement(self::getEM()->getRepository(User::class)->find($other->getId()));
+        self::getEM()->flush();
+
+        $this->client->submit($removeForm);
+        $this->assertResponseRedirects('/packages/test/pkg');
+        $crawler = $this->client->followRedirect();
+        $this->assertStringContainsString('A package must keep at least one maintainer.', $crawler->filter('.flash-container')->text());
+        $this->assertCount(0, $crawler->filter('[name="remove_maintainer_form"]'));
+
+        $em = self::getEM();
+        $em->clear();
+        $this->assertCount(1, $em->getRepository(Package::class)->find($package->getId())->getMaintainers());
     }
 
     #[TestWith(['/packages/test/pkg/maintainers/'])]

@@ -806,9 +806,10 @@ class PackageController extends Controller
             // The template renders each of these behind the matching voter grant, and building them
             // is not free - createView() on the remove-maintainer form materialises an EntityType
             // choice list with a DB query - so visitors who cannot see a form must not pay for it.
-            $data['addMaintainerForm'] = $this->isGranted(PackageActions::AddMaintainer->value, $package)
+            $maintainerCount = $package->getMaintainers()->count();
+            $data['addMaintainerForm'] = $maintainerCount < Package::MAX_MAINTAINERS && $this->isGranted(PackageActions::AddMaintainer->value, $package)
                 ? $this->createAddMaintainerForm($package)->createView() : null;
-            $data['removeMaintainerForm'] = $this->isGranted(PackageActions::RemoveMaintainer->value, $package)
+            $data['removeMaintainerForm'] = $maintainerCount > 1 && $this->isGranted(PackageActions::RemoveMaintainer->value, $package)
                 ? $this->createRemoveMaintainerForm($package)->createView() : null;
             $data['transferPackageForm'] = $this->isGranted(PackageActions::TransferPackage->value, $package)
                 ? $this->createTransferPackageForm($package)->createView() : null;

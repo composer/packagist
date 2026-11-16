@@ -57,9 +57,7 @@ class PackageVoter extends Voter
             PackageActions::HideVersion => $this->canAdministerVersion(),
             PackageActions::AdminSubmit => $this->canSubmitForOtherUsers(),
             PackageActions::Edit => $this->canEdit($package, $user),
-            PackageActions::ManageMaintainers, PackageActions::TransferPackage => $this->canManageMaintainers($package, $user),
-            PackageActions::AddMaintainer => $this->canAddMaintainers($package, $user),
-            PackageActions::RemoveMaintainer => $this->canRemoveMaintainers($package, $user),
+            PackageActions::AddMaintainer, PackageActions::RemoveMaintainer, PackageActions::TransferPackage => $this->canManageMaintainers($package, $user),
             PackageActions::Update => $package->isMaintainer($user) || $this->security->isGranted('ROLE_UPDATE_PACKAGES'),
         };
     }
@@ -145,25 +143,6 @@ class PackageVoter extends Voter
         }
 
         return !$package->getFreezeReason()?->suppressesPackage();
-    }
-
-    private function canAddMaintainers(Package $package, User $user): bool
-    {
-        if ($package->getMaintainers()->count() >= Package::MAX_MAINTAINERS) {
-            return false;
-        }
-
-        return $this->canManageMaintainers($package, $user);
-    }
-
-    private function canRemoveMaintainers(Package $package, User $user): bool
-    {
-        // at least one has to remain
-        if (1 === $package->getMaintainers()->count()) {
-            return false;
-        }
-
-        return $this->canManageMaintainers($package, $user);
     }
 
     public function supportsAttribute(string $attribute): bool

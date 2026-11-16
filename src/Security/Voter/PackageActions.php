@@ -15,7 +15,6 @@ namespace App\Security\Voter;
 enum PackageActions: string
 {
     case Edit = 'edit';
-    case ManageMaintainers = 'manage_maintainers';
     case AddMaintainer = 'add_maintainer';
     case RemoveMaintainer = 'remove_maintainer';
     case TransferPackage = 'transfer_package';

@@ -316,7 +316,7 @@ class ApiController extends Controller
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
-        if (!$this->isGrantedForApiUser($user, PackageActions::ManageMaintainers, $package)) {
+        if (!$this->isGrantedForApiUser($user, PackageActions::AddMaintainer, $package)) {
             return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
         }
 
@@ -347,7 +347,7 @@ class ApiController extends Controller
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
-        if (!$this->isGrantedForApiUser($user, PackageActions::ManageMaintainers, $package)) {
+        if (!$this->isGrantedForApiUser($user, PackageActions::RemoveMaintainer, $package)) {
             return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
         }
 
