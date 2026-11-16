@@ -12,9 +12,7 @@
 
 namespace App\QueryFilter\TransparencyLog;
 
-use App\Entity\PackageTransparencyLogSearch;
 use App\Log\TransparencyLogSearchType;
-use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 
 /**
@@ -24,6 +22,8 @@ use Doctrine\ORM\QueryBuilder;
  */
 abstract class AbstractSearchIndexFilter extends AbstractTextFilter
 {
+    use JoinsSearchIndex;
+
     abstract protected static function type(): TransparencyLogSearchType;
 
     protected function applyFilter(QueryBuilder $qb, string $value): QueryBuilder
@@ -31,14 +31,10 @@ abstract class AbstractSearchIndexFilter extends AbstractTextFilter
         // one alias per filter, so the User and Actor filters can be used together
         $alias = static::key().'Search';
 
-        return $qb
-            ->join(PackageTransparencyLogSearch::class, $alias, Join::WITH, $alias.'.leafIndex = t.leafIndex')
+        return self::joinSearchIndex($qb, $alias)
             ->andWhere($alias.'.type = :'.$alias.'Type')
             ->andWhere($alias.'.name = :'.$alias.'Name')
             ->setParameter($alias.'Type', static::type()->value)
-            ->setParameter($alias.'Name', mb_strtolower($value))
-            // order by the index columns, so MySQL reads the index in page order and does not sort
-            ->orderBy($alias.'.datetime', 'DESC')
-            ->addOrderBy($alias.'.leafIndex', 'DESC');
+            ->setParameter($alias.'Name', mb_strtolower($value));
     }
 }
