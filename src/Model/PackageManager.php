@@ -24,6 +24,7 @@ use App\Entity\User;
 use App\Entity\Version;
 use App\Package\PackageListCache;
 use App\Search\PackageIndex;
+use App\Security\MaintainerAdditionRateLimiter;
 use App\Service\CdnClient;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
@@ -63,6 +64,7 @@ class PackageManager
         private readonly Scheduler $scheduler,
         private readonly PackageListCache $listCache,
         private readonly DownloadManager $downloadManager,
+        private readonly MaintainerAdditionRateLimiter $maintainerRateLimiter,
     ) {
     }
 
@@ -400,16 +402,12 @@ class PackageManager
             return false;
         }
 
-        if (!$maintainer->isAccountActive()) {
-            throw new MaintainerChangeException('Inactive accounts can not be added as maintainers');
-        }
-        if ($package->getMaintainers()->count() >= Package::MAX_MAINTAINERS) {
-            throw new MaintainerChangeException('A package can have at most '.Package::MAX_MAINTAINERS.' maintainers');
-        }
+        $this->assertCanAddMaintainers($package->getMaintainers()->count() + 1, [$maintainer], true);
 
         $package->addMaintainer($maintainer);
         $this->doctrine->getManager()->persist(AuditRecord::maintainerAdded($package, $maintainer, $actor));
         $this->notifyNewMaintainer($maintainer, $package);
+        $this->maintainerRateLimiter->recordAddition($maintainer);
 
         return true;
     }
@@ -437,7 +435,29 @@ class PackageManager
     }
 
     /**
+     * @param array<User> $addedMaintainers
+     *
+     * @throws MaintainerChangeException
+     */
+    private function assertCanAddMaintainers(int $resultingCount, array $addedMaintainers, bool $rateLimited): void
+    {
+        if ($resultingCount > Package::MAX_MAINTAINERS) {
+            throw new MaintainerChangeException('A package can have at most '.Package::MAX_MAINTAINERS.' maintainers');
+        }
+        foreach ($addedMaintainers as $maintainer) {
+            if (!$maintainer->isAccountActive()) {
+                throw new MaintainerChangeException('Inactive accounts can not be added as maintainers');
+            }
+            if ($rateLimited && $this->maintainerRateLimiter->isLimited($maintainer)) {
+                throw new MaintainerAdditionRateLimitedException('Too many maintainer additions, try again later');
+            }
+        }
+    }
+
+    /**
      * @param array<User> $newMaintainers
+     *
+     * @throws MaintainerChangeException
      */
     public function transferPackage(?User $actor, Package $package, array $newMaintainers, bool $notifyMaintainers): bool
     {
@@ -452,17 +472,18 @@ class PackageManager
             return false;
         }
 
+        $addedMaintainers = array_filter($newMaintainers, static fn (User $user) => !\in_array($user->getId(), $normalizedOldMaintainers, true));
+        $this->assertCanAddMaintainers(\count($newMaintainers), $addedMaintainers, $notifyMaintainers);
+
         $package->getMaintainers()->clear();
         foreach ($newMaintainers as $maintainer) {
-            $isNewMaintainer = !\in_array($maintainer->getId(), $normalizedOldMaintainers);
             $package->addMaintainer($maintainer);
-
-            if ($notifyMaintainers && $isNewMaintainer) {
-                $this->notifyNewMaintainer($maintainer, $package);
-            }
         }
-
         if ($notifyMaintainers) {
+            foreach ($addedMaintainers as $maintainer) {
+                $this->notifyNewMaintainer($maintainer, $package);
+                $this->maintainerRateLimiter->recordAddition($maintainer);
+            }
             foreach ($oldMaintainers as $oldMaintainer) {
                 if (!\in_array($oldMaintainer->getId(), $normalizedMaintainers, true) && $actor?->getId() !== $oldMaintainer->getId()) {
                     $this->notifyRemovedMaintainer($oldMaintainer, $package);

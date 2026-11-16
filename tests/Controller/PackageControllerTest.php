@@ -1055,13 +1055,16 @@ class PackageControllerTest extends IntegrationTestCase
 
     #[TestWith(['does_not_exist', 'value is not a valid username'])]
     #[TestWith([null, 'at least one maintainer must be specified'])]
+    #[TestWith(['carol', 'Too many maintainer additions, try again later'])]
     public function testTransferPackageReturnsValidationError(?string $value, string $message): void
     {
         $alice = self::createUser('alice', 'alice@example.org');
         $bob = self::createUser('bob', 'bob@example.org', enabled: false);
+        $carol = self::createUser('carol', 'carol@example.org');
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$alice]);
 
-        $this->store($alice, $bob, $package);
+        $this->store($alice, $bob, $carol, $package);
+        self::redisCache()->set('maintainer-add:user:'.$carol->getId(), 20);
 
         $this->client->loginUser($alice);
 
@@ -1082,6 +1085,12 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertCount(1, $elements);
         $text = $elements->text();
         $this->assertStringContainsStringIgnoringCase($message, $text);
+        $this->assertEmailCount(0);
+        $em = self::getEM();
+        $em->clear();
+        $reloaded = $em->getRepository(Package::class)->find($package->getId());
+        $this->assertNotNull($reloaded);
+        $this->assertSame(['alice'], array_values(array_map(static fn (User $user) => $user->getUsername(), $reloaded->getMaintainers()->toArray())));
     }
 
     #[TestWith([null, null, 200])]

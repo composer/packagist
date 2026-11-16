@@ -167,6 +167,51 @@ class PackageManagerTest extends IntegrationTestCase
         $this->assertEmailHeaderSame($removal, 'Subject', 'You have been removed from vendor/package as a maintainer');
     }
 
+    public function testTransferPackageAppliesTheAddMaintainerGuards(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $disabled = self::createUser('disabled', 'disabled@example.org', enabled: false);
+        $limited = self::createUser('limited', 'limited@example.org');
+        $others = [];
+        for ($i = 0; $i < Package::MAX_MAINTAINERS; ++$i) {
+            $others[] = self::createUser('other'.$i, 'other'.$i.'@example.org');
+        }
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice]);
+        $this->store($alice, $disabled, $limited, $package, ...$others);
+        self::redisCache()->set('maintainer-add:user:'.$limited->getId(), 20);
+
+        foreach ([
+            'Inactive accounts can not be added as maintainers' => [$alice, $disabled],
+            'Too many maintainer additions, try again later' => [$alice, $limited],
+            'A package can have at most 10 maintainers' => [$alice, ...$others],
+        ] as $message => $newMaintainers) {
+            try {
+                $this->packageManager->transferPackage($alice, $package, $newMaintainers, true);
+                self::fail('Expected the transfer to be refused: '.$message);
+            } catch (MaintainerChangeException $e) {
+                self::assertSame($message, $e->getMessage());
+            }
+            self::assertSame([$alice], $package->getMaintainers()->toArray());
+        }
+        $this->assertEmailCount(0);
+
+        // without notifications nothing is mailed, so the rate limit does not apply
+        self::assertTrue($this->packageManager->transferPackage(null, $package, [$alice, $limited], false));
+    }
+
+    public function testTransferPackageCountsTowardsTheRateLimit(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice]);
+        $this->store($alice, $bob, $package);
+
+        self::assertTrue($this->packageManager->transferPackage($alice, $package, [$alice, $bob], true));
+
+        self::assertSame('1', self::redisCache()->get('maintainer-add:user:'.$bob->getId()));
+        self::assertNull(self::redisCache()->get('maintainer-add:user:'.$alice->getId()));
+    }
+
     public function testTransferPackageWithSameMaintainersDoesNothing(): void
     {
         $alice = self::createUser('alice', 'alice@example.org');

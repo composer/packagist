@@ -21,6 +21,7 @@ use App\Entity\User;
 use App\Log\Display\AuditLogDisplayFactory;
 use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
+use App\Model\MaintainerChangeException;
 use App\Model\PackageManager;
 use App\Security\TotpAuthManager;
 use App\Security\Voter\PackageActions;
@@ -277,7 +278,14 @@ class SupportController extends Controller
         // The same gate the package page's transfer form uses, asked of this admin and this package.
         $this->denyAccessUnlessGranted(PackageActions::TransferPackage->value, $package);
 
-        if (!$packageManager->transferPackage($actor, $package, [$request->user], true)) {
+        try {
+            $transferred = $packageManager->transferPackage($actor, $package, [$request->user], true);
+        } catch (MaintainerChangeException $e) {
+            $this->addFlash('error', $e->getMessage().'.');
+
+            return $redirect;
+        }
+        if (!$transferred) {
             $this->addFlash('warning', $request->user->getUsername().' already maintains '.$name.' alone.');
 
             return $redirect;

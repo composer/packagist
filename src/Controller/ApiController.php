@@ -17,13 +17,13 @@ use App\Entity\SecurityAdvisory;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Model\DownloadManager;
+use App\Model\MaintainerAdditionRateLimitedException;
 use App\Model\MaintainerChangeException;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\BranchDeletionHandler;
 use App\Package\BranchDeletionOutcome;
-use App\Security\MaintainerAdditionRateLimiter;
 use App\Security\Voter\PackageActions;
 use App\Service\FallbackGitHubAuthProvider;
 use App\Service\GitHubUserMigrationWorker;
@@ -33,7 +33,6 @@ use Composer\Pcre\Preg;
 use Graze\DogStatsD\Client as StatsDClient;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,6 +42,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -310,7 +310,7 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_add_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['PUT'])]
-    public function addMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, MaintainerAdditionRateLimiter $rateLimiter, Security $security, StatsDClient $statsd): JsonResponse
+    public function addMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, Security $security, StatsDClient $statsd): JsonResponse
     {
         $user = $this->findUser($request);
         if (!$user) {
@@ -327,15 +327,12 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
-        if (!$package->isMaintainer($maintainer) && $rateLimiter->isLimited($maintainer, $request->getClientIp())) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Too many maintainer additions, try again later'], Response::HTTP_TOO_MANY_REQUESTS);
-        }
-
         try {
             if ($packageManager->addMaintainer($package, $maintainer, $user)) {
                 $this->getEM()->flush();
-                $rateLimiter->recordAddition($maintainer, $request->getClientIp());
             }
+        } catch (MaintainerAdditionRateLimitedException $e) {
+            return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], Response::HTTP_TOO_MANY_REQUESTS);
         } catch (MaintainerChangeException $e) {
             return new JsonResponse(['status' => 'error', 'message' => $e->getMessage()], Response::HTTP_CONFLICT);
         }

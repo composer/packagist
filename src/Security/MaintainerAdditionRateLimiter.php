@@ -15,6 +15,7 @@ namespace App\Security;
 use App\Entity\User;
 use Predis\Client;
 use Predis\PredisException;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Adding a maintainer emails them, so cap additions per IP and per added user to stop
@@ -25,12 +26,16 @@ class MaintainerAdditionRateLimiter
     private const int PER_IP_PER_HOUR = 20;
     private const int PER_TARGET_PER_HOUR = 20;
 
-    public function __construct(private readonly Client $redisCache)
-    {
+    public function __construct(
+        private readonly Client $redisCache,
+        private readonly RequestStack $requestStack,
+    ) {
     }
 
-    public function isLimited(User $maintainer, ?string $ip): bool
+    public function isLimited(User $maintainer): bool
     {
+        $ip = $this->requestStack->getMainRequest()?->getClientIp();
+
         try {
             if ((int) $this->redisCache->get($this->targetKey($maintainer)) >= self::PER_TARGET_PER_HOUR) {
                 return true;
@@ -46,8 +51,10 @@ class MaintainerAdditionRateLimiter
         return false;
     }
 
-    public function recordAddition(User $maintainer, ?string $ip): void
+    public function recordAddition(User $maintainer): void
     {
+        $ip = $this->requestStack->getMainRequest()?->getClientIp();
+
         try {
             $this->redisCache->multi();
             $this->redisCache->incr($this->targetKey($maintainer));

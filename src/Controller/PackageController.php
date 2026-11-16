@@ -48,7 +48,6 @@ use App\Model\MaintainerChangeException;
 use App\Model\PackageManager;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
-use App\Security\MaintainerAdditionRateLimiter;
 use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\GitHubUserMigrationWorker;
@@ -1166,7 +1165,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name:package}/maintainers/', name: 'add_maintainer', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
-    public function createMaintainerAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger, MaintainerAdditionRateLimiter $rateLimiter): RedirectResponse
+    public function createMaintainerAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] User $user, LoggerInterface $logger): RedirectResponse
     {
         $this->denyAccessUnlessGranted(PackageActions::AddMaintainer->value, $package);
 
@@ -1182,12 +1181,9 @@ class PackageController extends Controller
                 if (!empty($maintainer) && $maintainer->isAccountActive()) {
                     if ($package->isMaintainer($maintainer)) {
                         $this->addFlash('success', $maintainer->getUsername().' is already a '.$package->getName().' maintainer.');
-                    } elseif ($rateLimiter->isLimited($maintainer, $req->getClientIp())) {
-                        $this->addFlash('error', 'Too many maintainer additions, try again later.');
                     } else {
                         $this->packageManager->addMaintainer($package, $maintainer, $user);
                         $em->flush();
-                        $rateLimiter->recordAddition($maintainer, $req->getClientIp());
 
                         $this->addFlash('success', $maintainer->getUsername().' is now a '.$package->getName().' maintainer.');
                     }
@@ -1275,6 +1271,8 @@ class PackageController extends Controller
             }
 
             return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
+        } catch (MaintainerChangeException $e) {
+            $this->addFlash('error', $e->getMessage().'.');
         } catch (\Exception $e) {
             $logger->critical($e->getMessage(), ['exception', $e]);
             $this->addFlash('error', 'The package could not be transferred.');
