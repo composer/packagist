@@ -589,7 +589,7 @@ PUT https://{{ packagist_host }}/api/packages/[package name]/maintainers/[userna
 <section class="col-md-12">
     <h3 id="remove-maintainer">{{ _self.section_link('remove-maintainer') }}Remove a maintainer from a package <span class="badge bg-warning">Authentication Required</span></h3>
 
-    <p>This endpoint removes a user from the maintainers of a package you maintain. A package must keep at least one maintainer, so removing the last one returns a <code>409</code> error. Removing a user who does not maintain the package changes nothing. Only the <code>DELETE</code> method is allowed.</p>
+    <p>This endpoint removes a user from the maintainers of a package you maintain. The removed maintainer is notified by email, unless they removed themselves. A package must keep at least one maintainer, so removing the last one returns a <code>409</code> error. Removing a user who does not maintain the package changes nothing. Only the <code>DELETE</code> method is allowed.</p>
     <p>This endpoint is considered UNSAFE and requires your main <a href="{{ path('my_profile') }}">API token</a> to be used.</p>
 
     <pre>

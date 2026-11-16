@@ -852,10 +852,15 @@ class ApiControllerTest extends IntegrationTestCase
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg', maintainers: [$owner, $maintainer]);
         $this->store($owner, $maintainer, $package);
 
+        $this->client->enableProfiler();
         $this->requestMaintainers('DELETE', '/api/packages/test/pkg/maintainers/leaving');
 
         self::assertResponseStatusCodeSame(Response::HTTP_OK);
         self::assertSame(['status' => 'success'], $this->decodeResponse());
+        $this->assertEmailCount(1);
+        $email = $this->getMailerMessage();
+        $this->assertNotNull($email);
+        $this->assertEmailHeaderSame($email, 'To', 'leaving@example.org');
 
         $em = self::getEM();
         $em->clear();

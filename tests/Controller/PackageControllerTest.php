@@ -903,7 +903,13 @@ class PackageControllerTest extends IntegrationTestCase
             'remove_maintainer_form[user]' => $maintainer->getId(),
         ]);
 
+        $this->client->enableProfiler();
         $this->client->submit($form);
+
+        $this->assertEmailCount(1);
+        $email = $this->getMailerMessage();
+        $this->assertNotNull($email);
+        $this->assertEmailHeaderSame($email, 'To', $maintainer->getEmail());
 
         $this->assertResponseRedirects('/packages/test/pkg');
         $this->client->followRedirect();

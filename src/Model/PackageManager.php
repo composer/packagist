@@ -365,6 +365,32 @@ class PackageManager
         return true;
     }
 
+    public function notifyRemovedMaintainer(User $user, Package $package): bool
+    {
+        $body = $this->twig->render('email/maintainer_removed.txt.twig', [
+            'package_name' => $package->getName(),
+        ]);
+
+        $message = new Email()
+            ->subject('You have been removed from '.$package->getName().' as a maintainer')
+            ->from(new Address($this->options['from'], $this->options['fromName']))
+            ->to((string) $user->getEmail())
+            ->text($body)
+        ;
+
+        $message->getHeaders()->addTextHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
+
+        try {
+            $this->mailer->send($message);
+        } catch (\Symfony\Component\Mailer\Exception\TransportExceptionInterface $e) {
+            $this->logger->error('['.$e::class.'] '.$e->getMessage());
+
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * @throws MaintainerChangeException
      */
@@ -403,6 +429,9 @@ class PackageManager
 
         $package->getMaintainers()->removeElement($maintainer);
         $this->doctrine->getManager()->persist(AuditRecord::maintainerRemoved($package, $maintainer, $actor));
+        if ($actor?->getId() !== $maintainer->getId()) {
+            $this->notifyRemovedMaintainer($maintainer, $package);
+        }
 
         return true;
     }

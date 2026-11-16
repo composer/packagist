@@ -111,10 +111,41 @@ class PackageManagerTest extends IntegrationTestCase
 
         self::assertTrue($this->packageManager->removeMaintainer($package, $bob, null));
         self::assertFalse($this->packageManager->removeMaintainer($package, $bob, null));
+        $this->assertEmailCount(1);
 
         $this->expectException(MaintainerChangeException::class);
         $this->expectExceptionMessage('A package must keep at least one maintainer');
         $this->packageManager->removeMaintainer($package, $alice, null);
+    }
+
+    public function testRemoveMaintainerNotifiesTheRemovedMaintainer(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice, $bob]);
+        $this->store($alice, $bob, $package);
+
+        self::assertTrue($this->packageManager->removeMaintainer($package, $bob, $alice));
+
+        $this->assertEmailCount(1);
+        $email = $this->getMailerMessage();
+        $this->assertNotNull($email);
+        $this->assertEmailHeaderSame($email, 'To', 'bob@example.org');
+        $this->assertEmailHeaderSame($email, 'Subject', 'You have been removed from vendor/package as a maintainer');
+        $this->assertEmailTextBodyContains($email, '/transparency-log?package=vendor/package');
+        $this->assertEmailTextBodyNotContains($email, 'alice');
+    }
+
+    public function testRemoveMaintainerDoesNotNotifyMaintainersRemovingThemselves(): void
+    {
+        $alice = self::createUser('alice', 'alice@example.org');
+        $bob = self::createUser('bob', 'bob@example.org');
+        $package = self::createPackage('vendor/package', 'https://github.com/vendor/package', maintainers: [$alice, $bob]);
+        $this->store($alice, $bob, $package);
+
+        self::assertTrue($this->packageManager->removeMaintainer($package, $bob, $bob));
+
+        $this->assertEmailCount(0);
     }
 
     public function testTransferPackageWithSameMaintainersDoesNothing(): void
