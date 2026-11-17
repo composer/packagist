@@ -31,7 +31,8 @@ Check `composer.json` for exact versions.
   and only allows reads or non-destructive actions like updates. `PackageVoter` enforces this for
   package actions; elsewhere check `isGranted(ApiType::Unsafe->value)`
 - API tokens skip 2FA, so they only ever carry `ROLE_USER`: admin roles never apply to API requests
-- Failed authentication does not error out, endpoints return their own JSON errors
+- Failed authentication does not error out: endpoints take `#[CurrentUser] ?User $user` and return
+  their own JSON errors when it is null
 - Inactive accounts are rejected by `App\Security\UserChecker`, as on the website
 
 ## Conventions

@@ -488,8 +488,8 @@ class ApiControllerTest extends IntegrationTestCase
 
         $payload = json_encode(['repository' => 'https://github.com/composer/composer']);
         $this->client->request('POST', '/api/create-package?username=test&apiToken=safe-api-token', ['payload' => $payload]);
-        $this->assertEquals(Response::HTTP_NOT_ACCEPTABLE, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
-        $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
+        $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        $this->assertSame(['status' => 'error', 'message' => 'The safe API token can not be used for this action, use the main API token'], $this->decodeResponse());
     }
 
     #[TestWith([false, null])]
@@ -514,6 +514,9 @@ class ApiControllerTest extends IntegrationTestCase
         $user = self::createUser();
         $this->store($user);
         $this->client->loginUser($user);
+        // loginUser() also sets the token on the current container, only the next request gets a fresh one
+        $this->client->request('GET', '/profile/');
+        $this->assertResponseIsSuccessful();
 
         $payload = json_encode(['repository' => 'https://github.com/test/pkg']);
         $this->client->request('POST', '/api/create-package', ['payload' => $payload]);

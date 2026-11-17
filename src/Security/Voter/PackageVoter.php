@@ -57,6 +57,8 @@ class PackageVoter extends Voter
         }
 
         return match ($action) {
+            // open to any user, but API requests still need the main token (checked above)
+            PackageActions::Create => true,
             PackageActions::Abandon => $this->canEdit($package, $user),
             PackageActions::Delete => $this->canDelete($package, $user),
             PackageActions::ViewHiddenVersion, PackageActions::DeleteVersion, PackageActions::RecoverVersion => $this->canDeleteVersion($package, $user),

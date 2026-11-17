@@ -43,6 +43,7 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -116,7 +117,7 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/create-package', name: 'generic_create', defaults: ['_format' => 'json'], methods: ['POST'])]
-    public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator): JsonResponse
+    public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator, #[CurrentUser] ?User $user): JsonResponse
     {
         $payload = json_decode((string) $request->request->get('payload'), true);
         if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
@@ -134,14 +135,16 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in payload'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
-        $user = $this->getApiUser();
-        if (null === $user || !$this->isGranted(ApiType::Unsafe->value)) {
+        if (null === $user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
         $package = new Package();
         $package->addMaintainer($user);
         $package->setRepository($url);
+        if (!$this->isGranted(PackageActions::Create->value, $package)) {
+            return $this->forbiddenResponse();
+        }
         $errors = $validator->validate($package, groups: ['Default', 'Create']);
         if (\count($errors) > 0) {
             $errorArray = [];
@@ -180,7 +183,7 @@ class ApiController extends Controller
     #[Route(path: '/api/update-package', name: 'generic_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
     #[Route(path: '/api/github', name: 'github_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
     #[Route(path: '/api/bitbucket', name: 'bitbucket_postreceive', defaults: ['_format' => 'json'], methods: ['POST'])]
-    public function updatePackageAction(Request $request, string $githubWebhookSecret, StatsDClient $statsd): JsonResponse
+    public function updatePackageAction(Request $request, string $githubWebhookSecret, StatsDClient $statsd, #[CurrentUser] ?User $user): JsonResponse
     {
         // a user hook set to "send me everything" turned every workflow run and comment into a crawl
         $event = $request->headers->get('X-GitHub-Event');
@@ -235,7 +238,7 @@ class ApiController extends Controller
 
         $url = str_replace('https://api.github.com/repos', 'https://github.com', $url);
 
-        return $this->receiveUpdateRequest($request, $url, $urlRegex, $remoteId, $githubWebhookSecret, $statsd, $deletedBranch);
+        return $this->receiveUpdateRequest($request, $user, $url, $urlRegex, $remoteId, $githubWebhookSecret, $statsd, $deletedBranch);
     }
 
     /**
@@ -261,9 +264,8 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'json'], methods: ['PUT'])]
-    public function editPackageAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
+    public function editPackageAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, ValidatorInterface $validator, StatsDClient $statsd, #[CurrentUser] ?User $user): JsonResponse
     {
-        $user = $this->getApiUser();
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
@@ -304,13 +306,13 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_add_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['PUT'])]
-    public function addMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd): JsonResponse
+    public function addMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd, #[CurrentUser] ?User $user): JsonResponse
     {
-        $resolved = $this->resolveMaintainerChange(PackageActions::AddMaintainer, $package, $username, $statsd);
+        $resolved = $this->resolveMaintainerChange(PackageActions::AddMaintainer, $user, $package, $username, $statsd);
         if ($resolved instanceof JsonResponse) {
             return $resolved;
         }
-        [$user, $maintainer] = $resolved;
+        $maintainer = $resolved;
         if (!$maintainer->isAccountActive()) {
             return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
@@ -329,13 +331,13 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_remove_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['DELETE'])]
-    public function removeMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd): JsonResponse
+    public function removeMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd, #[CurrentUser] ?User $user): JsonResponse
     {
-        $resolved = $this->resolveMaintainerChange(PackageActions::RemoveMaintainer, $package, $username, $statsd);
+        $resolved = $this->resolveMaintainerChange(PackageActions::RemoveMaintainer, $user, $package, $username, $statsd);
         if ($resolved instanceof JsonResponse) {
             return $resolved;
         }
-        [$user, $maintainer] = $resolved;
+        $maintainer = $resolved;
 
         try {
             if ($packageManager->removeMaintainer($package, $maintainer, $user)) {
@@ -349,11 +351,10 @@ class ApiController extends Controller
     }
 
     /**
-     * @return array{User, User}|JsonResponse the API user and the user to add or remove, or the error to return
+     * @return User|JsonResponse the user to add or remove, or the error to return
      */
-    private function resolveMaintainerChange(PackageActions $action, Package $package, string $username, StatsDClient $statsd): array|JsonResponse
+    private function resolveMaintainerChange(PackageActions $action, ?User $user, Package $package, string $username, StatsDClient $statsd): User|JsonResponse
     {
-        $user = $this->getApiUser();
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
@@ -368,7 +369,7 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
-        return [$user, $maintainer];
+        return $maintainer;
     }
 
     #[Route(path: '/jobs/{id}', name: 'get_job', requirements: ['id' => '[a-f0-9]+'], defaults: ['_format' => 'json'], methods: ['GET'])]
@@ -545,7 +546,7 @@ class ApiController extends Controller
      * @param string                  $url      the repository's URL (deducted from the request)
      * @param value-of<self::REGEXES> $urlRegex the regex used to split the user packages into domain and path
      */
-    protected function receiveUpdateRequest(Request $request, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret, StatsDClient $statsd, ?string $deletedBranch = null): JsonResponse
+    protected function receiveUpdateRequest(Request $request, ?User $apiUser, string $url, string $urlRegex, string|int|null $remoteId, string $githubWebhookSecret, StatsDClient $statsd, ?string $deletedBranch = null): JsonResponse
     {
         // try to parse the URL first to avoid the DB lookup on malformed requests
         if (!Preg::isMatchStrictGroups($urlRegex, $url, $match)) {
@@ -595,7 +596,7 @@ class ApiController extends Controller
 
         if (!$user) {
             // find the user
-            $user = $this->getApiUser();
+            $user = $apiUser;
             if ($user) {
                 $source = 'manual_hook ('.$user->getUsername().' @ '.$request->getPathInfo().')';
                 $voteOnBranchDeletion = true;
@@ -684,13 +685,6 @@ class ApiController extends Controller
         }
 
         return new JsonResponse($response, Response::HTTP_ACCEPTED);
-    }
-
-    private function getApiUser(): ?User
-    {
-        $user = $this->getUser();
-
-        return $user instanceof User ? $user : null;
     }
 
     private function forbiddenResponse(): JsonResponse
