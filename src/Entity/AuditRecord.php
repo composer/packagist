@@ -16,7 +16,6 @@ use App\Audit\AbandonmentReason;
 use App\Audit\AuditLogSearchType;
 use App\Audit\UserRegistrationMethod;
 use App\Audit\VersionDeletionReason;
-use App\Audit\WebAuthnCredentialAction;
 use App\Log\AuditLogEventType;
 use App\Log\Display\OrganizationDisplay;
 use Composer\Pcre\Preg;
@@ -542,13 +541,13 @@ class AuditRecord
         );
     }
 
-    public static function webAuthnCredentialChanged(WebAuthnCredential $credential, WebAuthnCredentialAction $action, ?User $actor = null): self
+    public static function webAuthnCredentialChanged(WebAuthnCredential $credential, AuditLogEventType $type, ?User $actor = null): self
     {
         $actor ??= $credential->user;
 
         return new self(
-            AuditLogEventType::WebAuthnCredentialChanged,
-            ['user' => self::getUserData($credential->user), 'actor' => self::getUserData($actor), 'credentialId' => $credential->id, 'action' => $action->value],
+            $type,
+            ['user' => self::getUserData($credential->user), 'actor' => self::getUserData($actor), 'credentialId' => $credential->id, 'credentialName' => $credential->getName()],
             actorId: $actor->getId(),
             userId: $credential->user->getId(),
         );

@@ -13,7 +13,6 @@
 namespace App\Log\Display;
 
 use App\Audit\UserRegistrationMethod;
-use App\Audit\WebAuthnCredentialAction;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\FilterList\FilterLists;
@@ -176,10 +175,11 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
                 $this->buildActor('self'),
                 $record->ip,
             ),
-            AuditLogEventType::WebAuthnCredentialChanged => new Event\WebAuthnCredentialChangedDisplay(
+            AuditLogEventType::WebAuthnCredentialAdded, AuditLogEventType::WebAuthnCredentialRenamed, AuditLogEventType::WebAuthnCredentialDeleted => new Event\WebAuthnCredentialDisplay(
+                $record->type,
                 $record->datetime,
                 $record->attributes['user']['username'],
-                WebAuthnCredentialAction::from($record->attributes['action']),
+                $record->attributes['credentialName'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
             ),

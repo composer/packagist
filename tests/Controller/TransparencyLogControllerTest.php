@@ -12,11 +12,11 @@
 
 namespace App\Tests\Controller;
 
-use App\Audit\WebAuthnCredentialAction;
 use App\Command\ProjectTransparencyLogCommand;
 use App\Entity\AuditRecord;
 use App\Entity\PackageFreezeReason;
 use App\Entity\WebAuthnCredential;
+use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -132,12 +132,12 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $credential = new WebAuthnCredential($user, CredentialRecord::create(
             'credential-id', 'public-key', [], 'none', EmptyTrustPath::create(), Uuid::v4(), 'public-key', 'user-handle', 0,
         ));
-        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::webAuthnCredentialChanged($credential, WebAuthnCredentialAction::Added));
+        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialAdded));
         $this->runProjector();
         $this->givenLoggedInVisitor();
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
-            'type' => [TransparencyLogEventType::TotpAuthenticationDeactivated->value, TransparencyLogEventType::WebAuthnCredentialChanged->value],
+            'type' => [TransparencyLogEventType::TotpAuthenticationDeactivated->value, TransparencyLogEventType::WebAuthnCredentialAdded->value],
         ]));
         static::assertResponseIsSuccessful();
 
@@ -145,8 +145,8 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         // itself excludes it. The rows are still projected, see TransparencyLogProjectorTest.
         $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
         static::assertNotContains('Authenticator app removed', $types);
-        static::assertNotContains('Passkeys and security keys changed', $types);
-        static::assertCount(0, $crawler->filter('option[value="webauthn_credential_changed"]'));
+        static::assertNotContains('Passkey or security key added', $types);
+        static::assertCount(0, $crawler->filter('option[value="webauthn_credential_added"]'));
         static::assertContains('Package created', $types);
     }
 

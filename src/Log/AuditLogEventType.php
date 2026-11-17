@@ -50,7 +50,9 @@ enum AuditLogEventType: string implements LogEventType
     case UsernameChanged = 'username_changed';
     case GitHubLinkedWithUser = 'github_linked_with_user';
     case GitHubDisconnectedFromUser = 'github_disconnected_from_user';
-    case WebAuthnCredentialChanged = 'webauthn_credential_changed';
+    case WebAuthnCredentialAdded = 'webauthn_credential_added';
+    case WebAuthnCredentialRenamed = 'webauthn_credential_renamed';
+    case WebAuthnCredentialDeleted = 'webauthn_credential_deleted';
     case TotpAuthenticationActivated = 'totp_activated';
     case TotpAuthenticationDeactivated = 'totp_deactivated';
 
@@ -108,7 +110,7 @@ enum AuditLogEventType: string implements LogEventType
             self::PasswordResetRequested, self::PasswordReset, self::PasswordChanged,
             self::EmailChanged, self::UsernameChanged, self::GitHubLinkedWithUser,
             self::GitHubDisconnectedFromUser, self::TotpAuthenticationActivated,
-            self::TotpAuthenticationDeactivated, self::WebAuthnCredentialChanged => 'user',
+            self::TotpAuthenticationDeactivated, self::WebAuthnCredentialAdded, self::WebAuthnCredentialRenamed, self::WebAuthnCredentialDeleted => 'user',
             self::FilterListEntryAdded, self::FilterListEntryDeleted,
             self::FilterListEntryDisabled, self::FilterListEntryEnabled,
             self::FilterListEntryEdited => 'filterlist',

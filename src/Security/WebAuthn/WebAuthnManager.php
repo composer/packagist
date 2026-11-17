@@ -12,12 +12,12 @@
 
 namespace App\Security\WebAuthn;
 
-use App\Audit\WebAuthnCredentialAction;
 use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Entity\WebAuthnCredential;
-use App\Event\SecondFactorsResetEvent;
 use App\Event\SecondFactorRemovedEvent;
+use App\Event\SecondFactorsResetEvent;
+use App\Log\AuditLogEventType;
 use App\Security\SecondFactorManager;
 use App\Security\UserNotifier;
 use Doctrine\ORM\EntityManagerInterface;
@@ -93,7 +93,7 @@ class WebAuthnManager
             $code = $user->hasSecondFactorAuthenticationEnabled() ? null : $this->secondFactors->generateBackupCode($user);
             $user->addWebAuthnCredential($credential);
             $this->em->persist($credential);
-            $this->persistChange($credential, WebAuthnCredentialAction::Added);
+            $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialAdded);
 
             return $code;
         });
@@ -149,14 +149,14 @@ class WebAuthnManager
     public function rename(WebAuthnCredential $credential, string $name): void
     {
         $credential->rename($name);
-        $this->persistChange($credential, WebAuthnCredentialAction::Renamed);
+        $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialRenamed);
     }
 
     public function revoke(WebAuthnCredential $credential): void
     {
         $this->secondFactors->withAccountLock($credential->user, function () use ($credential): void {
             $this->stageRevocation($credential);
-            $this->persistChange($credential, WebAuthnCredentialAction::Removed);
+            $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialDeleted);
         });
 
         $this->notifyChange($credential);
@@ -167,7 +167,7 @@ class WebAuthnManager
     {
         foreach ($event->user->getWebAuthnCredentials() as $credential) {
             $this->stageRevocation($credential);
-            $this->em->persist(AuditRecord::webAuthnCredentialChanged($credential, WebAuthnCredentialAction::Removed, $event->actor));
+            $this->em->persist(AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialDeleted, $event->actor));
         }
     }
 
@@ -178,9 +178,9 @@ class WebAuthnManager
         $this->eventDispatcher->dispatch(new SecondFactorRemovedEvent($credential->user));
     }
 
-    private function persistChange(WebAuthnCredential $credential, WebAuthnCredentialAction $action): void
+    private function persistChange(WebAuthnCredential $credential, AuditLogEventType $type): void
     {
-        $this->em->persist(AuditRecord::webAuthnCredentialChanged($credential, $action));
+        $this->em->persist(AuditRecord::webAuthnCredentialChanged($credential, $type));
         $this->em->flush();
     }
 

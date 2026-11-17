@@ -240,7 +240,9 @@ log:
         version_deleted: Version deleted
         version_soft_deleted: Version soft-deleted
         version_recovered: Version recovered
-        webauthn_credential_changed: Passkeys and security keys changed
+        webauthn_credential_added: Passkey or security key added
+        webauthn_credential_renamed: Passkey or security key renamed
+        webauthn_credential_deleted: Passkey or security key deleted
         totp_activated: Authenticator app enabled
         totp_deactivated: Authenticator app removed
         password_reset: Password reset
@@ -299,8 +301,3 @@ webauthn:
         invalid_registration: 'The passkey or security key could not be registered.'
         invalid_name: 'Enter a name between 1 and 100 characters.'
         too_many_attempts: 'Too many authentication failures. Try again in %minutes% minutes.'
-
-webauthn.audit:
-    added: Passkey or security key added
-    renamed: Passkey or security key renamed
-    removed: Passkey or security key removed

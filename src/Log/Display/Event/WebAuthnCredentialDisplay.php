@@ -12,17 +12,17 @@
 
 namespace App\Log\Display\Event;
 
-use App\Audit\WebAuthnCredentialAction;
 use App\Log\AuditLogEventType;
 use App\Log\Display\AbstractLogDisplay;
 use App\Log\Display\ActorDisplay;
 
-readonly class WebAuthnCredentialChangedDisplay extends AbstractLogDisplay
+readonly class WebAuthnCredentialDisplay extends AbstractLogDisplay
 {
     public function __construct(
+        private AuditLogEventType $type,
         \DateTimeImmutable $datetime,
         public string $username,
-        public WebAuthnCredentialAction $action,
+        public string $credentialName,
         ActorDisplay $actor,
         ?string $ip,
     ) {
@@ -31,11 +31,11 @@ readonly class WebAuthnCredentialChangedDisplay extends AbstractLogDisplay
 
     public function getType(): AuditLogEventType
     {
-        return AuditLogEventType::WebAuthnCredentialChanged;
+        return $this->type;
     }
 
     public function getTemplateName(): string
     {
-        return 'log/display/webauthn_credential_changed.html.twig';
+        return 'log/display/webauthn_credential.html.twig';
     }
 }

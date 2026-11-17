@@ -14,7 +14,6 @@ namespace App\Tests\Log;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\VersionDeletionReason;
-use App\Audit\WebAuthnCredentialAction;
 use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -68,7 +67,8 @@ class TransparencyLogScrubberTest extends TestCase
         'version_soft_deleted' => ['internalReasonText'],
         'email_changed' => ['email_from', 'email_to'],
         'totp_deactivated' => ['reason'],
-        'webauthn_credential_changed' => ['action', 'credentialId'],
+        'webauthn_credential_added' => ['credentialId', 'credentialName'],
+        'webauthn_credential_deleted' => ['credentialId', 'credentialName'],
     ];
 
     private const PACKAGE_NAME = 'acme/widget';
@@ -487,9 +487,15 @@ class TransparencyLogScrubberTest extends TestCase
             'credential-id', 'public-key', [], 'none', EmptyTrustPath::create(), Uuid::v4(), 'public-key', 'user-handle', 0,
         ));
 
-        yield 'webauthn_credential_changed' => [
-            AuditLogEventType::WebAuthnCredentialChanged,
-            AuditRecord::webAuthnCredentialChanged($credential, WebAuthnCredentialAction::Added, $admin),
+        yield 'webauthn_credential_added' => [
+            AuditLogEventType::WebAuthnCredentialAdded,
+            AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialAdded, $admin),
+            ['user' => self::MAINTAINER, 'actor' => self::ADMIN],
+        ];
+
+        yield 'webauthn_credential_deleted' => [
+            AuditLogEventType::WebAuthnCredentialDeleted,
+            AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialDeleted, $admin),
             ['user' => self::MAINTAINER, 'actor' => self::ADMIN],
         ];
 

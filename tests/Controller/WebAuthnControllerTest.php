@@ -128,9 +128,9 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSame('My key', $crawler->filter('#key-'.$credential->id)->attr('value'));
         $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorNotExists('.two-factor-backup-code');
-        $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::WebAuthnCredentialChanged, 'userId' => $this->user->getId()]);
+        $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::WebAuthnCredentialAdded, 'userId' => $this->user->getId()]);
         self::assertNotNull($audit);
-        self::assertSame('added', $audit->attributes['action']);
+        self::assertSame('My key', $audit->attributes['credentialName']);
     }
 
     public function testNewlyEnrolledKeyCanBeRenamedAndAnotherAddedWithoutConfirmation(): void
@@ -142,6 +142,18 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseRedirects('/profile/security/keys');
         self::assertSame('Renamed key', $this->freshUser()->findWebAuthnCredential($credential->id)?->getName());
         self::assertEmailCount(0);
+        $renames = self::getEM()->getRepository(AuditRecord::class)->findBy(['type' => AuditLogEventType::WebAuthnCredentialRenamed, 'userId' => $this->user->getId()]);
+        self::assertCount(1, $renames);
+        self::assertSame('Renamed key', $renames[0]->attributes['credentialName']);
+
+        $auditor = self::createUser('auditor', 'auditor@example.org', roles: ['ROLE_AUDITOR']);
+        $this->store($auditor);
+        $this->client->loginUser($auditor);
+        $this->client->request('GET', '/admin/audit-log?type[]=webauthn_credential_added&type[]=webauthn_credential_renamed');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('td.audit-log-details', 'Renamed key');
+        self::assertStringContainsString('My key', $this->client->getResponse()->getContent());
+        $this->client->loginUser($this->freshUser());
 
         $this->authenticator = new VirtualAuthenticator();
         $this->register('Spare key');
@@ -638,12 +650,12 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertFalse($user->hasSecondFactorAuthenticationEnabled());
         self::assertFalse($user->isBackupCode('abc12345'));
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
-            'type' => AuditLogEventType::WebAuthnCredentialChanged->value,
+            'type' => AuditLogEventType::WebAuthnCredentialDeleted->value,
             'userId' => $user->getId(),
             'actorId' => $admin->getId(),
         ]);
         self::assertNotNull($audit);
-        self::assertSame('removed', $audit->attributes['action']);
+        self::assertSame(AuditLogEventType::WebAuthnCredentialDeleted, $audit->type);
     }
 
     #[TestWith([false])]

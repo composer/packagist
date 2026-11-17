@@ -13,7 +13,6 @@
 namespace App\Tests\Service;
 
 use App\Audit\UserRegistrationMethod;
-use App\Audit\WebAuthnCredentialAction;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\Package;
@@ -22,6 +21,7 @@ use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
 use App\Entity\WebAuthnCredential;
+use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
 use App\Log\TransparencyLogScrubber;
 use App\Service\TransparencyLogProjector;
@@ -31,8 +31,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\AbstractLogger;
-use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Uid\Uuid;
@@ -66,9 +66,11 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         ));
     }
 
-    #[TestWith([false])]
-    #[TestWith([true])]
-    public function testFansOutAccountEventToMaintainedPackages(bool $webAuthn): void
+    #[TestWith([null])]
+    #[TestWith([AuditLogEventType::WebAuthnCredentialAdded])]
+    #[TestWith([AuditLogEventType::WebAuthnCredentialDeleted])]
+    #[TestWith([AuditLogEventType::WebAuthnCredentialRenamed])]
+    public function testProjectsAccountSecurityChangesToMaintainedPackages(?AuditLogEventType $eventType): void
     {
         $em = $this->getEM();
         $conn = self::getService(Connection::class);
@@ -86,19 +88,24 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         $credential = new WebAuthnCredential($user, CredentialRecord::create(
             'credential-id', 'public-key', [], 'none', EmptyTrustPath::create(), Uuid::v4(), 'public-key', 'user-handle', 0,
         ));
-        $record = $webAuthn
-            ? AuditRecord::webAuthnCredentialChanged($credential, WebAuthnCredentialAction::Added)
+        $record = $eventType !== null
+            ? AuditRecord::webAuthnCredentialChanged($credential, $eventType)
             : AuditRecord::totpAuthenticationDeactivated($user, $user, 'x');
         $em->getRepository(AuditRecord::class)->insert($record);
         $type = $record->type->value;
 
+        if ($eventType === AuditLogEventType::WebAuthnCredentialRenamed) {
+            self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue WHERE auditLogId = ?', [$record->id->toBinary()]));
+        }
+
         $created = self::getService(TransparencyLogProjector::class)->project(0);
 
-        self::assertSame(2, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = ?", [$type]));
-        // return value accounts for every row written (the two package_created rows plus the fan-out)
+        $expectedPackages = $eventType === AuditLogEventType::WebAuthnCredentialRenamed ? [] : ['svc/one', 'svc/two'];
+        self::assertSame(\count($expectedPackages), (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = ?", [$type]));
+        // Return value accounts for the package-created rows and any projected account changes
         self::assertSame((int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'), $created);
 
-        self::assertSame(['svc/one', 'svc/two'], $conn->fetchFirstColumn(
+        self::assertSame($expectedPackages, $conn->fetchFirstColumn(
             "SELECT packageName FROM package_transparency_log WHERE type = ? ORDER BY packageName", [$type],
         ));
     }
