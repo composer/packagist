@@ -488,8 +488,83 @@ class ApiControllerTest extends IntegrationTestCase
 
         $payload = json_encode(['repository' => 'https://github.com/composer/composer']);
         $this->client->request('POST', '/api/create-package?username=test&apiToken=safe-api-token', ['payload' => $payload]);
-        $this->assertEquals(Response::HTTP_NOT_ACCEPTABLE, $this->client->getResponse()->getStatusCode(), $this->client->getResponse()->getContent());
-        $this->assertEquals(json_encode(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request']), $this->client->getResponse()->getContent());
+        $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        $this->assertSame(['status' => 'error', 'message' => 'The safe API token can not be used for this action, use the main API token'], $this->decodeResponse());
+    }
+
+    #[TestWith([false, null])]
+    #[TestWith([true, UserFreezeReason::Spam])]
+    public function testInactiveUsersCannotUseTheirApiTokens(bool $enabled, ?UserFreezeReason $freezeReason): void
+    {
+        $user = self::createUser(enabled: $enabled);
+        if ($freezeReason) {
+            $user->freeze($freezeReason);
+        }
+        $this->store($user);
+
+        $payload = json_encode(['repository' => 'https://github.com/test/pkg']);
+        $this->client->request('POST', '/api/create-package', ['payload' => $payload], server: ['HTTP_Authorization' => 'Bearer test:api-token']);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_NOT_ACCEPTABLE);
+        $this->assertSame(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], $this->decodeResponse());
+    }
+
+    public function testWebSessionsDoNotAuthenticateApiRequests(): void
+    {
+        $user = self::createUser();
+        $this->store($user);
+        $this->client->loginUser($user);
+        // loginUser() also sets the token on the current container, only the next request gets a fresh one
+        $this->client->request('GET', '/profile/');
+        $this->assertResponseIsSuccessful();
+
+        $payload = json_encode(['repository' => 'https://github.com/test/pkg']);
+        $this->client->request('POST', '/api/create-package', ['payload' => $payload]);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_NOT_ACCEPTABLE);
+        $this->assertSame(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], $this->decodeResponse());
+    }
+
+    public function testApiTokensMustMatchExactly(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/pkg', 'https://github.com/test/pkg', maintainers: [$user]);
+        $this->store($user, $package);
+
+        $payload = json_encode(['repository' => 'https://github.com/test/pkg']);
+        $this->client->request('POST', '/api/update-package', ['payload' => $payload], server: ['HTTP_Authorization' => 'Bearer test:SAFE-API-TOKEN']);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_FORBIDDEN);
+        $this->assertSame(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], $this->decodeResponse());
+    }
+
+    #[TestWith(['Bearer test:safe-api-token', Response::HTTP_FORBIDDEN, 'The safe API token can not be used for this action, use the main API token'])]
+    #[TestWith(['Bearer other:api-token-other', Response::HTTP_FORBIDDEN, 'You are not allowed to edit this package'])]
+    public function testEditPackageRequiresTheMainApiTokenOfAMaintainer(string $authorization, int $status, string $message): void
+    {
+        $user = self::createUser();
+        $other = self::createUser('other', 'other@example.org', apiToken: 'api-token-other');
+        $package = self::createPackage('test/pkg', 'https://github.com/test/pkg', maintainers: [$user]);
+        $this->store($user, $other, $package);
+
+        $this->client->request('PUT', '/api/packages/test/pkg', [], [], ['HTTP_Authorization' => $authorization, 'CONTENT_TYPE' => 'application/json'], json_encode(['repository' => 'https://github.com/test/other']));
+
+        $this->assertResponseStatusCodeSame($status);
+        $this->assertSame(['status' => 'error', 'message' => $message], $this->decodeResponse());
+        self::getEM()->clear();
+        $this->assertSame('https://github.com/test/pkg', self::getEM()->getRepository(Package::class)->find($package->getId())->getRepository());
+    }
+
+    public function testApiRequestsDoNotStartASession(): void
+    {
+        $user = self::createUser();
+        $package = self::createPackage('test/pkg', 'https://github.com/test/pkg', maintainers: [$user]);
+        $this->store($user, $package);
+
+        $this->client->request('POST', '/api/update-package', ['payload' => json_encode(['repository' => 'https://github.com/test/pkg'])], server: ['HTTP_Authorization' => 'Bearer test:api-token']);
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_ACCEPTED);
+        $this->assertSame([], $this->client->getResponse()->headers->getCookies());
     }
 
     public function testSafeApiAcceptsBothApiTokens(): void
@@ -936,11 +1011,11 @@ class ApiControllerTest extends IntegrationTestCase
         self::assertSame(['status' => 'error', 'message' => 'User not found'], $this->decodeResponse());
     }
 
-    #[TestWith(['PUT', '/api/packages/test/pkg/maintainers/newbie', 'Bearer test:safe-api-token'])]
-    #[TestWith(['DELETE', '/api/packages/test/pkg/maintainers/other', 'Bearer test:safe-api-token'])]
+    #[TestWith(['PUT', '/api/packages/test/pkg/maintainers/newbie', 'Bearer test:safe-api-token', Response::HTTP_FORBIDDEN, 'The safe API token can not be used for this action, use the main API token'])]
+    #[TestWith(['DELETE', '/api/packages/test/pkg/maintainers/other', 'Bearer test:safe-api-token', Response::HTTP_FORBIDDEN, 'The safe API token can not be used for this action, use the main API token'])]
     #[TestWith(['PUT', '/api/packages/test/pkg/maintainers/newbie', 'Bearer test:wrong'])]
     #[TestWith(['DELETE', '/api/packages/test/pkg/maintainers/other', null])]
-    public function testMaintainerEndpointsRequireTheMainApiToken(string $method, string $path, ?string $authorization): void
+    public function testMaintainerEndpointsRequireTheMainApiToken(string $method, string $path, ?string $authorization, int $status = Response::HTTP_NOT_ACCEPTABLE, string $message = 'Missing or invalid username/apiToken in request'): void
     {
         $owner = self::createUser();
         $other = self::createUser('other', 'other@example.org');
@@ -949,8 +1024,8 @@ class ApiControllerTest extends IntegrationTestCase
 
         $this->requestMaintainers($method, $path, $authorization);
 
-        self::assertResponseStatusCodeSame(Response::HTTP_NOT_ACCEPTABLE);
-        self::assertSame(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], $this->decodeResponse());
+        self::assertResponseStatusCodeSame($status);
+        self::assertSame(['status' => 'error', 'message' => $message], $this->decodeResponse());
 
         $em = self::getEM();
         $em->clear();
