@@ -24,7 +24,7 @@ use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * @extends Voter<value-of<PackageActions>, Package>
+ * @extends Voter<value-of<PackageActions>, Package|null>
  */
 class PackageVoter extends Voter
 {
@@ -36,7 +36,10 @@ class PackageVoter extends Voter
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return $subject instanceof Package && PackageActions::tryFrom($attribute) instanceof PackageActions;
+        $action = PackageActions::tryFrom($attribute);
+
+        // creating has no package to vote on yet
+        return $subject instanceof Package ? $action instanceof PackageActions : PackageActions::Create === $action && null === $subject;
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
@@ -48,17 +51,20 @@ class PackageVoter extends Voter
             return false;
         }
 
-        /** @var Package $package */
-        $package = $subject;
         $action = PackageActions::from($attribute);
 
         if ($token instanceof ApiToken && !$token->allows(self::requiredApiType($action))) {
             return false;
         }
 
+        if (PackageActions::Create === $action) {
+            return true;
+        }
+
+        /** @var Package $package */
+        $package = $subject;
+
         return match ($action) {
-            // open to any user, but API requests still need the main token (checked above)
-            PackageActions::Create => true,
             PackageActions::Abandon => $this->canEdit($package, $user),
             PackageActions::Delete => $this->canDelete($package, $user),
             PackageActions::ViewHiddenVersion, PackageActions::DeleteVersion, PackageActions::RecoverVersion => $this->canDeleteVersion($package, $user),
@@ -172,6 +178,6 @@ class PackageVoter extends Voter
 
     public function supportsType(string $subjectType): bool
     {
-        return is_a($subjectType, Package::class, true);
+        return 'null' === $subjectType || is_a($subjectType, Package::class, true);
     }
 }

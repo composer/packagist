@@ -24,7 +24,6 @@ use App\Model\ProviderManager;
 use App\Model\VersionIdCache;
 use App\Package\BranchDeletionHandler;
 use App\Package\BranchDeletionOutcome;
-use App\Security\Api\ApiType;
 use App\Security\Voter\PackageActions;
 use App\Service\FallbackGitHubAuthProvider;
 use App\Service\GitHubUserMigrationWorker;
@@ -44,6 +43,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -117,7 +117,8 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/create-package', name: 'generic_create', defaults: ['_format' => 'json'], methods: ['POST'])]
-    public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator, #[CurrentUser] ?User $user): JsonResponse
+    #[IsGranted(PackageActions::Create->value)]
+    public function createPackageAction(Request $request, ProviderManager $providerManager, GitHubUserMigrationWorker $githubUserMigrationWorker, RouterInterface $router, ValidatorInterface $validator, #[CurrentUser] User $user): JsonResponse
     {
         $payload = json_decode((string) $request->request->get('payload'), true);
         if (!$payload && $request->headers->get('Content-Type') === 'application/json') {
@@ -135,16 +136,9 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => '{repository: string} expected in payload'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
-        if (null === $user) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
-        }
-
         $package = new Package();
         $package->addMaintainer($user);
         $package->setRepository($url);
-        if (!$this->isGranted(PackageActions::Create->value, $package)) {
-            return $this->forbiddenResponse();
-        }
         $errors = $validator->validate($package, groups: ['Default', 'Create']);
         if (\count($errors) > 0) {
             $errorArray = [];
@@ -264,15 +258,9 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/packages/{package}', name: 'api_edit_package', requirements: ['package' => Package::PACKAGE_NAME_REGEX], defaults: ['_format' => 'json'], methods: ['PUT'])]
-    public function editPackageAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, ValidatorInterface $validator, StatsDClient $statsd, #[CurrentUser] ?User $user): JsonResponse
+    #[IsGranted(PackageActions::Edit->value, subject: 'package')]
+    public function editPackageAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, ValidatorInterface $validator, StatsDClient $statsd): JsonResponse
     {
-        if (!$user) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
-        }
-        if (!$this->isGranted(PackageActions::Edit->value, $package)) {
-            return $this->forbiddenResponse();
-        }
-
         $statsd->increment('edit_package_api');
 
         $payload = json_decode((string) $request->request->get('payload'), true);
@@ -306,14 +294,13 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_add_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['PUT'])]
-    public function addMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd, #[CurrentUser] ?User $user): JsonResponse
+    #[IsGranted(PackageActions::AddMaintainer->value, subject: 'package')]
+    public function addMaintainerAction(#[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd, #[CurrentUser] User $user): JsonResponse
     {
-        $resolved = $this->resolveMaintainerChange(PackageActions::AddMaintainer, $user, $package, $username, $statsd);
-        if ($resolved instanceof JsonResponse) {
-            return $resolved;
-        }
-        $maintainer = $resolved;
-        if (!$maintainer->isAccountActive()) {
+        $statsd->increment('add_maintainer_api');
+
+        $maintainer = $this->findUserByUsername($username);
+        if (!$maintainer?->isAccountActive()) {
             return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
@@ -331,13 +318,15 @@ class ApiController extends Controller
     }
 
     #[Route(path: '/api/packages/{package}/maintainers/{username}', name: 'api_remove_maintainer', requirements: ['package' => Package::PACKAGE_NAME_REGEX, 'username' => '[^/]+'], defaults: ['_format' => 'json'], methods: ['DELETE'])]
-    public function removeMaintainerAction(Request $request, #[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd, #[CurrentUser] ?User $user): JsonResponse
+    #[IsGranted(PackageActions::RemoveMaintainer->value, subject: 'package')]
+    public function removeMaintainerAction(#[MapEntity(mapping: ['package' => 'name'])] Package $package, string $username, PackageManager $packageManager, StatsDClient $statsd, #[CurrentUser] User $user): JsonResponse
     {
-        $resolved = $this->resolveMaintainerChange(PackageActions::RemoveMaintainer, $user, $package, $username, $statsd);
-        if ($resolved instanceof JsonResponse) {
-            return $resolved;
+        $statsd->increment('remove_maintainer_api');
+
+        $maintainer = $this->findUserByUsername($username);
+        if (!$maintainer) {
+            return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
-        $maintainer = $resolved;
 
         try {
             if ($packageManager->removeMaintainer($package, $maintainer, $user)) {
@@ -350,26 +339,9 @@ class ApiController extends Controller
         return new JsonResponse(['status' => 'success'], Response::HTTP_OK);
     }
 
-    /**
-     * @return User|JsonResponse the user to add or remove, or the error to return
-     */
-    private function resolveMaintainerChange(PackageActions $action, ?User $user, Package $package, string $username, StatsDClient $statsd): User|JsonResponse
+    private function findUserByUsername(string $username): ?User
     {
-        if (!$user) {
-            return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
-        }
-        if (!$this->isGranted($action->value, $package)) {
-            return $this->forbiddenResponse();
-        }
-
-        $statsd->increment($action->value.'_api');
-
-        $maintainer = $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => mb_strtolower($username)]);
-        if (!$maintainer) {
-            return new JsonResponse(['status' => 'error', 'message' => 'User not found'], Response::HTTP_NOT_FOUND);
-        }
-
-        return $maintainer;
+        return $this->getEM()->getRepository(User::class)->findOneBy(['usernameCanonical' => mb_strtolower($username)]);
     }
 
     #[Route(path: '/jobs/{id}', name: 'get_job', requirements: ['id' => '[a-f0-9]+'], defaults: ['_format' => 'json'], methods: ['GET'])]
@@ -685,13 +657,6 @@ class ApiController extends Controller
         }
 
         return new JsonResponse($response, Response::HTTP_ACCEPTED);
-    }
-
-    private function forbiddenResponse(): JsonResponse
-    {
-        $message = $this->isGranted(ApiType::Unsafe->value) ? 'You are not allowed to edit this package' : 'The safe API token can not be used for this action, use the main API token';
-
-        return new JsonResponse(['status' => 'error', 'message' => $message], Response::HTTP_FORBIDDEN);
     }
 
     /**

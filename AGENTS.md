@@ -29,10 +29,11 @@ Check `composer.json` for exact versions.
   `Authorization: Bearer username:apiToken` (takes precedence) or username/apiToken parameters
 - Two token types: main (`apiToken`) and safe (`safeApiToken`). The safe token is leak-tolerant
   and only allows reads or non-destructive actions like updates. `PackageVoter` enforces this for
-  package actions; elsewhere check `isGranted(ApiType::Unsafe->value)`
+  package actions, so use `#[IsGranted(PackageActions::...)]` on endpoints
 - API tokens skip 2FA, so they only ever carry `ROLE_USER`: admin roles never apply to API requests
-- Failed authentication does not error out: endpoints take `#[CurrentUser] ?User $user` and return
-  their own JSON errors when it is null
+- Failed authentication does not error out, the request continues without a user. A denied
+  `#[IsGranted]` gets a JSON error from the firewall: 406 from `ApiTokenAuthenticator::start()`
+  without a user, 403 from `ApiAccessDeniedHandler` otherwise
 - Inactive accounts are rejected by `App\Security\UserChecker`, as on the website
 
 ## Conventions

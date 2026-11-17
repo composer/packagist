@@ -14,6 +14,7 @@ namespace App\Security\Api;
 
 use App\Entity\User;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -23,12 +24,13 @@ use Symfony\Component\Security\Http\Authenticator\AbstractAuthenticator;
 use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\Passport;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
+use Symfony\Component\Security\Http\EntryPoint\AuthenticationEntryPointInterface;
 
 /**
  * Authenticates API requests by username and API token, from a `Bearer username:apiToken` header
  * or from username/apiToken request or query parameters.
  */
-class ApiTokenAuthenticator extends AbstractAuthenticator
+class ApiTokenAuthenticator extends AbstractAuthenticator implements AuthenticationEntryPointInterface
 {
     public function __construct(private readonly ManagerRegistry $doctrine)
     {
@@ -82,8 +84,13 @@ class ApiTokenAuthenticator extends AbstractAuthenticator
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
-        // the endpoints answer unauthenticated requests themselves, in their own format
+        // carry on unauthenticated, endpoints that require a user are answered by start()
         return null;
+    }
+
+    public function start(Request $request, ?AuthenticationException $authException = null): Response
+    {
+        return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
     }
 
     /**
