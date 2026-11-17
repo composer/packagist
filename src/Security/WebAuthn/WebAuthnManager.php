@@ -150,7 +150,6 @@ class WebAuthnManager
     {
         $credential->rename($name);
         $this->persistChange($credential, WebAuthnCredentialAction::Renamed);
-        $this->notifyChange($credential);
     }
 
     public function revoke(WebAuthnCredential $credential): void

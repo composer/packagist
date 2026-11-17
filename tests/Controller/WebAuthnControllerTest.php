@@ -141,6 +141,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         ]);
         self::assertResponseRedirects('/profile/security/keys');
         self::assertSame('Renamed key', $this->freshUser()->findWebAuthnCredential($credential->id)?->getName());
+        self::assertEmailCount(0);
 
         $this->authenticator = new VirtualAuthenticator();
         $this->register('Spare key');
