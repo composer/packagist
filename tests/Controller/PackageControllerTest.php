@@ -16,6 +16,7 @@ use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
+use App\Entity\FilterListEntry;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -24,6 +25,9 @@ use App\Entity\PackageRepository;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
+use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
+use App\FilterList\RemoteFilterListEntry;
 use App\Log\AuditLogEventType;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
@@ -38,6 +42,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestWith;
 use Predis\Client;
 use Psr\Log\NullLogger;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedJsonResponse;
@@ -880,7 +885,7 @@ class PackageControllerTest extends IntegrationTestCase
 
         $this->assertTrue($package->isMaintainer($maintainer));
 
-        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
+        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::MaintainerAdded->value,
             'packageId' => $package->getId(),
             'actorId' => $owner->getId(),
@@ -927,7 +932,7 @@ class PackageControllerTest extends IntegrationTestCase
 
         $this->assertFalse($package->isMaintainer($maintainer));
 
-        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
+        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::MaintainerRemoved->value,
             'packageId' => $package->getId(),
             'actorId' => $owner->getId(),
@@ -1108,7 +1113,7 @@ class PackageControllerTest extends IntegrationTestCase
         $this->assertContains($bob->getId(), $maintainerIds);
         $this->assertNotContains($john->getId(), $maintainerIds);
 
-        $auditRecord = $em->getRepository(\App\Entity\AuditRecord::class)->findOneBy([
+        $auditRecord = $em->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::PackageTransferred->value,
             'packageId' => $package->getId(),
         ]);
@@ -1514,6 +1519,86 @@ class PackageControllerTest extends IntegrationTestCase
             'Deleted by maintainer on 2026-02-03 04:05:06 UTC',
             $crawler->filter('ul.versions li.version-soft-deleted .deletion-alert')->attr('title')
         );
+    }
+
+    public function testPackagePageMalwareBannerForLiveFlaggedVersion(): void
+    {
+        $crawler = $this->requestPackagePageWithFlaggedVersion(null);
+
+        self::assertCount(1, $crawler->filter('.alert-danger .bi-fire'));
+        self::assertCount(0, $crawler->filter('.deleted-malware-notice'));
+        self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
+    }
+
+    #[TestWith([VersionDeletionReason::DeletedByMaintainer])]
+    #[TestWith([VersionDeletionReason::AutoDeletedMissing])]
+    public function testPackagePageShowsSofterNoticeForRecentlyDeletedFlaggedVersions(VersionDeletionReason $reason): void
+    {
+        $deletedAt = new \DateTimeImmutable('-1 day');
+        $crawler = $this->requestPackagePageWithFlaggedVersion($deletedAt, $reason);
+
+        self::assertCount(0, $crawler->filter('.alert-danger .bi-fire'));
+        $notice = $crawler->filter('.alert-warning.deleted-malware-notice');
+        self::assertCount(1, $notice);
+        self::assertStringContainsString('flagged as malware by Aikido', $notice->text());
+        self::assertStringContainsString('will be removed on '.$deletedAt->modify('+7 days')->format('M j, Y'), $notice->text());
+        self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
+    }
+
+    #[TestWith([VersionDeletionReason::DeletedByMaintainer])]
+    #[TestWith([VersionDeletionReason::AutoDeletedMissing])]
+    public function testPackagePageDropsMalwareNoticeAWeekAfterLastFlaggedVersionDeletion(VersionDeletionReason $reason): void
+    {
+        $crawler = $this->requestPackagePageWithFlaggedVersion(new \DateTimeImmutable('-8 days'), $reason);
+
+        self::assertCount(0, $crawler->filter('.alert-danger .bi-fire'));
+        self::assertCount(0, $crawler->filter('.deleted-malware-notice'));
+        // the flag stays visible on the version itself for reference
+        self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
+    }
+
+    public function testPackagePageMalwareBannerOnlyNamesSourcesFlaggingLiveVersions(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $live = $this->createStableVersion($package, '1.0.0');
+        $deleted = $this->createStableVersion($package, '1.0.1');
+        $deleted->setSoftDeletedAt(new \DateTimeImmutable('-1 day'));
+        $deleted->setDeletionReason(VersionDeletionReason::DeletedByMaintainer);
+        $liveEntry = FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '1.0.0', FilterLists::MALWARE, 'https://example.com/test/pkg', 'malware', FilterSources::AIKIDO));
+        $deletedEntry = FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '1.0.1', FilterLists::MALWARE, 'https://example.com/test/pkg', 'malware', FilterSources::PACKAGIST));
+
+        $this->store($package, $live, $deleted, $liveEntry, $deletedEntry);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        $banner = $crawler->filter('.alert-danger:has(.bi-fire)');
+        self::assertCount(1, $banner);
+        self::assertStringContainsString('flagged as malware by Aikido!', $banner->text());
+        self::assertStringNotContainsString('Packagist.org', $banner->text());
+        self::assertCount(0, $crawler->filter('.deleted-malware-notice'));
+        self::assertCount(2, $crawler->filter('ul.versions .malware-alert'));
+    }
+
+    private function requestPackagePageWithFlaggedVersion(?\DateTimeImmutable $deletedAt, VersionDeletionReason $reason = VersionDeletionReason::DeletedByMaintainer): Crawler
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $clean = $this->createStableVersion($package, '1.0.0');
+        $flagged = $this->createStableVersion($package, '1.0.1');
+        if (null !== $deletedAt) {
+            $flagged->setSoftDeletedAt($deletedAt);
+            $flagged->setDeletionReason($reason);
+        }
+        $entry = FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '1.0.1', FilterLists::MALWARE, 'https://example.com/test/pkg', 'malware', FilterSources::AIKIDO));
+
+        $this->store($package, $clean, $flagged, $entry);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        return $crawler;
     }
 
     public function testPackagePageHidesHiddenVersionsFromNonStaff(): void
