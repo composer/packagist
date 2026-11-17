@@ -334,8 +334,7 @@ class UserController extends Controller
         TotpAuthenticatorInterface $authenticator,
         TotpAuthManager $authManager,
         SecondFactorProofStore $secondFactorProofStore,
-    ): Response
-    {
+    ): Response {
         if ($user->getId() !== $loggedUser->getId()) {
             throw $this->createAccessDeniedException('You cannot change this user\'s two-factor authentication settings');
         }

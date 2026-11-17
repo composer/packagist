@@ -14,8 +14,8 @@ namespace App\Tests\Security\WebAuthn;
 
 use App\Entity\User;
 use App\Entity\WebAuthnCredential;
-use App\Security\WebAuthn\WebAuthnManager;
 use App\Security\UserNotifier;
+use App\Security\WebAuthn\WebAuthnManager;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
@@ -169,7 +169,7 @@ class WebAuthnManagerTest extends TestCase
                 ],
             ]),
             new SessionStorage($requests),
-            (new \Webauthn\Denormalizer\WebauthnSerializerFactory($support))->create(),
+            new \Webauthn\Denormalizer\WebauthnSerializerFactory($support)->create(),
             $em,
             $notifier,
             $events,

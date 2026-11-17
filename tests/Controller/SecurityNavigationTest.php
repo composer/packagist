@@ -139,7 +139,7 @@ class SecurityNavigationTest extends IntegrationTestCase
         $crawler = $this->client->submit($form);
         self::assertSame(422, $this->client->getResponse()->getStatusCode());
         $form = $crawler->selectButton('Enable authenticator app')->form();
-        $form['enable_totp_auth[code]'] = \App\Tests\Mock\TotpAuthenticatorStub::MOCKED_VALID_CODE;
+        $form['enable_totp_auth[code]'] = TotpAuthenticatorStub::MOCKED_VALID_CODE;
         $this->client->submit($form);
         self::assertSame('/users/alice/totp/confirm', $this->client->getResponse()->headers->get('Location'));
         $crawler = $this->client->followRedirect();

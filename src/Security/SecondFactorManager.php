@@ -13,8 +13,8 @@
 namespace App\Security;
 
 use App\Entity\User;
-use App\Event\SecondFactorsResetEvent;
 use App\Event\SecondFactorRemovedEvent;
+use App\Event\SecondFactorsResetEvent;
 use App\Service\Locker;
 use Doctrine\ORM\EntityManagerInterface;
 use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
@@ -40,7 +40,9 @@ class SecondFactorManager implements BackupCodeManagerInterface
 
     /**
      * @template T
+     *
      * @param \Closure(): T $operation
+     *
      * @return T
      */
     public function withAccountLock(User $user, \Closure $operation): mixed
