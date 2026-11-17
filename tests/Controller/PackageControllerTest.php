@@ -16,6 +16,7 @@ use App\Audit\VersionDeletionReason;
 use App\Entity\AuditRecord;
 use App\Entity\Dependent;
 use App\Entity\Download;
+use App\Entity\FilterListEntry;
 use App\Entity\Job;
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
@@ -24,6 +25,9 @@ use App\Entity\PackageRepository;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
+use App\FilterList\FilterLists;
+use App\FilterList\FilterSources;
+use App\FilterList\RemoteFilterListEntry;
 use App\Log\AuditLogEventType;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
@@ -1514,6 +1518,30 @@ class PackageControllerTest extends IntegrationTestCase
             'Deleted by maintainer on 2026-02-03 04:05:06 UTC',
             $crawler->filter('ul.versions li.version-soft-deleted .deletion-alert')->attr('title')
         );
+    }
+
+    #[TestWith([false, true])]
+    #[TestWith([true, false])]
+    public function testPackagePageMalwareBannerIgnoresSoftDeletedVersions(bool $softDeleted, bool $expectBanner): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $package->setCrawledAt(new \DateTimeImmutable());
+        $clean = $this->createStableVersion($package, '1.0.0');
+        $flagged = $this->createStableVersion($package, '1.0.1');
+        if ($softDeleted) {
+            $flagged->setSoftDeletedAt(new \DateTimeImmutable());
+            $flagged->setDeletionReason(VersionDeletionReason::DeletedByMaintainer);
+        }
+        $entry = FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '1.0.1', FilterLists::MALWARE, 'https://example.com/test/pkg', 'malware', FilterSources::AIKIDO));
+
+        $this->store($package, $clean, $flagged, $entry);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        self::assertCount($expectBanner ? 1 : 0, $crawler->filter('.alert-danger .bi-fire'));
+        // the flag stays visible on the version itself for reference, deleted or not
+        self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
     }
 
     public function testPackagePageHidesHiddenVersionsFromNonStaff(): void

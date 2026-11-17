@@ -60,7 +60,7 @@
                 <div class="col-lg-9">
                     <p class="requireme"><i class="bi bi-terminal"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
 
-                    {% if hasVersionsFlaggedAsMalware %}
+                    {% if listsFlaggingVersionsAsMalware %}
                     <div class="alert alert-danger"><i class="bi bi-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
                     {% endif %}
 

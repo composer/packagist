@@ -798,7 +798,11 @@ class PackageController extends Controller
                 foreach ($versions as $version) {
                     if ($constraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
                         $data['hasVersionsFlaggedAsMalware'][$version->getId()] = true;
-                        $data['listsFlaggingVersionsAsMalware'][$packageVersionFlaggedAsMalware->getSource()->value] = $packageVersionFlaggedAsMalware->getSource();
+                        // soft-deleted versions keep their per-version flag for reference, but no longer
+                        // trigger the package-level warning as they are not publicly installable anymore
+                        if (!$version->isSoftDeleted()) {
+                            $data['listsFlaggingVersionsAsMalware'][$packageVersionFlaggedAsMalware->getSource()->value] = $packageVersionFlaggedAsMalware->getSource();
+                        }
                     }
                 }
             }
