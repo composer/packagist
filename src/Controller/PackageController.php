@@ -109,6 +109,8 @@ class PackageController extends Controller
     private const string STATS_RECORD_DATE = '2012-04-13 00:00:00';
     private const string RELEASES_RECORD_DATE = '2011-01-01 00:00:00';
 
+    private const int DELETED_MALWARE_NOTICE_DAYS = 7;
+
     public function __construct(
         private ProviderManager $providerManager,
         private PackageListCache $listCache,
@@ -791,19 +793,35 @@ class PackageController extends Controller
             }
 
             $data['listsFlaggingVersionsAsMalware'] = [];
+            $data['listsFlaggingDeletedVersionsAsMalware'] = [];
+            $data['deletedMalwareNoticeExpiresAt'] = null;
             $data['hasVersionsFlaggedAsMalware'] = [];
+            $lastFlaggedVersionDeletedAt = null;
             $packageVersionsFlaggedAsMalware = $this->getEM()->getRepository(FilterListEntry::class)->getPackageVersionsFlaggedAsMalwareForPackage($package);
             foreach ($packageVersionsFlaggedAsMalware as $packageVersionFlaggedAsMalware) {
                 $constraint = $versionParser->parseConstraints($packageVersionFlaggedAsMalware->getVersion());
+                $source = $packageVersionFlaggedAsMalware->getSource();
                 foreach ($versions as $version) {
                     if ($constraint->matches(new Constraint('=', $version->getNormalizedVersion()))) {
                         $data['hasVersionsFlaggedAsMalware'][$version->getId()] = true;
-                        // soft-deleted versions keep their per-version flag for reference, but no longer
-                        // trigger the package-level warning as they are not publicly installable anymore
-                        if (!$version->isSoftDeleted()) {
-                            $data['listsFlaggingVersionsAsMalware'][$packageVersionFlaggedAsMalware->getSource()->value] = $packageVersionFlaggedAsMalware->getSource();
+                        $deletedAt = $version->getSoftDeletedAt();
+                        if (null === $deletedAt) {
+                            $data['listsFlaggingVersionsAsMalware'][$source->value] = $source;
+                        } else {
+                            $data['listsFlaggingDeletedVersionsAsMalware'][$source->value] = $source;
+                            if (null === $lastFlaggedVersionDeletedAt || $deletedAt > $lastFlaggedVersionDeletedAt) {
+                                $lastFlaggedVersionDeletedAt = $deletedAt;
+                            }
                         }
                     }
+                }
+            }
+            // Any deletion counts, including tags removed upstream by whoever controls the repo,
+            // so keep a softer notice up for a while rather than clearing the warning instantly.
+            if (!$data['listsFlaggingVersionsAsMalware'] && null !== $lastFlaggedVersionDeletedAt) {
+                $expiresAt = $lastFlaggedVersionDeletedAt->modify('+'.self::DELETED_MALWARE_NOTICE_DAYS.' days');
+                if ($expiresAt > new \DateTimeImmutable()) {
+                    $data['deletedMalwareNoticeExpiresAt'] = $expiresAt;
                 }
             }
 
@@ -823,6 +841,8 @@ class PackageController extends Controller
             $data['hasVersionSecurityAdvisories'] = [];
             $data['hasVersionsFlaggedAsMalware'] = [];
             $data['listsFlaggingVersionsAsMalware'] = [];
+            $data['listsFlaggingDeletedVersionsAsMalware'] = [];
+            $data['deletedMalwareNoticeExpiresAt'] = null;
         }
 
         // A single CSRF token covers every version-mutation action on this package. The actions
