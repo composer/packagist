@@ -150,6 +150,11 @@ class WebAuthnManager
     {
         $previousName = $credential->getName();
         $credential->rename($name);
+
+        if ($credential->getName() === $previousName) {
+            return;
+        }
+
         $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialRenamed, $previousName);
     }
 

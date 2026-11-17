@@ -161,6 +161,23 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertCount(2, $this->freshUser()->getWebAuthnCredentials());
     }
 
+    #[TestWith(['My key'])]
+    #[TestWith(['  My key  '])]
+    public function testSavingTheSameNameDoesNotRecordARename(string $name): void
+    {
+        $credential = $this->register();
+        $this->client->request('POST', '/profile/security/keys/'.$credential->id.'/edit', [
+            '_token' => $this->csrf, 'action' => 'rename', 'name' => $name,
+        ]);
+        self::assertResponseRedirects('/profile/security/keys');
+        self::assertSame('My key', $this->freshUser()->findWebAuthnCredential($credential->id)?->getName());
+        self::assertSame(0, self::getEM()->getRepository(AuditRecord::class)->count([
+            'type' => AuditLogEventType::WebAuthnCredentialRenamed,
+            'userId' => $this->user->getId(),
+        ]));
+        self::assertEmailCount(0);
+    }
+
     public function testEnrollmentAndVerificationKeepTheSameUserHandle(): void
     {
         $userHandle = $this->freshUser()->getWebAuthnUserHandle();
