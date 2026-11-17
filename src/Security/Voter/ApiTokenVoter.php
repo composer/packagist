@@ -30,11 +30,7 @@ class ApiTokenVoter extends Voter
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
     {
-        if (!$token instanceof ApiToken) {
-            return false;
-        }
-
-        return ApiType::Safe === ApiType::from($attribute) || ApiType::Unsafe === $token->type;
+        return $token instanceof ApiToken && $token->allows(ApiType::from($attribute));
     }
 
     public function supportsAttribute(string $attribute): bool

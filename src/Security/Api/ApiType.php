@@ -17,7 +17,7 @@ namespace App\Security\Api;
  */
 enum ApiType: string
 {
-    /** The main or the safe API token. The safe one is meant to be leak-tolerant, so it only allows triggering updates. */
+    /** The main or the safe API token. The safe one is meant to be leak-tolerant, so it only allows reads or non-destructive actions like updates. */
     case Safe = 'API_SAFE';
     /** The main API token only. */
     case Unsafe = 'API_UNSAFE';

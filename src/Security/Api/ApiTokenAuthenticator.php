@@ -54,7 +54,12 @@ class ApiTokenAuthenticator extends AbstractAuthenticator
                 ->getQuery()
                 ->getOneOrNullResult();
 
-            return $user instanceof User && $user->isAccountActive() ? $user : null;
+            // the column collation is case-insensitive, so make sure the token matches exactly
+            if (!$user instanceof User || (!hash_equals($user->getApiToken(), $apiToken) && !hash_equals($user->getSafeApiToken(), $apiToken))) {
+                return null;
+            }
+
+            return $user;
         }));
         $passport->setAttribute('apiToken', $apiToken);
 
@@ -65,7 +70,7 @@ class ApiTokenAuthenticator extends AbstractAuthenticator
     {
         $user = $passport->getUser();
         \assert($user instanceof User);
-        $type = hash_equals((string) $user->getApiToken(), (string) $passport->getAttribute('apiToken')) ? ApiType::Unsafe : ApiType::Safe;
+        $type = hash_equals($user->getApiToken(), $passport->getAttribute('apiToken')) ? ApiType::Unsafe : ApiType::Safe;
 
         return new ApiToken($user, $type);
     }

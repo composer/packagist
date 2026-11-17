@@ -23,4 +23,9 @@ class ApiToken extends AbstractToken
         parent::__construct(['ROLE_USER']);
         $this->setUser($user);
     }
+
+    public function allows(ApiType $type): bool
+    {
+        return ApiType::Safe === $type || ApiType::Unsafe === $this->type;
+    }
 }

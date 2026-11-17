@@ -15,6 +15,8 @@ namespace App\Security\Voter;
 use App\Entity\Package;
 use App\Entity\User;
 use App\Model\DownloadManager;
+use App\Security\Api\ApiToken;
+use App\Security\Api\ApiType;
 use Predis\PredisException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -48,8 +50,13 @@ class PackageVoter extends Voter
 
         /** @var Package $package */
         $package = $subject;
+        $action = PackageActions::from($attribute);
 
-        return match (PackageActions::from($attribute)) {
+        if ($token instanceof ApiToken && !$token->allows(self::requiredApiType($action))) {
+            return false;
+        }
+
+        return match ($action) {
             PackageActions::Abandon => $this->canEdit($package, $user),
             PackageActions::Delete => $this->canDelete($package, $user),
             PackageActions::ViewHiddenVersion, PackageActions::DeleteVersion, PackageActions::RecoverVersion => $this->canDeleteVersion($package, $user),
@@ -59,6 +66,17 @@ class PackageVoter extends Voter
             PackageActions::Edit => $this->canEdit($package, $user),
             PackageActions::AddMaintainer, PackageActions::RemoveMaintainer, PackageActions::TransferPackage => $this->canManageMaintainers($package, $user),
             PackageActions::Update => $package->isMaintainer($user) || $this->security->isGranted('ROLE_UPDATE_PACKAGES'),
+        };
+    }
+
+    /**
+     * The safe API token is leak-tolerant, so it only allows reads and non-destructive actions.
+     */
+    private static function requiredApiType(PackageActions $action): ApiType
+    {
+        return match ($action) {
+            PackageActions::Update, PackageActions::ViewHiddenVersion => ApiType::Safe,
+            default => ApiType::Unsafe,
         };
     }
 

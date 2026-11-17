@@ -135,7 +135,7 @@ class ApiController extends Controller
         }
 
         $user = $this->getApiUser();
-        if (null === $user) {
+        if (null === $user || !$this->isGranted(ApiType::Unsafe->value)) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
 
@@ -267,8 +267,8 @@ class ApiController extends Controller
         if (!$user) {
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
-        if (!$package->getMaintainers()->contains($user)) {
-            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
+        if (!$this->isGranted(PackageActions::Edit->value, $package)) {
+            return $this->forbiddenResponse();
         }
 
         $statsd->increment('edit_package_api');
@@ -358,7 +358,7 @@ class ApiController extends Controller
             return new JsonResponse(['status' => 'error', 'message' => 'Missing or invalid username/apiToken in request'], Response::HTTP_NOT_ACCEPTABLE);
         }
         if (!$this->isGranted($action->value, $package)) {
-            return new JsonResponse(['status' => 'error', 'message' => 'You are not allowed to edit this package'], Response::HTTP_FORBIDDEN);
+            return $this->forbiddenResponse();
         }
 
         $statsd->increment($action->value.'_api');
@@ -558,6 +558,8 @@ class ApiController extends Controller
 
         $packages = null;
         $user = null;
+        // only API token callers go through the voter, the signature-verified hooks decided above
+        $voteOnBranchDeletion = false;
         $autoUpdated = Package::AUTO_MANUAL_HOOK;
         $receiveType = 'manual';
         $source = 'unknown';
@@ -593,13 +595,10 @@ class ApiController extends Controller
 
         if (!$user) {
             // find the user
-            $user = $this->getApiUser(ApiType::Safe);
+            $user = $this->getApiUser();
             if ($user) {
                 $source = 'manual_hook ('.$user->getUsername().' @ '.$request->getPathInfo().')';
-                // safe token: crawl only, as above
-                if (null !== $deletedBranch && !$this->isGranted(ApiType::Unsafe->value)) {
-                    $deletedBranch = null;
-                }
+                $voteOnBranchDeletion = true;
             }
         }
 
@@ -658,7 +657,7 @@ class ApiController extends Controller
 
             $package->setAutoUpdated($autoUpdated);
 
-            if (null !== $deletedBranch) {
+            if (null !== $deletedBranch && (!$voteOnBranchDeletion || $this->isGranted(PackageActions::DeleteVersion->value, $package))) {
                 $outcome = $this->branchDeletionHandler->apply($package, $deletedBranch);
                 $statsd->increment('update_pkg_api.branch_deletion', tags: ['outcome' => $outcome->value]);
                 if (BranchDeletionOutcome::Deferred !== $outcome) {
@@ -687,16 +686,18 @@ class ApiController extends Controller
         return new JsonResponse($response, Response::HTTP_ACCEPTED);
     }
 
-    private function getApiUser(ApiType $type = ApiType::Unsafe): ?User
+    private function getApiUser(): ?User
     {
-        if (!$this->isGranted($type->value)) {
-            return null;
-        }
-
         $user = $this->getUser();
-        \assert($user instanceof User);
 
-        return $user;
+        return $user instanceof User ? $user : null;
+    }
+
+    private function forbiddenResponse(): JsonResponse
+    {
+        $message = $this->isGranted(ApiType::Unsafe->value) ? 'You are not allowed to edit this package' : 'The safe API token can not be used for this action, use the main API token';
+
+        return new JsonResponse(['status' => 'error', 'message' => $message], Response::HTTP_FORBIDDEN);
     }
 
     /**

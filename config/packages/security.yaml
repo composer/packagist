@@ -25,6 +25,7 @@ security:
             pattern:      ^/api/
             stateless:    true
             lazy:         true
+            user_checker: App\Security\UserChecker
             custom_authenticators:
                 - App\Security\Api\ApiTokenAuthenticator
         main:
