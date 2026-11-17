@@ -145,13 +145,14 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $renames = self::getEM()->getRepository(AuditRecord::class)->findBy(['type' => AuditLogEventType::WebAuthnCredentialRenamed, 'userId' => $this->user->getId()]);
         self::assertCount(1, $renames);
         self::assertSame('Renamed key', $renames[0]->attributes['credentialName']);
+        self::assertSame('My key', $renames[0]->attributes['previousCredentialName']);
 
         $auditor = self::createUser('auditor', 'auditor@example.org', roles: ['ROLE_AUDITOR']);
         $this->store($auditor);
         $this->client->loginUser($auditor);
         $this->client->request('GET', '/admin/audit-log?type[]=webauthn_credential_added&type[]=webauthn_credential_renamed');
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('td.audit-log-details', 'Renamed key');
+        self::assertSelectorTextContains('td.audit-log-details', 'My key → Renamed key');
         self::assertStringContainsString('My key', $this->client->getResponse()->getContent());
         $this->client->loginUser($this->freshUser());
 
@@ -167,7 +168,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
 
         $credential = $this->register();
         self::assertNull($credential->getLastUsedAt());
-        $this->authenticator->counter = 0xfffffffe;
+        $this->authenticator->counter = 0xFFFFFFFE;
         $this->verify();
 
         self::getEM()->clear();
@@ -712,7 +713,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
 
         $manager = self::getService(SecondFactorManager::class);
         self::assertTrue($manager->isBackupCode($user, 'old12345'));
-        $emailCount = count(self::getMailerMessages());
+        $emailCount = \count(self::getMailerMessages());
 
         try {
             $manager->invalidateBackupCode($user, 'old12345');
@@ -765,7 +766,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         };
         $dispatcher->addListener(SecondFactorsResetEvent::class, $listener, -100);
 
-        $emailCount = count(self::getMailerMessages());
+        $emailCount = \count(self::getMailerMessages());
 
         try {
             self::getService(SecondFactorManager::class)->invalidateBackupCode($user, 'abc12345');

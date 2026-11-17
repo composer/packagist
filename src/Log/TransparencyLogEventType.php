@@ -12,8 +12,6 @@
 
 namespace App\Log;
 
-use App\Log\LogEventType;
-
 /**
  * The events published in the package transparency log. Two kinds:
  *  - package-native (ownership / package / version): projected 1:1 from an audit row that already

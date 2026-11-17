@@ -12,8 +12,6 @@
 
 namespace App\Log;
 
-use App\Log\LogEventType;
-
 enum AuditLogEventType: string implements LogEventType
 {
     // package ownership

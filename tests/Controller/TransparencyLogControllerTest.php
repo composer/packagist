@@ -42,7 +42,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
         static::assertContains('Package created', $types);
     }
 
@@ -143,7 +143,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         // The hidden type is dropped from the filter, so this falls back to the unfiltered list, which
         // itself excludes it. The rows are still projected, see TransparencyLogProjectorTest.
-        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
         static::assertNotContains('Authenticator app removed', $types);
         static::assertNotContains('Passkey or security key added', $types);
         static::assertCount(0, $crawler->filter('option[value="webauthn_credential_added"]'));
@@ -200,7 +200,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'acme/gone-log']));
 
         static::assertResponseIsSuccessful();
-        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
         // Newest first: the whole history of the gone package is still readable, deletion included.
         static::assertSame(['Package deleted', 'Package created'], $types);
     }
@@ -229,7 +229,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         foreach ([['package' => 'acme/late-log'], ['package' => 'acme/late-log', 'datetime_from' => '2026-01-01T00:00:00']] as $query) {
             $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query($query));
-            $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+            $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
             static::assertSame(['Package frozen', 'Package unfrozen', 'Package created'], $types);
         }
     }

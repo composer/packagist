@@ -25,6 +25,7 @@ readonly class WebAuthnCredentialDisplay extends AbstractLogDisplay
         public string $credentialName,
         ActorDisplay $actor,
         ?string $ip,
+        public ?string $previousCredentialName = null,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }

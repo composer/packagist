@@ -148,8 +148,9 @@ class WebAuthnManager
 
     public function rename(WebAuthnCredential $credential, string $name): void
     {
+        $previousName = $credential->getName();
         $credential->rename($name);
-        $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialRenamed);
+        $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialRenamed, $previousName);
     }
 
     public function revoke(WebAuthnCredential $credential): void
@@ -178,9 +179,9 @@ class WebAuthnManager
         $this->eventDispatcher->dispatch(new SecondFactorRemovedEvent($credential->user));
     }
 
-    private function persistChange(WebAuthnCredential $credential, AuditLogEventType $type): void
+    private function persistChange(WebAuthnCredential $credential, AuditLogEventType $type, ?string $previousName = null): void
     {
-        $this->em->persist(AuditRecord::webAuthnCredentialChanged($credential, $type));
+        $this->em->persist(AuditRecord::webAuthnCredentialChanged($credential, $type, previousName: $previousName));
         $this->em->flush();
     }
 

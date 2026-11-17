@@ -290,7 +290,7 @@ class TransparencyLogScrubberTest extends TestCase
     public function testEveryProjectedAuditLogEventTypeHasAFixture(): void
     {
         $covered = [];
-        foreach (self::projectedRecords() as [$type, , ]) {
+        foreach (self::projectedRecords() as [$type]) {
             $covered[] = $type->value;
         }
 
@@ -310,7 +310,7 @@ class TransparencyLogScrubberTest extends TestCase
     public function testFixturesStillFeedPrivateDataIntoEveryRecordThatCanCarryIt(): void
     {
         $carryingPrivateData = [];
-        foreach (self::projectedRecords() as [$type, $record, ]) {
+        foreach (self::projectedRecords() as [$type, $record]) {
             if (self::privateValuePaths($record->attributes) !== []) {
                 $carryingPrivateData[] = $type->value;
             }

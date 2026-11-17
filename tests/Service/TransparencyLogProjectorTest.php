@@ -31,8 +31,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\AbstractLogger;
-use Psr\Log\LogLevel;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Uid\Uuid;
@@ -89,7 +89,7 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
             'credential-id', 'public-key', [], 'none', EmptyTrustPath::create(), Uuid::v4(), 'public-key', 'user-handle', 0,
         ));
         $record = $eventType !== null
-            ? AuditRecord::webAuthnCredentialChanged($credential, $eventType)
+            ? AuditRecord::webAuthnCredentialChanged($credential, $eventType, previousName: $eventType === AuditLogEventType::WebAuthnCredentialRenamed ? 'Previous name' : null)
             : AuditRecord::totpAuthenticationDeactivated($user, $user, 'x');
         $em->getRepository(AuditRecord::class)->insert($record);
         $type = $record->type->value;
@@ -101,12 +101,12 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         $created = self::getService(TransparencyLogProjector::class)->project(0);
 
         $expectedPackages = $eventType === AuditLogEventType::WebAuthnCredentialRenamed ? [] : ['svc/one', 'svc/two'];
-        self::assertSame(\count($expectedPackages), (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = ?", [$type]));
+        self::assertSame(\count($expectedPackages), (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log WHERE type = ?', [$type]));
         // Return value accounts for the package-created rows and any projected account changes
         self::assertSame((int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'), $created);
 
         self::assertSame($expectedPackages, $conn->fetchFirstColumn(
-            "SELECT packageName FROM package_transparency_log WHERE type = ? ORDER BY packageName", [$type],
+            'SELECT packageName FROM package_transparency_log WHERE type = ? ORDER BY packageName', [$type],
         ));
     }
 
@@ -633,7 +633,7 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
     {
         $conn = self::getService(Connection::class);
 
-        $conn->executeStatement('INSERT INTO package_transparency_log_queue (auditLogId) VALUES (?)', [(new Ulid())->toBinary()]);
+        $conn->executeStatement('INSERT INTO package_transparency_log_queue (auditLogId) VALUES (?)', [new Ulid()->toBinary()]);
 
         self::assertSame(0, self::getService(TransparencyLogProjector::class)->project(0));
 
@@ -650,7 +650,7 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         // the queue, because nothing is dequeued: a loop driven by rows disappearing would spin here.
         $ids = [];
         for ($i = 0; $i < 501; $i++) {
-            $ids[] = (new Ulid())->toBinary();
+            $ids[] = new Ulid()->toBinary();
         }
 
         $conn->executeStatement(

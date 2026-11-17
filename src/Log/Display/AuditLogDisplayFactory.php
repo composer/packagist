@@ -182,6 +182,7 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
                 $record->attributes['credentialName'],
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
+                $record->attributes['previousCredentialName'] ?? null,
             ),
             AuditLogEventType::TotpAuthenticationActivated => new Event\GenericUserDisplay(
                 $record->type,

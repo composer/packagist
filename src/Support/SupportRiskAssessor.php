@@ -209,7 +209,6 @@ class SupportRiskAssessor
             AuditLogEventType::TotpAuthenticationActivated,
             AuditLogEventType::TotpAuthenticationDeactivated,
             AuditLogEventType::WebAuthnCredentialAdded,
-            AuditLogEventType::WebAuthnCredentialRenamed,
             AuditLogEventType::WebAuthnCredentialDeleted,
             AuditLogEventType::UserFrozen,
             AuditLogEventType::UserUnfrozen,
