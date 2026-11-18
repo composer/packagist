@@ -32,6 +32,9 @@ readonly class MaintainerAccountEventDisplay extends AbstractLogDisplay
         // only set on github_linked_with_user
         public ?string $githubUsername = null,
         public ?int $githubId = null,
+        public ?string $eventId = null,
+        // The N in "and N more packages". 0 means no link.
+        public int $otherPackageCount = 0,
     ) {
         parent::__construct($datetime, $actor);
     }

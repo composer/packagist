@@ -25,20 +25,21 @@ class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
 {
     /**
      * @param iterable<PackageTransparencyLog> $entries
+     * @param array<string, int>               $packageCounts packages per account event, by source id, for the "and N more packages" link
      *
      * @return list<LogDisplayInterface>
      */
-    public function build(iterable $entries): array
+    public function build(iterable $entries, array $packageCounts = []): array
     {
         $displays = [];
         foreach ($entries as $entry) {
-            $displays[] = $this->buildSingle($entry);
+            $displays[] = $this->buildSingle($entry, $packageCounts[(string) $entry->sourceAuditLogId] ?? 1);
         }
 
         return $displays;
     }
 
-    public function buildSingle(PackageTransparencyLog $entry): LogDisplayInterface
+    public function buildSingle(PackageTransparencyLog $entry, int $packageCount = 1): LogDisplayInterface
     {
         $attributes = $entry->attributes;
 
@@ -160,6 +161,8 @@ class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
                 $this->buildActor($attributes['actor'] ?? null),
                 $attributes['github_username'] ?? null,
                 $attributes['github_id'] ?? null,
+                (string) $entry->sourceAuditLogId,
+                $packageCount - 1,
             ),
         };
     }

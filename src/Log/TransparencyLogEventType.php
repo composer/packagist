@@ -135,6 +135,23 @@ enum TransparencyLogEventType: string implements LogEventType
         };
     }
 
+    public const CATEGORY_ORDER = ['package', 'maintainers', 'version', 'security'];
+
+    public function category(): string
+    {
+        return match ($this) {
+            self::PackageCreated, self::CanonicalUrlChanged, self::PackageAbandoned, self::PackageUnabandoned,
+            self::PackageFrozen, self::PackageUnfrozen, self::PackageDeleted => 'package',
+            self::MaintainerAdded, self::MaintainerRemoved, self::PackageTransferred => 'maintainers',
+            self::VersionCreated, self::VersionReferenceChangeBlocked, self::VersionDeleted,
+            self::VersionSoftDeleted, self::VersionRecovered => 'version',
+            self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted,
+            self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated,
+            self::PasswordReset, self::PasswordChanged, self::EmailChanged,
+            self::GitHubLinkedWithUser, self::GitHubDisconnectedFromUser => 'security',
+        };
+    }
+
     /**
      * The audit record types that are projected into the package transparency log.
      *

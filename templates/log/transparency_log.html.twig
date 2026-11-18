@@ -11,10 +11,14 @@
 
     {% embed 'log/_filters.html.twig' with {route: 'view_transparency_log'} %}
         {% block type_options %}
-            {% for type in selectableTypes %}
-                <option value="{{ type.value }}" {% if type.value in selectedFilters.type %}selected="selected"{% endif %}>
-                    {{ ('log.type.' ~ type.value)|trans }}
-                </option>
+            {% for category, types in selectableTypes %}
+                <optgroup label="{{ category|capitalize }}">
+                    {% for type in types %}
+                        <option value="{{ type.value }}" {% if type.value in selectedFilters.type %}selected="selected"{% endif %}>
+                            {{ ('log.type.' ~ type.value)|trans }}
+                        </option>
+                    {% endfor %}
+                </optgroup>
             {% endfor %}
         {% endblock %}
 
@@ -62,14 +66,26 @@
                     <input type="hidden" name="user_id" value="{{ selectedFilters.user_id }}">
                 </div>
             {% endif %}
+            {% if selectedFilters.event %}
+                {# The event filter is only set by the "and N more packages" link of an account event #}
+                <input type="hidden" name="event" value="{{ selectedFilters.event }}">
+            {% endif %}
         {% endblock %}
     {% endembed %}
 
     {% include 'log/_time_range.html.twig' %}
 
+    {% if selectedFilters.event %}
+        <div class="alert alert-info" data-test="event-filter-notice">
+            Showing every package of a single account event.
+            <a href="{{ url('view_transparency_log') }}">Show all entries</a>
+        </div>
+    {% endif %}
+
     {% include 'log/_table.html.twig' with {
         displays: transparencyLogDisplays,
         emptyMessage: 'No transparency log entries found.',
+        surroundingLogsRoute: 'view_transparency_log',
     } only %}
 
     {% if transparencyLogDisplays|length and paginator.haveToPaginate() %}
