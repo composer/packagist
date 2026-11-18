@@ -148,11 +148,21 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertStringStartsWith('/users/verify/totp/disable?_hash=', (string) $this->client->getResponse()->headers->get('Location'));
     }
 
-    #[TestWith([''])]
-    #[TestWith(['?return_to=/profile/security/keys'])]
-    public function testVerificationPageRequiresASignedReturnUrl(string $query): void
+    public function testDirectVerificationReturnsToAuthenticatorSettings(): void
     {
-        $this->client->request('GET', '/profile/security/verify-totp'.$query);
+        $crawler = $this->client->request('GET', '/profile/security/verify-totp');
+        self::assertResponseIsSuccessful();
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+
+        self::assertResponseRedirects();
+        self::assertStringStartsWith('/profile/security/authenticator?_hash=', (string) $this->client->getResponse()->headers->get('Location'));
+        $this->client->followRedirect();
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testVerificationPageRejectsAnUnsignedReturnUrl(): void
+    {
+        $this->client->request('GET', '/profile/security/verify-totp?return_to=/profile/security/keys');
         self::assertResponseStatusCodeSame(403);
     }
 
@@ -166,14 +176,12 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         $this->assertRemovalRequiresVerification();
     }
 
-    #[TestWith([''])]
-    #[TestWith(['/profile/security/keys?_hash=invalid'])]
-    public function testMissingOrInvalidReturnUrlDoesNotGrantProof(string $returnUrl): void
+    public function testInvalidReturnUrlDoesNotGrantProof(): void
     {
         $this->client->request('GET', '/users/verify/totp/disable');
         $crawler = $this->client->followRedirect();
         $form = $crawler->selectButton('Confirm identity')->form();
-        $this->client->request('POST', '/profile/security/verify-totp?'.http_build_query(['return_to' => $returnUrl]), [
+        $this->client->request('POST', '/profile/security/verify-totp?'.http_build_query(['return_to' => '/profile/security/keys?_hash=invalid']), [
             'verify_totp' => ['_token' => $form['verify_totp[_token]']->getValue(), 'code' => TotpAuthenticatorStub::MOCKED_VALID_CODE],
         ]);
         self::assertResponseStatusCodeSame(403);

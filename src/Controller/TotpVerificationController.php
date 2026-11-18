@@ -42,11 +42,7 @@ class TotpVerificationController extends Controller
             return $this->redirectToRoute('security_authenticator');
         }
 
-        $returnUrl = $request->query->getString('return_to');
-
-        if (!$this->uriSigner->check($returnUrl)) {
-            throw $this->createAccessDeniedException();
-        }
+        $returnUrl = $this->resolveSignedReturnUrl($request, $this->uriSigner, 'security_authenticator');
 
         // Checked before handleRequest() as validating the form already checks the code
         if ($request->isMethod('POST')) {

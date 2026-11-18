@@ -22,6 +22,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\UriSigner;
 use Symfony\Contracts\Service\Attribute\Required;
 
 /**
@@ -37,6 +38,21 @@ abstract class Controller extends AbstractController
     public function setDeps(ManagerRegistry $doctrine): void
     {
         $this->doctrine = $doctrine;
+    }
+
+    protected function resolveSignedReturnUrl(Request $request, UriSigner $uriSigner, string $defaultRoute): string
+    {
+        $returnUrl = $request->query->getString('return_to');
+
+        if ($returnUrl === '') {
+            return $uriSigner->sign($this->generateUrl($defaultRoute));
+        }
+
+        if (!$uriSigner->check($returnUrl)) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $returnUrl;
     }
 
     /**

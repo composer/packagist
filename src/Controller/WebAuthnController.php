@@ -51,7 +51,7 @@ class WebAuthnController extends Controller
             throw $this->createNotFoundException();
         }
 
-        $returnUrl = $this->verificationReturnUrl($request);
+        $returnUrl = $this->resolveSignedReturnUrl($request, $this->uriSigner, 'user_webauthn_manage');
 
         return $this->render('user/webauthn_manage.html.twig', [
             'user' => $user,
@@ -182,7 +182,7 @@ class WebAuthnController extends Controller
     public function verify(Request $request, #[CurrentUser] User $user, SecondFactorProofStore $proofs): Response
     {
         $this->checkCsrf($request);
-        $returnUrl = $this->verificationReturnUrl($request);
+        $returnUrl = $this->resolveSignedReturnUrl($request, $this->uriSigner, 'user_webauthn_manage');
 
         try {
             $this->limiter->ensureNotRateLimited($user->getUserIdentifier());
@@ -227,21 +227,6 @@ class WebAuthnController extends Controller
         }
 
         return JsonResponse::fromJsonString($this->webAuthn->startAuthentication($token->getUser()), headers: ['Cache-Control' => 'no-store']);
-    }
-
-    private function verificationReturnUrl(Request $request): string
-    {
-        $returnUrl = $request->query->getString('return_to');
-
-        if ($returnUrl === '') {
-            return $this->uriSigner->sign($this->generateUrl('user_webauthn_manage'));
-        }
-
-        if (!$this->uriSigner->check($returnUrl)) {
-            throw $this->createAccessDeniedException();
-        }
-
-        return $returnUrl;
     }
 
     private function canManageKeys(User $user): bool
