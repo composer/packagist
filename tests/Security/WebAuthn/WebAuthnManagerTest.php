@@ -145,6 +145,9 @@ class WebAuthnManagerTest extends TestCase
         $locker = $this->createStub(\App\Service\Locker::class);
         $locker->method('lockAccountSecurity')->willReturn(true);
 
+        $users = $this->createStub(\App\Entity\UserRepository::class);
+        $users->method('refreshIfSessionIsCurrent')->willReturn(true);
+
         return new WebAuthnManager(
             new \Webauthn\AuthenticatorAttestationResponseValidator($factory->creationCeremony()),
             new \Webauthn\AuthenticatorAssertionResponseValidator($factory->requestCeremony()),
@@ -173,7 +176,7 @@ class WebAuthnManagerTest extends TestCase
             $em,
             $notifier,
             $events,
-            new \App\Security\SecondFactorManager($events, $em, $requests, $notifier, $locker),
+            new \App\Security\SecondFactorManager($events, $em, $requests, $notifier, $locker, $users),
             'packagist.wip',
         );
     }

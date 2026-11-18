@@ -45,8 +45,10 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\UriSigner;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
@@ -364,7 +366,13 @@ class UserController extends Controller
             ->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $backupCode = $authManager->enableTotpAuthentication($user, $loggedUser, $secret);
+            try {
+                $backupCode = $authManager->enableTotpAuthentication($user, $loggedUser, $secret);
+            } catch (BadCredentialsException|ServiceUnavailableHttpException $e) {
+                $this->addFlash('error', $e->getMessage());
+
+                return $this->redirectToRoute('security_authenticator');
+            }
             $req->getSession()->remove('totp_secret');
 
             $secondFactorProofStore->record($user, SecondFactorProofStore::TOTP);
@@ -455,7 +463,13 @@ class UserController extends Controller
                 throw $this->createAccessDeniedException('Invalid CSRF token.');
             }
 
-            $authManager->disableTotpAuthentication($user, $loggedUser, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
+            try {
+                $authManager->disableTotpAuthentication($user, $loggedUser, $user->getId() === $loggedUser->getId() ? 'Manually disabled' : 'Disabled on request from user');
+            } catch (BadCredentialsException|ServiceUnavailableHttpException $e) {
+                $this->addFlash('error', $e->getMessage());
+
+                return $this->redirectToRoute('user_totp_configure', ['name' => $user->getUsername()]);
+            }
 
             $this->addFlash('success', 'Authenticator app removed.');
 

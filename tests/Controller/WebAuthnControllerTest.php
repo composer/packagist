@@ -240,6 +240,37 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
     }
 
+    public function testConcurrentAccountChangeShowsAnErrorInsteadOfRemovingTheKey(): void
+    {
+        $credential = $this->register();
+        $user = $this->freshUser();
+        $userId = $user->getId();
+        $sessionBuster = $user->getSessionBuster();
+        $dispatcher = self::getService(EventDispatcherInterface::class);
+        $listener = static function () use ($userId, $sessionBuster): void {
+            self::getEM()->getConnection()->update('fos_user', ['sessionBuster' => $sessionBuster + 1], ['id' => $userId]);
+        };
+        $dispatcher->addListener(KernelEvents::CONTROLLER, $listener);
+
+        try {
+            $this->client->request('POST', '/profile/security/keys/'.$credential->id.'/edit', [
+                '_token' => $this->csrf, 'action' => 'remove',
+            ]);
+            self::assertResponseRedirects('/profile/security/keys');
+        } finally {
+            $dispatcher->removeListener(KernelEvents::CONTROLLER, $listener);
+        }
+
+        $session = $this->client->getSession();
+        self::assertNotNull($session);
+        self::assertSame(['Account security settings have changed. Please sign in again.'], $session->getFlashBag()->peek('error'));
+        self::assertNull(self::getEM()->getConnection()->fetchOne('SELECT revokedAt FROM webauthn_credential WHERE id = ?', [$credential->id]));
+        $this->client->followRedirect();
+        self::assertResponseRedirects('/login/');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.flash-container', 'Account security settings have changed. Please sign in again.');
+    }
+
     public function testRevokedCredentialIdCannotBeRegisteredAgain(): void
     {
         $credential = $this->register();

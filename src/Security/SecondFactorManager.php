@@ -13,6 +13,7 @@
 namespace App\Security;
 
 use App\Entity\User;
+use App\Entity\UserRepository;
 use App\Event\SecondFactorRemovedEvent;
 use App\Event\SecondFactorsResetEvent;
 use App\Service\Locker;
@@ -35,6 +36,7 @@ class SecondFactorManager implements BackupCodeManagerInterface
         private RequestStack $requestStack,
         private UserNotifier $userNotifier,
         private Locker $locker,
+        private UserRepository $users,
     ) {
     }
 
@@ -48,17 +50,14 @@ class SecondFactorManager implements BackupCodeManagerInterface
     public function withAccountLock(User $user, \Closure $operation): mixed
     {
         $userId = $user->getId();
-        $sessionBuster = $user->getSessionBuster();
 
         if (!$this->locker->lockAccountSecurity($userId, 5)) {
             throw new ServiceUnavailableHttpException(1, 'Account security settings are being updated. Please try again.');
         }
 
         try {
-            $this->em->refresh($user);
-
             // A concurrent factor change can invalidate the authorization checked before the lock
-            if ($user->getSessionBuster() !== $sessionBuster) {
+            if (!$this->users->refreshIfSessionIsCurrent($user)) {
                 throw new BadCredentialsException('Account security settings have changed. Please sign in again.');
             }
 

@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use Composer\Pcre\Preg;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -44,6 +45,18 @@ class UserRepository extends ServiceEntityRepository
         }
 
         return $qb;
+    }
+
+    public function refreshIfSessionIsCurrent(User $user): bool
+    {
+        // Check the session version in the same query that refreshes the managed user
+        return $this->createQueryBuilder('u')
+            ->where('u.id = :id AND u.sessionBuster = :sessionBuster')
+            ->setParameter('id', $user->getId())
+            ->setParameter('sessionBuster', $user->getSessionBuster())
+            ->getQuery()
+            ->setHint(Query::HINT_REFRESH, true)
+            ->getOneOrNullResult() === $user;
     }
 
     public function findOneByUsernameOrEmail(string $usernameOrEmail): ?User

@@ -24,6 +24,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\UriSigner;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
@@ -88,6 +89,8 @@ class WebAuthnController extends Controller
 
         try {
             $backupCode = $this->webAuthn->register($user, $request->request->getString('credential'), $request->request->getString('name'));
+        } catch (ServiceUnavailableHttpException $e) {
+            return $this->json(['error' => $e->getMessage()], $e->getStatusCode(), $e->getHeaders());
         } catch (BadCredentialsException|\InvalidArgumentException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
@@ -146,7 +149,7 @@ class WebAuthnController extends Controller
             } else {
                 $this->webAuthn->rename($credential, $request->request->getString('name'));
             }
-        } catch (\InvalidArgumentException $e) {
+        } catch (BadCredentialsException|ServiceUnavailableHttpException|\InvalidArgumentException $e) {
             $this->addFlash('error', $this->translator->trans($e->getMessage()));
         }
 
@@ -191,6 +194,8 @@ class WebAuthnController extends Controller
 
         try {
             $this->webAuthn->authenticate($user, $request->request->getString('credential'));
+        } catch (ServiceUnavailableHttpException $e) {
+            return $this->json(['error' => $e->getMessage()], $e->getStatusCode(), $e->getHeaders());
         } catch (BadCredentialsException $e) {
             if (!$e instanceof ExpiredWebAuthnChallengeException) {
                 $this->limiter->recordFailure($user->getUserIdentifier());
