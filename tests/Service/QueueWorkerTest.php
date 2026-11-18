@@ -22,6 +22,8 @@ use Composer\Util\Http\ResponseWarnings;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
+use Monolog\Handler\TestHandler;
+use Monolog\Level;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
 use Predis\Client as Redis;
@@ -68,7 +70,46 @@ class QueueWorkerTest extends TestCase
         self::assertSame('', $io->getOutput());
     }
 
-    private function createWorker(PackagePurgeWorker $jobWorker): QueueWorker
+    public function testFailedJobIsLoggedAsWarning(): void
+    {
+        $records = $this->processFailedJob([]);
+
+        self::assertCount(1, $records);
+        self::assertSame(Level::Warning, $records[0]->level);
+    }
+
+    public function testFailedJobIsLoggedAtTheLevelTheJobWorkerAskedFor(): void
+    {
+        $records = $this->processFailedJob(['logLevel' => Level::Notice]);
+
+        self::assertCount(1, $records);
+        self::assertSame(Level::Notice, $records[0]->level);
+        self::assertSame('Job job1 failed', $records[0]->message);
+        self::assertArrayNotHasKey('logLevel', $records[0]->context);
+    }
+
+    /**
+     * @param array<string, mixed> $extraResult
+     *
+     * @return list<\Monolog\LogRecord> the records logged at notice level or above
+     */
+    private function processFailedJob(array $extraResult): array
+    {
+        $jobWorker = $this->createStub(PackagePurgeWorker::class);
+        $jobWorker->method('process')->willReturn(['status' => Job::STATUS_FAILED, 'message' => 'failed', 'exception' => new \RuntimeException('failed')] + $extraResult);
+
+        // QueueWorker resets the logger after each job, which would clear the records
+        $handler = new class extends TestHandler {
+            public function reset(): void
+            {
+            }
+        };
+        $this->processJob($this->createWorker($jobWorker, new Logger('test', [$handler])), 'job1');
+
+        return array_values(array_filter($handler->getRecords(), static fn ($record) => $record->level->isHigherThan(Level::Info)));
+    }
+
+    private function createWorker(PackagePurgeWorker $jobWorker, Logger $logger = new Logger('test')): QueueWorker
     {
         $repo = $this->createStub(JobRepository::class);
         $repo->method('start')->willReturn(true);
@@ -84,7 +125,7 @@ class QueueWorkerTest extends TestCase
         return new QueueWorker(
             $this->createStub(Redis::class),
             $doctrine,
-            new Logger('test'),
+            $logger,
             ['package:purge' => $jobWorker],
             $this->createStub(StatsDClient::class),
             new LogIdProcessor(),

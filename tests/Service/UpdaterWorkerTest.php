@@ -34,11 +34,13 @@ use App\Tests\IntegrationTestCase;
 use Composer\Config;
 use Composer\Downloader\TransportException;
 use Composer\IO\IOInterface;
+use Composer\Repository\InvalidRepositoryException;
 use Composer\Repository\VcsRepository;
 use Composer\Util\HttpDownloader;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
+use Monolog\Level;
 use Psr\Log\NullLogger;
 use Seld\Signal\SignalHandler;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
@@ -159,6 +161,31 @@ class UpdaterWorkerTest extends IntegrationTestCase
         $package = $this->reload($package);
         self::assertFalse($package->isFrozen());
         self::assertNull($package->unreachableSince);
+    }
+
+    public function testInvalidMetadataFailureIsLoggedAsNoticeAndWaitsForTheNextScheduledCrawl(): void
+    {
+        $package = $this->storePackage();
+        $package->setCrawledAt(new \DateTimeImmutable('-1 month'));
+        $this->getEM()->flush();
+
+        $result = $this->runWorker($package, new InvalidRepositoryException('Some branches contained invalid data and were discarded'));
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        self::assertSame(Level::Notice, $result['logLevel']);
+        $crawledAt = $this->reload($package)->getCrawledAt();
+        self::assertNotNull($crawledAt);
+        self::assertEqualsWithDelta(new \DateTimeImmutable()->getTimestamp(), $crawledAt->getTimestamp(), 60);
+    }
+
+    public function testOtherFailuresKeepTheDefaultLogLevel(): void
+    {
+        $package = $this->storePackage();
+
+        $result = $this->runWorker($package, new UnsupportedRepositoryException('The server only supports the dumb HTTP protocol'));
+
+        self::assertSame(Job::STATUS_FAILED, $result['status']);
+        self::assertArrayNotHasKey('logLevel', $result);
     }
 
     public function testPrivateHostSkipsTheHostForAWeekOnFirstFailure(): void
