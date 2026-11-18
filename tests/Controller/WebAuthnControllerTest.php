@@ -701,6 +701,8 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->loginUser($admin);
         $crawler = $this->client->request('GET', $path);
         self::assertSelectorTextContains('body', 'Passkey or security key added');
+        self::assertSelectorTextContains('.alert-danger', 'a passkey or security key was added, in the last 7 days.');
+        self::assertSelectorTextContains('body', 'Last passkey or security key added');
         $this->client->submit($crawler->selectButton('Remove all second factors and resolve')->form());
         self::assertResponseRedirects($path);
 

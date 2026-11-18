@@ -190,7 +190,7 @@
                         <strong>Check this one carefully.</strong>
                         <ul class="mb-0">
                             {% if risk.hasRecentCredentialChange %}
-                                <li>Password or email changed in the last 7 days - an attacker may already hold this account.</li>
+                                <li>A password or email changed, or a passkey or security key was added, in the last 7 days.</li>
                             {% endif %}
                             {% for package in risk.solePopularPackages %}
                                 <li>Sole maintainer of <strong>{{ package.name }}</strong> ({{ package.downloads|number_format }} downloads).</li>
@@ -212,6 +212,9 @@
                     {% if supportRequest.user.lastLogin %}<li>Last login {{ supportRequest.user.lastLogin|date('Y-m-d') }}</li>{% endif %}
                     {% if risk.totpEnabledAt %}
                         <li>Authenticator app enabled {{ risk.totpEnabledAt|date('Y-m-d') }}</li>
+                    {% endif %}
+                    {% if risk.lastPasskeyAddedAt %}
+                        <li>Last passkey or security key added {{ risk.lastPasskeyAddedAt|date('Y-m-d') }}</li>
                     {% endif %}
                     {% set ipKnown = risk.requestIpIsKnown(supportRequest.ip) %}
                     {% if ipKnown is not null %}
