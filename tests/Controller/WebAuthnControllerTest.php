@@ -670,6 +670,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseRedirects();
         self::assertEmailCount(1);
         self::assertEmailHeaderSame(self::getMailerMessage(), 'Subject', 'Two-factor authentication disabled after backup code use on Packagist.org');
+        self::assertEmailTextBodyContains(self::getMailerMessage(), 'Username: keys');
         self::assertCount(0, $this->freshUser()->getWebAuthnCredentials());
         self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
         self::assertFalse($this->freshUser()->isBackupCode('abc12345'));

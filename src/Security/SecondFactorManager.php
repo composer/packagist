@@ -143,6 +143,7 @@ class SecondFactorManager implements BackupCodeManagerInterface
             $user->getEmail(),
             reason: 'A backup code was used to sign in and all configured second factors were disabled.',
             subject: 'Two-factor authentication disabled after backup code use on Packagist.org',
+            username: $user->getUsername(),
         );
 
         $session = $this->requestStack->getCurrentRequest()?->getSession();
