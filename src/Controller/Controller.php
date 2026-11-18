@@ -33,22 +33,24 @@ abstract class Controller extends AbstractController
     use DoctrineTrait;
 
     protected ManagerRegistry $doctrine;
+    protected UriSigner $uriSigner;
 
     #[Required]
-    public function setDeps(ManagerRegistry $doctrine): void
+    public function setDeps(ManagerRegistry $doctrine, UriSigner $uriSigner): void
     {
         $this->doctrine = $doctrine;
+        $this->uriSigner = $uriSigner;
     }
 
-    protected function resolveSignedReturnUrl(Request $request, UriSigner $uriSigner, string $defaultRoute): string
+    protected function resolveSignedReturnUrl(Request $request, string $defaultRoute, string $queryParameter = 'return_to'): string
     {
-        $returnUrl = $request->query->getString('return_to');
+        $returnUrl = $request->query->getString($queryParameter);
 
         if ($returnUrl === '') {
-            return $uriSigner->sign($this->generateUrl($defaultRoute));
+            return $this->uriSigner->sign($this->generateUrl($defaultRoute));
         }
 
-        if (!$uriSigner->check($returnUrl)) {
+        if (!$this->uriSigner->check($returnUrl)) {
             throw $this->createAccessDeniedException();
         }
 

@@ -18,7 +18,6 @@ use App\Security\SecondFactorProofStore;
 use App\Security\TwoFactorAuthRateLimiter;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\UriSigner;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
@@ -31,7 +30,6 @@ class TotpVerificationController extends Controller
     public function __construct(
         private TwoFactorAuthRateLimiter $limiter,
         private SecondFactorProofStore $secondFactorProofStore,
-        private UriSigner $uriSigner,
     ) {
     }
 
@@ -42,7 +40,7 @@ class TotpVerificationController extends Controller
             return $this->redirectToRoute('security_authenticator');
         }
 
-        $returnUrl = $this->resolveSignedReturnUrl($request, $this->uriSigner, 'security_authenticator');
+        $returnUrl = $this->resolveSignedReturnUrl($request, 'security_authenticator');
 
         // Checked before handleRequest() as validating the form already checks the code
         if ($request->isMethod('POST')) {

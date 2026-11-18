@@ -23,7 +23,6 @@ use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorTokenInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\UriSigner;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -39,7 +38,6 @@ class WebAuthnController extends Controller
         private WebAuthnManager $webAuthn,
         private TwoFactorAuthRateLimiter $limiter,
         private TranslatorInterface $translator,
-        private UriSigner $uriSigner,
     ) {
     }
 
@@ -51,7 +49,7 @@ class WebAuthnController extends Controller
             throw $this->createNotFoundException();
         }
 
-        $returnUrl = $this->resolveSignedReturnUrl($request, $this->uriSigner, 'user_webauthn_manage');
+        $returnUrl = $this->resolveSignedReturnUrl($request, 'user_webauthn_manage');
 
         return $this->render('user/webauthn_manage.html.twig', [
             'user' => $user,
@@ -182,7 +180,7 @@ class WebAuthnController extends Controller
     public function verify(Request $request, #[CurrentUser] User $user, SecondFactorProofStore $proofs): Response
     {
         $this->checkCsrf($request);
-        $returnUrl = $this->resolveSignedReturnUrl($request, $this->uriSigner, 'user_webauthn_manage');
+        $returnUrl = $this->resolveSignedReturnUrl($request, 'user_webauthn_manage');
 
         try {
             $this->limiter->ensureNotRateLimited($user->getUserIdentifier());
