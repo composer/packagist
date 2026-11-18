@@ -70,26 +70,28 @@ class SupportController extends Controller
     }
 
     /**
-     * The access_control rule for /totp/lost requires
+     * The access_control rule for /2fa/lost and the legacy /totp/lost requires
      * IS_AUTHENTICATED_2FA_IN_PROGRESS, which only a TwoFactorToken can satisfy, so the route is
      * unreachable both logged out and fully logged in. access_control has no catch-all deny, so
      * the dedicated rule gives this a second layer beyond the check below.
      */
-    #[Route(path: '/totp/lost', name: 'support_lost_totp', methods: ['GET', 'POST'])]
-    public function lostTotp(Request $req, TokenStorageInterface $tokenStorage, SupportRiskAssessor $riskAssessor): Response
+    // Keep the previous recovery URL working for existing links
+    #[Route(path: '/totp/lost', name: 'support_lost_totp_legacy', methods: ['GET', 'POST'])]
+    #[Route(path: '/2fa/lost', name: 'support_lost_second_factor', methods: ['GET', 'POST'])]
+    public function lostSecondFactor(Request $req, TokenStorageInterface $tokenStorage, SupportRiskAssessor $riskAssessor): Response
     {
         $user = $this->userFromTwoFactorToken($tokenStorage);
 
         // UserChecker rejects frozen accounts at authentication, which happens before the 2FA step,
         // so this state is not reachable through login today. Checked anyway: the whole flow hands
         // out account access, and a frozen account must never gain a recovery path.
-        if ($user->isFrozen() || !$user->isTotpAuthenticationEnabled()) {
+        if ($user->isFrozen() || !$user->hasSecondFactorAuthenticationEnabled()) {
             throw $this->createAccessDeniedException('This account cannot request a two-factor reset.');
         }
 
         $existing = $this->supportRequests->findOpen($user, SupportRequestType::LostTotp);
         if ($existing !== null) {
-            return $this->renderLostTotp(null, $existing);
+            return $this->renderLostSecondFactor(null, $existing);
         }
 
         $data = new LostTotpSupportRequest();
@@ -99,7 +101,7 @@ class SupportController extends Controller
             if ($this->rateLimiter->isLimited($user, SupportRequestType::LostTotp, $req->getClientIp())) {
                 $this->addFlash('error', 'You have submitted this request too many times recently. Please email contact@packagist.org instead.');
 
-                return $this->renderLostTotp($form, null);
+                return $this->renderLostSecondFactor($form, null);
             }
 
             $cancelToken = bin2hex(random_bytes(32));
@@ -118,17 +120,17 @@ class SupportController extends Controller
             } catch (UniqueConstraintViolationException) {
                 // Lost the race against a double submit. The violation itself proves an open request
                 // exists, and the failed flush has closed the EM, so report it without reading back.
-                return $this->renderLostTotp(null, null, duplicate: true);
+                return $this->renderLostSecondFactor(null, null, duplicate: true);
             }
 
             $this->rateLimiter->recordSubmission($user, SupportRequestType::LostTotp, $req->getClientIp());
             $this->notifier->notifyTotpResetRequested($request, $cancelToken);
             $this->notifier->notifyAdmins($request);
 
-            return $this->renderLostTotp(null, $request);
+            return $this->renderLostSecondFactor(null, $request);
         }
 
-        return $this->renderLostTotp($form, null);
+        return $this->renderLostSecondFactor($form, null);
     }
 
     /**
@@ -171,18 +173,8 @@ class SupportController extends Controller
         // reset in the same moment, losing that race would overwrite the grant and tell the owner
         // they are safe while their authenticator app has been removed. Not refreshed afterwards -- that cascades
         // and would discard the session invalidation below.
-        $claimed = $em->createQuery(
-            'UPDATE App\Entity\SupportRequest r
-             SET r.status = :closed, r.resolvedAt = :now, r.updatedAt = :now
-             WHERE r.id = :id AND r.status = :open'
-        )
-            ->setParameter('closed', SupportRequestStatus::Closed->value)
-            ->setParameter('open', SupportRequestStatus::Open->value)
-            ->setParameter('now', $now)
-            ->setParameter('id', $request->id, 'ulid')
-            ->execute();
+        $lostClaim = !$this->supportRequests->transitionOpenRequest($request, SupportRequestStatus::Closed, $now);
 
-        $lostClaim = $claimed === 0;
         if (!$lostClaim) {
             // Mirror what the UPDATE did, so the entity and the page agree.
             $request->close($now);
@@ -364,9 +356,9 @@ class SupportController extends Controller
     /**
      * @param FormInterface<LostTotpSupportRequest>|null $form
      */
-    private function renderLostTotp(?FormInterface $form, ?SupportRequest $existing, bool $duplicate = false): Response
+    private function renderLostSecondFactor(?FormInterface $form, ?SupportRequest $existing, bool $duplicate = false): Response
     {
-        return $this->render('support/lost_totp.html.twig', [
+        return $this->render('support/lost_second_factor.html.twig', [
             'form' => $form?->createView(),
             'existingRequest' => $existing,
             // Set when we know a request exists but cannot name it, after a lost insert race.

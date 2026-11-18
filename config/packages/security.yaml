@@ -65,9 +65,11 @@ security:
         - { path: ^/logout$, role: PUBLIC_ACCESS }
         # The login challenge and authenticator recovery require an in-progress second factor.
         - { path: ^/2fa(?:-check)?/?$, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
-        - { path: ^/totp/lost/?$, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
+        # Scheb checks the access map before the controller runs
+        - { path: ^/2fa/webauthn/options$, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
+        - { path: ^/(?:2fa|totp)/lost/?$, role: IS_AUTHENTICATED_2FA_IN_PROGRESS }
         # Members only parts of the site
-        # /contact itself and the token-authenticated TOTP reset cancellation link stay public, so only the
+        # /contact itself and the token-authenticated second-factor reset cancellation link stay public, so only the
         # workflow forms are listed. There is no catch-all deny below, so this is a real second
         # layer rather than a restatement of the controllers' #[IsGranted].
         - { path: ^/contact/(package-transfer|vendor-claim|delete-account)$, role: ROLE_USER }

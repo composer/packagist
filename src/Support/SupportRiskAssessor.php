@@ -113,8 +113,9 @@ class SupportRiskAssessor
             organizationCount: $this->organizationCount($user),
             totpEnabledAt: $this->totpEnabledAt($user),
             recentSecurityEvents: $securityEvents,
-            hasRecentCredentialChange: $this->hasRecentCredentialChange($securityEvents),
+            hasRecentCredentialChange: $this->hasRecentCredentialChange($user),
             knownIps: $this->knownIps($securityEvents),
+            lastPasskeyAddedAt: $this->latestPasskeyAddedAt($user),
         );
     }
 
@@ -154,26 +155,26 @@ class SupportRiskAssessor
         );
     }
 
-    /**
-     * @param list<AuditRecord> $events
-     */
-    private function hasRecentCredentialChange(array $events): bool
+    private function latestPasskeyAddedAt(User $user): ?\DateTimeImmutable
     {
-        $cutoff = new \DateTimeImmutable('-'.self::RECENT_CREDENTIAL_CHANGE_DAYS.' days');
+        $records = $this->auditRecords->findForUser($user, [AuditLogEventType::WebAuthnCredentialAdded], limit: 1);
 
-        foreach ($events as $event) {
-            $isCredentialChange = \in_array($event->type, [
+        return $records[0]->datetime ?? null;
+    }
+
+    private function hasRecentCredentialChange(User $user): bool
+    {
+        return $this->auditRecords->findForUser(
+            $user,
+            [
                 AuditLogEventType::PasswordChanged,
                 AuditLogEventType::PasswordReset,
                 AuditLogEventType::EmailChanged,
-            ], true);
-
-            if ($isCredentialChange && $event->datetime > $cutoff) {
-                return true;
-            }
-        }
-
-        return false;
+                AuditLogEventType::WebAuthnCredentialAdded,
+            ],
+            new \DateTimeImmutable('-'.self::RECENT_CREDENTIAL_CHANGE_DAYS.' days'),
+            1,
+        ) !== [];
     }
 
     /**
@@ -208,6 +209,8 @@ class SupportRiskAssessor
             AuditLogEventType::GitHubDisconnectedFromUser,
             AuditLogEventType::TotpAuthenticationActivated,
             AuditLogEventType::TotpAuthenticationDeactivated,
+            AuditLogEventType::WebAuthnCredentialAdded,
+            AuditLogEventType::WebAuthnCredentialDeleted,
             AuditLogEventType::UserFrozen,
             AuditLogEventType::UserUnfrozen,
         ];

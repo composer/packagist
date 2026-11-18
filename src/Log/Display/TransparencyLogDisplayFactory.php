@@ -148,6 +148,7 @@ class TransparencyLogDisplayFactory extends AbstractLogDisplayFactory
                 $attributes['ref_to'],
                 $this->buildActor($attributes['actor'] ?? null),
             ),
+            TransparencyLogEventType::WebAuthnCredentialAdded, TransparencyLogEventType::WebAuthnCredentialDeleted,
             TransparencyLogEventType::TotpAuthenticationActivated, TransparencyLogEventType::TotpAuthenticationDeactivated,
             TransparencyLogEventType::PasswordReset, TransparencyLogEventType::PasswordChanged,
             TransparencyLogEventType::EmailChanged, TransparencyLogEventType::GitHubLinkedWithUser, TransparencyLogEventType::GitHubDisconnectedFromUser => new Event\MaintainerAccountEventDisplay(

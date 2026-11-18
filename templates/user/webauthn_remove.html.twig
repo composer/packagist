@@ -1,0 +1,23 @@
+{% extends 'user/security_layout.html.twig' %}
+
+{% block title %}Remove passkey or security key - {{ parent() }}{% endblock %}
+
+{% block security_content %}
+    <h3>Remove “{{ credential.name }}”?</h3>
+    <p>You will no longer be able to use this passkey or security key to sign in.</p>
+
+    {% if user.webAuthnCredentials|length == 1 and not user.totpAuthenticationEnabled %}
+        <p class="text-danger"><strong>This is your last second factor. Removing it will turn off two-factor authentication and invalidate your backup code.</strong></p>
+    {% else %}
+        <p>Your other second factors and backup code will remain enabled.</p>
+    {% endif %}
+
+    <form class="account-form" method="post" action="{{ path('user_webauthn_edit', {id: credential.id}) }}">
+        <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
+        <input type="hidden" name="action" value="remove">
+        <div class="form-actions">
+            <button class="btn btn-danger" type="submit">Remove key</button>
+            <a class="btn btn-secondary" href="{{ path('user_webauthn_manage') }}">Keep key</a>
+        </div>
+    </form>
+{% endblock %}

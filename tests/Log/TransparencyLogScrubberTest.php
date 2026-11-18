@@ -19,11 +19,15 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\User;
 use App\Entity\Version;
+use App\Entity\WebAuthnCredential;
 use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
 use App\Log\TransparencyLogScrubber;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Uid\Uuid;
+use Webauthn\CredentialRecord;
+use Webauthn\TrustPath\EmptyTrustPath;
 
 class TransparencyLogScrubberTest extends TestCase
 {
@@ -63,6 +67,8 @@ class TransparencyLogScrubberTest extends TestCase
         'version_soft_deleted' => ['internalReasonText'],
         'email_changed' => ['email_from', 'email_to'],
         'totp_deactivated' => ['reason'],
+        'webauthn_credential_added' => ['credentialId', 'credentialName'],
+        'webauthn_credential_deleted' => ['credentialId', 'credentialName'],
     ];
 
     private const PACKAGE_NAME = 'acme/widget';
@@ -284,7 +290,7 @@ class TransparencyLogScrubberTest extends TestCase
     public function testEveryProjectedAuditLogEventTypeHasAFixture(): void
     {
         $covered = [];
-        foreach (self::projectedRecords() as [$type, , ]) {
+        foreach (self::projectedRecords() as [$type]) {
             $covered[] = $type->value;
         }
 
@@ -304,7 +310,7 @@ class TransparencyLogScrubberTest extends TestCase
     public function testFixturesStillFeedPrivateDataIntoEveryRecordThatCanCarryIt(): void
     {
         $carryingPrivateData = [];
-        foreach (self::projectedRecords() as [$type, $record, ]) {
+        foreach (self::projectedRecords() as [$type, $record]) {
             if (self::privateValuePaths($record->attributes) !== []) {
                 $carryingPrivateData[] = $type->value;
             }
@@ -477,6 +483,22 @@ class TransparencyLogScrubberTest extends TestCase
         ];
 
         // account security
+        $credential = new WebAuthnCredential($maintainer, CredentialRecord::create(
+            'credential-id', 'public-key', [], 'none', EmptyTrustPath::create(), Uuid::v4(), 'public-key', 'user-handle', 0,
+        ));
+
+        yield 'webauthn_credential_added' => [
+            AuditLogEventType::WebAuthnCredentialAdded,
+            AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialAdded, $admin),
+            ['user' => self::MAINTAINER, 'actor' => self::ADMIN],
+        ];
+
+        yield 'webauthn_credential_deleted' => [
+            AuditLogEventType::WebAuthnCredentialDeleted,
+            AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialDeleted, $admin),
+            ['user' => self::MAINTAINER, 'actor' => self::ADMIN],
+        ];
+
         yield 'totp_activated' => [
             AuditLogEventType::TotpAuthenticationActivated,
             AuditRecord::totpAuthenticationActivated($maintainer, $maintainer),

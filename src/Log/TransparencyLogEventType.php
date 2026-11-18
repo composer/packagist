@@ -12,8 +12,6 @@
 
 namespace App\Log;
 
-use App\Log\LogEventType;
-
 /**
  * The events published in the package transparency log. Two kinds:
  *  - package-native (ownership / package / version): projected 1:1 from an audit row that already
@@ -45,6 +43,8 @@ enum TransparencyLogEventType: string implements LogEventType
     case VersionRecovered = 'version_recovered';
 
     // account security (fanned out to every package the user maintains)
+    case WebAuthnCredentialAdded = 'webauthn_credential_added';
+    case WebAuthnCredentialDeleted = 'webauthn_credential_deleted';
     case TotpAuthenticationActivated = 'totp_activated';
     case TotpAuthenticationDeactivated = 'totp_deactivated';
     case PasswordReset = 'password_reset';
@@ -78,6 +78,8 @@ enum TransparencyLogEventType: string implements LogEventType
             AuditLogEventType::VersionDeleted => self::VersionDeleted,
             AuditLogEventType::VersionSoftDeleted => self::VersionSoftDeleted,
             AuditLogEventType::VersionRecovered => self::VersionRecovered,
+            AuditLogEventType::WebAuthnCredentialAdded => self::WebAuthnCredentialAdded,
+            AuditLogEventType::WebAuthnCredentialDeleted => self::WebAuthnCredentialDeleted,
             AuditLogEventType::TotpAuthenticationActivated => self::TotpAuthenticationActivated,
             AuditLogEventType::TotpAuthenticationDeactivated => self::TotpAuthenticationDeactivated,
             AuditLogEventType::PasswordReset => self::PasswordReset,
@@ -94,6 +96,8 @@ enum TransparencyLogEventType: string implements LogEventType
             AuditLogEventType::UserCreated, AuditLogEventType::UserVerified, AuditLogEventType::UserDeleted,
             AuditLogEventType::UserFrozen, AuditLogEventType::UserUnfrozen,
             AuditLogEventType::PasswordResetRequested, AuditLogEventType::UsernameChanged,
+            // Credential labels do not affect account security
+            AuditLogEventType::WebAuthnCredentialRenamed,
             // Moderation tooling: the filter list is not public, and its entries name packages we
             // have not published anything about.
             AuditLogEventType::FilterListEntryAdded, AuditLogEventType::FilterListEntryDeleted,
@@ -124,7 +128,7 @@ enum TransparencyLogEventType: string implements LogEventType
     public function fansOutToMaintainedPackages(): bool
     {
         return match ($this) {
-            self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated,
+            self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted, self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated,
             self::PasswordReset, self::PasswordChanged,
             self::EmailChanged, self::GitHubLinkedWithUser, self::GitHubDisconnectedFromUser => true,
             default => false,
@@ -149,7 +153,7 @@ enum TransparencyLogEventType: string implements LogEventType
      */
     public static function temporarilyHiddenTypes(): array
     {
-        return [self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated];
+        return [self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated, self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted];
     }
 
     /**

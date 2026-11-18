@@ -175,6 +175,15 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
                 $this->buildActor('self'),
                 $record->ip,
             ),
+            AuditLogEventType::WebAuthnCredentialAdded, AuditLogEventType::WebAuthnCredentialRenamed, AuditLogEventType::WebAuthnCredentialDeleted => new Event\WebAuthnCredentialDisplay(
+                $record->type,
+                $record->datetime,
+                $record->attributes['user']['username'],
+                $record->attributes['credentialName'],
+                $this->buildActor($record->attributes['actor']),
+                $record->ip,
+                $record->attributes['previousCredentialName'] ?? null,
+            ),
             AuditLogEventType::TotpAuthenticationActivated => new Event\GenericUserDisplay(
                 $record->type,
                 $record->datetime,

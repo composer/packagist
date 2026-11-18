@@ -178,6 +178,7 @@ class TransparencyLogScrubber
                 'previousReason' => Attribute::Scalar,
                 'actor' => Attribute::User,
             ],
+            TransparencyLogEventType::WebAuthnCredentialAdded, TransparencyLogEventType::WebAuthnCredentialDeleted,
             TransparencyLogEventType::TotpAuthenticationActivated, TransparencyLogEventType::TotpAuthenticationDeactivated,
             TransparencyLogEventType::PasswordReset, TransparencyLogEventType::PasswordChanged,
             TransparencyLogEventType::EmailChanged, TransparencyLogEventType::GitHubDisconnectedFromUser => [

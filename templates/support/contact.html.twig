@@ -21,22 +21,19 @@
 
     <section class="row">
         <section class="col-lg-6">
-            <h3 id="lost-totp">Lost access to your authenticator app</h3>
+            <h3 id="lost-totp">Lost access to your second factors</h3>
             <p>
-                If you still have your backup code, enter it in place of the authentication code when
-                you log in and two-factor authentication will be switched off for your account.
+                If you still have your backup code, use it at the two-factor sign-in prompt and two-factor authentication will be switched off for your account.
             </p>
             <p>
                 Without the backup code, <a href="{{ path('login') }}">start logging in</a> as usual.
-                Once you reach the two-factor code prompt you will find a link to request a reset from
+                Once you reach the two-factor prompt you will find a link to request a reset from
                 there. We ask for it at that point because your password has already been checked by
                 then, which tells us the request really comes from your account.
             </p>
             <p class="text-muted">
-                Lost your password as well? Then you are stuck: resetting your password asks for a
-                two-factor code, which a backup code cannot stand in for, and the request link above
-                only appears once your password has been accepted. Email us and we will sort it out
-                with you directly.
+                If you lost your password as well, start with a password reset. If you have an authenticator
+                app configured and cannot supply its code, email us for help recovering your account.
             </p>
         </section>
 

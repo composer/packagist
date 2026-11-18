@@ -16,9 +16,14 @@ use App\Audit\UserRegistrationMethod;
 use App\Entity\AuditRecord;
 use App\Entity\AuditRecordRepository;
 use App\Entity\UserFreezeReason;
+use App\Entity\WebAuthnCredential;
+use App\Log\AuditLogEventType;
 use App\Support\SupportRiskAssessor;
 use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\Types\Types;
+use Symfony\Component\Uid\Uuid;
+use Webauthn\CredentialRecord;
+use Webauthn\TrustPath\EmptyTrustPath;
 
 class SupportRiskAssessorTest extends IntegrationTestCase
 {
@@ -74,6 +79,23 @@ class SupportRiskAssessorTest extends IntegrationTestCase
         $this->assertSame(
             [$frozen->id->toRfc4122(), $emailChanged->id->toRfc4122()],
             array_map(static fn (AuditRecord $record): string => $record->id->toRfc4122(), $events),
+        );
+    }
+
+    public function testWebAuthnHistoryIncludesEnrollmentAndDeletionButNotRenames(): void
+    {
+        $user = self::createUser('alice', 'alice@example.org');
+        $this->store($user);
+        $credential = new WebAuthnCredential($user, CredentialRecord::create(
+            'credential-id', 'public-key', [], 'none', EmptyTrustPath::create(), Uuid::v4(), 'public-key', 'user-handle', 0,
+        ));
+        $added = $this->record(AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialAdded), self::ago('-3 days'));
+        $this->record(AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialRenamed, previousName: 'Old name'), self::ago('-2 days'));
+        $deleted = $this->record(AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialDeleted), self::ago('-1 day'));
+
+        self::assertSame(
+            [$deleted->id->toRfc4122(), $added->id->toRfc4122()],
+            array_map(static fn (AuditRecord $record): string => $record->id->toRfc4122(), $this->assessor->assess($user)->recentSecurityEvents),
         );
     }
 

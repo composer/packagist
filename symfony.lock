@@ -765,6 +765,9 @@
     "ua-parser/uap-php": {
         "version": "v3.9.14"
     },
+    "web-auth/webauthn-symfony-bundle": {
+        "version": "5.3.9"
+    },
     "webmozart/assert": {
         "version": "1.9.1"
     }

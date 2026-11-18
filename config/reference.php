@@ -131,6 +131,130 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     ...<string, DefinitionType|AliasType|PrototypeType|StackType|ArgumentsType|null>
  * }
  * @psalm-type ExtensionType = array<string, mixed>
+ * @psalm-type WebauthnConfig = array{
+ *     fake_credential_generator?: scalar|Param|null, // A service that implements the FakeCredentialGenerator to generate fake credentials for preventing username enumeration. // Default: "Webauthn\\SimpleFakeCredentialGenerator"
+ *     clock?: scalar|Param|null, // PSR-20 Clock service. // Default: "webauthn.clock.default"
+ *     options_storage?: scalar|Param|null, // Service responsible of the options/user entity storage during the ceremony // Default: "Webauthn\\Bundle\\Security\\Storage\\SessionStorage"
+ *     event_dispatcher?: scalar|Param|null, // PSR-14 Event Dispatcher service. // Default: "Psr\\EventDispatcher\\EventDispatcherInterface"
+ *     http_client?: scalar|Param|null, // A Symfony HTTP client. // Default: "webauthn.http_client.default"
+ *     logger?: scalar|Param|null, // A PSR-3 logger to receive logs during the processes // Default: "webauthn.logger.default"
+ *     credential_repository?: scalar|Param|null, // This repository is responsible of the credential storage // Default: "Webauthn\\Bundle\\Repository\\DummyPublicKeyCredentialSourceRepository"
+ *     user_repository?: scalar|Param|null, // This repository is responsible of the user storage // Default: "Webauthn\\Bundle\\Repository\\DummyPublicKeyCredentialUserEntityRepository"
+ *     allowed_origins?: array<string, scalar|Param|null>,
+ *     allow_subdomains?: bool|Param, // Default: false
+ *     secured_rp_ids?: array<string, scalar|Param|null>,
+ *     counter_checker?: scalar|Param|null, // This service will check if the counter is valid. By default it throws an exception (recommended). // Default: "Webauthn\\Counter\\ThrowExceptionIfInvalid"
+ *     top_origin_validator?: scalar|Param|null, // For cross origin (e.g. iframe), this service will be in charge of verifying the top origin. // Default: null
+ *     creation_profiles?: bool|array<string, array{ // Default: []
+ *         rp?: array{
+ *             id?: scalar|Param|null, // Default: null
+ *             name?: scalar|Param|null, // Deprecated: The child node "name" at path "webauthn.creation_profiles..rp.name" is deprecated and will be removed in the next major release. // Default: ""
+ *             icon?: scalar|Param|null, // Deprecated: The child node "icon" at path "webauthn.creation_profiles..rp.icon" is deprecated and has no effect. // Default: null
+ *         },
+ *         challenge_length?: int|Param, // Default: 32
+ *         timeout?: int|Param, // Default: null
+ *         authenticator_selection_criteria?: array{
+ *             authenticator_attachment?: scalar|Param|null, // Default: null
+ *             require_resident_key?: bool|Param, // Default: false
+ *             user_verification?: scalar|Param|null, // Default: "preferred"
+ *             resident_key?: scalar|Param|null, // Default: "preferred"
+ *         },
+ *         extensions?: array<string, scalar|Param|null>,
+ *         public_key_credential_parameters?: list<int|Param>,
+ *         attestation_conveyance?: scalar|Param|null, // Default: "none"
+ *         conditional_create?: bool|Param, // Enable Conditional Create (auto-register) for this profile. When true, user presence can be false after password authentication. See https://github.com/w3c/webauthn/wiki/Explainer:-Conditional-Create // Default: false
+ *     }>,
+ *     request_profiles?: bool|array<string, array{ // Default: []
+ *         rp_id?: scalar|Param|null, // Default: null
+ *         challenge_length?: int|Param, // Default: 32
+ *         timeout?: int|Param, // Default: null
+ *         user_verification?: scalar|Param|null, // Default: "preferred"
+ *         extensions?: array<string, scalar|Param|null>,
+ *     }>,
+ *     client_override_policy?: array{ // Configuration for allowing client request values to override profile configuration
+ *         user_verification?: array{
+ *             enabled?: bool|Param, // Whether to allow client requests to override the user verification requirement // Default: false
+ *             allowed_values?: list<scalar|Param|null>,
+ *         },
+ *         authenticator_attachment?: array{
+ *             enabled?: bool|Param, // Whether to allow client requests to override the authenticator attachment // Default: true
+ *             allowed_values?: list<scalar|Param|null>,
+ *         },
+ *         resident_key?: array{
+ *             enabled?: bool|Param, // Whether to allow client requests to override the resident key requirement // Default: true
+ *             allowed_values?: list<scalar|Param|null>,
+ *         },
+ *         attestation_conveyance?: array{
+ *             enabled?: bool|Param, // Whether to allow client requests to override the attestation conveyance preference // Default: true
+ *             allowed_values?: list<scalar|Param|null>,
+ *         },
+ *         extensions?: array{
+ *             enabled?: bool|Param, // Whether to allow client requests to override extensions // Default: true
+ *         },
+ *         mediation?: array{
+ *             enabled?: bool|Param, // Whether to allow client requests to request the conditional mediation flow (auto-register). // Default: false
+ *             allowed_values?: list<scalar|Param|null>,
+ *         },
+ *     },
+ *     metadata?: bool|array{ // Enable the support of the Metadata Statements. Please read the documentation for this feature.
+ *         enabled?: bool|Param, // Default: false
+ *         mds_repository?: scalar|Param|null, // The Metadata Statement repository.
+ *         status_report_repository?: scalar|Param|null, // The Status Report repository.
+ *         certificate_chain_checker?: scalar|Param|null, // A Certificate Chain checker. // Default: "Webauthn\\MetadataService\\CertificateChain\\PhpCertificateChainValidator"
+ *     },
+ *     controllers?: bool|array{
+ *         enabled?: bool|Param, // Default: false
+ *         creation?: array<string, array{ // Default: []
+ *             options_method?: scalar|Param|null, // Default: "POST"
+ *             options_path?: scalar|Param|null,
+ *             result_method?: scalar|Param|null, // Default: "POST"
+ *             result_path?: scalar|Param|null, // Default: null
+ *             host?: scalar|Param|null, // Default: null
+ *             profile?: scalar|Param|null, // Default: "default"
+ *             options_builder?: scalar|Param|null, // When set, corresponds to the ID of the Public Key Credential Creation Builder. The profile-based ebuilder is ignored. // Default: null
+ *             user_entity_guesser?: scalar|Param|null,
+ *             hide_existing_credentials?: scalar|Param|null, // In order to prevent username enumeration, the existing credentials can be hidden. This is highly recommended when the attestation ceremony is performed by anonymous users. // Default: false
+ *             options_storage?: scalar|Param|null, // Deprecated: The child node "options_storage" at path "webauthn.controllers.creation..options_storage" is deprecated. Please use the root option "options_storage" instead. // Service responsible of the options/user entity storage during the ceremony // Default: null
+ *             success_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Service\\DefaultSuccessHandler"
+ *             failure_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Service\\DefaultFailureHandler"
+ *             options_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Security\\Handler\\DefaultCreationOptionsHandler"
+ *             allowed_origins?: array<string, scalar|Param|null>,
+ *             allow_subdomains?: bool|Param, // Default: false
+ *             secured_rp_ids?: array<string, scalar|Param|null>,
+ *         }>,
+ *         request?: array<string, array{ // Default: []
+ *             options_method?: scalar|Param|null, // Default: "POST"
+ *             options_path?: scalar|Param|null,
+ *             result_method?: scalar|Param|null, // Default: "POST"
+ *             result_path?: scalar|Param|null, // Default: null
+ *             host?: scalar|Param|null, // Default: null
+ *             profile?: scalar|Param|null, // Default: "default"
+ *             options_builder?: scalar|Param|null, // When set, corresponds to the ID of the Public Key Credential Creation Builder. The profile-based ebuilder is ignored. // Default: null
+ *             options_storage?: scalar|Param|null, // Deprecated: The child node "options_storage" at path "webauthn.controllers.request..options_storage" is deprecated. Please use the root option "options_storage" instead. // Service responsible of the options/user entity storage during the ceremony // Default: null
+ *             success_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Service\\DefaultSuccessHandler"
+ *             failure_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Service\\DefaultFailureHandler"
+ *             options_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Security\\Handler\\DefaultRequestOptionsHandler"
+ *             allowed_origins?: array<string, scalar|Param|null>,
+ *             allow_subdomains?: bool|Param, // Default: false
+ *             secured_rp_ids?: array<string, scalar|Param|null>,
+ *         }>,
+ *     },
+ *     passkey_endpoints?: bool|array{ // Enable the .well-known/passkey-endpoints discovery endpoint as defined in the W3C Passkey Endpoints specification.
+ *         enabled?: bool|Param, // Default: false
+ *         enroll?: Param|string|array{ // URL to the passkey enrollment/creation interface.
+ *             path?: scalar|Param|null, // The absolute HTTPS URL or Symfony route name.
+ *             params?: list<mixed>,
+ *         },
+ *         manage?: Param|string|array{ // URL to the passkey management interface.
+ *             path?: scalar|Param|null, // The absolute HTTPS URL or Symfony route name.
+ *             params?: list<mixed>,
+ *         },
+ *         prf_usage_details?: Param|string|array{ // URL to informational page about PRF (Pseudo-Random Function) extension usage.
+ *             path?: scalar|Param|null, // The absolute HTTPS URL or Symfony route name.
+ *             params?: list<mixed>,
+ *         },
+ *     },
+ * }
  * @psalm-type FrameworkConfig = array{
  *     secret?: scalar|Param|null,
  *     http_method_override?: bool|Param, // Set true to enable support for the '_method' request parameter to determine the intended HTTP method on POST requests. // Default: false
@@ -1186,6 +1310,40 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             target_route?: scalar|Param|null, // Default: null
  *         },
  *         required_badges?: list<scalar|Param|null>,
+ *         webauthn?: array{
+ *             user_provider?: scalar|Param|null, // Default: null
+ *             options_storage?: scalar|Param|null, // Deprecated: The child node "options_storage" at path "security.firewalls..webauthn.options_storage" is deprecated. Please use the root option "options_storage" instead. // Default: null
+ *             success_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Security\\Handler\\DefaultSuccessHandler"
+ *             failure_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Security\\Handler\\DefaultFailureHandler"
+ *             secured_rp_ids?: array<string, scalar|Param|null>,
+ *             authentication?: bool|array{
+ *                 enabled?: bool|Param, // Default: true
+ *                 profile?: scalar|Param|null, // Default: "default"
+ *                 options_builder?: scalar|Param|null, // Default: null
+ *                 routes?: array{
+ *                     host?: scalar|Param|null, // Default: null
+ *                     options_method?: scalar|Param|null, // Default: "POST"
+ *                     options_path?: scalar|Param|null, // Default: "/login/options"
+ *                     result_method?: scalar|Param|null, // Default: "POST"
+ *                     result_path?: scalar|Param|null, // Default: "/login"
+ *                 },
+ *                 options_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Security\\Handler\\DefaultRequestOptionsHandler"
+ *             },
+ *             registration?: bool|array{
+ *                 enabled?: bool|Param, // Default: false
+ *                 hide_existing_credentials?: bool|Param, // Default: true
+ *                 profile?: scalar|Param|null, // Default: "default"
+ *                 options_builder?: scalar|Param|null, // Default: null
+ *                 routes?: array{
+ *                     host?: scalar|Param|null, // Default: null
+ *                     options_method?: scalar|Param|null, // Default: "POST"
+ *                     options_path?: scalar|Param|null, // Default: "/register/options"
+ *                     result_method?: scalar|Param|null, // Default: "POST"
+ *                     result_path?: scalar|Param|null, // Default: "/register"
+ *                 },
+ *                 options_handler?: scalar|Param|null, // Default: "Webauthn\\Bundle\\Security\\Handler\\DefaultCreationOptionsHandler"
+ *             },
+ *         },
  *         custom_authenticators?: list<scalar|Param|null>,
  *         login_throttling?: array{
  *             limiter?: scalar|Param|null, // A service id implementing "Symfony\Component\HttpFoundation\RateLimiter\RequestRateLimiterInterface".
@@ -1822,6 +1980,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     imports?: ImportsConfig,
  *     parameters?: ParametersConfig,
  *     services?: ServicesConfig,
+ *     webauthn?: WebauthnConfig,
  *     framework?: FrameworkConfig,
  *     twig?: TwigConfig,
  *     monolog?: MonologConfig,
@@ -1841,6 +2000,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
  *         services?: ServicesConfig,
+ *         webauthn?: WebauthnConfig,
  *         framework?: FrameworkConfig,
  *         twig?: TwigConfig,
  *         web_profiler?: WebProfilerConfig,
@@ -1864,6 +2024,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
  *         services?: ServicesConfig,
+ *         webauthn?: WebauthnConfig,
  *         framework?: FrameworkConfig,
  *         twig?: TwigConfig,
  *         monolog?: MonologConfig,
@@ -1884,6 +2045,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
  *         services?: ServicesConfig,
+ *         webauthn?: WebauthnConfig,
  *         framework?: FrameworkConfig,
  *         twig?: TwigConfig,
  *         web_profiler?: WebProfilerConfig,

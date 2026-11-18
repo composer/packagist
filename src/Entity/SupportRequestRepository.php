@@ -136,6 +136,20 @@ class SupportRequestRepository extends ServiceEntityRepository
         return $counts;
     }
 
+    public function transitionOpenRequest(SupportRequest $request, SupportRequestStatus $status, \DateTimeImmutable $now): bool
+    {
+        return 1 === $this->getEntityManager()->createQuery(
+            'UPDATE App\Entity\SupportRequest r
+             SET r.status = :status, r.resolvedAt = :now, r.updatedAt = :now
+             WHERE r.id = :id AND r.status = :open'
+        )
+            ->setParameter('status', $status->value)
+            ->setParameter('open', SupportRequestStatus::Open->value)
+            ->setParameter('now', $now)
+            ->setParameter('id', $request->id, 'ulid')
+            ->execute();
+    }
+
     /**
      * Whether the row is resolved as the database has it, ignoring the managed entity, which the
      * caller may have just lost a race against. A COUNT rather than a status select so the enum

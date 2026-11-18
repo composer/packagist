@@ -24,6 +24,8 @@ class TransparencyLogEventTypeTest extends TestCase
     private static function accountAuditTypes(): array
     {
         return [
+            AuditLogEventType::WebAuthnCredentialAdded,
+            AuditLogEventType::WebAuthnCredentialDeleted,
             AuditLogEventType::TotpAuthenticationActivated,
             AuditLogEventType::TotpAuthenticationDeactivated,
             AuditLogEventType::PasswordReset,
@@ -67,6 +69,7 @@ class TransparencyLogEventTypeTest extends TestCase
             AuditLogEventType::UserFrozen,
             AuditLogEventType::UserUnfrozen,
             AuditLogEventType::UsernameChanged,
+            AuditLogEventType::WebAuthnCredentialRenamed,
             // a reset *request* comes from an unauthenticated visitor, so publishing it would leak
             // account existence; only the completed reset is projected
             AuditLogEventType::PasswordResetRequested,

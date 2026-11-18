@@ -1,0 +1,15 @@
+webauthn:
+    allowed_origins: ['%env(WEBAUTHN_ORIGIN)%']
+    creation_profiles:
+        without_attestation:
+            rp:
+                id: '%env(WEBAUTHN_RP_ID)%'
+            timeout: 60000
+            # Offer ES256 and RS256 for authenticators that support either elliptic-curve or RSA keys
+            public_key_credential_parameters:
+                - !php/const Cose\Algorithms::COSE_ALGORITHM_ES256
+                - !php/const Cose\Algorithms::COSE_ALGORITHM_RS256
+    request_profiles:
+        packagist:
+            rp_id: '%env(WEBAUTHN_RP_ID)%'
+            timeout: 60000

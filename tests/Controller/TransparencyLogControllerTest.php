@@ -15,10 +15,15 @@ namespace App\Tests\Controller;
 use App\Command\ProjectTransparencyLogCommand;
 use App\Entity\AuditRecord;
 use App\Entity\PackageFreezeReason;
+use App\Entity\WebAuthnCredential;
+use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Uid\Uuid;
+use Webauthn\CredentialRecord;
+use Webauthn\TrustPath\EmptyTrustPath;
 
 class TransparencyLogControllerTest extends IntegrationTestCase
 {
@@ -37,7 +42,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/transparency-log');
         static::assertResponseIsSuccessful();
 
-        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
         static::assertContains('Package created', $types);
     }
 
@@ -116,7 +121,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertStringNotContainsString('remote_id', $details);
     }
 
-    public function testTotpEventsAreHiddenEvenWhenRequestedExplicitly(): void
+    public function testSecondFactorEventsAreHiddenEvenWhenRequestedExplicitly(): void
     {
         $user = self::createUser('hidden', 'hidden@example.com');
         $this->store($user);
@@ -124,18 +129,24 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $this->store($package);
 
         $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::totpAuthenticationDeactivated($user, $user, 'x'));
+        $credential = new WebAuthnCredential($user, CredentialRecord::create(
+            'credential-id', 'public-key', [], 'none', EmptyTrustPath::create(), Uuid::v4(), 'public-key', 'user-handle', 0,
+        ));
+        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialAdded));
         $this->runProjector();
         $this->givenLoggedInVisitor();
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
-            'type' => [TransparencyLogEventType::TotpAuthenticationDeactivated->value],
+            'type' => [TransparencyLogEventType::TotpAuthenticationDeactivated->value, TransparencyLogEventType::WebAuthnCredentialAdded->value],
         ]));
         static::assertResponseIsSuccessful();
 
         // The hidden type is dropped from the filter, so this falls back to the unfiltered list, which
         // itself excludes it. The rows are still projected, see TransparencyLogProjectorTest.
-        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
         static::assertNotContains('Authenticator app removed', $types);
+        static::assertNotContains('Passkey or security key added', $types);
+        static::assertCount(0, $crawler->filter('option[value="webauthn_credential_added"]'));
         static::assertContains('Package created', $types);
     }
 
@@ -189,7 +200,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'acme/gone-log']));
 
         static::assertResponseIsSuccessful();
-        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
         // Newest first: the whole history of the gone package is still readable, deletion included.
         static::assertSame(['Package deleted', 'Package created'], $types);
     }
@@ -218,7 +229,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         foreach ([['package' => 'acme/late-log'], ['package' => 'acme/late-log', 'datetime_from' => '2026-01-01T00:00:00']] as $query) {
             $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query($query));
-            $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+            $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
             static::assertSame(['Package frozen', 'Package unfrozen', 'Package created'], $types);
         }
     }

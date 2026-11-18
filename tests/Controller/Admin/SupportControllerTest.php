@@ -16,8 +16,10 @@ use App\Entity\AuditRecord;
 use App\Entity\Package;
 use App\Entity\SupportRequest;
 use App\Entity\SupportRequestMessage;
+use App\Entity\SupportRequestRepository;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
+use App\Event\SecondFactorsResetEvent;
 use App\Log\AuditLogEventType;
 use App\Support\Attributes\AccountDeletionAttributes;
 use App\Support\Attributes\LostTotpAttributes;
@@ -28,6 +30,9 @@ use App\Support\SupportRequestStatus;
 use App\Tests\IntegrationTestCase;
 use App\Util\IpAddress;
 use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\Attributes\TestWith;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 class SupportControllerTest extends IntegrationTestCase
 {
@@ -143,7 +148,7 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertNull($reopened->resolvedAt);
     }
 
-    public function testGrantingATotpResetRequiresTheDisableSecondFactorRole(): void
+    public function testGrantingASecondFactorResetRequiresTheDisableSecondFactorRole(): void
     {
         $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
         $requester = $this->twoFactorUser();
@@ -154,13 +159,15 @@ class SupportControllerTest extends IntegrationTestCase
 
         $this->client->loginUser($admin);
         // Denied before the token is even looked at, so its value does not matter here.
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => 'irrelevant']);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-second-factor-reset', ['token' => 'irrelevant']);
 
         self::assertSame(403, $this->client->getResponse()->getStatusCode());
         self::assertTrue($this->reload($request)->user->isTotpAuthenticationEnabled());
     }
 
-    public function testGrantDisablesTwoFactorResolvesAndNotifiesTheUser(): void
+    #[TestWith(['grant-second-factor-reset'])]
+    #[TestWith(['grant-totp-reset'])]
+    public function testGrantDisablesTwoFactorResolvesAndNotifiesTheUser(string $action): void
     {
         [$admin, $request, $requester] = $this->givenTwoFactorRequest();
 
@@ -168,7 +175,7 @@ class SupportControllerTest extends IntegrationTestCase
         $token = $this->csrfTokenFor($request);
 
         $this->client->enableProfiler();
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => $token]);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/'.$action, ['token' => $token]);
 
         $this->assertResponseRedirects('/admin/support/'.$request->publicId);
 
@@ -177,11 +184,13 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertNotNull($reloaded->resolvedAt);
         self::assertFalse($reloaded->user->isTotpAuthenticationEnabled());
 
-        // The standard authenticator removal notice plus the support reply: they say different things.
+        // The security alert and the support reply serve different purposes
         $this->assertEmailCount(2);
         foreach ($this->getMailerMessages() as $mail) {
             $this->assertEmailHeaderSame($mail, 'To', $requester->getEmail());
         }
+        self::assertEmailTextBodyContains(self::getMailerMessage(), 'Username: '.$requester->getUsername());
+        self::assertEmailTextBodyContains(self::getMailerMessage(), 'Time:');
 
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy([
             'type' => AuditLogEventType::TotpAuthenticationDeactivated->value,
@@ -192,12 +201,123 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertStringContainsString($request->publicId, (string) $audit->attributes['reason']);
     }
 
+    public function testGrantResolvesWithoutNotifyingWhenNoFactorsRemain(): void
+    {
+        [$admin, $request, $requester] = $this->givenTwoFactorRequest();
+        $requester->setTotpSecret(null);
+        self::getEM()->flush();
+        $this->client->loginUser($admin);
+
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-second-factor-reset', ['token' => $this->csrfTokenFor($request)]);
+        self::assertResponseRedirects('/admin/support/'.$request->publicId);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.alert-info', 'Two-factor authentication was already off');
+        $reloaded = $this->reload($request);
+        self::assertSame(SupportRequestStatus::Resolved, $reloaded->status);
+        self::assertNull($this->firstMessage($reloaded));
+        self::assertEmailCount(0);
+    }
+
+    public function testGrantDoesNotOverwriteAConcurrentOwnerCancellation(): void
+    {
+        [$admin, $request] = $this->givenTwoFactorRequest();
+        $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+        $dispatcher = self::getService(EventDispatcherInterface::class);
+
+        $cancel = static function () use ($request): void {
+            $repository = self::getService(SupportRequestRepository::class);
+            $loaded = $repository->findOneByPublicId($request->publicId);
+            self::assertNotNull($loaded);
+            self::assertTrue($loaded->isOpen());
+            self::assertTrue($repository->transitionOpenRequest($loaded, SupportRequestStatus::Closed, new \DateTimeImmutable()));
+        };
+        $dispatcher->addListener(KernelEvents::CONTROLLER, $cancel);
+
+        try {
+            $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-second-factor-reset', ['token' => $token]);
+            self::assertResponseRedirects('/admin/support/'.$request->publicId);
+        } finally {
+            $dispatcher->removeListener(KernelEvents::CONTROLLER, $cancel);
+        }
+
+        $reloaded = $this->reload($request);
+        self::assertSame(SupportRequestStatus::Closed, $reloaded->status);
+        self::assertTrue($reloaded->user->isTotpAuthenticationEnabled());
+        self::assertNull($this->firstMessage($reloaded));
+        self::assertEmailCount(0);
+    }
+
+    public function testGrantShowsARetryMessageWhenTheAccountChanges(): void
+    {
+        [$admin, $request] = $this->givenTwoFactorRequest();
+        $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+        $dispatcher = self::getService(EventDispatcherInterface::class);
+
+        $change = static function () use ($request): void {
+            $loaded = self::getService(SupportRequestRepository::class)->findOneByPublicId($request->publicId);
+            self::assertNotNull($loaded);
+            self::getEM()->getConnection()->update('fos_user', [
+                'sessionBuster' => $loaded->user->getSessionBuster() + 1,
+            ], ['id' => $loaded->user->getId()]);
+        };
+        $dispatcher->addListener(KernelEvents::CONTROLLER, $change);
+
+        try {
+            $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-second-factor-reset', ['token' => $token]);
+            self::assertResponseRedirects('/admin/support/'.$request->publicId);
+        } finally {
+            $dispatcher->removeListener(KernelEvents::CONTROLLER, $change);
+        }
+
+        self::assertEmailCount(0);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Review the request and try again.');
+        $reloaded = $this->reload($request);
+        self::assertSame(SupportRequestStatus::Open, $reloaded->status);
+        self::assertTrue($reloaded->user->isTotpAuthenticationEnabled());
+    }
+
+    public function testGrantClaimRollsBackIfFactorRemovalFails(): void
+    {
+        [$admin, $request] = $this->givenTwoFactorRequest();
+        $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+        $dispatcher = self::getService(EventDispatcherInterface::class);
+
+        $failure = new \RuntimeException('Factor removal failed');
+        $fail = static function (SecondFactorsResetEvent $event) use ($failure): void {
+            self::assertFalse($event->user->hasSecondFactorAuthenticationEnabled());
+            self::getEM()->flush();
+
+            throw $failure;
+        };
+        $dispatcher->addListener(SecondFactorsResetEvent::class, $fail, -100);
+        $this->client->catchExceptions(false);
+
+        try {
+            $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-second-factor-reset', ['token' => $token]);
+            self::fail('Expected factor removal to fail');
+        } catch (\RuntimeException $exception) {
+            self::assertSame($failure, $exception);
+        } finally {
+            $dispatcher->removeListener(SecondFactorsResetEvent::class, $fail);
+        }
+
+        $reloaded = $this->reload($request);
+        self::assertSame(SupportRequestStatus::Open, $reloaded->status);
+        self::assertTrue($reloaded->user->isTotpAuthenticationEnabled());
+        self::assertNull($this->firstMessage($reloaded));
+        self::assertEmailCount(0);
+    }
+
     public function testGrantIsRefusedWhileTheCoolingOffPeriodRuns(): void
     {
         [$admin, $request] = $this->givenTwoFactorRequest(approvableAt: new \DateTimeImmutable('+24 hours'));
 
         $this->client->loginUser($admin);
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => $this->csrfTokenFor($request)]);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-second-factor-reset', ['token' => $this->csrfTokenFor($request)]);
 
         $reloaded = $this->reload($request);
         self::assertSame(SupportRequestStatus::Open, $reloaded->status);
@@ -213,8 +333,40 @@ class SupportControllerTest extends IntegrationTestCase
         self::getEM()->flush();
 
         $this->client->loginUser($admin);
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => $this->csrfTokenFor($request)]);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-second-factor-reset', ['token' => $this->csrfTokenFor($request)]);
 
+        $reloaded = $this->reload($request);
+        self::assertSame(SupportRequestStatus::Open, $reloaded->status);
+        self::assertTrue($reloaded->user->isTotpAuthenticationEnabled());
+    }
+
+    public function testGrantRefusesAnAccountFrozenAfterItWasLoaded(): void
+    {
+        [$admin, $request] = $this->givenTwoFactorRequest();
+        $this->client->loginUser($admin);
+        $token = $this->csrfTokenFor($request);
+        $dispatcher = self::getService(EventDispatcherInterface::class);
+
+        $freeze = static function () use ($request): void {
+            $loaded = self::getService(SupportRequestRepository::class)->findOneByPublicId($request->publicId);
+            self::assertNotNull($loaded);
+            self::assertFalse($loaded->user->isFrozen());
+            self::getEM()->getConnection()->update('fos_user', [
+                'frozen' => UserFreezeReason::BadActor->value,
+            ], ['id' => $loaded->user->getId()]);
+        };
+        $dispatcher->addListener(KernelEvents::CONTROLLER, $freeze);
+
+        try {
+            $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-second-factor-reset', ['token' => $token]);
+            self::assertResponseRedirects('/admin/support/'.$request->publicId);
+        } finally {
+            $dispatcher->removeListener(KernelEvents::CONTROLLER, $freeze);
+        }
+
+        self::assertEmailCount(0);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'This account is frozen');
         $reloaded = $this->reload($request);
         self::assertSame(SupportRequestStatus::Open, $reloaded->status);
         self::assertTrue($reloaded->user->isTotpAuthenticationEnabled());
@@ -230,7 +382,7 @@ class SupportControllerTest extends IntegrationTestCase
         $this->store($request);
 
         $this->client->loginUser($admin);
-        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-totp-reset', ['token' => $this->csrfTokenFor($request)]);
+        $this->client->request('POST', '/admin/support/'.$request->publicId.'/grant-second-factor-reset', ['token' => $this->csrfTokenFor($request)]);
 
         self::assertSame(400, $this->client->getResponse()->getStatusCode());
     }

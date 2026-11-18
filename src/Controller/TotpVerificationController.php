@@ -40,7 +40,9 @@ class TotpVerificationController extends Controller
             return $this->redirectToRoute('security_authenticator');
         }
 
-        // Checked before handleRequest() as validating the form already checks the code.
+        $returnUrl = $this->resolveSignedReturnUrl($request, 'security_authenticator');
+
+        // Checked before handleRequest() as validating the form already checks the code
         if ($request->isMethod('POST')) {
             try {
                 $this->limiter->ensureNotRateLimited($user->getUserIdentifier());
@@ -49,13 +51,16 @@ class TotpVerificationController extends Controller
             }
         }
 
-        $form = $this->createForm(VerifyTotpType::class, null, ['user' => $user])->handleRequest($request);
+        $form = $this->createForm(VerifyTotpType::class, null, [
+            'user' => $user,
+            'action' => $this->generateUrl('user_verify_totp', ['return_to' => $returnUrl]),
+        ])->handleRequest($request);
 
         if ($form->isSubmitted()) {
             if ($form->isValid()) {
                 $this->secondFactorProofStore->record($user, SecondFactorProofStore::TOTP);
 
-                return $this->redirectToRoute('user_totp_disable', ['name' => $user->getUsername()]);
+                return $this->redirect($returnUrl);
             }
 
             if (\count($form->get('code')->getErrors()) > 0) {
@@ -63,6 +68,6 @@ class TotpVerificationController extends Controller
             }
         }
 
-        return $this->render('user/verify_totp.html.twig', ['user' => $user, 'form' => $form]);
+        return $this->render('user/verify_totp.html.twig', ['user' => $user, 'form' => $form, 'return_to' => $returnUrl]);
     }
 }

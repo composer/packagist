@@ -68,7 +68,8 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         $this->clock->sleep(1);
         $this->assertAuthenticationChecks(true, false);
         $this->client->request('GET', '/users/verify/totp/disable');
-        self::assertResponseRedirects('/profile/security/verify-totp');
+        self::assertResponseRedirects();
+        self::assertStringStartsWith('/profile/security/verify-totp?return_to=', (string) $this->client->getResponse()->headers->get('Location'));
     }
 
     public function testTrustedDeviceDoesNotCountAsSecondFactorAuthentication(): void
@@ -100,9 +101,11 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         $session->save();
         $this->assertAuthenticationChecks(false, false);
         self::assertInstanceOf(RememberMeToken::class, self::getContainer()->get('security.token_storage')->getToken());
-        $crawler = $this->client->request('GET', '/profile/security/verify-totp');
+        $this->client->request('GET', '/users/verify/totp/disable');
+        $crawler = $this->client->followRedirect();
         $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
-        self::assertResponseRedirects('/users/verify/totp/disable');
+        self::assertResponseRedirects();
+        self::assertStringStartsWith('/users/verify/totp/disable?_hash=', (string) $this->client->getResponse()->headers->get('Location'));
         $this->assertAuthenticationChecks(true, true);
     }
 
@@ -122,9 +125,7 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         $check = static function () use ($authenticated, $recent): void {
             $authorization = self::getContainer()->get(AuthorizationCheckerInterface::class);
             self::assertSame($authenticated, $authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA));
-            self::assertSame($authenticated, $authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP));
             self::assertSame($recent, $authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY));
-            self::assertSame($recent, $authorization->isGranted(SecondFactorVoter::IS_AUTHENTICATED_TOTP_RECENTLY));
         };
         $dispatcher = self::getContainer()->get('event_dispatcher');
         $dispatcher->addListener(KernelEvents::RESPONSE, $check);

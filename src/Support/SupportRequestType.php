@@ -68,10 +68,10 @@ enum SupportRequestType: string
     }
 
     /**
-     * Sent verbatim when a TOTP reset request is granted, so unlike {@see suggestedReply()} it carries
+     * Sent verbatim when a second-factor reset request is granted, so unlike {@see suggestedReply()} it carries
      * no draft branches for an admin to delete: nobody edits this before it goes out.
      */
-    public static function totpResetGrantedReply(SupportRequest $request): string
+    public static function secondFactorResetGrantedReply(SupportRequest $request): string
     {
         return <<<TXT
             Your request to reset two-factor authentication has been approved, and two-factor
@@ -89,7 +89,7 @@ enum SupportRequestType: string
      * branches so the admin deletes one and edits the rest.
      *
      * Only ever used to prefill the reply textarea. The one message the system sends on its own is
-     * {@see totpResetGrantedReply()}.
+     * {@see secondFactorResetGrantedReply()}.
      */
     public function suggestedReply(SupportRequest $request): string
     {

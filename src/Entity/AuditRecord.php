@@ -14,10 +14,10 @@ namespace App\Entity;
 
 use App\Audit\AbandonmentReason;
 use App\Audit\AuditLogSearchType;
-use App\Log\AuditLogEventType;
-use App\Log\Display\OrganizationDisplay;
 use App\Audit\UserRegistrationMethod;
 use App\Audit\VersionDeletionReason;
+use App\Log\AuditLogEventType;
+use App\Log\Display\OrganizationDisplay;
 use Composer\Pcre\Preg;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -538,6 +538,30 @@ class AuditRecord
                 'actor' => 'self',
             ],
             userId: $user->getId(),
+        );
+    }
+
+    public static function webAuthnCredentialChanged(WebAuthnCredential $credential, AuditLogEventType $type, ?User $actor = null, ?string $previousName = null): self
+    {
+        if (!\in_array($type, [AuditLogEventType::WebAuthnCredentialAdded, AuditLogEventType::WebAuthnCredentialRenamed, AuditLogEventType::WebAuthnCredentialDeleted], true)) {
+            throw new \InvalidArgumentException('Expected a WebAuthn credential event type.');
+        }
+        if ($type === AuditLogEventType::WebAuthnCredentialRenamed && $previousName === null) {
+            throw new \InvalidArgumentException('A credential rename requires its previous name.');
+        }
+
+        $actor ??= $credential->user;
+        $attributes = ['user' => self::getUserData($credential->user), 'actor' => self::getUserData($actor), 'credentialId' => $credential->id, 'credentialName' => $credential->getName()];
+
+        if ($type === AuditLogEventType::WebAuthnCredentialRenamed) {
+            $attributes['previousCredentialName'] = $previousName;
+        }
+
+        return new self(
+            $type,
+            $attributes,
+            actorId: $actor->getId(),
+            userId: $credential->user->getId(),
         );
     }
 

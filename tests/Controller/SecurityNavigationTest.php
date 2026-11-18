@@ -66,10 +66,15 @@ class SecurityNavigationTest extends IntegrationTestCase
 
     public function testSecurityNavigationGroupsPasswordAndSecondFactorSettings(): void
     {
+        $this->user->addRole('ROLE_ADMIN');
+        self::getEM()->flush();
+        $this->client->loginUser($this->user);
+
         $pages = [
             '/profile/security' => 'Overview',
             '/profile/security/password' => 'Change password',
             '/profile/security/authenticator' => 'Authenticator app',
+            '/profile/security/keys' => 'Passkeys and security keys',
         ];
         foreach ($pages as $url => $label) {
             $crawler = $this->client->request('GET', $url);
@@ -80,7 +85,7 @@ class SecurityNavigationTest extends IntegrationTestCase
             self::assertNotContains('Change password', $accountLinks);
             self::assertSame('Security', $crawler->filter('nav[aria-label="Account settings"] li.active > a')->text());
             self::assertCount(0, $crawler->filter('header .mobile-account-menu a[href="/profile/security/password"]'));
-            self::assertCount(3, $crawler->filter('.security-tabs a'));
+            self::assertCount(4, $crawler->filter('.security-tabs a'));
         }
     }
 
@@ -134,7 +139,7 @@ class SecurityNavigationTest extends IntegrationTestCase
         $crawler = $this->client->submit($form);
         self::assertSame(422, $this->client->getResponse()->getStatusCode());
         $form = $crawler->selectButton('Enable authenticator app')->form();
-        $form['enable_totp_auth[code]'] = \App\Tests\Mock\TotpAuthenticatorStub::MOCKED_VALID_CODE;
+        $form['enable_totp_auth[code]'] = TotpAuthenticatorStub::MOCKED_VALID_CODE;
         $this->client->submit($form);
         self::assertSame('/users/alice/totp/confirm', $this->client->getResponse()->headers->get('Location'));
         $crawler = $this->client->followRedirect();
@@ -158,6 +163,24 @@ class SecurityNavigationTest extends IntegrationTestCase
         self::assertSame(403, $this->client->getResponse()->getStatusCode());
     }
 
+    public function testPasskeysTabIsHiddenForNonAdminsWithoutKeys(): void
+    {
+        $this->client->request('GET', '/profile/security');
+        self::assertSelectorNotExists('.security-tabs a[href="/profile/security/keys"]');
+        self::assertSelectorNotExists('[aria-labelledby="passkeys-heading"]');
+    }
+
+    public function testOverviewOffersPasskeySetupToAdmins(): void
+    {
+        $this->user->addRole('ROLE_ADMIN');
+        self::getEM()->flush();
+        $this->client->loginUser($this->user);
+
+        $crawler = $this->client->request('GET', '/profile/security');
+        self::assertSelectorTextContains('[aria-labelledby="passkeys-heading"] .badge', 'Not set up');
+        self::assertSame('/profile/security/keys', $crawler->selectLink('Set up a passkey or security key')->attr('href'));
+    }
+
     public function testSecurityTabsAreChildrenOfTheAccountMenuItem(): void
     {
         $this->client->request('GET', '/users/alice/totp/');
@@ -176,7 +199,8 @@ class SecurityNavigationTest extends IntegrationTestCase
         $this->client->loginUser($this->user);
         $crawler = $this->client->request('GET', '/profile/security/authenticator');
         $this->client->click($crawler->selectLink('Remove authenticator app')->link());
-        self::assertResponseRedirects('/profile/security/verify-totp');
+        self::assertResponseRedirects();
+        self::assertStringStartsWith('/profile/security/verify-totp?return_to=', (string) $this->client->getResponse()->headers->get('Location'));
         $crawler = $this->client->followRedirect();
         $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
         $crawler = $this->client->followRedirect();

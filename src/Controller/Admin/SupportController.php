@@ -23,11 +23,13 @@ use App\Model\DownloadManager;
 use App\Model\FavoriteManager;
 use App\Model\MaintainerChangeException;
 use App\Model\PackageManager;
-use App\Security\TotpAuthManager;
+use App\Security\SecondFactorManager;
 use App\Security\Voter\PackageActions;
 use App\Support\Attributes\LostTotpAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
+use App\Support\SecondFactorResetOutcome;
+use App\Support\SecondFactorResetResult;
 use App\Support\SupportNotifier;
 use App\Support\SupportQueueAccess;
 use App\Support\SupportRequestStatus;
@@ -40,7 +42,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /**
@@ -304,11 +308,13 @@ class SupportController extends Controller
     }
 
     /**
-     * Disables TOTP authentication, tells the requester it was granted, and closes the task in
+     * Disables all second factors, tells the requester it was granted, and closes the task in
      * one POST.
      */
-    #[Route(path: '/admin/support/{publicId}/grant-totp-reset', name: 'admin_support_request_grant_totp_reset', methods: ['POST'])]
-    public function grantTotpReset(Request $req, string $publicId, #[CurrentUser] User $actor, TotpAuthManager $authManager): RedirectResponse
+    // Keep existing admin forms usable across deployment
+    #[Route(path: '/admin/support/{publicId}/grant-totp-reset', name: 'admin_support_request_grant_totp_reset_legacy', methods: ['POST'])]
+    #[Route(path: '/admin/support/{publicId}/grant-second-factor-reset', name: 'admin_support_request_grant_second_factor_reset', methods: ['POST'])]
+    public function grantSecondFactorReset(Request $req, string $publicId, #[CurrentUser] User $actor, SecondFactorManager $secondFactors): RedirectResponse
     {
         // Seeing the queue is not enough; this is the capability that actually hands out access.
         // Checked before the token so a missing role reports as denied rather than as a bad token.
@@ -336,39 +342,65 @@ class SupportController extends Controller
             return $redirect;
         }
 
-        // Re-checked here, not just at request time: freezing an account between the request and the
-        // approval must not leave a path that hands a frozen bad actor a working login.
-        if ($request->user->isFrozen()) {
-            $this->addFlash('error', 'This account is frozen, so its two-factor authentication cannot be reset.');
+        try {
+            $result = $this->approveSecondFactorReset($request, $actor, $secondFactors);
+        } catch (BadCredentialsException|ServiceUnavailableHttpException) {
+            $this->addFlash('warning', 'Account security settings are being updated or have changed. Review the request and try again.');
 
             return $redirect;
         }
 
-        if (!$request->user->isTotpAuthenticationEnabled()) {
-            $request->resolve($now);
-            $this->getEM()->flush();
-            $this->addFlash('info', 'Two-factor authentication was already off on this account; the request has been resolved.');
-
-            return $redirect;
-        }
-
-        // Built before the call because disableTotpAuthentication() flushes, which persists these too.
-        $reply = SupportRequestMessage::reply($request, SupportRequestType::totpResetGrantedReply($request), $actor);
-        $request->resolve($now);
-        $this->getEM()->persist($reply);
-
-        $authManager->disableTotpAuthentication(
-            $request->user,
-            $actor,
-            'Reset by support, request '.$request->publicId,
-            supportReset: true,
-        );
-
-        $this->notifier->notifyUserOfReply($request, $reply);
-
-        $this->addFlash('success', 'Two-factor authentication disabled and request '.$request->publicId.' resolved.');
+        $this->reportSecondFactorReset($request, $result, $secondFactors);
 
         return $redirect;
+    }
+
+    private function reportSecondFactorReset(SupportRequest $request, SecondFactorResetResult $result, SecondFactorManager $secondFactors): void
+    {
+        if ($result->outcome === SecondFactorResetOutcome::Reset) {
+            $secondFactors->notifySupportReset($request->user);
+            $this->notifier->notifyUserOfReply($request, $result->reply());
+        }
+
+        [$type, $message] = match ($result->outcome) {
+            SecondFactorResetOutcome::Reset => ['success', 'Two-factor authentication disabled and request '.$request->publicId.' resolved.'],
+            SecondFactorResetOutcome::AlreadyHandled => ['warning', 'This request has already been dealt with.'],
+            SecondFactorResetOutcome::NoFactors => ['info', 'Two-factor authentication was already off on this account, so the request has been resolved.'],
+            SecondFactorResetOutcome::Frozen => ['error', 'This account is frozen, so its two-factor authentication cannot be reset.'],
+        };
+
+        $this->addFlash($type, $message);
+    }
+
+    private function approveSecondFactorReset(SupportRequest $request, User $actor, SecondFactorManager $secondFactors): SecondFactorResetResult
+    {
+        return $secondFactors->withAccountLock($request->user, function () use ($request, $actor, $secondFactors): SecondFactorResetResult {
+            // Check the refreshed account before claiming the request or changing any factors
+            if ($request->user->isFrozen()) {
+                return new SecondFactorResetResult(SecondFactorResetOutcome::Frozen);
+            }
+
+            return $this->getEM()->wrapInTransaction(function () use ($request, $actor, $secondFactors): SecondFactorResetResult {
+                $now = new \DateTimeImmutable();
+
+                // The conditional update protects the owner's veto and rolls back with factor removal
+                if (!$this->supportRequests->transitionOpenRequest($request, SupportRequestStatus::Resolved, $now)) {
+                    return new SecondFactorResetResult(SecondFactorResetOutcome::AlreadyHandled);
+                }
+
+                $request->resolve($now);
+
+                if (!$request->user->hasSecondFactorAuthenticationEnabled()) {
+                    return new SecondFactorResetResult(SecondFactorResetOutcome::NoFactors);
+                }
+
+                $secondFactors->stageSecondFactorReset($request->user, $actor, 'Reset by support, request '.$request->publicId);
+                $reply = SupportRequestMessage::reply($request, SupportRequestType::secondFactorResetGrantedReply($request), $actor);
+                $this->getEM()->persist($reply);
+
+                return new SecondFactorResetResult(SecondFactorResetOutcome::Reset, $reply);
+            });
+        });
     }
 
     /**

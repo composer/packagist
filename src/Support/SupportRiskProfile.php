@@ -48,6 +48,7 @@ readonly class SupportRiskProfile
         public array $recentSecurityEvents,
         public bool $hasRecentCredentialChange,
         public array $knownIps,
+        public ?\DateTimeImmutable $lastPasskeyAddedAt,
     ) {
     }
 

@@ -20,6 +20,8 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
+use App\Entity\WebAuthnCredential;
+use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
 use App\Log\TransparencyLogScrubber;
 use App\Service\TransparencyLogProjector;
@@ -27,11 +29,15 @@ use App\Tests\IntegrationTestCase;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
+use PHPUnit\Framework\Attributes\TestWith;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Symfony\Component\Uid\Ulid;
+use Symfony\Component\Uid\Uuid;
+use Webauthn\CredentialRecord;
+use Webauthn\TrustPath\EmptyTrustPath;
 
 class TransparencyLogProjectorTest extends IntegrationTestCase
 {
@@ -60,7 +66,11 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         ));
     }
 
-    public function testFansOutAccountEventToMaintainedPackages(): void
+    #[TestWith([null])]
+    #[TestWith([AuditLogEventType::WebAuthnCredentialAdded])]
+    #[TestWith([AuditLogEventType::WebAuthnCredentialDeleted])]
+    #[TestWith([AuditLogEventType::WebAuthnCredentialRenamed])]
+    public function testProjectsAccountSecurityChangesToMaintainedPackages(?AuditLogEventType $eventType): void
     {
         $em = $this->getEM();
         $conn = self::getService(Connection::class);
@@ -75,16 +85,28 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         $em->persist($p2);
         $em->flush();
 
-        $em->getRepository(AuditRecord::class)->insert(AuditRecord::totpAuthenticationDeactivated($user, $user, 'x'));
+        $credential = new WebAuthnCredential($user, CredentialRecord::create(
+            'credential-id', 'public-key', [], 'none', EmptyTrustPath::create(), Uuid::v4(), 'public-key', 'user-handle', 0,
+        ));
+        $record = $eventType !== null
+            ? AuditRecord::webAuthnCredentialChanged($credential, $eventType, previousName: $eventType === AuditLogEventType::WebAuthnCredentialRenamed ? 'Previous name' : null)
+            : AuditRecord::totpAuthenticationDeactivated($user, $user, 'x');
+        $em->getRepository(AuditRecord::class)->insert($record);
+        $type = $record->type->value;
+
+        if ($eventType === AuditLogEventType::WebAuthnCredentialRenamed) {
+            self::assertSame(0, (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log_queue WHERE auditLogId = ?', [$record->id->toBinary()]));
+        }
 
         $created = self::getService(TransparencyLogProjector::class)->project(0);
 
-        self::assertSame(2, (int) $conn->fetchOne("SELECT COUNT(*) FROM package_transparency_log WHERE type = 'totp_deactivated'"));
-        // return value accounts for every row written (the two package_created rows plus the fan-out)
+        $expectedPackages = $eventType === AuditLogEventType::WebAuthnCredentialRenamed ? [] : ['svc/one', 'svc/two'];
+        self::assertSame(\count($expectedPackages), (int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log WHERE type = ?', [$type]));
+        // Return value accounts for the package-created rows and any projected account changes
         self::assertSame((int) $conn->fetchOne('SELECT COUNT(*) FROM package_transparency_log'), $created);
 
-        self::assertSame(['svc/one', 'svc/two'], $conn->fetchFirstColumn(
-            "SELECT packageName FROM package_transparency_log WHERE type = 'totp_deactivated' ORDER BY packageName",
+        self::assertSame($expectedPackages, $conn->fetchFirstColumn(
+            'SELECT packageName FROM package_transparency_log WHERE type = ? ORDER BY packageName', [$type],
         ));
     }
 
@@ -611,7 +633,7 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
     {
         $conn = self::getService(Connection::class);
 
-        $conn->executeStatement('INSERT INTO package_transparency_log_queue (auditLogId) VALUES (?)', [(new Ulid())->toBinary()]);
+        $conn->executeStatement('INSERT INTO package_transparency_log_queue (auditLogId) VALUES (?)', [new Ulid()->toBinary()]);
 
         self::assertSame(0, self::getService(TransparencyLogProjector::class)->project(0));
 
@@ -628,7 +650,7 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
         // the queue, because nothing is dequeued: a loop driven by rows disappearing would spin here.
         $ids = [];
         for ($i = 0; $i < 501; $i++) {
-            $ids[] = (new Ulid())->toBinary();
+            $ids[] = new Ulid()->toBinary();
         }
 
         $conn->executeStatement(
