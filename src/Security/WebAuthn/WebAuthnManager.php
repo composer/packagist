@@ -151,14 +151,22 @@ class WebAuthnManager
 
     public function rename(WebAuthnCredential $credential, string $name): void
     {
-        $previousName = $credential->getName();
-        $credential->rename($name);
+        $this->secondFactors->withAccountLock($credential->user, function () use ($credential, $name): void {
+            $this->em->refresh($credential);
 
-        if ($credential->getName() === $previousName) {
-            return;
-        }
+            if ($credential->getRevokedAt() !== null) {
+                throw new BadCredentialsException('This passkey or security key has already been removed.');
+            }
 
-        $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialRenamed, $previousName);
+            $previousName = $credential->getName();
+            $credential->rename($name);
+
+            if ($credential->getName() === $previousName) {
+                return;
+            }
+
+            $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialRenamed, $previousName);
+        });
     }
 
     public function revoke(WebAuthnCredential $credential): void

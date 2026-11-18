@@ -21,6 +21,7 @@ use App\Log\AuditLogEventType;
 use App\Security\SecondFactorManager;
 use App\Security\SecondFactorProofStore;
 use App\Security\TotpAuthManager;
+use App\Security\WebAuthn\WebAuthnManager;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
 use App\Tests\IntegrationTestCase;
@@ -159,6 +160,24 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->authenticator = new VirtualAuthenticator();
         $this->register('Spare key');
         self::assertCount(2, $this->freshUser()->getWebAuthnCredentials());
+    }
+
+    public function testRenameAuditsTheLatestStoredName(): void
+    {
+        $credential = $this->register();
+        $em = self::getEM();
+        $em->getConnection()->update('webauthn_credential', ['name' => 'Changed in another request'], ['id' => $credential->id]);
+        self::assertSame('My key', $credential->getName());
+
+        self::getService(WebAuthnManager::class)->rename($credential, 'Renamed key');
+
+        $audit = $em->getRepository(AuditRecord::class)->findOneBy([
+            'type' => AuditLogEventType::WebAuthnCredentialRenamed,
+            'userId' => $this->user->getId(),
+        ]);
+        self::assertNotNull($audit);
+        self::assertSame('Changed in another request', $audit->attributes['previousCredentialName']);
+        self::assertSame('Renamed key', $audit->attributes['credentialName']);
     }
 
     #[TestWith(['My key'])]
