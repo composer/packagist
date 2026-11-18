@@ -67,7 +67,7 @@ class WebAuthnManagerTest extends TestCase
     #[TestWith(['signature'])]
     public function testRegistrationRejectsInvalidResponse(string $failure): void
     {
-        $options = json_decode($this->manager->startRegistration($this->user), true);
+        $options = json_decode($this->manager->startRegistration($this->user, 'My key'), true);
         match ($failure) {
             'origin' => $this->authenticator->origin = 'https://attacker.test',
             'rpId' => $this->authenticator->rpId = 'attacker.test',
@@ -112,7 +112,7 @@ class WebAuthnManagerTest extends TestCase
 
     public function testRegistrationChallengeCannotBeUsedForAnotherAccount(): void
     {
-        $options = json_decode($this->manager->startRegistration($this->user), true);
+        $options = json_decode($this->manager->startRegistration($this->user, 'My key'), true);
         $other = new User();
 
         $this->expectException(BadCredentialsException::class);
@@ -184,7 +184,7 @@ class WebAuthnManagerTest extends TestCase
     /** @param array<string, mixed>|null $options */
     private function register(?array $options = null): WebAuthnCredential
     {
-        $options ??= json_decode($this->manager->startRegistration($this->user), true);
+        $options ??= json_decode($this->manager->startRegistration($this->user, 'My key'), true);
         $this->manager->register($this->user, $this->authenticator->register($options), 'My key');
         $credential = $this->user->findWebAuthnCredential(hash('sha256', $this->authenticator->id));
         self::assertNotNull($credential);

@@ -74,7 +74,11 @@ class WebAuthnController extends Controller
             throw $this->createAccessDeniedException();
         }
 
-        return JsonResponse::fromJsonString($this->webAuthn->startRegistration($user), headers: ['Cache-Control' => 'no-store']);
+        try {
+            return JsonResponse::fromJsonString($this->webAuthn->startRegistration($user, $request->request->getString('name')), headers: ['Cache-Control' => 'no-store']);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
+        }
     }
 
     #[IsGranted(WebAuthnVoter::ENROLL)]

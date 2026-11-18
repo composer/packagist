@@ -57,8 +57,9 @@ class WebAuthnManager
     ) {
     }
 
-    public function startRegistration(User $user): string
+    public function startRegistration(User $user, string $name): string
     {
+        WebAuthnCredential::normalizeName($name);
         $options = $this->registrationOptions($user);
         $this->optionsStorage->store(Item::create($options, $options->user));
 
@@ -67,6 +68,8 @@ class WebAuthnManager
 
     public function register(User $user, string $response, string $name): ?string
     {
+        $name = WebAuthnCredential::normalizeName($name);
+
         try {
             $key = $this->decodeCredential($response);
             $options = $this->optionsStorage->get($key->response->clientDataJSON->challenge)->getPublicKeyCredentialOptions();

@@ -151,11 +151,18 @@ class WebAuthnCredential
 
     public function rename(string $name): void
     {
+        $this->name = self::normalizeName($name);
+    }
+
+    public static function normalizeName(string $name): string
+    {
         $name = trim($name);
+
         if ($name === '' || mb_strlen($name) > 100) {
             throw new \InvalidArgumentException('webauthn.error.invalid_name');
         }
-        $this->name = $name;
+
+        return $name;
     }
 
     public function recordAuthentication(CredentialRecord $record): void

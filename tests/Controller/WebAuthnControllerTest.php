@@ -240,6 +240,17 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
     }
 
+    public function testRegistrationOptionsRejectAWhitespaceOnlyName(): void
+    {
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => '   ']);
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertJsonStringEqualsJsonString(
+            '{"error":"Enter a name between 1 and 100 characters."}',
+            (string) $this->client->getResponse()->getContent(),
+        );
+    }
+
     public function testConcurrentAccountChangeShowsAnErrorInsteadOfRemovingTheKey(): void
     {
         $credential = $this->register();
@@ -277,7 +288,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->verify();
         $this->client->request('POST', '/profile/security/keys/'.$credential->id.'/edit', ['_token' => $this->csrf, 'action' => 'remove']);
         self::assertResponseRedirects('/profile/security/keys');
-        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf]);
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'Reused']);
         self::assertResponseIsSuccessful();
         $options = json_decode($this->client->getResponse()->getContent(), true);
         $this->client->request('POST', '/profile/security/keys/register', ['_token' => $this->csrf, 'name' => 'Reused', 'credential' => $this->authenticator->register($options)]);
@@ -874,7 +885,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
 
     private function register(string $name = 'My key'): WebAuthnCredential
     {
-        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf]);
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => $name]);
         self::assertResponseIsSuccessful();
         $options = json_decode($this->client->getResponse()->getContent(), true);
         self::assertSame('none', $options['attestation']);
