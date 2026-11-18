@@ -793,7 +793,6 @@ class PackageController extends Controller
             }
 
             $data['listsFlaggingVersionsAsMalware'] = [];
-            $data['listsFlaggingDeletedVersionsAsMalware'] = [];
             $data['deletedMalwareNoticeExpiresAt'] = null;
             $data['hasVersionsFlaggedAsMalware'] = [];
             $lastFlaggedVersionDeletedAt = null;
@@ -807,11 +806,8 @@ class PackageController extends Controller
                         $deletedAt = $version->getSoftDeletedAt();
                         if (null === $deletedAt) {
                             $data['listsFlaggingVersionsAsMalware'][$source->value] = $source;
-                        } else {
-                            $data['listsFlaggingDeletedVersionsAsMalware'][$source->value] = $source;
-                            if (null === $lastFlaggedVersionDeletedAt || $deletedAt > $lastFlaggedVersionDeletedAt) {
-                                $lastFlaggedVersionDeletedAt = $deletedAt;
-                            }
+                        } elseif (null === $lastFlaggedVersionDeletedAt || $deletedAt > $lastFlaggedVersionDeletedAt) {
+                            $lastFlaggedVersionDeletedAt = $deletedAt;
                         }
                     }
                 }
@@ -841,7 +837,6 @@ class PackageController extends Controller
             $data['hasVersionSecurityAdvisories'] = [];
             $data['hasVersionsFlaggedAsMalware'] = [];
             $data['listsFlaggingVersionsAsMalware'] = [];
-            $data['listsFlaggingDeletedVersionsAsMalware'] = [];
             $data['deletedMalwareNoticeExpiresAt'] = null;
         }
 

@@ -1525,7 +1525,10 @@ class PackageControllerTest extends IntegrationTestCase
     {
         $crawler = $this->requestPackagePageWithFlaggedVersion(null);
 
-        self::assertCount(1, $crawler->filter('.alert-danger .bi-fire'));
+        $banner = $crawler->filter('.alert-danger:has(.bi-fire)');
+        self::assertCount(1, $banner);
+        self::assertSame('Versions of this package have been flagged as malware!', $banner->text());
+        self::assertSame('/packages/test/pkg/filter-lists/malware/', $banner->filter('a')->attr('href'));
         self::assertCount(0, $crawler->filter('.deleted-malware-notice'));
         self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
     }
@@ -1540,7 +1543,8 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(0, $crawler->filter('.alert-danger .bi-fire'));
         $notice = $crawler->filter('.alert-warning.deleted-malware-notice');
         self::assertCount(1, $notice);
-        self::assertStringContainsString('flagged as malware by Aikido', $notice->text());
+        self::assertStringContainsString('Versions of this package were flagged as malware and have since been deleted.', $notice->text());
+        self::assertStringNotContainsString('Aikido', $notice->text());
         self::assertStringContainsString('will be removed on '.$deletedAt->modify('+7 days')->format('M j, Y'), $notice->text());
         self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
     }
@@ -1557,7 +1561,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
     }
 
-    public function testPackagePageMalwareBannerOnlyNamesSourcesFlaggingLiveVersions(): void
+    public function testPackagePageMalwareBannerStaysWhileAnyFlaggedVersionIsLive(): void
     {
         $package = self::createPackage('test/pkg', 'https://example.org/pkg');
         $package->setCrawledAt(new \DateTimeImmutable());
@@ -1575,8 +1579,7 @@ class PackageControllerTest extends IntegrationTestCase
 
         $banner = $crawler->filter('.alert-danger:has(.bi-fire)');
         self::assertCount(1, $banner);
-        self::assertStringContainsString('flagged as malware by Aikido!', $banner->text());
-        self::assertStringNotContainsString('Packagist.org', $banner->text());
+        self::assertSame('Versions of this package have been flagged as malware!', $banner->text());
         self::assertCount(0, $crawler->filter('.deleted-malware-notice'));
         self::assertCount(2, $crawler->filter('ul.versions .malware-alert'));
     }

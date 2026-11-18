@@ -61,9 +61,9 @@
                     <p class="requireme"><i class="bi bi-terminal"></i> <input type="text" readonly="readonly" value="{{ package.installCommand(version) }}" /></p>
 
                     {% if listsFlaggingVersionsAsMalware %}
-                    <div class="alert alert-danger"><i class="bi bi-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware by {{ listsFlaggingVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a>!</div>
+                    <div class="alert alert-danger"><i class="bi bi-fire"></i> Versions of this package have been <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware</a>!</div>
                     {% elseif deletedMalwareNoticeExpiresAt %}
-                    <div class="alert alert-warning deleted-malware-notice"><i class="bi bi-exclamation-triangle"></i> Versions of this package were <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware by {{ listsFlaggingDeletedVersionsAsMalware|map(l => l.displayName)|join(', ', ' and ') }}</a> and have since been deleted. If your project installed one of them (check your composer.lock), treat it as compromised. This notice will be removed on {{ deletedMalwareNoticeExpiresAt|date('M j, Y') }}.</div>
+                    <div class="alert alert-warning deleted-malware-notice"><i class="bi bi-exclamation-triangle"></i> Versions of this package were <a href="{{ path('view_package_filter_lists', {name: package.name, list: 'malware'}) }}">flagged as malware</a> and have since been deleted. If your project installed one of them (check your composer.lock), treat it as compromised. This notice will be removed on {{ deletedMalwareNoticeExpiresAt|date('M j, Y') }}.</div>
                     {% endif %}
 
                     {% if not package.isAutoUpdated() and is_granted('update', package) %}
