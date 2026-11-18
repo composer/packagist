@@ -1,0 +1,12 @@
+{% set socketSupplyChainAlerts = socket_supply_chain_alerts(package.name) %}
+{% if socketSupplyChainAlerts %}
+{% set socketPackageUrl = 'https://socket.dev/composer/package/' ~ package.name %}
+<div class="alert alert-warning socket-supply-chain-alerts">
+    <i class="bi bi-exclamation-triangle"></i> <a rel="nofollow noopener external noindex" href="{{ socketPackageUrl }}">Socket</a> reports supply chain risks in versions of this package:
+    <ul class="mb-0">
+        {% for group in socketSupplyChainAlerts %}
+            <li>{{ group.type.label }}: {% for alert in group.alerts %}{% if alert.link %}<a rel="nofollow noopener external noindex" href="{{ alert.link }}">{{ alert.version }}</a>{% else %}{{ alert.version }}{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}{% if group.more %} and <a rel="nofollow noopener external noindex" href="{{ socketPackageUrl }}">{{ group.more }} more</a>{% endif %}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}

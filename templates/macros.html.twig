@@ -101,3 +101,10 @@
         {{ packageName }}
     {%- endif -%}
 {% endmacro %}
+
+{# the date a security report came in, which orders reports of the same version #}
+{% macro reportedAt(date) %}
+    {%- if date -%}
+        <time datetime="{{ date|date('Y-m-d\\TH:i:s\\Z', 'UTC') }}" title="{{ date|date('Y-m-d H:i', 'UTC') }} UTC">{{ date|date('Y-m-d', 'UTC') }}</time>
+    {%- endif -%}
+{% endmacro %}

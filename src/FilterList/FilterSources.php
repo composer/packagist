@@ -15,6 +15,7 @@ namespace App\FilterList;
 enum FilterSources: string
 {
     case AIKIDO = 'aikido';
+    case SOCKET = 'socket';
     case PACKAGIST = 'packagist';
 
     /**
@@ -25,6 +26,7 @@ enum FilterSources: string
     {
         return match ($this) {
             self::AIKIDO => 'img/sponsors/aikido-dark.svg',
+            self::SOCKET => 'img/sponsors/socket-dark.svg',
             self::PACKAGIST => null,
         };
     }
@@ -33,6 +35,7 @@ enum FilterSources: string
     {
         return match ($this) {
             self::AIKIDO => 'Aikido',
+            self::SOCKET => 'Socket',
             self::PACKAGIST => 'Packagist.org',
         };
     }
@@ -45,6 +48,7 @@ enum FilterSources: string
     {
         return match ($this) {
             self::AIKIDO => 'https://aikido.dev/',
+            self::SOCKET => 'https://socket.dev/',
             self::PACKAGIST => null,
         };
     }

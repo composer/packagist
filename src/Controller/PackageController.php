@@ -53,6 +53,7 @@ use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
 use App\Util\Killswitch;
+use App\Util\VersionReportOrder;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
@@ -793,7 +794,6 @@ class PackageController extends Controller
             }
 
             $data['listsFlaggingVersionsAsMalware'] = [];
-            $data['listsFlaggingDeletedVersionsAsMalware'] = [];
             $data['deletedMalwareNoticeExpiresAt'] = null;
             $data['hasVersionsFlaggedAsMalware'] = [];
             $lastFlaggedVersionDeletedAt = null;
@@ -807,11 +807,8 @@ class PackageController extends Controller
                         $deletedAt = $version->getSoftDeletedAt();
                         if (null === $deletedAt) {
                             $data['listsFlaggingVersionsAsMalware'][$source->value] = $source;
-                        } else {
-                            $data['listsFlaggingDeletedVersionsAsMalware'][$source->value] = $source;
-                            if (null === $lastFlaggedVersionDeletedAt || $deletedAt > $lastFlaggedVersionDeletedAt) {
-                                $lastFlaggedVersionDeletedAt = $deletedAt;
-                            }
+                        } elseif (null === $lastFlaggedVersionDeletedAt || $deletedAt > $lastFlaggedVersionDeletedAt) {
+                            $lastFlaggedVersionDeletedAt = $deletedAt;
                         }
                     }
                 }
@@ -841,7 +838,6 @@ class PackageController extends Controller
             $data['hasVersionSecurityAdvisories'] = [];
             $data['hasVersionsFlaggedAsMalware'] = [];
             $data['listsFlaggingVersionsAsMalware'] = [];
-            $data['listsFlaggingDeletedVersionsAsMalware'] = [];
             $data['deletedMalwareNoticeExpiresAt'] = null;
         }
 
@@ -2123,7 +2119,7 @@ class PackageController extends Controller
             }
         }
 
-        $data['entries'] = $entries;
+        $data['entries'] = VersionReportOrder::sort($entries, static fn (FilterListEntry $entry) => $entry->getVersion(), static fn (FilterListEntry $entry) => $entry->getReportedAt());
         $data['count'] = \count($entries);
         $data['list'] = $list;
 

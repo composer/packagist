@@ -179,6 +179,11 @@ class SecurityAdvisory
         return $this->cve;
     }
 
+    public function getReportedAt(): \DateTimeImmutable
+    {
+        return $this->reportedAt;
+    }
+
     public function getAffectedVersions(): string
     {
         return $this->affectedVersions;

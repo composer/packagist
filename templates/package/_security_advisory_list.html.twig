@@ -1,3 +1,4 @@
+{% import "macros.html.twig" as macros %}
 <section class="row">
     <section class="col-lg-12">
         {% if securityAdvisories|length %}
@@ -26,7 +27,7 @@
                                     <p>Affected version: {{ advisory.affectedVersions }}</p>
                                 </div>
                                 <div class="col-md-4 col-xl-3">
-                                    <p>Reported by:<br/>{% for source in advisory.sources %}{{ source.source }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+                                    <p>Reported by:<br/>{% for source in advisory.sources %}{{ source.source }}{% if not loop.last %}, {% endif %}{% endfor %} on {{ macros.reportedAt(advisory.reportedAt) }}</p>
                                 </div>
                             </div>
                         </div>

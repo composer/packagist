@@ -1,3 +1,4 @@
+{% import "macros.html.twig" as macros %}
 <section class="row">
     <section class="col-lg-12">
         {% if entries|length %}
@@ -28,6 +29,7 @@
                                         {% else %}
                                             Reported by: {{ entry.source.displayName }}
                                         {% endif %}
+                                        {% if entry.reportedAt %}on {{ macros.reportedAt(entry.reportedAt) }}{% endif %}
                                     </p>
                                 </div>
                             </div>

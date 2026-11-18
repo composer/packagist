@@ -22,6 +22,8 @@ use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageReadme;
 use App\Entity\PackageRepository;
+use App\Entity\SecurityAdvisory;
+use App\Entity\SocketSupplyChainAlert;
 use App\Entity\User;
 use App\Entity\Vendor;
 use App\Entity\Version;
@@ -31,8 +33,10 @@ use App\FilterList\RemoteFilterListEntry;
 use App\Log\AuditLogEventType;
 use App\Model\ProviderManager;
 use App\Package\PackageListCache;
+use App\SecurityAdvisory\RemoteSecurityAdvisory;
 use App\Service\Spam\FeatureExtractor;
 use App\Service\Spam\SpamClassifier;
+use App\Socket\SupplyChainAlertType;
 use App\Tests\IntegrationTestCase;
 use Composer\Package\Version\VersionParser;
 use Doctrine\DBAL\Driver\Exception as DriverExceptionInterface;
@@ -148,6 +152,34 @@ class PackageControllerTest extends IntegrationTestCase
         yield 'data url' => ['data://text/html,x', null];
     }
 
+    public function testViewShowsSocketSupplyChainAlerts(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $this->store(
+            $package,
+            new SocketSupplyChainAlert('test/pkg', '1.0.0', SupplyChainAlertType::TYPOSQUAT, 'https://socket.dev/composer/package/test/pkg/alerts/1.0.0'),
+            new SocketSupplyChainAlert('test/pkg', '1.1.0', SupplyChainAlertType::TYPOSQUAT, null),
+            new SocketSupplyChainAlert('test/pkg', '1.1.0', SupplyChainAlertType::TELEMETRY, null),
+            new SocketSupplyChainAlert('test/other', '1.0.0', SupplyChainAlertType::PROTESTWARE, null),
+        );
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+
+        $items = $crawler->filter('.socket-supply-chain-alerts li');
+        self::assertSame(['Typosquat: 1.1.0, 1.0.0', 'Telemetry: 1.1.0'], $items->each(static fn ($item) => $item->text()));
+        self::assertSame('https://socket.dev/composer/package/test/pkg/alerts/1.0.0', $items->first()->filter('a')->attr('href'));
+    }
+
+    public function testViewHasNoSocketSupplyChainAlertsWithoutAlerts(): void
+    {
+        $this->store(self::createPackage('test/pkg', 'https://example.com/test/pkg'));
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('.socket-supply-chain-alerts'));
+    }
+
     public function testVersionListMakesTheWholeVersionNumberCellALink(): void
     {
         $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
@@ -173,6 +205,57 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $link);
         self::assertSame('#1.0.0', $link->attr('href'));
         self::assertCount(0, $crawler->filter('.versions .version div.version-number'));
+    }
+
+    public function testMalwarePageListsNewestVersionFirstThenEarliestReport(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $this->store(
+            $package,
+            FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '1.0.0', FilterLists::MALWARE, null, 'malware', FilterSources::SOCKET, new \DateTimeImmutable('2026-01-01'))),
+            FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '2.0.0', FilterLists::MALWARE, null, 'malware', FilterSources::AIKIDO)),
+            FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '2.0.0', FilterLists::MALWARE, null, 'malware', FilterSources::SOCKET, new \DateTimeImmutable('2026-03-01'))),
+            FilterListEntry::fromRemote(new RemoteFilterListEntry('test/pkg', '1.10.0', FilterLists::MALWARE, null, 'malware', FilterSources::AIKIDO)),
+        );
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg/filter-lists/malware/');
+        self::assertResponseIsSuccessful();
+
+        // "Flagged version: <version> Reason: ..." and the reporter's logo
+        self::assertSame(
+            [['2.0.0', 'Socket'], ['2.0.0', 'Aikido'], ['1.10.0', 'Aikido'], ['1.0.0', 'Socket']],
+            $crawler->filter('.package-item')->each(static fn ($item) => [explode(' ', $item->text())[2], $item->filter('img')->attr('alt')]),
+        );
+        self::assertSame(
+            ['2026-03-01T00:00:00Z', null, null, '2026-01-01T00:00:00Z'],
+            $crawler->filter('.package-item')->each(static fn ($item) => $item->filter('time')->count() ? $item->filter('time')->attr('datetime') : null),
+        );
+    }
+
+    public function testAdvisoriesPageShowsWhenEachAdvisoryWasReported(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.com/test/pkg');
+        $advisory = new SecurityAdvisory(new RemoteSecurityAdvisory(
+            'GHSA-test-test-test',
+            'Remote code execution',
+            'test/pkg',
+            '<1.0.1',
+            'https://example.com/advisory',
+            null,
+            new \DateTimeImmutable('2026-01-27 05:21:14'),
+            SecurityAdvisory::PACKAGIST_ORG,
+            [],
+            'GitHub',
+            null,
+        ), 'GitHub');
+        $this->store($package, $advisory);
+
+        $crawler = $this->client->request('GET', '/packages/test/pkg/advisories');
+        self::assertResponseIsSuccessful();
+
+        $reportedAt = $crawler->filter('.package-item time');
+        self::assertSame('2026-01-27', $reportedAt->text());
+        self::assertSame('2026-01-27T05:21:14Z', $reportedAt->attr('datetime'));
     }
 
     public function testPackagePageOmitsManagementFormsForVisitorsWhoCannotUseThem(): void
@@ -1525,7 +1608,10 @@ class PackageControllerTest extends IntegrationTestCase
     {
         $crawler = $this->requestPackagePageWithFlaggedVersion(null);
 
-        self::assertCount(1, $crawler->filter('.alert-danger .bi-fire'));
+        $banner = $crawler->filter('.alert-danger:has(.bi-fire)');
+        self::assertCount(1, $banner);
+        self::assertSame('Versions of this package have been flagged as malware!', $banner->text());
+        self::assertSame('/packages/test/pkg/filter-lists/malware/', $banner->filter('a')->attr('href'));
         self::assertCount(0, $crawler->filter('.deleted-malware-notice'));
         self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
     }
@@ -1540,7 +1626,8 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(0, $crawler->filter('.alert-danger .bi-fire'));
         $notice = $crawler->filter('.alert-warning.deleted-malware-notice');
         self::assertCount(1, $notice);
-        self::assertStringContainsString('flagged as malware by Aikido', $notice->text());
+        self::assertStringContainsString('Versions of this package were flagged as malware and have since been deleted.', $notice->text());
+        self::assertStringNotContainsString('Aikido', $notice->text());
         self::assertStringContainsString('will be removed on '.$deletedAt->modify('+7 days')->format('M j, Y'), $notice->text());
         self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
     }
@@ -1557,7 +1644,7 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertCount(1, $crawler->filter('ul.versions .malware-alert'));
     }
 
-    public function testPackagePageMalwareBannerOnlyNamesSourcesFlaggingLiveVersions(): void
+    public function testPackagePageMalwareBannerStaysWhileAnyFlaggedVersionIsLive(): void
     {
         $package = self::createPackage('test/pkg', 'https://example.org/pkg');
         $package->setCrawledAt(new \DateTimeImmutable());
@@ -1575,8 +1662,7 @@ class PackageControllerTest extends IntegrationTestCase
 
         $banner = $crawler->filter('.alert-danger:has(.bi-fire)');
         self::assertCount(1, $banner);
-        self::assertStringContainsString('flagged as malware by Aikido!', $banner->text());
-        self::assertStringNotContainsString('Packagist.org', $banner->text());
+        self::assertSame('Versions of this package have been flagged as malware!', $banner->text());
         self::assertCount(0, $crawler->filter('.deleted-malware-notice'));
         self::assertCount(2, $crawler->filter('ul.versions .malware-alert'));
     }
