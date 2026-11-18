@@ -18,6 +18,7 @@ use App\Util\DoctrineTrait;
 use Composer\Util\Http\ResponseWarnings;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
+use Monolog\Level;
 use Monolog\Logger;
 use Predis\Client as Redis;
 use Seld\Signal\SignalHandler;
@@ -186,8 +187,10 @@ class QueueWorker
         Assert::keyExists($result, 'status');
         Assert::inArray($result['status'], [Job::STATUS_COMPLETED, Job::STATUS_FAILED, Job::STATUS_ERRORED, Job::STATUS_PACKAGE_GONE, Job::STATUS_PACKAGE_DELETED]);
 
+        $logLevel = $result['logLevel'] ?? null;
+        unset($result['logLevel']);
         if ($result['status'] === Job::STATUS_FAILED) {
-            $this->logger->warning('Job '.$job->getId().' failed', $result);
+            $this->logger->log($logLevel ?? Level::Warning, 'Job '.$job->getId().' failed', $result);
         } elseif ($result['status'] === Job::STATUS_ERRORED) {
             $this->logger->error('Job '.$job->getId().' errored', $result);
         }

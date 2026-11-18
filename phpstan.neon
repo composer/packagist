@@ -70,7 +70,7 @@ parameters:
         GenericCompletedResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string}'
         RescheduleResult: 'array{status: \App\Entity\Job::STATUS_RESCHEDULE, after: \DateTimeImmutable, message: string, vendor?: string}'
         PackageCompletedResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string, details: string, vendor: string}'
-        PackageFailedResult: 'array{status: \App\Entity\Job::STATUS_FAILED, message: string, vendor: string, exception: \Throwable, details?: string}'
+        PackageFailedResult: 'array{status: \App\Entity\Job::STATUS_FAILED, message: string, vendor: string, exception: \Throwable, details?: string, logLevel?: \Monolog\Level}'
         PackageGoneResult: 'array{status: \App\Entity\Job::STATUS_PACKAGE_GONE, message: string, vendor: string, exception: \Throwable, details?: string}'
         PackageDeletedResult: 'array{status: \App\Entity\Job::STATUS_PACKAGE_DELETED, message: string, vendor: string, exception: \Throwable, details: string}'
         AdvisoriesCompletedResult: 'array{status: \App\Entity\Job::STATUS_COMPLETED, message: string, details: string}'

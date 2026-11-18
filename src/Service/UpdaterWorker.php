@@ -41,6 +41,7 @@ use Composer\Semver\Intervals;
 use Doctrine\ORM\EntityNotFoundException;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
+use Monolog\Level;
 use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use Psr\SimpleCache\CacheInterface;
@@ -282,6 +283,8 @@ class UpdaterWorker
                     'details' => '<pre>'.$output.'</pre>',
                     'exception' => $e,
                     'vendor' => $packageVendor,
+                    // the maintainers were mailed, there is nothing for us to fix
+                    'logLevel' => Level::Notice,
                 ];
             }
 
