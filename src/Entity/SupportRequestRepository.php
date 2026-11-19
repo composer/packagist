@@ -76,7 +76,8 @@ class SupportRequestRepository extends ServiceEntityRepository
             // the value still JSON-quoted, which a substring LIKE does not mind.
             $qb->andWhere("u.username LIKE :search ESCAPE '!'
                     OR JSON_EXTRACT(r.attributeData, '$.vendorName') LIKE :search ESCAPE '!'
-                    OR JSON_EXTRACT(r.attributeData, '$.packageNames') LIKE :search ESCAPE '!'")
+                    OR JSON_EXTRACT(r.attributeData, '$.packageNames') LIKE :search ESCAPE '!'
+                    OR JSON_EXTRACT(r.attributeData, '$.changes[*].packageName') LIKE :search ESCAPE '!'")
                 ->setParameter('search', '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%');
         }
 

@@ -451,6 +451,24 @@ class SupportControllerTest extends IntegrationTestCase
         self::assertStringNotContainsString($withWildcard->publicId, $html);
     }
 
+    public function testQueueSearchFindsUrlChangeRequestsByPackageName(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $mover = self::createUser('mover', 'mover@example.org');
+        $this->store($admin, $mover);
+        $request = SupportRequest::create($mover, 'It moved.', new PackageUrlChangeAttributes([new PackageUrlChange('acme/console', 'https://example.org/acme/console')]));
+        $this->store($request);
+
+        $this->client->loginUser($admin);
+
+        $html = $this->client->request('GET', '/admin/support/?search=acme/console')->html();
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString($request->publicId, $html);
+
+        $html = $this->client->request('GET', '/admin/support/?search=acme/other')->html();
+        self::assertStringNotContainsString($request->publicId, $html);
+    }
+
     /**
      * js/search.js runs on every page and reads `q`, `query`, `type` and `tags` straight off the
      * query string: it redirects to /search/ when it sees a filter without a query, and otherwise
