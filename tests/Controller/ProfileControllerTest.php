@@ -90,7 +90,8 @@ class ProfileControllerTest extends IntegrationTestCase
 
         $auditLink = $crawler->filter('a[href*="transparency-log"]');
         self::assertCount(1, $auditLink);
-        self::assertStringContainsString('user=test', (string) $auditLink->attr('href'));
+        // by account id, so entries from before a rename are also found
+        self::assertStringContainsString('user_id='.$user->getId(), (string) $auditLink->attr('href'));
         self::assertStringContainsString('noindex', (string) $auditLink->attr('rel'));
     }
 

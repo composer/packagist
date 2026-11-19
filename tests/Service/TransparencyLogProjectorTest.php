@@ -20,6 +20,7 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
+use App\Entity\PackageTransparencyLogSearchRepository;
 use App\Entity\WebAuthnCredential;
 use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
@@ -670,8 +671,81 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
     }
 
     /**
-     * The container-wired projector logs where the test cannot see it, so the log assertions build
-     * their own around a collecting logger.
+     * The projector indexes every person that an entry names.
+     */
+    public function testIndexesEveryoneAPublishedEntryNames(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $previous = self::createUser('transferfrom', 'transferfrom@example.org');
+        $current = self::createUser('transferto', 'transferto@example.org');
+        $admin = self::createUser('transferadmin', 'transferadmin@example.org');
+        $em->persist($previous);
+        $em->persist($current);
+        $em->persist($admin);
+        $em->flush();
+
+        $package = self::createPackage('svc/transferred', 'https://github.com/svc/transferred', null, [$current]);
+        $em->persist($package);
+        $em->flush();
+
+        $em->getRepository(AuditRecord::class)->insert(
+            AuditRecord::packageTransferred($package, $admin, [$previous], [$current]),
+        );
+
+        self::getService(TransparencyLogProjector::class)->project(0);
+
+        $leafIndex = (int) $conn->fetchOne("SELECT leafIndex FROM package_transparency_log WHERE type = 'package_transferred'");
+        // a transfer has no single subject
+        self::assertNull($conn->fetchOne("SELECT userId FROM package_transparency_log WHERE type = 'package_transferred'"));
+
+        // the maintainers are users, the admin is the actor
+        self::assertSame(
+            ['actor:transferadmin', 'user:transferfrom', 'user:transferto'],
+            $conn->fetchFirstColumn(
+                "SELECT CONCAT(type, ':', name) FROM package_transparency_log_search WHERE leafIndex = ? ORDER BY type, name",
+                [$leafIndex],
+            ),
+        );
+    }
+
+    /**
+     * Most entries name the person only as the actor.
+     */
+    public function testIndexesAnEntryThatOnlyNamesAnActor(): void
+    {
+        $em = $this->getEM();
+        $conn = self::getService(Connection::class);
+
+        $publisher = self::createUser('versionpublisher', 'versionpublisher@example.org');
+        $em->persist($publisher);
+        $em->flush();
+
+        $package = self::createPackage('svc/published', 'https://github.com/svc/published', null, [$publisher]);
+        $em->persist($package);
+        $em->flush();
+
+        $em->getRepository(AuditRecord::class)->insert(
+            AuditRecord::packageDeleted($package, $publisher),
+        );
+
+        self::getService(TransparencyLogProjector::class)->project(0);
+
+        $leafIndex = (int) $conn->fetchOne("SELECT leafIndex FROM package_transparency_log WHERE type = 'package_deleted'");
+        self::assertNull($conn->fetchOne("SELECT userId FROM package_transparency_log WHERE type = 'package_deleted'"));
+        self::assertSame(
+            [(string) $publisher->getId()],
+            array_map('strval', $conn->fetchFirstColumn(
+                'SELECT userId FROM package_transparency_log_search WHERE leafIndex = ?',
+                [$leafIndex],
+            )),
+        );
+    }
+
+    /**
+     * The projector from the service container uses the app logger, which a test cannot read.
+     * This creates a projector that writes its log messages to the given logger, so a test can check them.
      */
     private function createProjectorLoggingTo(LoggerInterface $logger): TransparencyLogProjector
     {
@@ -680,6 +754,7 @@ class TransparencyLogProjectorTest extends IntegrationTestCase
             self::getService(TransparencyLogScrubber::class),
             self::getService(AuditRecordRepository::class),
             self::getService(PackageTransparencyLogRepository::class),
+            self::getService(PackageTransparencyLogSearchRepository::class),
             self::getService(PackageTransparencyLogQueueRepository::class),
             $logger,
         );

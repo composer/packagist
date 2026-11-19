@@ -18,6 +18,7 @@ use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogQueue;
 use App\Entity\PackageTransparencyLogQueueRepository;
 use App\Entity\PackageTransparencyLogRepository;
+use App\Entity\PackageTransparencyLogSearchRepository;
 use App\Log\TransparencyLogEventType;
 use App\Log\TransparencyLogScrubber;
 use Doctrine\Persistence\ManagerRegistry;
@@ -55,6 +56,7 @@ class TransparencyLogProjector
         private TransparencyLogScrubber $scrubber,
         private AuditRecordRepository $auditRecordRepository,
         private PackageTransparencyLogRepository $transparencyLogRepository,
+        private PackageTransparencyLogSearchRepository $transparencyLogSearchRepository,
         private PackageTransparencyLogQueueRepository $queueRepository,
         private LoggerInterface $logger,
     ) {
@@ -300,6 +302,8 @@ class TransparencyLogProjector
         }
 
         $this->transparencyLogRepository->appendProjectedEntries($entries);
+        // same transaction, so every published entry can be found by person
+        $this->transparencyLogSearchRepository->index($entries);
 
         return \count($entries);
     }

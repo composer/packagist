@@ -15,12 +15,15 @@ namespace App\Tests\Controller;
 use App\Command\ProjectTransparencyLogCommand;
 use App\Entity\AuditRecord;
 use App\Entity\PackageFreezeReason;
+use App\Entity\PackageTransparencyLogRepository;
 use App\Entity\WebAuthnCredential;
 use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
+use App\QueryFilter\TransparencyLog\UserIdFilter;
 use App\Tests\IntegrationTestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\Uid\Uuid;
 use Webauthn\CredentialRecord;
 use Webauthn\TrustPath\EmptyTrustPath;
@@ -375,6 +378,187 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
             return $match[1];
         });
+    }
+
+    /**
+     * Most entries name the person only as the actor, so the entry's userId is empty.
+     */
+    public function testActorFilterFindsEntriesThatOnlyNameThePersonAsTheActor(): void
+    {
+        $this->givenAPackageDeletedByAnAdmin();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['actor' => 'onlyactor']));
+        static::assertResponseIsSuccessful();
+
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        static::assertContains('Package deleted', $types);
+    }
+
+    /**
+     * The User filter finds what an action was about, not what the person did.
+     */
+    public function testUserFilterDoesNotFindEntriesThePersonOnlyDid(): void
+    {
+        $this->givenAPackageDeletedByAnAdmin();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user' => 'onlyactor']));
+        static::assertResponseIsSuccessful();
+
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        static::assertNotContains('Package deleted', $types);
+    }
+
+    /**
+     * A transfer has no subject. Its maintainers are found through the index only.
+     */
+    public function testOwnershipTransfersAreFoundByAMaintainerNamedOnlyInTheSnapshot(): void
+    {
+        $previous = self::createUser('snapshotonly', 'snapshotonly@example.org');
+        $current = self::createUser('newowner', 'newowner@example.org');
+        $admin = self::createUser('transfermod', 'transfermod@example.org', roles: ['ROLE_ADMIN']);
+        $this->store($previous, $current, $admin);
+
+        $package = self::createPackage('acme/transferred-log', 'https://github.com/acme/transferred-log', maintainers: [$current]);
+        $this->store($package);
+        $this->store(AuditRecord::packageTransferred($package, $admin, [$previous], [$current]));
+
+        $this->runProjector();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user' => 'snapshotonly']));
+        static::assertResponseIsSuccessful();
+
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        static::assertSame(['Package transferred'], $types);
+    }
+
+    /**
+     * A search by username finds every account that had that username.
+     */
+    public function testUserFilterReturnsTheHistoryOfTheNameAcrossEveryAccountThatHeldIt(): void
+    {
+        $this->givenARecycledUsername();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user' => 'handover']));
+        static::assertResponseIsSuccessful();
+
+        // the maintainer entries of both accounts, and the package created for the first one
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+        static::assertSame(['Maintainer added', 'Maintainer added', 'Package created'], $types);
+    }
+
+    /**
+     * Each entry shows the account id, so the accounts can be told apart.
+     */
+    public function testEntriesRecordedUnderARecycledNameShowWhichAccountTheyAreAbout(): void
+    {
+        [$renamed, $successor] = $this->givenARecycledUsername();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user' => 'handover']));
+        static::assertResponseIsSuccessful();
+
+        // ->text() reads only the first row, so read all of them
+        $details = implode(' ', $crawler->filter('td.audit-log-details')->each(fn ($node) => $node->text()));
+        static::assertStringContainsString('(#'.$renamed->getId().')', $details);
+        static::assertStringContainsString('(#'.$successor->getId().')', $details);
+    }
+
+    /**
+     * The profile link searches by account, so it also finds entries from before a rename.
+     */
+    public function testProfileDeepLinkReturnsOneAccountsHistoryAcrossItsRename(): void
+    {
+        [$renamed, $successor] = $this->givenARecycledUsername();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user_id' => $renamed->getId()]));
+        static::assertResponseIsSuccessful();
+
+        // only the entries of this account, not of the account that has the username now
+        static::assertCount(2, $crawler->filter('[data-test="log-type"]'));
+        static::assertStringContainsString('(#'.$renamed->getId().')', $crawler->filter('td.audit-log-details')->text());
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user_id' => $successor->getId()]));
+        static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
+        static::assertStringContainsString('(#'.$successor->getId().')', $crawler->filter('td.audit-log-details')->text());
+    }
+
+    /**
+     * The account is both user and actor, so the index has two rows for the entry. The search must
+     * return one. This is checked on the query, because Doctrine hides duplicates on the page, but they
+     * would still make the count and the pages wrong.
+     */
+    public function testAccountSearchReturnsOneRowPerEntryWhenTheAccountIsBothUserAndActor(): void
+    {
+        $user = self::createUser('selfacting', 'selfacting@example.org');
+        $this->store($user);
+        $package = self::createPackage('acme/self-acting', 'https://github.com/acme/self-acting', maintainers: [$user]);
+        $this->store($package);
+        $this->store(AuditRecord::passwordChanged($user, $user));
+
+        $this->runProjector();
+
+        $qb = self::getService(PackageTransparencyLogRepository::class)->getQueryBuilderForPublicView();
+        UserIdFilter::fromQuery(new InputBag(['user_id' => (string) $user->getId()]))->filter($qb);
+        $ids = $qb->select('t.id')->getQuery()->getSingleColumnResult();
+
+        static::assertNotEmpty($ids);
+        static::assertSame(array_values(array_unique($ids)), $ids);
+    }
+
+    public function testAHandEditedAccountIdDegradesToAnUnfilteredList(): void
+    {
+        $this->givenProjectedLog();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user_id' => 'not-an-id']));
+
+        static::assertResponseIsSuccessful();
+        static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
+    }
+
+    /**
+     * Account A has the username `handover` and gets an entry. Then A is renamed, and account B takes
+     * the username and gets an entry.
+     *
+     * @return array{\App\Entity\User, \App\Entity\User} the renamed account and the one that took its name
+     */
+    private function givenARecycledUsername(): array
+    {
+        $renamed = self::createUser('handover', 'handover-first@example.org');
+        $admin = self::createUser('handoveradmin', 'handoveradmin@example.org', roles: ['ROLE_ADMIN']);
+        $this->store($renamed, $admin);
+
+        $package = self::createPackage('acme/handover', 'https://github.com/acme/handover', maintainers: [$renamed]);
+        $this->store($package);
+        $this->store(AuditRecord::maintainerAdded($package, $renamed, $admin));
+
+        $renamed->setUsername('handover_old');
+        $renamed->setUsernameCanonical('handover_old');
+        $this->getEM()->flush();
+
+        $successor = self::createUser('handover', 'handover-second@example.org');
+        $this->store($successor);
+        $this->store(AuditRecord::maintainerAdded($package, $successor, $admin));
+
+        $this->runProjector();
+
+        return [$renamed, $successor];
+    }
+
+    private function givenAPackageDeletedByAnAdmin(): void
+    {
+        $actor = self::createUser('onlyactor', 'onlyactor@example.org', roles: ['ROLE_ADMIN']);
+        $this->store($actor);
+        $package = self::createPackage('acme/actor-only', 'https://github.com/acme/actor-only');
+        $this->store($package);
+        $this->store(AuditRecord::packageDeleted($package, $actor));
+
+        $this->runProjector();
     }
 
     private function givenProjectedLog(): void

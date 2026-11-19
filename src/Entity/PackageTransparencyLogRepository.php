@@ -90,6 +90,22 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
+     * Entries in leafIndex order, for the backfill of {@see PackageTransparencyLogSearch}.
+     *
+     * @return list<PackageTransparencyLog>
+     */
+    public function findForIndexing(int $afterLeafIndex, int $limit): array
+    {
+        return $this->createQueryBuilder('t')
+            ->where('t.leafIndex > :after')
+            ->setParameter('after', $afterLeafIndex)
+            ->orderBy('t.leafIndex', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * All entries, newest event first. Ordered by event time rather than leafIndex, so a late or
      * backfilled entry shows up where it happened instead of at the top.
      * {@see TransparencyLogEventType::temporarilyHiddenTypes()} are projected but only shown when

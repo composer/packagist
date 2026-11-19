@@ -12,24 +12,20 @@
 
 namespace App\QueryFilter\TransparencyLog;
 
-use App\Entity\User;
-use Doctrine\ORM\QueryBuilder;
+use App\Log\TransparencyLogSearchType;
 
 /**
- * Filters down to entries about one user, by the canonical (lowercased) username. Matches the user
- * the event is about, not the actor.
+ * Entries about a username, including the maintainers of a transfer.
  */
-class UserFilter extends AbstractTextFilter
+class UserFilter extends AbstractSearchIndexFilter
 {
     protected static function key(): string
     {
         return 'user';
     }
 
-    protected function applyFilter(QueryBuilder $qb, string $value): QueryBuilder
+    protected static function type(): TransparencyLogSearchType
     {
-        return $qb
-            ->andWhere(\sprintf('t.userId IN (SELECT u.id FROM %s u WHERE u.usernameCanonical = :user)', User::class))
-            ->setParameter('user', mb_strtolower($value));
+        return TransparencyLogSearchType::User;
     }
 }
