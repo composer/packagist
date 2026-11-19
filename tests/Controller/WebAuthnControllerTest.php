@@ -21,21 +21,29 @@ use App\Log\AuditLogEventType;
 use App\Security\SecondFactorManager;
 use App\Security\SecondFactorProofStore;
 use App\Security\TotpAuthManager;
+use App\Security\WebAuthn\CredentialType;
+use App\Security\WebAuthn\FidoMetadataRepository;
+use App\Security\WebAuthn\FidoMetadataUnavailableException;
 use App\Security\WebAuthn\WebAuthnManager;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
+use App\Tests\Security\WebAuthn\AttestationAuthority;
 use App\Tests\Security\WebAuthn\VirtualAuthenticator;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Clock\Clock;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\Authentication\Token\RememberMeToken;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
+use Webauthn\MetadataService\Statement\StatusReport;
 
 class WebAuthnControllerTest extends IntegrationTestCase
 {
@@ -43,6 +51,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     private VirtualAuthenticator $authenticator;
     private MockClock $clock;
     private string $csrf;
+    private FidoMetadataRepository $metadata;
 
     protected function setUp(): void
     {
@@ -53,6 +62,8 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->store($this->user);
         $this->client->loginUser($this->user);
         $this->authenticator = new VirtualAuthenticator();
+        $this->metadata = $this->createStub(FidoMetadataRepository::class);
+        self::getContainer()->set(FidoMetadataRepository::class, $this->metadata);
         $crawler = $this->client->request('GET', '/profile/security/keys');
         $this->csrf = $crawler->filter('form[data-webauthn="register"] input[name="_token"]')->attr('value');
     }
@@ -63,7 +74,9 @@ class WebAuthnControllerTest extends IntegrationTestCase
         parent::tearDown();
     }
 
-    public function testWebAuthnEnrollmentIsDeniedWithoutAdminRole(): void
+    #[TestWith(['regular'])]
+    #[TestWith(['hardware'])]
+    public function testWebAuthnEnrollmentIsDeniedWithoutAdminRole(string $kind): void
     {
         $user = $this->freshUser();
         $user->removeRole('ROLE_ADMIN');
@@ -74,7 +87,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(404);
 
         foreach (['/profile/security/keys/options', '/profile/security/keys/register'] as $path) {
-            $this->client->request('POST', $path, ['_token' => $this->csrf]);
+            $this->client->request('POST', $path, ['_token' => $this->csrf, 'name' => 'My key', 'kind' => $kind]);
             self::assertResponseStatusCodeSame(403);
         }
     }
@@ -113,10 +126,311 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSelectorNotExists('[aria-labelledby="passkeys-heading"] form');
     }
 
+    public function testUnsupportedCredentialTypeIsRejected(): void
+    {
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'unknown']);
+        self::assertResponseStatusCodeSame(400);
+        self::assertStringContainsString('Choose a supported key type.', $this->client->getResponse()->getContent());
+    }
+
+    public function testUnavailableMetadataBlocksOnlyHardwareEnrollmentOptions(): void
+    {
+        $this->metadata->method('ensureAvailable')->willThrowException(new FidoMetadataUnavailableException('The FIDO metadata feed has not been imported'));
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
+        self::assertResponseStatusCodeSame(503);
+        self::assertJsonStringEqualsJsonString('{"error":"Verified hardware security key enrollment is temporarily unavailable. Please try again later."}', $this->client->getResponse()->getContent());
+
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'regular']);
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testMetadataCanExpireAfterHardwareEnrollmentOptionsAreIssued(): void
+    {
+        $authority = new AttestationAuthority();
+        $this->authenticator->attestation = $authority;
+        $this->authenticator->aaguid = AttestationAuthority::AAGUID;
+        $this->metadata->method('findOneByAAGUID')->willThrowException(new FidoMetadataUnavailableException('The FIDO metadata feed has expired'));
+
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
+        self::assertResponseIsSuccessful();
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/profile/security/keys/register', [
+            '_token' => $this->csrf, 'name' => 'My key',
+            'credential' => $this->authenticator->register($options),
+        ]);
+        self::assertResponseStatusCodeSame(503);
+        self::assertJsonStringEqualsJsonString('{"error":"Verified hardware security key enrollment is temporarily unavailable. Please try again later."}', $this->client->getResponse()->getContent());
+        self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
+    }
+
+    #[TestWith([''])]
+    #[TestWith(['remote'])]
+    public function testVerifiedHardwareKeyEnrollmentAndSignIn(string $variant): void
+    {
+        $this->configureHardwareMetadata($variant);
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
+        self::assertResponseIsSuccessful();
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        self::assertSame('direct', $options['attestation']);
+        self::assertSame('cross-platform', $options['authenticatorSelection']['authenticatorAttachment']);
+
+        $this->client->request('POST', '/profile/security/keys/register', [
+            '_token' => $this->csrf, 'name' => 'Hardware key', 'kind' => 'regular',
+            'credential' => $this->authenticator->register($options),
+        ]);
+        self::assertResponseIsSuccessful();
+        self::getEM()->clear();
+        $credential = self::getEM()->find(WebAuthnCredential::class, hash('sha256', $this->authenticator->id));
+        self::assertNotNull($credential);
+        self::assertSame('Test hardware key', $credential->authenticatorDescription);
+        self::assertSame(CredentialType::VerifiedHardware, $credential->credentialType);
+        $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::WebAuthnCredentialAdded, 'userId' => $this->user->getId()]);
+        self::assertNotNull($audit);
+        self::assertSame('hardware', $audit->attributes['credentialType']);
+        self::assertSame('Test hardware key', $audit->attributes['authenticatorDescription']);
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorTextContains('.badge', 'Verified hardware security key');
+        self::assertSelectorExists('.two-factor-backup-code');
+        $this->beginLogin();
+        $this->finishLoginWithKey();
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertResponseIsSuccessful();
+    }
+
+    #[TestWith(['none'])]
+    #[TestWith(['self'])]
+    #[TestWith(['unknown'])]
+    #[TestWith(['software'])]
+    #[TestWith(['backup'])]
+    #[TestWith(['nil'])]
+    #[TestWith(['no_status'])]
+    #[TestWith(['revoked'])]
+    #[TestWith(['compromised'])]
+    #[TestWith(['untrusted'])]
+    #[TestWith(['platform'])]
+    #[TestWith(['missing_attachment'])]
+    #[TestWith(['mixed_attachment'])]
+    public function testHardwareEnrollmentRejectsUnverifiedKeys(string $failure): void
+    {
+        $this->configureHardwareMetadata($failure);
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
+        self::assertResponseIsSuccessful();
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/profile/security/keys/register', [
+            '_token' => $this->csrf, 'name' => 'Hardware key', 'kind' => 'regular',
+            'credential' => $this->authenticator->register($options, $failure === 'self'),
+        ]);
+        self::assertResponseStatusCodeSame(400);
+        self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
+        self::assertSame(0, self::getEM()->getRepository(WebAuthnCredential::class)->count([]));
+        self::assertEmailCount(0);
+    }
+
+    #[TestWith([['REVOKED', 'FIDO_CERTIFIED']])]
+    #[TestWith([['FIDO_CERTIFIED', 'REVOKED']])]
+    #[TestWith([['ATTESTATION_KEY_COMPROMISE', 'FIDO_CERTIFIED']])]
+    #[TestWith([['FIDO_CERTIFIED', 'ATTESTATION_KEY_COMPROMISE']])]
+    public function testHardwareEnrollmentRejectsUnsafeStatusReportsInEitherOrder(array $statuses): void
+    {
+        $this->configureHardwareMetadata('', $statuses);
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
+        self::assertResponseIsSuccessful();
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/profile/security/keys/register', [
+            '_token' => $this->csrf, 'name' => 'Hardware key',
+            'credential' => $this->authenticator->register($options),
+        ]);
+        self::assertResponseStatusCodeSame(400);
+        self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
+        self::assertSame(0, self::getEM()->getRepository(WebAuthnCredential::class)->count([]));
+        self::assertEmailCount(0);
+    }
+
+    public function testOrdinaryEnrollmentCannotAcquireHardwareClassificationByChangingTheForm(): void
+    {
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key']);
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/profile/security/keys/register', [
+            '_token' => $this->csrf, 'kind' => 'hardware', 'name' => 'Ordinary key',
+            'credential' => $this->authenticator->register($options),
+        ]);
+        self::assertResponseIsSuccessful();
+        $credential = self::getEM()->find(WebAuthnCredential::class, hash('sha256', $this->authenticator->id));
+        self::assertNull($credential->authenticatorDescription);
+        self::assertSame(CredentialType::Regular, $credential->credentialType);
+    }
+
+    public function testHardwareEnrollmentCannotCrossAccounts(): void
+    {
+        $this->configureHardwareMetadata();
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
+        self::assertResponseIsSuccessful();
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $other = self::createUser('other', 'other@example.org', roles: ['ROLE_ADMIN']);
+        $this->store($other);
+        $this->client->loginUser($other);
+        $crawler = $this->client->request('GET', '/profile/security/keys');
+        $csrf = $crawler->filter('form[data-webauthn="register"] input[name="_token"]')->attr('value');
+        $this->client->request('POST', '/profile/security/keys/register', [
+            '_token' => $csrf, 'name' => 'Wrong account', 'credential' => $this->authenticator->register($options),
+        ]);
+        self::assertResponseStatusCodeSame(400);
+        self::assertFalse($other->hasSecondFactorAuthenticationEnabled());
+        self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
+    }
+
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testAuthenticationProofReflectsTheKeyUsedForSignInAndConfirmation(bool $hardware): void
+    {
+        if ($hardware) {
+            $this->configureHardwareMetadata();
+        }
+
+        $this->register('My key', $hardware);
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorNotExists('[data-credential-verification]');
+        $this->assertWebAuthnProof(true, false);
+        $this->verify();
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorTextContains('[data-credential-verification] .badge', 'Verified in this session · 10 min remaining');
+        $this->assertWebAuthnProof(true, $hardware);
+        $this->clock->sleep(599);
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorTextContains('[data-credential-verification] .badge', 'less than a minute remaining');
+        $this->clock->sleep(1);
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorNotExists('[data-credential-verification]');
+        $this->assertWebAuthnProof(true, $hardware, false);
+        $this->beginLogin();
+        $this->assertWebAuthnProof(false, false);
+        $this->authenticator->counter++;
+        $this->finishLoginWithKey();
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('[data-credential-verification] .badge', 'Verified in this session · 10 min remaining');
+        $this->assertWebAuthnProof(true, $hardware);
+    }
+
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testFailedHardwareAssertionDoesNotGrantProof(bool $signIn): void
+    {
+        $this->configureHardwareMetadata();
+        $this->register('Hardware key', true);
+
+        if ($signIn) {
+            $this->beginLogin();
+            $this->authenticator->corruptSignature = true;
+            $this->finishLoginWithKey();
+            self::assertResponseRedirects('/2fa');
+            $this->assertWebAuthnProof(false, false);
+
+            return;
+        }
+
+        $this->clock->sleep(600);
+        $this->client->request('POST', '/profile/security/keys/verify/options', ['_token' => $this->csrf]);
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $this->authenticator->corruptSignature = true;
+        $this->client->request('POST', '/profile/security/keys/verify', [
+            '_token' => $this->csrf, 'credential' => $this->authenticator->authenticate($options),
+        ]);
+        self::assertResponseStatusCodeSame(400);
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorNotExists('[data-credential-verification]');
+        $this->assertWebAuthnProof(true, false, false);
+    }
+
+    public function testRecentVerificationIndicatorIdentifiesOnlyTheKeyUsed(): void
+    {
+        $first = $this->register('First key');
+        $firstAuthenticator = $this->authenticator;
+        $this->authenticator = new VirtualAuthenticator();
+        $second = $this->register('Second key');
+        $this->authenticator = $firstAuthenticator;
+        $this->verify();
+        $crawler = $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorCount(1, '[data-credential-verification]');
+        $firstRow = $crawler->filter('#key-'.$first->id)->closest('li');
+        $secondRow = $crawler->filter('#key-'.$second->id)->closest('li');
+        self::assertNotNull($firstRow);
+        self::assertNotNull($secondRow);
+        self::assertCount(1, $firstRow->filter('[data-credential-verification]'));
+        self::assertCount(0, $secondRow->filter('[data-credential-verification]'));
+    }
+
+    public function testLastUseInAnotherSessionDoesNotShowTheIndicator(): void
+    {
+        $credential = $this->register();
+        $this->verify();
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorExists('[data-credential-verification]');
+        $this->client->restart();
+        $this->client->loginUser($this->freshUser());
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('[data-credential-verification]');
+        $storedCredential = self::getEM()->find(WebAuthnCredential::class, $credential->id);
+        self::assertNotNull($storedCredential);
+        self::assertNotNull($storedCredential->lastUsedAt);
+    }
+
+    private function assertWebAuthnProof(bool $authenticated, bool $hardware, bool $recent = true): void
+    {
+        $request = new Request();
+        $request->setSession($this->client->getSession());
+        $requests = new RequestStack();
+        $requests->push($request);
+        $proofs = new SecondFactorProofStore($requests, $this->clock);
+        $user = $this->freshUser();
+        self::assertSame($authenticated, $proofs->hasProof($user, SecondFactorProofStore::WEBAUTHN));
+        self::assertSame($authenticated && $recent, $proofs->hasRecentProof($user, SecondFactorProofStore::WEBAUTHN));
+        self::assertSame($hardware, $proofs->hasProof($user, SecondFactorProofStore::HARDWARE_KEY));
+        self::assertSame($hardware && $recent, $proofs->hasRecentProof($user, SecondFactorProofStore::HARDWARE_KEY));
+    }
+
+    /** @param list<string>|null $statuses */
+    private function configureHardwareMetadata(string $failure = '', ?array $statuses = null): void
+    {
+        Clock::set($this->clock = new MockClock());
+        $authority = new AttestationAuthority();
+        $statement = $authority->statement();
+        $this->authenticator->attestation = \in_array($failure, ['none', 'self'], true) ? null : $authority;
+        $this->authenticator->aaguid = $failure === 'nil' ? '00000000-0000-0000-0000-000000000000' : $authority::AAGUID;
+
+        if ($failure === 'backup') {
+            $this->authenticator->flags |= 8;
+        }
+
+        if (\in_array($failure, ['software', 'remote'], true)) {
+            $statement->keyProtection = $failure === 'software' ? ['software'] : ['hardware', 'remote_handle'];
+        }
+
+        $statement->attachmentHint = match ($failure) {
+            'platform' => ['internal'],
+            'missing_attachment' => [],
+            'mixed_attachment' => ['internal', 'external', 'wired'],
+            default => $statement->attachmentHint,
+        };
+
+        if ($failure === 'untrusted') {
+            $statement = new AttestationAuthority()->statement();
+        }
+
+        $status = match ($failure) {
+            'revoked' => 'REVOKED', 'compromised' => 'ATTESTATION_KEY_COMPROMISE', default => 'FIDO_CERTIFIED',
+        };
+        $repository = $this->metadata;
+        $repository->method('findOneByAAGUID')->willReturn($failure === 'unknown' ? null : $statement);
+        $statuses ??= $failure === 'no_status' ? [] : [$status];
+        $repository->method('findStatusReportsByAAGUID')->willReturn(array_map(static fn (string $status) => new StatusReport($status, null, null, null, null, null, null, null), $statuses));
+    }
+
     public function testFirstKeyEnablesMfaAndShowsBackupCodeOnce(): void
     {
         $credential = $this->register();
-        self::assertSame('My key', $credential->getName());
+        self::assertSame('My key', $credential->name);
         self::assertFalse($this->freshUser()->isTotpAuthenticationEnabled());
         self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
         $crawler = $this->client->request('GET', '/profile/security/keys');
@@ -132,6 +446,8 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::WebAuthnCredentialAdded, 'userId' => $this->user->getId()]);
         self::assertNotNull($audit);
         self::assertSame('My key', $audit->attributes['credentialName']);
+        self::assertSame('regular', $audit->attributes['credentialType']);
+        self::assertNull($audit->attributes['authenticatorDescription']);
     }
 
     public function testNewlyEnrolledKeyCanBeRenamedAndAnotherAddedWithoutConfirmation(): void
@@ -141,7 +457,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
             '_token' => $this->csrf, 'action' => 'rename', 'name' => 'Renamed key',
         ]);
         self::assertResponseRedirects('/profile/security/keys');
-        self::assertSame('Renamed key', $this->freshUser()->findWebAuthnCredential($credential->id)?->getName());
+        self::assertSame('Renamed key', $this->freshUser()->findWebAuthnCredential($credential->id)?->name);
         self::assertEmailCount(0);
         $renames = self::getEM()->getRepository(AuditRecord::class)->findBy(['type' => AuditLogEventType::WebAuthnCredentialRenamed, 'userId' => $this->user->getId()]);
         self::assertCount(1, $renames);
@@ -167,7 +483,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $credential = $this->register();
         $em = self::getEM();
         $em->getConnection()->update('webauthn_credential', ['name' => 'Changed in another request'], ['id' => $credential->id]);
-        self::assertSame('My key', $credential->getName());
+        self::assertSame('My key', $credential->name);
 
         self::getService(WebAuthnManager::class)->rename($credential, 'Renamed key');
 
@@ -189,7 +505,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
             '_token' => $this->csrf, 'action' => 'rename', 'name' => $name,
         ]);
         self::assertResponseRedirects('/profile/security/keys');
-        self::assertSame('My key', $this->freshUser()->findWebAuthnCredential($credential->id)?->getName());
+        self::assertSame('My key', $this->freshUser()->findWebAuthnCredential($credential->id)?->name);
         self::assertSame(0, self::getEM()->getRepository(AuditRecord::class)->count([
             'type' => AuditLogEventType::WebAuthnCredentialRenamed,
             'userId' => $this->user->getId(),
@@ -203,14 +519,14 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $userHandle);
 
         $credential = $this->register();
-        self::assertNull($credential->getLastUsedAt());
+        self::assertNull($credential->lastUsedAt);
         $this->authenticator->counter = 0xFFFFFFFE;
         $this->verify();
 
         self::getEM()->clear();
         $storedCredential = self::getEM()->find(WebAuthnCredential::class, $credential->id);
         self::assertNotNull($storedCredential);
-        self::assertNotNull($storedCredential->getLastUsedAt());
+        self::assertNotNull($storedCredential->lastUsedAt);
         self::assertSame($this->authenticator->counter, $storedCredential->toCredentialRecord()->counter);
         self::assertSame($userHandle, $this->freshUser()->getWebAuthnUserHandle());
     }
@@ -313,7 +629,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->request('POST', '/profile/security/keys/register', ['_token' => $this->csrf, 'name' => 'Reused', 'credential' => $this->authenticator->register($options)]);
         self::assertResponseStatusCodeSame(400);
         self::assertCount(0, $this->freshUser()->getWebAuthnCredentials());
-        self::assertNotNull(self::getEM()->find(WebAuthnCredential::class, $credential->id)->getRevokedAt());
+        self::assertNotNull(self::getEM()->find(WebAuthnCredential::class, $credential->id)->revokedAt);
     }
 
     #[TestWith([false])]
@@ -455,7 +771,9 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSelectorExists('form[data-webauthn="register"]');
     }
 
-    public function testAddingAKeyAfterTotpVerificationKeepsTheBackupCode(): void
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testAddingAKeyAfterTotpVerificationKeepsTheBackupCode(bool $hardware): void
     {
         $user = $this->freshUser();
         $user->setTotpSecret('JBSWY3DPEHPK3PXP');
@@ -474,7 +792,11 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->followRedirect();
         self::assertSelectorExists('form[data-webauthn="register"]');
 
-        $this->register();
+        if ($hardware) {
+            $this->configureHardwareMetadata();
+        }
+
+        $this->register('My key', $hardware);
         self::getEM()->clear();
         $storedUser = $this->freshUser();
         self::assertCount(1, $storedUser->getWebAuthnCredentials());
@@ -502,16 +824,18 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
     }
 
-    #[TestWith(['/profile/security/keys/options'])]
-    #[TestWith(['/profile/security/keys/register'])]
-    public function testExistingSecondFactorRequiresRecentProofToEnrollAKey(string $path): void
+    #[TestWith(['/profile/security/keys/options', 'regular'])]
+    #[TestWith(['/profile/security/keys/register', 'regular'])]
+    #[TestWith(['/profile/security/keys/options', 'hardware'])]
+    #[TestWith(['/profile/security/keys/register', 'hardware'])]
+    public function testExistingSecondFactorRequiresRecentProofToEnrollAKey(string $path, string $kind): void
     {
         $user = $this->freshUser();
         $user->setTotpSecret('JBSWY3DPEHPK3PXP');
         self::getEM()->flush();
         $this->client->loginUser($user);
 
-        $this->client->request('POST', $path, ['_token' => $this->csrf]);
+        $this->client->request('POST', $path, ['_token' => $this->csrf, 'name' => 'My key', 'kind' => $kind]);
         self::assertResponseStatusCodeSame(403);
     }
 
@@ -525,13 +849,13 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->verify();
         $this->client->request('POST', '/profile/security/keys/'.$first->id.'/edit', ['_token' => $this->csrf, 'name' => 'Renamed key', 'action' => 'rename']);
         self::assertResponseRedirects('/profile/security/keys');
-        self::assertSame('Renamed key', self::getEM()->find(WebAuthnCredential::class, $first->id)->getName());
+        self::assertSame('Renamed key', self::getEM()->find(WebAuthnCredential::class, $first->id)->name);
         $this->client->request('POST', '/profile/security/keys/'.$first->id.'/edit', ['_token' => $this->csrf, 'action' => 'remove']);
         self::assertResponseRedirects('/profile/security/keys');
         $active = $this->freshUser()->getWebAuthnCredentials();
         self::assertCount(1, $active);
         self::assertSame($second->id, $active[0]->id);
-        self::assertNotNull(self::getEM()->find(WebAuthnCredential::class, $first->id)->getRevokedAt());
+        self::assertNotNull(self::getEM()->find(WebAuthnCredential::class, $first->id)->revokedAt);
     }
 
     public function testRemovalReviewRequiresProofAndReturnsAfterConfirmationWithoutRemovingTheKey(): void
@@ -586,7 +910,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->request('GET', $destination);
         self::assertResponseIsSuccessful();
         self::assertCount(1, $this->freshUser()->getWebAuthnCredentials());
-        self::assertSame('My key', $this->freshUser()->getWebAuthnCredentials()[0]->getName());
+        self::assertSame('My key', $this->freshUser()->getWebAuthnCredentials()[0]->name);
     }
 
     public function testExpiredProofDoesNotTurnAnInvalidRemovalCsrfTokenIntoARedirect(): void
@@ -599,13 +923,15 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertCount(1, $this->freshUser()->getWebAuthnCredentials());
     }
 
-    #[TestWith(['/profile/security/keys/options'])]
-    #[TestWith(['/profile/security/keys/register'])]
-    #[TestWith(['/profile/security/keys/verify/options'])]
-    #[TestWith(['/profile/security/keys/verify'])]
-    public function testCsrfIsRequired(string $path): void
+    #[TestWith(['/profile/security/keys/options', 'regular'])]
+    #[TestWith(['/profile/security/keys/register', 'regular'])]
+    #[TestWith(['/profile/security/keys/options', 'hardware'])]
+    #[TestWith(['/profile/security/keys/register', 'hardware'])]
+    #[TestWith(['/profile/security/keys/verify/options', 'regular'])]
+    #[TestWith(['/profile/security/keys/verify', 'regular'])]
+    public function testCsrfIsRequired(string $path, string $kind): void
     {
-        $this->client->request('POST', $path, ['_token' => 'invalid']);
+        $this->client->request('POST', $path, ['_token' => 'invalid', 'kind' => $kind]);
         self::assertResponseStatusCodeSame(403);
         self::assertCount(0, $this->freshUser()->getWebAuthnCredentials());
     }
@@ -674,10 +1000,15 @@ class WebAuthnControllerTest extends IntegrationTestCase
     }
 
     #[TestWith([false])]
+    #[TestWith([false, true])]
     #[TestWith([true])]
-    public function testBackupCodeDisablesKeysWithoutCreditingWebAuthnProof(bool $withTotp): void
+    public function testBackupCodeDisablesKeysWithoutCreditingWebAuthnProof(bool $withTotp, bool $hardware = false): void
     {
-        $this->register();
+        if ($hardware) {
+            $this->configureHardwareMetadata();
+        }
+
+        $this->register('My key', $hardware);
         $this->freshUser()->removeRole('ROLE_ADMIN');
         if ($withTotp) {
             $this->freshUser()->setTotpSecret('JBSWY3DPEHPK3PXP');
@@ -905,12 +1236,12 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseRedirects('/2fa');
     }
 
-    private function register(string $name = 'My key'): WebAuthnCredential
+    private function register(string $name = 'My key', bool $hardware = false): WebAuthnCredential
     {
-        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => $name]);
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => $name, 'kind' => $hardware ? 'hardware' : 'regular']);
         self::assertResponseIsSuccessful();
         $options = json_decode($this->client->getResponse()->getContent(), true);
-        self::assertSame('none', $options['attestation']);
+        self::assertSame($hardware ? 'direct' : 'none', $options['attestation']);
         $this->client->request('POST', '/profile/security/keys/register', [
             '_token' => $this->csrf, 'name' => $name, 'credential' => $this->authenticator->register($options),
         ]);
@@ -929,7 +1260,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
     }
 
-    private function beginLogin(): \Symfony\Component\DomCrawler\Crawler
+    private function beginLogin(): Crawler
     {
         $this->client->restart();
         $this->client->request('POST', '/login/', ['_username' => 'keys', '_password' => 'existing-password']);

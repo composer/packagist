@@ -551,7 +551,14 @@ class AuditRecord
         }
 
         $actor ??= $credential->user;
-        $attributes = ['user' => self::getUserData($credential->user), 'actor' => self::getUserData($actor), 'credentialId' => $credential->id, 'credentialName' => $credential->getName()];
+        $attributes = [
+            'user' => self::getUserData($credential->user),
+            'actor' => self::getUserData($actor),
+            'credentialId' => $credential->id,
+            'credentialName' => $credential->name,
+            'credentialType' => $credential->credentialType->value,
+            'authenticatorDescription' => $credential->authenticatorDescription,
+        ];
 
         if ($type === AuditLogEventType::WebAuthnCredentialRenamed) {
             $attributes['previousCredentialName'] = $previousName;

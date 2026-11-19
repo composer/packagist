@@ -15,6 +15,7 @@ namespace App\Tests\Security\WebAuthn;
 use CBOR\ByteStringObject;
 use CBOR\Encoder;
 use CBOR\MapObject;
+use Symfony\Component\Uid\Uuid;
 
 class VirtualAuthenticator
 {
@@ -25,6 +26,8 @@ class VirtualAuthenticator
     public int $flags = 1;
     public int $counter = 1;
     public bool $corruptSignature = false;
+    public ?AttestationAuthority $attestation = null;
+    public string $aaguid = '00000000-0000-0000-0000-000000000000';
 
     public function __construct()
     {
@@ -41,13 +44,17 @@ class VirtualAuthenticator
             -2 => new ByteStringObject(str_pad($details['ec']['x'], 32, "\0", \STR_PAD_LEFT)),
             -3 => new ByteStringObject(str_pad($details['ec']['y'], 32, "\0", \STR_PAD_LEFT)),
         ]);
-        $authData = $this->authData(true).str_repeat("\0", 16).pack('n', \strlen($this->id)).$this->id.$cose;
+        $authData = $this->authData(true).Uuid::fromString($this->aaguid)->toBinary().pack('n', \strlen($this->id)).$this->id.$cose;
         $clientData = $this->clientData($options, 'webauthn.create');
         $statement = $selfAttestation
             ? ['alg' => -7, 'sig' => new ByteStringObject($this->sign($authData.hash('sha256', $clientData, true)))]
             : new MapObject();
+        if ($this->attestation !== null) {
+            $statement = $this->attestation->attest($authData.hash('sha256', $clientData, true));
+        }
+
         $attestation = new Encoder()->encode([
-            'fmt' => $selfAttestation ? 'packed' : 'none',
+            'fmt' => ($selfAttestation || $this->attestation !== null) ? 'packed' : 'none',
             'authData' => new ByteStringObject($authData),
             'attStmt' => $statement,
         ]);

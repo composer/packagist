@@ -17,8 +17,12 @@ use App\Security\SecondFactorProofStore;
 use App\Security\TwoFactorAuthRateLimiter;
 use App\Security\Voter\SecondFactorVoter;
 use App\Security\Voter\WebAuthnVoter;
+use App\Security\WebAuthn\CredentialType;
 use App\Security\WebAuthn\ExpiredWebAuthnChallengeException;
+use App\Security\WebAuthn\FidoMetadataRepository;
+use App\Security\WebAuthn\FidoMetadataUnavailableException;
 use App\Security\WebAuthn\WebAuthnManager;
+use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorTokenInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -38,18 +42,29 @@ class WebAuthnController extends Controller
         private WebAuthnManager $webAuthn,
         private TwoFactorAuthRateLimiter $limiter,
         private TranslatorInterface $translator,
+        private FidoMetadataRepository $metadata,
+        private LoggerInterface $logger,
     ) {
     }
 
     #[IsGranted('ROLE_USER')]
     #[Route('/profile/security/keys', name: 'user_webauthn_manage', methods: ['GET'])]
-    public function manage(Request $request, #[CurrentUser] User $user): Response
+    public function manage(Request $request, #[CurrentUser] User $user, SecondFactorProofStore $proofs): Response
     {
         if (!$this->isGranted(WebAuthnVoter::VIEW)) {
             throw $this->createNotFoundException();
         }
 
         $returnUrl = $this->resolveSignedReturnUrl($request, 'user_webauthn_manage');
+        $credentialVerifications = [];
+
+        foreach ($user->getWebAuthnCredentials() as $credential) {
+            $remaining = $proofs->getCredentialProofRemainingLifetime($credential);
+
+            if ($remaining > 0) {
+                $credentialVerifications[$credential->id] = $remaining;
+            }
+        }
 
         return $this->render('user/webauthn_manage.html.twig', [
             'user' => $user,
@@ -58,6 +73,8 @@ class WebAuthnController extends Controller
             'has_return_to' => $request->query->has('return_to'),
             'totp_verification_url' => $this->generateUrl('user_verify_totp', ['return_to' => $returnUrl]),
             'webauthn_verification_url' => $this->generateUrl('user_webauthn_verify', ['return_to' => $returnUrl]),
+            'credential_types' => CredentialType::cases(),
+            'credential_verifications' => $credentialVerifications,
             'backup_code' => $request->getSession()->remove('backup_code'),
         ]);
     }
@@ -72,8 +89,20 @@ class WebAuthnController extends Controller
             throw $this->createAccessDeniedException();
         }
 
+        $credentialType = CredentialType::tryFrom($request->request->getString('kind', CredentialType::Regular->value));
+
+        if ($credentialType === null) {
+            return $this->json(['error' => $this->translator->trans('webauthn.error.invalid_enrollment')], 400);
+        }
+
         try {
-            return JsonResponse::fromJsonString($this->webAuthn->startRegistration($user, $request->request->getString('name')), headers: ['Cache-Control' => 'no-store']);
+            if ($credentialType->requiresAttestation()) {
+                $this->metadata->ensureAvailable();
+            }
+
+            return JsonResponse::fromJsonString($this->webAuthn->startRegistration($user, $request->request->getString('name'), $credentialType), headers: ['Cache-Control' => 'no-store']);
+        } catch (FidoMetadataUnavailableException $e) {
+            return $this->unavailableMetadataResponse($e);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
@@ -91,12 +120,16 @@ class WebAuthnController extends Controller
 
         try {
             $backupCode = $this->webAuthn->register($user, $request->request->getString('credential'), $request->request->getString('name'));
+        } catch (FidoMetadataUnavailableException $e) {
+            return $this->unavailableMetadataResponse($e);
         } catch (ServiceUnavailableHttpException $e) {
             return $this->json(['error' => $e->getMessage()], $e->getStatusCode(), $e->getHeaders());
         } catch (BadCredentialsException|\InvalidArgumentException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
 
+        // Keep key management available after enrollment
+        // Hardware and per-key proofs require a successful authentication assertion
         $proofs->record($user, SecondFactorProofStore::WEBAUTHN);
 
         if ($backupCode !== null) {
@@ -195,7 +228,7 @@ class WebAuthnController extends Controller
         }
 
         try {
-            $this->webAuthn->authenticate($user, $request->request->getString('credential'));
+            $credential = $this->webAuthn->authenticate($user, $request->request->getString('credential'));
         } catch (ServiceUnavailableHttpException $e) {
             return $this->json(['error' => $e->getMessage()], $e->getStatusCode(), $e->getHeaders());
         } catch (BadCredentialsException $e) {
@@ -206,7 +239,7 @@ class WebAuthnController extends Controller
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
 
-        $proofs->record($user, SecondFactorProofStore::WEBAUTHN);
+        $proofs->recordWebAuthn($credential);
 
         return $this->json(['redirect' => $returnUrl]);
     }
@@ -230,6 +263,13 @@ class WebAuthnController extends Controller
     private function canManageKeys(User $user): bool
     {
         return !$user->hasSecondFactorAuthenticationEnabled() || $this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY);
+    }
+
+    private function unavailableMetadataResponse(FidoMetadataUnavailableException $e): JsonResponse
+    {
+        $this->logger->error('Hardware security key enrollment blocked: '.$e->getMessage(), ['exception' => $e]);
+
+        return $this->json(['error' => $this->translator->trans('webauthn.error.metadata_unavailable')], Response::HTTP_SERVICE_UNAVAILABLE);
     }
 
     private function checkCsrf(Request $request): void

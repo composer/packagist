@@ -329,7 +329,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     /** @return list<WebAuthnCredential> */
     public function getWebAuthnCredentials(): array
     {
-        return array_values($this->webAuthnCredentials->filter(static fn (WebAuthnCredential $credential) => $credential->getRevokedAt() === null)->toArray());
+        return array_values($this->webAuthnCredentials->filter(static fn (WebAuthnCredential $credential) => $credential->revokedAt === null)->toArray());
     }
 
     public function findWebAuthnCredential(string $id): ?WebAuthnCredential

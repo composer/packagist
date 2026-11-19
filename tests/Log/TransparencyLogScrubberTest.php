@@ -23,6 +23,7 @@ use App\Entity\WebAuthnCredential;
 use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
 use App\Log\TransparencyLogScrubber;
+use App\Security\WebAuthn\CredentialType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;
@@ -67,8 +68,8 @@ class TransparencyLogScrubberTest extends TestCase
         'version_soft_deleted' => ['internalReasonText'],
         'email_changed' => ['email_from', 'email_to'],
         'totp_deactivated' => ['reason'],
-        'webauthn_credential_added' => ['credentialId', 'credentialName'],
-        'webauthn_credential_deleted' => ['credentialId', 'credentialName'],
+        'webauthn_credential_added' => ['authenticatorDescription', 'credentialId', 'credentialName', 'credentialType'],
+        'webauthn_credential_deleted' => ['authenticatorDescription', 'credentialId', 'credentialName', 'credentialType'],
     ];
 
     private const PACKAGE_NAME = 'acme/widget';
@@ -330,6 +331,9 @@ class TransparencyLogScrubberTest extends TestCase
             'version_created',
             // admin-only internalReasonText
             'version_soft_deleted',
+            // authenticator model names stay private
+            'webauthn_credential_added',
+            'webauthn_credential_deleted',
         ], $carryingPrivateData, 'a fixture no longer feeds private data into the scrubber, so its removal is no longer covered');
     }
 
@@ -486,6 +490,8 @@ class TransparencyLogScrubberTest extends TestCase
         $credential = new WebAuthnCredential($maintainer, CredentialRecord::create(
             'credential-id', 'public-key', [], 'none', EmptyTrustPath::create(), Uuid::v4(), 'public-key', 'user-handle', 0,
         ));
+
+        $credential->recordAttestation(CredentialType::VerifiedHardware, self::PRIVATE_MARKER);
 
         yield 'webauthn_credential_added' => [
             AuditLogEventType::WebAuthnCredentialAdded,

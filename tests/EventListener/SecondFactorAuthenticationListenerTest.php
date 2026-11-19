@@ -13,9 +13,13 @@
 namespace App\Tests\EventListener;
 
 use App\Entity\User;
+use App\Entity\WebAuthnCredential;
 use App\EventListener\SecondFactorAuthenticationListener;
 use App\Security\Passport\Badge\ResolvedTotpCodeCredentials;
 use App\Security\SecondFactorProofStore;
+use App\Security\WebAuthn\CredentialType;
+use App\Security\WebAuthn\WebAuthnTwoFactorProvider;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorToken;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Event\TwoFactorAuthenticationEvent;
@@ -32,6 +36,9 @@ use Symfony\Component\Security\Http\Authenticator\Passport\Badge\UserBadge;
 use Symfony\Component\Security\Http\Authenticator\Passport\SelfValidatingPassport;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
 use Symfony\Component\Security\Http\Event\LogoutEvent;
+use Symfony\Component\Uid\NilUuid;
+use Webauthn\CredentialRecord;
+use Webauthn\TrustPath\CertificateTrustPath;
 
 class SecondFactorAuthenticationListenerTest extends TestCase
 {
@@ -109,6 +116,33 @@ class SecondFactorAuthenticationListenerTest extends TestCase
         $this->secondFactorProofStore->record($this->user, 'totp');
         $this->listener->loggedOut(new LogoutEvent($this->request, $this->authenticated));
         self::assertFalse($this->secondFactorProofStore->hasRecentProof($this->user));
+    }
+
+    #[TestWith(['valid', true])]
+    #[TestWith(['missing', false])]
+    #[TestWith(['other_account', false])]
+    #[TestWith(['revoked', false])]
+    public function testHardwareProofRequiresTheCredentialValidatedForThisAccount(string $scenario, bool $expected): void
+    {
+        $owner = $scenario === 'other_account' ? new User() : $this->user;
+        $record = new CredentialRecord('credential', 'public-key', [], 'basic', new CertificateTrustPath(['certificate']), new NilUuid(), 'public-key', 'user', 0);
+        $credential = new WebAuthnCredential($owner, $record);
+        $credential->recordAttestation(CredentialType::VerifiedHardware, 'Hardware key');
+        $owner->addWebAuthnCredential($credential);
+
+        if ($scenario === 'revoked') {
+            $credential->revoke();
+        }
+
+        if ($scenario !== 'missing') {
+            $this->request->attributes->set(WebAuthnTwoFactorProvider::AUTHENTICATED_CREDENTIAL, $credential->id);
+        }
+
+        $this->tokens->setToken(new TwoFactorToken($this->authenticated, null, 'main', ['webauthn']));
+        $this->listener->codeValidated(new TwoFactorCodeEvent($this->user, 'response'));
+        $this->listener->completed(new TwoFactorAuthenticationEvent($this->request, $this->authenticated));
+        self::assertSame($expected, $this->secondFactorProofStore->hasRecentProof($this->user, SecondFactorProofStore::WEBAUTHN));
+        self::assertSame($expected, $this->secondFactorProofStore->hasRecentProof($this->user, SecondFactorProofStore::HARDWARE_KEY));
     }
 
     private function loginEvent(): LoginSuccessEvent

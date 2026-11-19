@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Security\WebAuthn\CredentialType;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 use Webauthn\CredentialRecord;
@@ -32,16 +33,16 @@ class WebAuthnCredential
     public readonly User $user;
 
     #[ORM\Column(length: 100)]
-    private string $name;
+    public private(set) string $name;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private \DateTimeImmutable $createdAt;
+    public private(set) \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $lastUsedAt = null;
+    public private(set) ?\DateTimeImmutable $lastUsedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $revokedAt = null;
+    public private(set) ?\DateTimeImmutable $revokedAt = null;
 
     #[ORM\Column(type: 'base64')]
     private string $publicKeyCredentialId;
@@ -86,6 +87,13 @@ class WebAuthnCredential
     #[ORM\Column(nullable: true)]
     private ?bool $uvInitialized;
 
+    #[ORM\Column(length: 32, enumType: CredentialType::class, options: ['default' => 'regular'])]
+    public private(set) CredentialType $credentialType = CredentialType::Regular;
+
+    // Human-readable model name from verified FIDO metadata
+    #[ORM\Column(type: 'text', nullable: true)]
+    public private(set) ?string $authenticatorDescription = null;
+
     public function __construct(User $user, CredentialRecord $record)
     {
         $this->publicKeyCredentialId = $record->publicKeyCredentialId;
@@ -129,24 +137,14 @@ class WebAuthnCredential
         return PublicKeyCredentialDescriptor::create($this->type, $this->publicKeyCredentialId, $this->transports);
     }
 
-    public function getName(): string
+    public function recordAttestation(CredentialType $credentialType, string $description): void
     {
-        return $this->name;
-    }
+        if ($credentialType === CredentialType::Regular) {
+            throw new \InvalidArgumentException('Regular enrollment does not verify attestation');
+        }
 
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function getLastUsedAt(): ?\DateTimeImmutable
-    {
-        return $this->lastUsedAt;
-    }
-
-    public function getRevokedAt(): ?\DateTimeImmutable
-    {
-        return $this->revokedAt;
+        $this->credentialType = $credentialType;
+        $this->authenticatorDescription = $description;
     }
 
     public function rename(string $name): void

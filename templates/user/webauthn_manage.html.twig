@@ -56,10 +56,31 @@
                         {% else %}
                             <h5 class="h6 mb-1 text-break">{{ credential.name }}</h5>
                         {% endif %}
-                        <div class="small text-body-secondary">
-                            <div>Added {{ credential.createdAt|date('Y-m-d') }}</div>
-                            <div>Last used {{ credential.lastUsedAt ? credential.lastUsedAt|date('Y-m-d H:i') : 'never' }}</div>
-                        </div>
+                        <dl class="row g-2 small text-body-secondary mt-3 mb-0">
+                            <dt class="col-3 fw-normal">Type</dt>
+                            <dd class="col-9 mb-0">
+                                {% if credential.credentialType.requiresAttestation %}
+                                    <span class="badge text-bg-success text-wrap text-start">{{ credential.credentialType.label }}</span>
+                                {% else %}
+                                    {{ credential.credentialType.label }}
+                                {% endif %}
+                            </dd>
+                            {% if credential.authenticatorDescription %}
+                                <dt class="col-3 fw-normal">Model</dt>
+                                <dd class="col-9 mb-0 text-break">{{ credential.authenticatorDescription }}</dd>
+                            {% endif %}
+                            <dt class="col-3 fw-normal">Added</dt>
+                            <dd class="col-9 mb-0">{{ credential.createdAt|date('Y-m-d') }}</dd>
+                            <dt class="col-3 fw-normal">Last used</dt>
+                            <dd class="col-9 mb-0">{{ credential.lastUsedAt ? credential.lastUsedAt|date('Y-m-d H:i') : 'never' }}</dd>
+                            {% set remaining = credential_verifications[credential.id]|default(0) %}
+                            {% if remaining > 0 %}
+                                <dt class="col-3 fw-normal">Verification</dt>
+                                <dd class="col-9 mb-0" data-credential-verification="{{ remaining }}" data-minutes-remaining="{{ 'webauthn.verification.minutes_remaining'|trans }}" data-less-than-minute="{{ 'webauthn.verification.less_than_minute'|trans }}">
+                                    <span class="badge text-bg-success text-wrap text-start">{{ remaining < 60 ? 'webauthn.verification.less_than_minute'|trans : 'webauthn.verification.minutes_remaining'|trans({'%minutes%': (remaining / 60)|round(0, 'ceil')}) }}</span>
+                                </dd>
+                            {% endif %}
+                        </dl>
                     </div>
                     <div class="col-sm-4 text-sm-end">
                         <a class="btn btn-sm btn-danger" href="{{ path('user_webauthn_remove', {id: credential.id}) }}">Remove</a>
@@ -79,6 +100,16 @@
                 <label class="form-label" for="key-name">Name</label>
                 <input class="form-control" id="key-name" name="name" placeholder="For example, my phone or spare key" maxlength="100" required>
             </div>
+            <fieldset class="form-group">
+                <legend class="h6">Key type</legend>
+                {% for type in credential_types %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="kind" id="key-{{ type.value }}" aria-describedby="key-{{ type.value }}-description" value="{{ type.value }}"{% if loop.first %} checked{% endif %}>
+                        <label class="form-check-label" for="key-{{ type.value }}">{{ type.label }}</label>
+                        <p class="small text-body-secondary" id="key-{{ type.value }}-description">{{ type.description }}</p>
+                    </div>
+                {% endfor %}
+            </fieldset>
             <div class="form-actions">
                 <button class="btn btn-primary" type="submit">Add passkey or security key</button>
             </div>

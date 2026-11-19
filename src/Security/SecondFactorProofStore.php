@@ -13,6 +13,8 @@
 namespace App\Security;
 
 use App\Entity\User;
+use App\Entity\WebAuthnCredential;
+use App\Security\WebAuthn\CredentialType;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -20,6 +22,7 @@ class SecondFactorProofStore
 {
     public const string TOTP = 'totp';
     public const string WEBAUTHN = 'webauthn';
+    public const string HARDWARE_KEY = 'hardware_key';
     public const int RECENT_AUTHENTICATION_LIFETIME = 600;
     private const string SESSION_KEY = 'security.second_factor_authentication';
 
@@ -40,6 +43,32 @@ class SecondFactorProofStore
     public function hasProof(User $user, ?string $method = null): bool
     {
         return $this->getProofs($user)?->hasVerificationAfter(null, $this->clock->now()->getTimestamp(), $method) ?? false;
+    }
+
+    public function recordWebAuthn(WebAuthnCredential $credential): void
+    {
+        if ($credential->revokedAt !== null) {
+            return;
+        }
+
+        $this->record($credential->user, self::WEBAUTHN);
+        $this->record($credential->user, self::WEBAUTHN.':'.$credential->id);
+
+        if ($credential->credentialType === CredentialType::VerifiedHardware) {
+            $this->record($credential->user, self::HARDWARE_KEY);
+        }
+    }
+
+    public function getCredentialProofRemainingLifetime(WebAuthnCredential $credential): int
+    {
+        if ($credential->revokedAt !== null) {
+            return 0;
+        }
+
+        $now = $this->clock->now()->getTimestamp();
+        $verifiedAt = $this->getProofs($credential->user)?->getVerificationTime(self::WEBAUTHN.':'.$credential->id, $now);
+
+        return $verifiedAt === null ? 0 : max(0, $verifiedAt + self::RECENT_AUTHENTICATION_LIFETIME - $now);
     }
 
     public function hasRecentProof(User $user, ?string $method = null): bool

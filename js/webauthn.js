@@ -67,3 +67,25 @@ for (const form of document.querySelectorAll('form[data-webauthn]')) {
         }
     });
 }
+
+for (const verification of document.querySelectorAll('[data-credential-verification]')) {
+    const badge = verification.querySelector('.badge');
+    const expiresAt = performance.now() + Number(verification.dataset.credentialVerification) * 1000;
+
+    function updateVerification() {
+        const remaining = Math.ceil((expiresAt - performance.now()) / 1000);
+
+        if (remaining <= 0) {
+            verification.previousElementSibling.remove();
+            verification.remove();
+            return;
+        }
+
+        badge.textContent = remaining < 60
+            ? verification.dataset.lessThanMinute
+            : verification.dataset.minutesRemaining.replace('%minutes%', Math.ceil(remaining / 60));
+        window.setTimeout(updateVerification, 1000);
+    }
+
+    updateVerification();
+}

@@ -299,5 +299,11 @@ webauthn:
         expired_challenge: 'This passkey request expired or was replaced. Start again.'
         invalid_assertion: 'The passkey or security key could not be verified.'
         invalid_registration: 'The passkey or security key could not be registered.'
+        invalid_enrollment: 'Choose a supported key type.'
+        invalid_attestation: 'This key could not be verified for the selected key type. Use a compatible device-bound key and allow your browser to share its manufacturer attestation.'
+        metadata_unavailable: 'Verified hardware security key enrollment is temporarily unavailable. Please try again later.'
         invalid_name: 'Enter a name between 1 and 100 characters.'
         too_many_attempts: 'Too many authentication failures. Try again in %minutes% minutes.'
+    verification:
+        minutes_remaining: 'Verified in this session · %minutes% min remaining'
+        less_than_minute: 'Verified in this session · less than a minute remaining'

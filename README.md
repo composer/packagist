@@ -169,3 +169,11 @@ bin/console packagist:index
 Use a trusted HTTPS certificate for `https://packagist.wip`. For a different local
 host, set `WEBAUTHN_RP_ID` to the hostname and `WEBAUTHN_ORIGIN` to the exact
 origin, including any port.
+
+Before testing verified hardware-key enrollment, import the official FIDO metadata:
+
+```bash
+bin/console packagist:webauthn:refresh-metadata
+```
+
+Run a daily CRON job `bin/console packagist:webauthn:refresh-metadata` to keep the metadata current.

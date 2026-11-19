@@ -13,18 +13,41 @@
 namespace App\Tests\Security\WebAuthn;
 
 use App\Entity\User;
+use App\Entity\UserRepository;
 use App\Entity\WebAuthnCredential;
+use App\Security\SecondFactorManager;
 use App\Security\UserNotifier;
+use App\Security\WebAuthn\AttestationPolicy;
+use App\Security\WebAuthn\ExpiringOptionsStorage;
+use App\Security\WebAuthn\FidoMetadataRepository;
 use App\Security\WebAuthn\WebAuthnManager;
+use App\Security\WebAuthn\WebAuthnTwoFactorProvider;
+use App\Service\Locker;
+use Cose\Algorithm\Manager;
+use Cose\Algorithm\Signature\ECDSA\ES256;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Clock\NativeClock;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
+use Webauthn\AttestationStatement\AttestationStatementSupportManager;
+use Webauthn\AttestationStatement\PackedAttestationStatementSupport;
+use Webauthn\AuthenticatorAssertionResponseValidator;
+use Webauthn\AuthenticatorAttestationResponseValidator;
 use Webauthn\Bundle\Security\Storage\SessionStorage;
+use Webauthn\Bundle\Service\PublicKeyCredentialCreationOptionsFactory;
+use Webauthn\Bundle\Service\PublicKeyCredentialRequestOptionsFactory;
+use Webauthn\CeremonyStep\CeremonyStepManagerFactory;
+use Webauthn\Denormalizer\WebauthnSerializerFactory;
 
 class WebAuthnManagerTest extends TestCase
 {
@@ -50,11 +73,11 @@ class WebAuthnManagerTest extends TestCase
     {
         $manager = $this->createStub(WebAuthnManager::class);
         $manager->method('authenticate')->willThrowException(
-            new \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException(1, 'Account security settings are being updated. Please try again.'),
+            new ServiceUnavailableHttpException(1, 'Account security settings are being updated. Please try again.'),
         );
-        $provider = new \App\Security\WebAuthn\WebAuthnTwoFactorProvider($manager, new \Twig\Environment(new \Twig\Loader\ArrayLoader()));
+        $provider = new WebAuthnTwoFactorProvider($manager, new Environment(new ArrayLoader()), new RequestStack());
 
-        $this->expectException(\Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException::class);
+        $this->expectException(CustomUserMessageAuthenticationException::class);
         $this->expectExceptionMessage('Please try again.');
         $provider->validateAuthenticationCode($this->user, 'response');
     }
@@ -131,28 +154,28 @@ class WebAuthnManagerTest extends TestCase
 
     private function createManager(RequestStack $requests): WebAuthnManager
     {
-        $algorithms = new \Cose\Algorithm\Manager()->add(new \Cose\Algorithm\Signature\ECDSA\ES256());
-        $support = new \Webauthn\AttestationStatement\AttestationStatementSupportManager([
-            new \Webauthn\AttestationStatement\PackedAttestationStatementSupport($algorithms),
+        $algorithms = new Manager()->add(new ES256());
+        $support = new AttestationStatementSupportManager([
+            new PackedAttestationStatementSupport($algorithms),
         ]);
-        $factory = new \Webauthn\CeremonyStep\CeremonyStepManagerFactory();
+        $factory = new CeremonyStepManagerFactory();
         $factory->setAllowedOrigins(['https://packagist.wip']);
         $factory->setAttestationStatementSupportManager($support);
 
         $em = $this->createStub(EntityManagerInterface::class);
-        $events = new \Symfony\Component\EventDispatcher\EventDispatcher();
+        $events = new EventDispatcher();
         $notifier = $this->createStub(UserNotifier::class);
-        $locker = $this->createStub(\App\Service\Locker::class);
+        $locker = $this->createStub(Locker::class);
         $locker->method('lockAccountSecurity')->willReturn(true);
 
-        $users = $this->createStub(\App\Entity\UserRepository::class);
+        $users = $this->createStub(UserRepository::class);
         $users->method('refreshIfSessionIsCurrent')->willReturn(true);
 
         return new WebAuthnManager(
-            new \Webauthn\AuthenticatorAttestationResponseValidator($factory->creationCeremony()),
-            new \Webauthn\AuthenticatorAssertionResponseValidator($factory->requestCeremony()),
-            new \Webauthn\Bundle\Service\PublicKeyCredentialCreationOptionsFactory([
-                'without_attestation' => [
+            new AuthenticatorAttestationResponseValidator($factory->creationCeremony()),
+            new AuthenticatorAssertionResponseValidator($factory->requestCeremony()),
+            new PublicKeyCredentialCreationOptionsFactory([
+                'regular' => [
                     'rp' => ['id' => 'packagist.wip', 'name' => ''],
                     'challenge_length' => 32,
                     'timeout' => 60000,
@@ -162,7 +185,7 @@ class WebAuthnManagerTest extends TestCase
                     'extensions' => [],
                 ],
             ]),
-            new \Webauthn\Bundle\Service\PublicKeyCredentialRequestOptionsFactory([
+            new PublicKeyCredentialRequestOptionsFactory([
                 'packagist' => [
                     'rp_id' => 'packagist.wip',
                     'challenge_length' => 32,
@@ -171,12 +194,13 @@ class WebAuthnManagerTest extends TestCase
                     'extensions' => [],
                 ],
             ]),
-            new SessionStorage($requests),
-            new \Webauthn\Denormalizer\WebauthnSerializerFactory($support)->create(),
+            new ExpiringOptionsStorage(new SessionStorage($requests), $requests, new NativeClock()),
+            new WebauthnSerializerFactory($support)->create(),
             $em,
             $notifier,
             $events,
-            new \App\Security\SecondFactorManager($events, $em, $requests, $notifier, $locker, $users),
+            new SecondFactorManager($events, $em, $requests, $notifier, $locker, $users),
+            new AttestationPolicy($this->createStub(FidoMetadataRepository::class)),
             'packagist.wip',
         );
     }
