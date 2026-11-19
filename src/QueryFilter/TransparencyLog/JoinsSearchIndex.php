@@ -26,4 +26,21 @@ trait JoinsSearchIndex
             ->orderBy($alias.'.datetime', 'DESC')
             ->addOrderBy($alias.'.leafIndex', 'DESC');
     }
+
+    /**
+     * @return list<string>
+     */
+    private static function searchIndexAliases(QueryBuilder $qb): array
+    {
+        $aliases = [];
+        foreach ($qb->getDQLPart('join') as $joins) {
+            foreach ($joins as $join) {
+                if ($join->getJoin() === PackageTransparencyLogSearch::class) {
+                    $aliases[] = (string) $join->getAlias();
+                }
+            }
+        }
+
+        return $aliases;
+    }
 }

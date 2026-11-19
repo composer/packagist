@@ -21,6 +21,7 @@ use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
 use App\QueryFilter\TransparencyLog\UserIdFilter;
 use App\Tests\IntegrationTestCase;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\InputBag;
@@ -508,6 +509,66 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         static::assertNotEmpty($ids);
         static::assertSame(array_values(array_unique($ids)), $ids);
+    }
+
+    #[TestWith(['user'])]
+    #[TestWith(['user_id'])]
+    public function testDateRangeBoundsTheSearchIndexScan(string $searchBy): void
+    {
+        [$renamed, $successor] = $this->givenARecycledUsername();
+        $search = $searchBy === 'user' ? ['user' => 'handover'] : ['user_id' => (string) $renamed->getId()];
+
+        $conn = $this->getEM()->getConnection();
+        $conn->executeStatement('UPDATE package_transparency_log_search SET datetime = ? WHERE userId = ?', ['2025-03-01 12:00:00', $renamed->getId()]);
+        $conn->executeStatement('UPDATE package_transparency_log_search SET datetime = ? WHERE userId = ?', ['2026-03-01 12:00:00', $successor->getId()]);
+        // keep the entries and the other index rows in sync with the copied datetime
+        $conn->executeStatement('UPDATE package_transparency_log t JOIN package_transparency_log_search s ON s.leafIndex = t.leafIndex AND s.userId IN (?, ?) SET t.datetime = s.datetime', [$renamed->getId(), $successor->getId()]);
+        $conn->executeStatement('UPDATE package_transparency_log_search s JOIN package_transparency_log t ON t.leafIndex = s.leafIndex SET s.datetime = t.datetime');
+
+        $this->givenLoggedInVisitor();
+        $this->client->enableProfiler();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query($search + ['datetime_from' => '2025-01-01T00:00:00', 'datetime_to' => '2025-12-31T23:59:59']));
+        static::assertResponseIsSuccessful();
+        static::assertCount(2, $crawler->filter('[data-test="log-type"]'));
+        static::assertStringContainsString('(#'.$renamed->getId().')', $crawler->filter('td.audit-log-details')->text());
+
+        $profile = $this->client->getProfile();
+        static::assertNotFalse($profile);
+        /** @var \Symfony\Bridge\Doctrine\DataCollector\DoctrineDataCollector $collector */
+        $collector = $profile->getCollector('db');
+        $sqls = array_column($collector->getQueries()['default'], 'sql');
+        $searchSqls = array_values(array_filter($sqls, static fn (string $sql) => str_starts_with($sql, 'SELECT') && str_contains($sql, 'JOIN package_transparency_log_search')));
+        static::assertNotEmpty($searchSqls);
+        foreach ($searchSqls as $sql) {
+            static::assertSame(1, preg_match('{JOIN package_transparency_log_search (\w+)}', $sql, $match));
+            static::assertStringContainsString($match[1].'.datetime >= ?', $sql);
+            static::assertStringContainsString($match[1].'.datetime <= ?', $sql);
+        }
+
+        // the other account's entry is outside the range
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query($search + ['datetime_from' => '2027-01-01T00:00:00']));
+        static::assertCount(0, $crawler->filter('[data-test="log-type"]'));
+    }
+
+    public function testDateRangeWithoutASearchOnlyBoundsTheLog(): void
+    {
+        $this->givenProjectedLog();
+        $this->givenLoggedInVisitor();
+        $this->client->enableProfiler();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['datetime_from' => '2000-01-01T00:00:00']));
+        static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
+
+        $profile = $this->client->getProfile();
+        static::assertNotFalse($profile);
+        /** @var \Symfony\Bridge\Doctrine\DataCollector\DoctrineDataCollector $collector */
+        $collector = $profile->getCollector('db');
+        $selects = array_filter(array_column($collector->getQueries()['default'], 'sql'), static fn (string $sql) => str_starts_with($sql, 'SELECT'));
+        static::assertNotEmpty($selects);
+        foreach ($selects as $sql) {
+            static::assertStringNotContainsString('package_transparency_log_search', $sql);
+        }
     }
 
     public function testAHandEditedAccountIdDegradesToAnUnfilteredList(): void

@@ -18,6 +18,8 @@ use Symfony\Component\HttpFoundation\InputBag;
 
 abstract class AbstractDateTimeFilter implements QueryFilterInterface
 {
+    use JoinsSearchIndex;
+
     final private function __construct(
         private readonly string $value,
     ) {
@@ -27,12 +29,22 @@ abstract class AbstractDateTimeFilter implements QueryFilterInterface
     {
         $dateTime = $this->getDateTime();
 
-        return $dateTime === null ? $qb : $this->applyFilter($qb, $dateTime);
+        if ($dateTime === null) {
+            return $qb;
+        }
+
+        // The search index orders by its own copy of the datetime, so the range must bound that
+        // copy too, or MySQL walks every index row for the name before filtering
+        foreach (['t', ...self::searchIndexAliases($qb)] as $alias) {
+            $qb->andWhere($alias.'.datetime '.static::operator().' :'.static::key());
+        }
+
+        return $qb->setParameter(static::key(), $dateTime);
     }
 
     abstract protected static function key(): string;
 
-    abstract protected function applyFilter(QueryBuilder $qb, \DateTimeImmutable $dateTime): QueryBuilder;
+    abstract protected static function operator(): string;
 
     final public function getKey(): string
     {
