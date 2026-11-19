@@ -13,6 +13,7 @@
 namespace App\Tests\Security\WebAuthn;
 
 use App\Entity\FidoMetadataFeed;
+use App\Security\WebAuthn\FidoMetadataCertificateChainValidator;
 use App\Security\WebAuthn\FidoMetadataRepository;
 use App\Security\WebAuthn\FidoMetadataUnavailableException;
 use App\Service\Locker;
@@ -100,6 +101,22 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
 
         $this->expectException(\RuntimeException::class);
         $this->repository()->refresh();
+    }
+
+    public function testFeedSignedByAnUnpinnedRootCannotReplaceTheAcceptedFeed(): void
+    {
+        $repository = $this->repository();
+        self::assertSame(1, $repository->refresh());
+        $this->authority = new AttestationAuthority();
+        $this->feeds[] = $this->blob(2);
+
+        try {
+            $repository->refresh();
+            self::fail('Expected the feed signed by an unpinned root to be rejected');
+        } catch (\RuntimeException $e) {
+            self::assertSame('The FIDO metadata feed could not be verified', $e->getMessage());
+            self::assertSame(1, (int) self::getEM()->getConnection()->fetchOne('SELECT sequenceNumber FROM fido_metadata_feed'));
+        }
     }
 
     public function testAnOlderFeedCannotReplaceAnAcceptedFeed(): void
@@ -245,7 +262,12 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
             return new MockResponse($this->feeds[$this->downloads++]);
         });
 
-        return new FidoMetadataRepository(self::getEM()->getConnection(), $client, new PhpCertificateChainValidator($client, $this->clock), $serializer ?? self::getService(SerializerInterface::class), $this->clock, self::getService(Locker::class));
+        $validator = new FidoMetadataCertificateChainValidator(
+            new PhpCertificateChainValidator($client, $this->clock),
+            hash('sha256', $this->authority->der($this->authority->root)),
+        );
+
+        return new FidoMetadataRepository(self::getEM()->getConnection(), $client, $validator, $serializer ?? self::getService(SerializerInterface::class), $this->clock, self::getService(Locker::class));
     }
 
     private function serializer(): SerializerInterface

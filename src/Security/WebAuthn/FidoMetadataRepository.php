@@ -17,7 +17,6 @@ use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Webauthn\MetadataService\CertificateChain\CertificateChainValidator;
 use Webauthn\MetadataService\MetadataStatementRepository;
 use Webauthn\MetadataService\Service\FidoAllianceCompliantMetadataService;
 use Webauthn\MetadataService\Statement\MetadataStatement;
@@ -34,7 +33,7 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
     public function __construct(
         private Connection $connection,
         private HttpClientInterface $httpClient,
-        private CertificateChainValidator $certificateValidator,
+        private FidoMetadataCertificateChainValidator $certificateValidator,
         private SerializerInterface $serializer,
         private ClockInterface $clock,
         private Locker $locker,
