@@ -35,7 +35,6 @@ use Symfony\Component\Uid\Ulid;
 // part of each index, otherwise MySQL filesorts every matching row.
 #[ORM\Index(name: 'package_name_datetime_idx', columns: ['packageName', 'datetime', 'leafIndex'])]
 #[ORM\Index(name: 'vendor_datetime_idx', columns: ['vendor', 'datetime', 'leafIndex'])]
-#[ORM\Index(name: 'user_datetime_idx', columns: ['userId', 'datetime', 'leafIndex'])]
 #[ORM\Index(name: 'type_datetime_idx', columns: ['type', 'datetime', 'leafIndex'])]
 #[ORM\Index(name: 'datetime_leaf_idx', columns: ['datetime', 'leafIndex'])]
 class PackageTransparencyLog
