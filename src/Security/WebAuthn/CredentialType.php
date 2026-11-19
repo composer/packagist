@@ -31,7 +31,7 @@ enum CredentialType: string
     {
         return match ($this) {
             self::Regular => [],
-            self::VerifiedHardware => [AuthenticatorRequirement::HardwareProtected],
+            self::VerifiedHardware => [AuthenticatorRequirement::HardwareProtected, AuthenticatorRequirement::External],
         };
     }
 
@@ -42,7 +42,7 @@ enum CredentialType: string
 
     public function creationProfile(): string
     {
-        return $this->requiresAttestation() ? 'with_attestation' : 'without_attestation';
+        return $this->requiresAttestation() ? 'external_hardware_key' : 'regular';
     }
 
     public function label(): string
@@ -57,7 +57,7 @@ enum CredentialType: string
     {
         return match ($this) {
             self::Regular => 'Use your phone, password manager, or security key.',
-            self::VerifiedHardware => "Requires a compatible key that provides manufacturer attestation verified against FIDO metadata. Synced passkeys are not supported. Your browser may ask permission to identify the key's model.",
+            self::VerifiedHardware => "Requires a compatible external security key whose model can be verified against FIDO metadata. Your browser may ask permission to identify the key's model.",
         };
     }
 }

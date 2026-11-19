@@ -141,6 +141,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         $options = json_decode($this->client->getResponse()->getContent(), true);
         self::assertSame('direct', $options['attestation']);
+        self::assertSame('cross-platform', $options['authenticatorSelection']['authenticatorAttachment']);
 
         $this->client->request('POST', '/profile/security/keys/register', [
             '_token' => $this->csrf, 'name' => 'Hardware key', 'kind' => 'regular',
@@ -175,6 +176,9 @@ class WebAuthnControllerTest extends IntegrationTestCase
     #[TestWith(['revoked'])]
     #[TestWith(['compromised'])]
     #[TestWith(['untrusted'])]
+    #[TestWith(['platform'])]
+    #[TestWith(['missing_attachment'])]
+    #[TestWith(['mixed_attachment'])]
     public function testHardwareEnrollmentRejectsUnverifiedKeys(string $failure): void
     {
         $this->configureHardwareMetadata($failure);
@@ -371,6 +375,13 @@ class WebAuthnControllerTest extends IntegrationTestCase
         if (\in_array($failure, ['software', 'remote'], true)) {
             $statement->keyProtection = $failure === 'software' ? ['software'] : ['hardware', 'remote_handle'];
         }
+
+        $statement->attachmentHint = match ($failure) {
+            'platform' => ['internal'],
+            'missing_attachment' => [],
+            'mixed_attachment' => ['internal', 'external', 'wired'],
+            default => $statement->attachmentHint,
+        };
 
         if ($failure === 'untrusted') {
             $statement = new AttestationAuthority()->statement();

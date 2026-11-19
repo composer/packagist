@@ -5,7 +5,7 @@ webauthn:
         mds_repository: App\Security\WebAuthn\FidoMetadataRepository
         status_report_repository: App\Security\WebAuthn\FidoMetadataRepository
     creation_profiles:
-        without_attestation:
+        regular:
             rp:
                 id: '%env(WEBAUTHN_RP_ID)%'
             timeout: 60000
@@ -13,13 +13,15 @@ webauthn:
             public_key_credential_parameters:
                 - !php/const Cose\Algorithms::COSE_ALGORITHM_ES256
                 - !php/const Cose\Algorithms::COSE_ALGORITHM_RS256
-        with_attestation:
+        external_hardware_key:
             rp:
                 id: '%env(WEBAUTHN_RP_ID)%'
             timeout: 60000
             public_key_credential_parameters:
                 - !php/const Cose\Algorithms::COSE_ALGORITHM_ES256
                 - !php/const Cose\Algorithms::COSE_ALGORITHM_RS256
+            authenticator_selection_criteria:
+                authenticator_attachment: !php/const Webauthn\AuthenticatorSelectionCriteria::AUTHENTICATOR_ATTACHMENT_CROSS_PLATFORM
             # Request manufacturer attestation so the validator can establish trust through FIDO metadata
             attestation_conveyance: !php/const Webauthn\PublicKeyCredentialCreationOptions::ATTESTATION_CONVEYANCE_PREFERENCE_DIRECT
     request_profiles:

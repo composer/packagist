@@ -16,12 +16,18 @@ use Webauthn\MetadataService\Statement\MetadataStatement;
 
 enum AuthenticatorRequirement: string
 {
+    case External = MetadataStatement::ATTACHMENT_HINT_EXTERNAL;
     case HardwareProtected = MetadataStatement::KEY_PROTECTION_HARDWARE;
     case SecureElementProtected = MetadataStatement::KEY_PROTECTION_SECURE_ELEMENT;
     case TrustedExecutionEnvironment = MetadataStatement::KEY_PROTECTION_TEE;
 
     public function isSatisfiedBy(MetadataStatement $statement): bool
     {
+        if ($this === self::External) {
+            return \in_array(MetadataStatement::ATTACHMENT_HINT_EXTERNAL, $statement->attachmentHint, true)
+                && !\in_array(MetadataStatement::ATTACHMENT_HINT_INTERNAL, $statement->attachmentHint, true);
+        }
+
         if ($this->hasIncompatibleKeyProtection($statement)) {
             return false;
         }

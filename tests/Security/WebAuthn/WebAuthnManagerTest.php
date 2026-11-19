@@ -175,7 +175,7 @@ class WebAuthnManagerTest extends TestCase
             new AuthenticatorAttestationResponseValidator($factory->creationCeremony()),
             new AuthenticatorAssertionResponseValidator($factory->requestCeremony()),
             new PublicKeyCredentialCreationOptionsFactory([
-                'without_attestation' => [
+                'regular' => [
                     'rp' => ['id' => 'packagist.wip', 'name' => ''],
                     'challenge_length' => 32,
                     'timeout' => 60000,

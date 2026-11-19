@@ -57,7 +57,7 @@ class AttestationAuthority
 
     public function statement(): MetadataStatement
     {
-        return new MetadataStatement('Test hardware key', 1, 'fido2', 3, [], ['secp256r1_ecdsa_sha256_raw'], ['cose'], ['basic_full'], [], [], [], [base64_encode($this->der($this->root))], aaguid: self::AAGUID, keyProtection: ['hardware', 'secure_element']);
+        return new MetadataStatement('Test hardware key', 1, 'fido2', 3, [], ['secp256r1_ecdsa_sha256_raw'], ['cose'], ['basic_full'], [], [], [], [base64_encode($this->der($this->root))], aaguid: self::AAGUID, keyProtection: ['hardware', 'secure_element'], attachmentHint: ['external', 'wired']);
     }
 
     /** @param array<string, mixed> $payload */
