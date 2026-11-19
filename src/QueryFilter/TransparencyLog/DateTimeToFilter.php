@@ -26,4 +26,12 @@ class DateTimeToFilter extends AbstractDateTimeFilter
         return $qb->andWhere('t.datetime <= :datetime_to')
             ->setParameter('datetime_to', $dateTime);
     }
+
+    public function getDateTime(): ?\DateTimeImmutable
+    {
+        $dateTime = parent::getDateTime();
+
+        // a date without a time includes that whole day
+        return $dateTime !== null && preg_match('{^\d{4}-\d{2}-\d{2}$}', $this->value) ? $dateTime->setTime(23, 59, 59) : $dateTime;
+    }
 }

@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\InputBag;
 abstract class AbstractDateTimeFilter implements QueryFilterInterface
 {
     final private function __construct(
-        private readonly string $value,
+        protected readonly string $value,
     ) {
     }
 
