@@ -1322,10 +1322,13 @@ class PackageController extends Controller
 
         // Never via setRepository(): it probes the URL, so a GET would reach a host the requester chose.
         $prefill = $fromSupport ? trim($req->query->getString('repository')) : '';
+        if (mb_strlen($prefill) > 255) {
+            $prefill = '';
+        }
         $previousUrl = $package->getRepository();
 
         $builder = $this->createFormBuilder($package, ['validation_groups' => ['Update']])
-            ->add('repository', TextType::class, $prefill !== '' && mb_strlen($prefill) <= 255 ? ['data' => $prefill] : []);
+            ->add('repository', TextType::class, $prefill !== '' ? ['data' => $prefill] : []);
         if ($isSupportAdmin) {
             // Unmapped and hidden so the reference survives the POST: the form's action is generated
             // without a query string, so reading it back off the URL would only ever work on the GET.

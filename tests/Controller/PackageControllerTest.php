@@ -313,6 +313,21 @@ class PackageControllerTest extends IntegrationTestCase
         self::assertSame('/packages/mover/thing/edit', $crawler->filter('form[action*="/edit"]')->first()->attr('action'));
     }
 
+    public function testOverlongPrefillIsDroppedAlongWithItsBanner(): void
+    {
+        $admin = self::createUser('pkgadmin', 'pkgadmin@example.org', roles: ['ROLE_EDIT_PACKAGES']);
+        $this->store($admin);
+        $package = self::createPackage('mover/thing', 'https://example.com/mover/thing', maintainers: [$admin]);
+        $this->store($package);
+
+        $this->client->loginUser($admin);
+        $crawler = $this->client->request('GET', '/packages/mover/thing/edit?repository='.urlencode('https://example.com/'.str_repeat('a', 300)));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('https://example.com/mover/thing', $crawler->filter('#form_repository')->attr('value'));
+        self::assertCount(0, $crawler->filter('.alert-warning'));
+    }
+
     public function testPrefillAndReferenceAreIgnoredForPlainMaintainers(): void
     {
         $user = self::createUser('mover', 'mover@example.org');
