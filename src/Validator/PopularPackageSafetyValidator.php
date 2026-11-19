@@ -59,10 +59,13 @@ class PopularPackageSafetyValidator extends ConstraintValidator
             return;
         }
 
+        // Fails closed, but flagged so the block does not send every package to the support queue.
+        $countIsKnown = true;
         try {
             $downloads = $this->downloadManager->getTotalDownloads($value);
         } catch (PredisException $e) {
             $downloads = \PHP_INT_MAX;
+            $countIsKnown = false;
         }
 
         // more than 50000 downloads = established package, do not allow editing URL anymore
@@ -81,8 +84,9 @@ class PopularPackageSafetyValidator extends ConstraintValidator
                 }
             }
 
-            $this->context->buildViolation($constraint->message)
+            $this->context->buildViolation($countIsKnown ? $constraint->message : $constraint->unknownMessage)
                 ->atPath('repository')
+                ->setCode($countIsKnown ? PopularPackageSafety::POPULAR_PACKAGE_ERROR : PopularPackageSafety::UNKNOWN_POPULARITY_ERROR)
                 ->addViolation()
             ;
         }

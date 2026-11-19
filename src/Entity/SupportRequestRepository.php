@@ -12,9 +12,11 @@
 
 namespace App\Entity;
 
+use App\Support\Attributes\SupportRequestAttributes;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -47,6 +49,31 @@ class SupportRequestRepository extends ServiceEntityRepository
     }
 
     /**
+     * For a requester adding to their open request. Conditional on it still being open, so an
+     * addition racing its resolution fails instead of landing on a request nobody looks at. The
+     * loaded entity is not updated.
+     */
+    public function replaceAttributesIfOpen(SupportRequest $request, SupportRequestAttributes $attributes, \DateTimeImmutable $now): bool
+    {
+        if ($attributes->type() !== $request->type) {
+            throw new \LogicException('Request '.$request->publicId.' is a '.$request->type->value.', so it cannot take a '.$attributes->type()->value.' payload');
+        }
+
+        return 1 === $this->getEntityManager()->createQueryBuilder()
+            ->update(SupportRequest::class, 'r')
+            ->set('r.attributeData', ':attributes')
+            ->set('r.updatedAt', ':now')
+            ->where('r.id = :id')
+            ->andWhere('r.status = :open')
+            ->setParameter('attributes', $attributes->toArray(), Types::JSON)
+            ->setParameter('now', $now, Types::DATETIME_IMMUTABLE)
+            ->setParameter('id', $request->id, 'ulid')
+            ->setParameter('open', SupportRequestStatus::Open->value)
+            ->getQuery()
+            ->execute();
+    }
+
+    /**
      * @param list<SupportRequestType> $visibleTypes types the viewer is allowed to see
      */
     public function createQueueQueryBuilder(array $visibleTypes, ?SupportRequestStatus $status, ?SupportRequestType $type, string $search): QueryBuilder
@@ -76,7 +103,8 @@ class SupportRequestRepository extends ServiceEntityRepository
             // the value still JSON-quoted, which a substring LIKE does not mind.
             $qb->andWhere("u.username LIKE :search ESCAPE '!'
                     OR JSON_EXTRACT(r.attributeData, '$.vendorName') LIKE :search ESCAPE '!'
-                    OR JSON_EXTRACT(r.attributeData, '$.packageNames') LIKE :search ESCAPE '!'")
+                    OR JSON_EXTRACT(r.attributeData, '$.packageNames') LIKE :search ESCAPE '!'
+                    OR JSON_EXTRACT(r.attributeData, '$.changes[*].packageName') LIKE :search ESCAPE '!'")
                 ->setParameter('search', '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%');
         }
 

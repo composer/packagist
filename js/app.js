@@ -4,6 +4,7 @@ import './view';
 import './submitPackage';
 import './filterListAdmin';
 import './webauthn';
+import './packagePicker';
 import '../css/app.scss';
 // bare side-effect import: registers the delegated data-bs-* handlers the navbar toggler and the
 // update-history rows need. It must stay on the same specifier as every other bootstrap import -

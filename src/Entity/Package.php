@@ -77,6 +77,16 @@ enum PackageFreezeReason: string
     }
 
     /**
+     * The complement of the suppressing reasons: a suppressed package 404s even for its maintainer.
+     *
+     * @return list<self>
+     */
+    public static function appealableCases(): array
+    {
+        return array_values(array_filter(self::cases(), static fn (self $reason): bool => !$reason->suppressesPackage()));
+    }
+
+    /**
      * Freeze reasons a package moderator may apply through the UI, given whether they hold
      * ROLE_DISABLE_PACKAGES. Gone is offered here as well as being crawler-set, for repos which are
      * gone in a way the 404 detection cannot conclude on its own. Excludes RemoteIdMismatch, which
@@ -565,10 +575,11 @@ class Package
         return $this->createdAt;
     }
 
-    public function setRepository(string $repoUrl): void
+    /**
+     * The rewrites setRepository() applies before storing, without its network probe.
+     */
+    public static function normalizeRepositoryUrl(string $repoUrl): string
     {
-        $this->vcsDriver = null;
-
         $repoUrl = Preg::replace('{^git@github.com:}i', 'https://github.com/', $repoUrl);
         $repoUrl = Preg::replace('{^git://github.com/}i', 'https://github.com/', $repoUrl);
         $repoUrl = Preg::replace('{^(https://github.com/.*?)\.git$}i', '$1', $repoUrl);
@@ -587,6 +598,15 @@ class Package
 
         // normalize protocol case
         $repoUrl = Preg::replaceCallbackStrictGroups('{^(https?|git|svn)://}i', static fn ($match) => strtolower($match[1]).'://', $repoUrl);
+
+        return $repoUrl;
+    }
+
+    public function setRepository(string $repoUrl): void
+    {
+        $this->vcsDriver = null;
+
+        $repoUrl = self::normalizeRepositoryUrl($repoUrl);
 
         $this->repository = $repoUrl;
         $this->remoteId = null;

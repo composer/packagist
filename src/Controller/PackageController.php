@@ -52,7 +52,9 @@ use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
+use App\Support\UrlChangeRequestTracker;
 use App\Util\Killswitch;
+use App\Validator\PopularPackageSafety;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
@@ -68,9 +70,11 @@ use Predis\Client as RedisClient;
 use Predis\PredisException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\HttpFoundation\AcceptHeader;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -1307,17 +1311,39 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name:package}/edit', name: 'edit_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
-    public function editAction(Request $req, #[MapEntity] Package $package, #[CurrentUser] ?User $user = null): Response
+    public function editAction(Request $req, #[MapEntity] Package $package, UrlChangeRequestTracker $urlChangeTracker, #[CurrentUser] ?User $user = null): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::Edit->value, $package);
 
-        $form = $this->createFormBuilder($package, ['validation_groups' => ['Update']])
-            ->add('repository', TextType::class)
+        // Only for support admins: from a link, the prefill and the reference would let anyone dress
+        // up a hijack URL as an official request to a maintainer.
+        $isSupportAdmin = $this->isGranted('ROLE_EDIT_PACKAGES');
+        $fromSupport = $isSupportAdmin && $req->isMethod('GET');
+
+        // Never via setRepository(): it probes the URL, so a GET would reach a host the requester chose.
+        $prefill = $fromSupport ? trim($req->query->getString('repository')) : '';
+        if (mb_strlen($prefill) > 255) {
+            $prefill = '';
+        }
+        $previousUrl = $package->getRepository();
+
+        $builder = $this->createFormBuilder($package, ['validation_groups' => ['Update']])
+            ->add('repository', TextType::class, $prefill !== '' ? ['data' => $prefill] : []);
+        if ($isSupportAdmin) {
+            // Unmapped and hidden so the reference survives the POST: the form's action is generated
+            // without a query string, so reading it back off the URL would only ever work on the GET.
+            $builder->add('supportRequest', HiddenType::class, [
+                'mapped' => false,
+                'data' => $fromSupport ? $req->query->getString('supportRequest') : '',
+            ]);
+        }
+        $form = $builder
             ->setMethod('POST')
             ->setAction($this->generateUrl('edit_package', ['name' => $package->getName()]))
             ->getForm();
 
         $form->handleRequest($req);
+        $supportRequestId = $form->has('supportRequest') && \is_string($id = $form->get('supportRequest')->getData()) ? $id : '';
         if ($form->isSubmitted() && $form->isValid()) {
             // Force updating of packages once the package is viewed after the redirect.
             $package->setCrawledAt(null);
@@ -1328,6 +1354,8 @@ class PackageController extends Controller
             $em->persist($package);
             $em->flush();
 
+            $urlChangeTracker->noteAppliedChange($package, $previousUrl, $supportRequestId, $user);
+
             $this->addFlash('success', 'Changes saved.');
 
             return $this->redirectToRoute('view_package', ['name' => $package->getName()]);
@@ -1336,7 +1364,32 @@ class PackageController extends Controller
         return $this->render('package/edit.html.twig', [
             'package' => $package,
             'form' => $form,
+            // Set only when the popularity guard is what rejected the edit, so the support workflow
+            // is offered exactly where it is the answer.
+            'urlChangeBlocked' => $this->popularityBlockedUrl($form),
+            'prefilled' => $prefill !== '',
+            'supportRequestId' => $supportRequestId,
         ]);
+    }
+
+    /**
+     * The URL the popularity guard rejected. UNKNOWN_POPULARITY_ERROR is excluded: during a Redis
+     * outage every package looks popular, and they should not all be sent to the support queue.
+     *
+     * @param FormInterface<Package> $form
+     */
+    private function popularityBlockedUrl(FormInterface $form): ?string
+    {
+        foreach ($form->getErrors(true) as $error) {
+            $cause = $error->getCause();
+            if ($cause instanceof ConstraintViolation && $cause->getCode() === PopularPackageSafety::POPULAR_PACKAGE_ERROR) {
+                $data = $form->get('repository')->getViewData();
+
+                return \is_string($data) && $data !== '' ? $data : null;
+            }
+        }
+
+        return null;
     }
 
     #[Route(path: '/packages/{name:package}/abandon', name: 'abandon_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
