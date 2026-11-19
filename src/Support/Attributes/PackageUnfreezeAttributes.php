@@ -23,6 +23,14 @@ final readonly class PackageUnfreezeAttributes implements SupportRequestAttribut
     ) {
     }
 
+    /**
+     * @param list<string> $packageNames
+     */
+    public function withPackages(array $packageNames): self
+    {
+        return new self(array_values(array_unique([...$this->packageNames, ...$packageNames])));
+    }
+
     public function type(): SupportRequestType
     {
         return SupportRequestType::PackageUnfreeze;

@@ -12,9 +12,11 @@
 
 namespace App\Entity;
 
+use App\Support\Attributes\SupportRequestAttributes;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -44,6 +46,31 @@ class SupportRequestRepository extends ServiceEntityRepository
             'type' => $type->value,
             'status' => SupportRequestStatus::Open->value,
         ]);
+    }
+
+    /**
+     * For a requester adding to their open request. Conditional on it still being open, so an
+     * addition racing its resolution fails instead of landing on a request nobody looks at. The
+     * loaded entity is not updated.
+     */
+    public function replaceAttributesIfOpen(SupportRequest $request, SupportRequestAttributes $attributes, \DateTimeImmutable $now): bool
+    {
+        if ($attributes->type() !== $request->type) {
+            throw new \LogicException('Request '.$request->publicId.' is a '.$request->type->value.', so it cannot take a '.$attributes->type()->value.' payload');
+        }
+
+        return 1 === $this->getEntityManager()->createQueryBuilder()
+            ->update(SupportRequest::class, 'r')
+            ->set('r.attributeData', ':attributes')
+            ->set('r.updatedAt', ':now')
+            ->where('r.id = :id')
+            ->andWhere('r.status = :open')
+            ->setParameter('attributes', $attributes->toArray(), Types::JSON)
+            ->setParameter('now', $now, Types::DATETIME_IMMUTABLE)
+            ->setParameter('id', $request->id, 'ulid')
+            ->setParameter('open', SupportRequestStatus::Open->value)
+            ->getQuery()
+            ->execute();
     }
 
     /**

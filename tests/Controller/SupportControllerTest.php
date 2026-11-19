@@ -16,6 +16,7 @@ use App\Entity\PackageFreezeReason;
 use App\Entity\SupportRequest;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
+use App\Form\Model\PackageDeletionSupportRequest;
 use App\Support\Attributes\AccountDeletionAttributes;
 use App\Support\Attributes\PackageDeletionAttributes;
 use App\Support\Attributes\PackageTransferAttributes;
@@ -981,6 +982,128 @@ class SupportControllerTest extends IntegrationTestCase
 
         $this->assertResponseStatusCodeSame(422);
         self::assertNull($this->findRequest($user, SupportRequestType::PackageDeletion));
+    }
+
+    public function testUnfreezeAppendsToAnOpenRequest(): void
+    {
+        [$user] = $this->givenFrozenPackage('frosty/one', PackageFreezeReason::Gone);
+        $this->givenFrozenPackage('frosty/two', PackageFreezeReason::Gone, $user);
+        $this->store(SupportRequest::create($user, 'Back up.', new PackageUnfreezeAttributes(['frosty/one'])));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/unfreeze-package');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_unfreeze_request[packageNames]' => ['frosty/one', 'frosty/two'],
+            'package_unfreeze_request[description]' => 'This one is back too.',
+        ]);
+        $this->client->submit($form);
+        $this->assertResponseRedirects('/contact');
+
+        $request = $this->findRequest($user, SupportRequestType::PackageUnfreeze);
+        self::assertNotNull($request);
+        self::assertSame(['frosty/one', 'frosty/two'], $request->attributesOf(PackageUnfreezeAttributes::class)->packageNames);
+        $note = $request->messages->last();
+        self::assertNotFalse($note);
+        // only what is new is reported as added
+        self::assertStringStartsWith('The requester added frosty/two to this request', $note->contents);
+        self::assertStringContainsString('This one is back too.', $note->contents);
+        $this->assertEmailCount(1);
+    }
+
+    public function testUnfreezeRefilingTheSamePackagesChangesNothing(): void
+    {
+        [$user] = $this->givenFrozenPackage('frosty/one', PackageFreezeReason::Gone);
+        $this->store(SupportRequest::create($user, 'Back up.', new PackageUnfreezeAttributes(['frosty/one'])));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/unfreeze-package');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_unfreeze_request[packageNames]' => ['frosty/one'],
+            'package_unfreeze_request[description]' => 'Any news?',
+        ]);
+        $this->client->submit($form);
+        $this->assertResponseRedirects('/contact');
+
+        $request = $this->findRequest($user, SupportRequestType::PackageUnfreeze);
+        self::assertNotNull($request);
+        self::assertCount(0, $request->messages);
+        $this->assertEmailCount(0);
+    }
+
+    public function testDeletePackagesAppendsToAnOpenRequest(): void
+    {
+        $user = self::createUser('owner', 'owner@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('owner/one', 'https://example.org/owner/one', maintainers: [$user]));
+        $this->store(self::createPackage('owner/two', 'https://example.org/owner/two', maintainers: [$user]));
+        $this->store(SupportRequest::create($user, 'Mistake.', new PackageDeletionAttributes(['owner/one'])));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/delete-packages');
+        $form = $crawler->selectButton('Send request')->form();
+        // checkbox fields are positional, so tick the second one rather than assigning a value list
+        $form['package_deletion_request[packageNames]'][1]->tick();
+        $form->setValues([
+            'package_deletion_request[description]' => 'This one as well.',
+            'package_deletion_request[acknowledged]' => '1',
+        ]);
+        $this->client->submit($form);
+        $this->assertResponseRedirects('/contact');
+
+        $request = $this->findRequest($user, SupportRequestType::PackageDeletion);
+        self::assertNotNull($request);
+        self::assertSame(['owner/one', 'owner/two'], $request->attributesOf(PackageDeletionAttributes::class)->packageNames);
+    }
+
+    public function testDeletePackagesAppendKeepsTheCapOnTheWholeRequest(): void
+    {
+        $user = self::createUser('owner', 'owner@example.org');
+        $this->store($user);
+        $names = [];
+        for ($i = 0; $i < PackageDeletionSupportRequest::MAX_PACKAGES; ++$i) {
+            $names[] = 'owner/p'.$i;
+        }
+        $this->store(self::createPackage('owner/extra', 'https://example.org/owner/extra', maintainers: [$user]));
+        $this->store(SupportRequest::create($user, 'Cleanup.', new PackageDeletionAttributes($names)));
+
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/contact/delete-packages');
+        $form = $crawler->selectButton('Send request')->form();
+        $form->setValues([
+            'package_deletion_request[packageNames]' => ['owner/extra'],
+            'package_deletion_request[description]' => 'And this one.',
+            'package_deletion_request[acknowledged]' => '1',
+        ]);
+        $this->client->submit($form);
+
+        $this->assertResponseStatusCodeSame(422);
+        $request = $this->findRequest($user, SupportRequestType::PackageDeletion);
+        self::assertNotNull($request);
+        self::assertSame($names, $request->attributesOf(PackageDeletionAttributes::class)->packageNames);
+    }
+
+    public function testAppendingToARequestClosedInTheMeantimeFails(): void
+    {
+        $user = self::createUser('owner', 'owner@example.org');
+        $this->store($user);
+        $request = SupportRequest::create($user, 'Mistake.', new PackageDeletionAttributes(['owner/one']));
+        $this->store($request);
+
+        $repo = self::getEM()->getRepository(SupportRequest::class);
+        self::assertTrue($repo->replaceAttributesIfOpen($request, new PackageDeletionAttributes(['owner/one', 'owner/two']), new \DateTimeImmutable()));
+
+        // as if an admin closed it between the requester loading it and writing to it
+        $request->close(new \DateTimeImmutable());
+        self::getEM()->flush();
+
+        self::assertFalse($repo->replaceAttributesIfOpen($request, new PackageDeletionAttributes(['owner/one', 'owner/two', 'owner/three']), new \DateTimeImmutable()));
+
+        self::getEM()->clear();
+        $reloaded = $repo->findOneBy(['publicId' => $request->publicId]);
+        self::assertNotNull($reloaded);
+        self::assertSame(['owner/one', 'owner/two'], $reloaded->attributesOf(PackageDeletionAttributes::class)->packageNames);
     }
 
     public function testDeletePackagesSendsUsersWithNoPackagesAway(): void

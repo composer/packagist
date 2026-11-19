@@ -39,6 +39,7 @@ use App\Support\Attributes\PackageTransferAttributes;
 use App\Support\Attributes\PackageUnfreezeAttributes;
 use App\Support\Attributes\PackageUrlChange;
 use App\Support\Attributes\PackageUrlChangeAttributes;
+use App\Support\Attributes\SupportRequestAttributes;
 use App\Support\Attributes\VendorClaimAttributes;
 use App\Support\PackageDisposition;
 use App\Support\SupportNotifier;
@@ -343,9 +344,17 @@ class SupportController extends Controller
         $form = $this->createForm(PackageUnfreezeSupportType::class, $data, ['frozen_packages' => $frozen])->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = static fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUnfreezeAttributes($data->packageNames));
+            // Before the insert: once the unique index trips, the entity manager is closed.
+            $existing = $this->supportRequests->findOpen($user, SupportRequestType::PackageUnfreeze);
+            if ($existing !== null) {
+                $attributes = $existing->attributesOf(PackageUnfreezeAttributes::class);
+                $response = $this->appendPackages($req, $user, $existing, $attributes->packageNames, $attributes->withPackages($data->packageNames), $data->description);
+            } else {
+                $create = static fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUnfreezeAttributes($data->packageNames));
+                $response = $this->storeRequest($req, $user, SupportRequestType::PackageUnfreeze, $create);
+            }
 
-            if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageUnfreeze, $create)) {
+            if ($response !== null) {
                 return $response;
             }
         }
@@ -421,9 +430,22 @@ class SupportController extends Controller
         $form = $this->createForm(PackageDeletionSupportType::class, $data, ['packages' => $packages])->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = static fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageDeletionAttributes($data->packageNames));
+            $existing = $this->supportRequests->findOpen($user, SupportRequestType::PackageDeletion);
+            $response = null;
+            if ($existing !== null) {
+                $attributes = $existing->attributesOf(PackageDeletionAttributes::class);
+                $merged = $attributes->withPackages($data->packageNames);
+                if (\count($merged->packageNames) > PackageDeletionSupportRequest::MAX_PACKAGES) {
+                    $form->get('packageNames')->addError(new FormError('Your open request ('.$existing->publicId.') already lists '.\count($attributes->packageNames).' packages, and one request can hold at most '.PackageDeletionSupportRequest::MAX_PACKAGES.'. To remove your whole account and everything under it, request account deletion instead.'));
+                } else {
+                    $response = $this->appendPackages($req, $user, $existing, $attributes->packageNames, $merged, $data->description);
+                }
+            } else {
+                $create = static fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageDeletionAttributes($data->packageNames));
+                $response = $this->storeRequest($req, $user, SupportRequestType::PackageDeletion, $create);
+            }
 
-            if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageDeletion, $create)) {
+            if ($response !== null) {
                 return $response;
             }
         }
@@ -451,29 +473,65 @@ class SupportController extends Controller
             return $this->redirectToRoute('support_contact');
         }
 
-        if ($this->rateLimiter->isLimited($user, SupportRequestType::PackageUrlChange, $req->getClientIp())) {
+        return $this->appendToOpenRequest(
+            $req,
+            $user,
+            $request,
+            $attributes->withChange($change),
+            ($previous !== null
+                ? 'The requester changed the URL for '.$change->packageName.' from '.$previous->repository.' to '.$change->repository
+                : 'The requester added '.$change->packageName.' to this request, asking for '.$change->repository).":\n\n".$description,
+            $change->packageName.($previous !== null ? ' was updated on' : ' was added to').' your open request ('.$request->publicId.'). We will get back to you by email.',
+        );
+    }
+
+    /**
+     * Adds packages to the open unfreeze or deletion request, since only one request per type may
+     * be open. Returns null when the form should be re-rendered with an error flash.
+     *
+     * @param list<string> $before
+     */
+    private function appendPackages(Request $req, User $user, SupportRequest $request, array $before, PackageUnfreezeAttributes|PackageDeletionAttributes $merged, string $description): ?Response
+    {
+        $added = array_values(array_diff($merged->packageNames, $before));
+        if ($added === []) {
+            $this->addFlash('info', 'Those packages are already part of your open request ('.$request->publicId.'). We will get back to you by email.');
+
+            return $this->redirectToRoute('support_contact');
+        }
+
+        return $this->appendToOpenRequest(
+            $req,
+            $user,
+            $request,
+            $merged,
+            'The requester added '.implode(', ', $added).' to this request:'."\n\n".$description,
+            implode(', ', $added).(\count($added) === 1 ? ' was' : ' were').' added to your open request ('.$request->publicId.'). We will get back to you by email.',
+        );
+    }
+
+    private function appendToOpenRequest(Request $req, User $user, SupportRequest $request, SupportRequestAttributes $attributes, string $note, string $success): ?Response
+    {
+        if ($this->rateLimiter->isLimited($user, $request->type, $req->getClientIp())) {
             $this->addFlash('error', 'You have submitted this request too many times recently. Please email contact@packagist.org instead.');
 
             return null;
         }
 
-        $request->replaceAttributes($attributes->withChange($change));
+        if (!$this->supportRequests->replaceAttributesIfOpen($request, $attributes, new \DateTimeImmutable())) {
+            $this->addFlash('error', 'Your request '.$request->publicId.' was closed while you were adding to it. Please send the form again to open a new request.');
+
+            return null;
+        }
 
         $em = $this->getEM();
-        $em->persist(SupportRequestMessage::internalNote(
-            $request,
-            ($previous !== null
-                ? 'The requester changed the URL for '.$change->packageName.' from '.$previous->repository.' to '.$change->repository
-                : 'The requester added '.$change->packageName.' to this request, asking for '.$change->repository).":\n\n".$description,
-            null,
-        ));
-        $request->touch(new \DateTimeImmutable());
+        $em->persist(SupportRequestMessage::internalNote($request, $note, null));
         $em->flush();
 
-        $this->rateLimiter->recordSubmission($user, SupportRequestType::PackageUrlChange, $req->getClientIp());
+        $this->rateLimiter->recordSubmission($user, $request->type, $req->getClientIp());
         $this->notifier->notifyAdmins($request, updated: true);
 
-        $this->addFlash('success', $change->packageName.($previous !== null ? ' was updated on' : ' was added to').' your open request ('.$request->publicId.'). We will get back to you by email.');
+        $this->addFlash('success', $success);
 
         return $this->redirectToRoute('support_contact');
     }
