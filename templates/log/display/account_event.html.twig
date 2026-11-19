@@ -1,6 +1,7 @@
 {% import 'log/macros.html.twig' as log %}
 
-Package: <strong>{{ log.packageLink(display.packageName) }}</strong><br>
+Package: <strong>{{ log.packageLink(display.packageName) }}</strong>
+{%- if display.otherPackageCount > 0 %} and <a rel="nofollow noindex" href="{{ path('view_transparency_log', {event: display.eventId}) }}" data-test="other-packages">{{ display.otherPackageCount }} more {{ display.otherPackageCount == 1 ? 'package' : 'packages' }}</a>{% endif %}<br>
 Maintainer: {{ log.userLink(display.maintainerUsername) }}{{ log.userId(display.maintainerId) }}
 {%- if display.githubUsername is not null %}<br>GitHub account: {{ display.githubUsername }}{% endif %}
 {%- if display.githubId is not null %}<br>GitHub account ID: {{ display.githubId }}{% endif %}

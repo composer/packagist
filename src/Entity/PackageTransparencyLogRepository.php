@@ -14,6 +14,7 @@ namespace App\Entity;
 
 use App\Log\TransparencyLogEventType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Ulid;
@@ -90,6 +91,40 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     }
 
     /**
+     * Counts the packages of each account event, for the "and N more packages" link.
+     *
+     * @param list<PackageTransparencyLog> $entries
+     *
+     * @return array<string, int> count by source id (the ULID as base32 string)
+     */
+    public function countPackagesOfAccountEvents(array $entries): array
+    {
+        $sourceAuditLogIds = [];
+        foreach ($entries as $entry) {
+            if ($entry->type->fansOutToMaintainedPackages()) {
+                $sourceAuditLogIds[(string) $entry->sourceAuditLogId] = $entry->sourceAuditLogId;
+            }
+        }
+
+        if ($sourceAuditLogIds === []) {
+            return [];
+        }
+
+        $rows = $this->getEntityManager()->getConnection()->fetchAllKeyValue(
+            'SELECT sourceAuditLogId, COUNT(*) FROM package_transparency_log WHERE sourceAuditLogId IN (?) GROUP BY sourceAuditLogId',
+            [array_map(static fn (Ulid $id): string => $id->toBinary(), array_values($sourceAuditLogIds))],
+            [ArrayParameterType::BINARY],
+        );
+
+        $counts = [];
+        foreach ($rows as $id => $count) {
+            $counts[(string) Ulid::fromBinary((string) $id)] = (int) $count;
+        }
+
+        return $counts;
+    }
+
+    /**
      * Entries in leafIndex order, for the backfill of {@see PackageTransparencyLogSearch}.
      *
      * @return list<PackageTransparencyLog>
@@ -110,12 +145,20 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
      * backfilled entry shows up where it happened instead of at the top.
      * {@see TransparencyLogEventType::temporarilyHiddenTypes()} are projected but only shown when
      * $includeHiddenTypes is set.
+     *
+     * With $showAccountEventsOnce, only the entry with the lowest packageId of each account event is
+     * shown, as a stand-in for all its packages.
      */
-    public function getQueryBuilderForPublicView(bool $includeHiddenTypes = false): QueryBuilder
+    public function getQueryBuilderForPublicView(bool $includeHiddenTypes = false, bool $showAccountEventsOnce = false): QueryBuilder
     {
         $qb = $this->createQueryBuilder('t')
             ->orderBy('t.datetime', \SortDirection::Descending)
             ->addOrderBy('t.leafIndex', \SortDirection::Descending);
+
+        if ($showAccountEventsOnce) {
+            // NOT EXISTS on source_package_uniq stops at the first sibling with a lower packageId.
+            $qb->andWhere('NOT EXISTS (SELECT sibling.id FROM '.PackageTransparencyLog::class.' sibling WHERE sibling.sourceAuditLogId = t.sourceAuditLogId AND sibling.packageId < t.packageId)');
+        }
 
         if ($includeHiddenTypes) {
             return $qb;

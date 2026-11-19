@@ -12,7 +12,9 @@
 
 namespace App\QueryFilter\TransparencyLog;
 
+use App\Entity\PackageTransparencyLog;
 use App\Entity\PackageTransparencyLogSearch;
+use Doctrine\ORM\Query\Expr\From;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\QueryBuilder;
 
@@ -20,9 +22,17 @@ trait JoinsSearchIndex
 {
     private static function joinSearchIndex(QueryBuilder $qb, string $alias): QueryBuilder
     {
+        if (self::searchIndexAliases($qb) !== []) {
+            return $qb->join(PackageTransparencyLogSearch::class, $alias, Join::WITH, $alias.'.leafIndex = t.leafIndex');
+        }
+
+        // The list must be sorted by the index columns, or MySQL sorts all entries of the person before
+        // it can return a page. Doctrine's cursor paginator fails on the link to the next page when the
+        // sort columns are in a joined table, so the query starts from the index and joins the entry.
         return $qb
-            ->join(PackageTransparencyLogSearch::class, $alias, Join::WITH, $alias.'.leafIndex = t.leafIndex')
-            // order by the index columns, so MySQL reads the index in page order and does not sort
+            ->resetDQLPart('from')
+            ->from(PackageTransparencyLogSearch::class, $alias)
+            ->join(PackageTransparencyLog::class, 't', Join::WITH, 't.leafIndex = '.$alias.'.leafIndex')
             ->orderBy($alias.'.datetime', \SortDirection::Descending)
             ->addOrderBy($alias.'.leafIndex', \SortDirection::Descending);
     }
@@ -33,6 +43,12 @@ trait JoinsSearchIndex
     private static function searchIndexAliases(QueryBuilder $qb): array
     {
         $aliases = [];
+        foreach ($qb->getDQLPart('from') as $from) {
+            \assert($from instanceof From);
+            if ($from->getFrom() === PackageTransparencyLogSearch::class) {
+                $aliases[] = $from->getAlias();
+            }
+        }
         foreach ($qb->getDQLPart('join') as $joins) {
             foreach ($joins as $join) {
                 if ($join->getJoin() === PackageTransparencyLogSearch::class) {

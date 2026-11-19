@@ -16,11 +16,13 @@ use App\Command\ProjectTransparencyLogCommand;
 use App\Entity\AuditRecord;
 use App\Entity\PackageFreezeReason;
 use App\Entity\PackageTransparencyLogRepository;
+use App\Entity\User;
 use App\Entity\WebAuthnCredential;
 use App\Log\AuditLogEventType;
 use App\Log\TransparencyLogEventType;
 use App\QueryFilter\TransparencyLog\UserIdFilter;
 use App\Tests\IntegrationTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DomCrawler\Crawler;
@@ -382,6 +384,78 @@ class TransparencyLogControllerTest extends IntegrationTestCase
     }
 
     /**
+     * @return iterable<string, array{array<string, string>}>
+     */
+    public static function providePersonFilters(): iterable
+    {
+        yield 'user' => [['user' => 'pagedperson']];
+        yield 'actor' => [['actor' => 'pagedperson']];
+        yield 'user and actor' => [['user' => 'pagedperson', 'actor' => 'pagedperson']];
+        yield 'user and time range' => [['user' => 'pagedperson', 'datetime_from' => '2000-01-01T00:00:00']];
+    }
+
+    /**
+     * @param array<string, string> $query
+     */
+    #[DataProvider('providePersonFilters')]
+    public function testPersonFiltersPageThroughAllEntries(array $query): void
+    {
+        $this->givenAPersonWithMoreEntriesThanFitOnAPage();
+        $this->givenLoggedInVisitor();
+
+        $this->assertPagesShowEveryEntryOnce('/transparency-log?'.http_build_query($query));
+    }
+
+    public function testProfileLinkPagesThroughAllEntries(): void
+    {
+        $user = $this->givenAPersonWithMoreEntriesThanFitOnAPage();
+        $this->givenLoggedInVisitor();
+
+        $this->assertPagesShowEveryEntryOnce('/transparency-log?'.http_build_query(['user_id' => $user->getId()]));
+    }
+
+    /**
+     * The person changes their email 25 times, and maintains one package, so each change is one entry.
+     */
+    private function givenAPersonWithMoreEntriesThanFitOnAPage(): User
+    {
+        $user = self::createUser('pagedperson', 'pagedperson@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('acme/paged', 'https://github.com/acme/paged', maintainers: [$user]));
+        for ($i = 1; $i <= 25; $i++) {
+            $this->store(AuditRecord::emailChanged($user, $user, 'old'.$i.'@example.org'));
+        }
+        $this->runProjector();
+
+        return $user;
+    }
+
+    private function assertPagesShowEveryEntryOnce(string $url): void
+    {
+        $crawler = $this->client->request('GET', $url);
+        static::assertResponseIsSuccessful();
+
+        $pages = 1;
+        $emailChanges = $this->countEmailChanges($crawler);
+        while (\count($next = $crawler->filter('a[rel="next"]')) > 0) {
+            $crawler = $this->client->click($next->link());
+            static::assertResponseIsSuccessful();
+            $pages++;
+            $emailChanges += $this->countEmailChanges($crawler);
+        }
+
+        static::assertSame(2, $pages);
+        static::assertSame(25, $emailChanges);
+    }
+
+    private function countEmailChanges(Crawler $crawler): int
+    {
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+
+        return \count(array_keys($types, 'Email address changed', true));
+    }
+
+    /**
      * Most entries name the person only as the actor, so the entry's userId is empty.
      */
     public function testActorFilterFindsEntriesThatOnlyNameThePersonAsTheActor(): void
@@ -538,10 +612,10 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         /** @var \Symfony\Bridge\Doctrine\DataCollector\DoctrineDataCollector $collector */
         $collector = $profile->getCollector('db');
         $sqls = array_column($collector->getQueries()['default'], 'sql');
-        $searchSqls = array_values(array_filter($sqls, static fn (string $sql) => str_starts_with($sql, 'SELECT') && str_contains($sql, 'JOIN package_transparency_log_search')));
+        $searchSqls = array_values(array_filter($sqls, static fn (string $sql) => str_starts_with($sql, 'SELECT') && str_contains($sql, ' package_transparency_log_search ')));
         static::assertNotEmpty($searchSqls);
         foreach ($searchSqls as $sql) {
-            static::assertSame(1, preg_match('{JOIN package_transparency_log_search (\w+)}', $sql, $match));
+            static::assertSame(1, preg_match('{(?:FROM|JOIN) package_transparency_log_search (\w+)}', $sql, $match));
             static::assertStringContainsString($match[1].'.datetime >= ?', $sql);
             static::assertStringContainsString($match[1].'.datetime <= ?', $sql);
         }
@@ -580,6 +654,260 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         static::assertResponseIsSuccessful();
         static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
+    }
+
+    /**
+     * @return iterable<string, array{array<string, string|list<string>>}>
+     */
+    public static function provideViewsAcrossPackages(): iterable
+    {
+        yield 'unfiltered' => [[]];
+        yield 'type' => [['type' => [TransparencyLogEventType::PasswordChanged->value]]];
+        yield 'user' => [['user' => 'busymaintainer']];
+        yield 'actor' => [['actor' => 'busymaintainer']];
+        yield 'date' => [['datetime_from' => '2000-01-01T00:00:00']];
+    }
+
+    /**
+     * @param array<string, string|list<string>> $query
+     */
+    #[DataProvider('provideViewsAcrossPackages')]
+    public function testAccountEventShowsOnceInViewsAcrossPackages(array $query): void
+    {
+        $this->givenAnAccountEventOfAMaintainerOfThreePackages();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query($query));
+        static::assertResponseIsSuccessful();
+
+        static::assertSame(1, $this->countPasswordChanges($crawler));
+        static::assertSame('2 more packages', $crawler->filter('[data-test="other-packages"]')->text());
+    }
+
+    public function testAccountEventShowsOnceInTheProfileLink(): void
+    {
+        $user = $this->givenAnAccountEventOfAMaintainerOfThreePackages();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user_id' => $user->getId()]));
+        static::assertResponseIsSuccessful();
+
+        static::assertSame(1, $this->countPasswordChanges($crawler));
+        static::assertSame('2 more packages', $crawler->filter('[data-test="other-packages"]')->text());
+    }
+
+    public function testTwoAccountEventsOnOnePageEachShowOnceWithTheirOwnLink(): void
+    {
+        $this->givenAnAccountEventOfAMaintainerOfThreePackages();
+        $other = self::createUser('pairmaintainer', 'pairmaintainer@example.org');
+        $this->store($other);
+        foreach (['acme/pair-one', 'acme/pair-two'] as $name) {
+            $this->store(self::createPackage($name, 'https://github.com/'.$name, maintainers: [$other]));
+        }
+        $this->store(AuditRecord::passwordChanged($other, $other));
+        $this->runProjector();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log');
+
+        static::assertSame(2, $this->countPasswordChanges($crawler));
+        $links = $crawler->filter('[data-test="other-packages"]');
+        static::assertEqualsCanonicalizing(['1 more package', '2 more packages'], $links->each(fn ($link) => $link->text()));
+        static::assertNotSame($links->eq(0)->attr('href'), $links->eq(1)->attr('href'));
+    }
+
+    /**
+     * The event has more entries than fit on one page, so its hidden entries would fill the next page
+     * if they were removed after loading the page instead of in the query.
+     */
+    public function testAnEventWithMorePackagesThanAPageShowsOnceWhenPaging(): void
+    {
+        $user = self::createUser('hugemaintainer', 'hugemaintainer@example.org');
+        $this->store($user);
+        for ($i = 1; $i <= 25; $i++) {
+            $this->store(self::createPackage('acme/huge-'.$i, 'https://github.com/acme/huge-'.$i, maintainers: [$user]));
+        }
+        $this->store(AuditRecord::passwordChanged($user, $user));
+        $this->runProjector();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $first = $this->client->request('GET', '/transparency-log');
+        $passwordChanges = $this->countPasswordChanges($crawler);
+        while (\count($next = $crawler->filter('a[rel="next"]')) > 0) {
+            $crawler = $this->client->click($next->link());
+            static::assertResponseIsSuccessful();
+            $passwordChanges += $this->countPasswordChanges($crawler);
+        }
+        static::assertSame(1, $passwordChanges);
+        static::assertSame('24 more packages', $first->filter('[data-test="other-packages"]')->text());
+
+        $crawler = $this->client->click($first->filter('[data-test="other-packages"]')->link());
+        $packages = [];
+        while (true) {
+            foreach ($crawler->filter('td.audit-log-details')->each(fn ($node) => $node->text()) as $details) {
+                preg_match('{acme/huge-\d+}', $details, $match);
+                $packages[] = $match[0];
+            }
+            if (\count($next = $crawler->filter('a[rel="next"]')) === 0) {
+                break;
+            }
+            $crawler = $this->client->click($next->link());
+            static::assertResponseIsSuccessful();
+        }
+
+        static::assertCount(25, $packages);
+        static::assertCount(25, array_unique($packages));
+    }
+
+    public function testPackageViewShowsTheAccountEventOfEveryPackage(): void
+    {
+        $this->givenAnAccountEventOfAMaintainerOfThreePackages();
+        $this->givenLoggedInVisitor();
+
+        foreach (['acme/busy-one', 'acme/busy-two', 'other/busy-three'] as $package) {
+            $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => $package]));
+            static::assertResponseIsSuccessful();
+
+            static::assertSame(1, $this->countPasswordChanges($crawler), $package);
+            static::assertStringContainsString($package, $crawler->filter('td.audit-log-details')->text());
+            static::assertCount(0, $crawler->filter('[data-test="other-packages"]'));
+        }
+
+        // a person filter on a package view shows the entry of that package, also if other views hide it
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'other/busy-three', 'user' => 'busymaintainer']));
+        static::assertSame(1, $this->countPasswordChanges($crawler));
+    }
+
+    public function testVendorViewShowsTheAccountEventOfEachPackageOfTheVendor(): void
+    {
+        $this->givenAnAccountEventOfAMaintainerOfThreePackages();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['vendor' => 'acme']));
+        static::assertResponseIsSuccessful();
+        static::assertSame(2, $this->countPasswordChanges($crawler));
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['vendor' => 'other']));
+        static::assertSame(1, $this->countPasswordChanges($crawler));
+    }
+
+    public function testTheMorePackagesLinkListsEveryPackageOfTheEvent(): void
+    {
+        $this->givenAnAccountEventOfAMaintainerOfThreePackages();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log');
+        static::assertSame('nofollow noindex', $crawler->filter('[data-test="other-packages"]')->attr('rel'));
+        $crawler = $this->client->click($crawler->filter('[data-test="other-packages"]')->link());
+        static::assertResponseIsSuccessful();
+
+        $details = implode(' ', $crawler->filter('td.audit-log-details')->each(fn ($node) => $node->text()));
+        static::assertSame(3, $this->countPasswordChanges($crawler));
+        static::assertCount(3, $crawler->filter('[data-test="log-type"]'));
+        foreach (['acme/busy-one', 'acme/busy-two', 'other/busy-three'] as $package) {
+            static::assertStringContainsString($package, $details);
+        }
+        static::assertCount(1, $crawler->filter('input[type="hidden"][name="event"]'));
+        static::assertStringContainsString('Showing every package of a single account event.', $crawler->filter('[data-test="event-filter-notice"]')->text());
+    }
+
+    public function testTypeFilterGroupsTheTypesWithPackageFirst(): void
+    {
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log');
+        static::assertResponseIsSuccessful();
+
+        $groups = $crawler->filter('#type-filter optgroup');
+        static::assertSame(['Package', 'Maintainers', 'Version', 'Security'], $groups->each(fn ($group) => $group->attr('label')));
+        static::assertSame(TransparencyLogEventType::PackageCreated->value, $groups->eq(0)->filter('option')->attr('value'));
+        static::assertSame(
+            [TransparencyLogEventType::MaintainerAdded->value, TransparencyLogEventType::MaintainerRemoved->value, TransparencyLogEventType::PackageTransferred->value],
+            $groups->eq(1)->filter('option')->each(fn ($option) => $option->attr('value')),
+        );
+
+        $security = $groups->eq(3)->filter('option')->each(fn ($option) => $option->attr('value'));
+        static::assertContains(TransparencyLogEventType::PasswordChanged->value, $security);
+        static::assertNotContains(TransparencyLogEventType::TotpAuthenticationActivated->value, $security);
+        static::assertNotContains(TransparencyLogEventType::TotpAuthenticationDeactivated->value, $security);
+    }
+
+    /**
+     * Like in the audit log, the date links to everything that happened around that time, so the
+     * other filters are dropped.
+     */
+    public function testTheDateLinkShowsAllEntriesAroundThatTime(): void
+    {
+        $this->insertEntries('old', 1, 1);
+        $this->givenAnAccountEventOfAMaintainerOfThreePackages();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['package' => 'other/busy-three']));
+        $link = $crawler->filter('tr')->reduce(fn ($row) => str_contains($row->text(), 'Password changed'))->filter('td.audit-log-datetime a');
+        static::assertCount(1, $link);
+        parse_str((string) parse_url((string) $link->attr('href'), \PHP_URL_QUERY), $query);
+        static::assertSame(['datetime_from', 'datetime_to'], array_keys($query));
+        $from = new \DateTimeImmutable($query['datetime_from'], new \DateTimeZone('UTC'));
+        $to = new \DateTimeImmutable($query['datetime_to'], new \DateTimeZone('UTC'));
+        static::assertSame(240, $to->getTimestamp() - $from->getTimestamp());
+
+        $crawler = $this->client->click($link->link());
+        static::assertResponseIsSuccessful();
+
+        static::assertSame(1, $this->countPasswordChanges($crawler));
+        static::assertSame('2 more packages', $crawler->filter('[data-test="other-packages"]')->text());
+        static::assertStringNotContainsString('old/p1', $crawler->filter('.audit-log-table')->text());
+    }
+
+    public function testAnInvalidEventIdDegradesToAnUnfilteredList(): void
+    {
+        $this->givenAnAccountEventOfAMaintainerOfThreePackages();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['event' => 'not-an-id']));
+
+        static::assertResponseIsSuccessful();
+        static::assertSame(1, $this->countPasswordChanges($crawler));
+        static::assertCount(0, $crawler->filter('input[type="hidden"][name="event"]'));
+    }
+
+    public function testAnEventWithOnePackageHasNoMorePackagesLink(): void
+    {
+        $user = self::createUser('lonemaintainer', 'lonemaintainer@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('acme/lone', 'https://github.com/acme/lone', maintainers: [$user]));
+        $this->store(AuditRecord::passwordChanged($user, $user));
+        $this->runProjector();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log');
+
+        static::assertSame(1, $this->countPasswordChanges($crawler));
+        static::assertCount(0, $crawler->filter('[data-test="other-packages"]'));
+    }
+
+    /**
+     * The maintainer changes their password, which writes one entry for each of their three packages.
+     */
+    private function givenAnAccountEventOfAMaintainerOfThreePackages(): User
+    {
+        $user = self::createUser('busymaintainer', 'busymaintainer@example.org');
+        $this->store($user);
+        foreach (['acme/busy-one', 'acme/busy-two', 'other/busy-three'] as $name) {
+            $this->store(self::createPackage($name, 'https://github.com/'.$name, maintainers: [$user]));
+        }
+        $this->store(AuditRecord::passwordChanged($user, $user));
+
+        $this->runProjector();
+
+        return $user;
+    }
+
+    private function countPasswordChanges(Crawler $crawler): int
+    {
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+
+        return \count(array_keys($types, 'Password changed', true));
     }
 
     /**

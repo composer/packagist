@@ -19,6 +19,7 @@ use App\QueryFilter\QueryFilterInterface;
 use App\QueryFilter\TransparencyLog\ActorFilter;
 use App\QueryFilter\TransparencyLog\DateTimeFromFilter;
 use App\QueryFilter\TransparencyLog\DateTimeToFilter;
+use App\QueryFilter\TransparencyLog\EventFilter;
 use App\QueryFilter\TransparencyLog\PackageNameFilter;
 use App\QueryFilter\TransparencyLog\EventTypeFilter;
 use App\QueryFilter\TransparencyLog\UserFilter;
@@ -46,19 +47,31 @@ class TransparencyLogController extends Controller
         $dateTimeFromFilter = DateTimeFromFilter::fromQuery($request->query);
         $dateTimeToFilter = DateTimeToFilter::fromQuery($request->query);
 
+        // An account event has one entry per package the user maintains. Views filtered by vendor,
+        // package name or event (the "and N more packages" link) show every entry, all other views
+        // show the event once.
+        $packageScopedFilters = [
+            VendorFilter::fromQuery($request->query),
+            PackageNameFilter::fromQuery($request->query),
+            EventFilter::fromQuery($request->query),
+        ];
+        $showAccountEventsOnce = array_all(
+            $packageScopedFilters,
+            static fn (QueryFilterInterface $filter): bool => \in_array($filter->getSelectedValue(), [null, ''], true),
+        );
+
         /** @var QueryFilterInterface[] $filters */
         $filters = [
             EventTypeFilter::fromQuery($request->query, $includeHiddenTypes),
             ActorFilter::fromQuery($request->query),
             UserFilter::fromQuery($request->query),
             UserIdFilter::fromQuery($request->query),
-            VendorFilter::fromQuery($request->query),
-            PackageNameFilter::fromQuery($request->query),
+            ...$packageScopedFilters,
             $dateTimeFromFilter,
             $dateTimeToFilter,
         ];
 
-        $qb = $repository->getQueryBuilderForPublicView($includeHiddenTypes);
+        $qb = $repository->getQueryBuilderForPublicView($includeHiddenTypes, $showAccountEventsOnce);
 
         $selectedFilters = [];
         foreach ($filters as $filter) {
@@ -74,8 +87,11 @@ class TransparencyLogController extends Controller
             $positionResolver->resolveCursorPosition($request),
         );
 
+        $entries = iterator_to_array($paginator->getCurrentPageResults(), false);
+        $packageCounts = $showAccountEventsOnce ? $repository->countPackagesOfAccountEvents($entries) : [];
+
         return $this->render('log/transparency_log.html.twig', [
-            'transparencyLogDisplays' => $displayFactory->build($paginator),
+            'transparencyLogDisplays' => $displayFactory->build($entries, $packageCounts),
             'paginator' => $paginator,
             'selectableTypes' => $this->selectableTypes($includeHiddenTypes),
             'selectedFilters' => $selectedFilters,
@@ -85,19 +101,19 @@ class TransparencyLogController extends Controller
     }
 
     /**
-     * @return list<TransparencyLogEventType>
+     * @return array<string, list<TransparencyLogEventType>> types by category, in {@see TransparencyLogEventType::CATEGORY_ORDER}
      */
     private function selectableTypes(bool $includeHiddenTypes): array
     {
-        if ($includeHiddenTypes) {
-            return TransparencyLogEventType::cases();
+        $hidden = $includeHiddenTypes ? [] : TransparencyLogEventType::temporarilyHiddenTypes();
+
+        $grouped = array_fill_keys(TransparencyLogEventType::CATEGORY_ORDER, []);
+        foreach (TransparencyLogEventType::cases() as $type) {
+            if (!\in_array($type, $hidden, true)) {
+                $grouped[$type->category()][] = $type;
+            }
         }
 
-        $hidden = TransparencyLogEventType::temporarilyHiddenTypes();
-
-        return array_values(array_filter(
-            TransparencyLogEventType::cases(),
-            static fn (TransparencyLogEventType $type): bool => !\in_array($type, $hidden, true),
-        ));
+        return array_filter($grouped);
     }
 }
