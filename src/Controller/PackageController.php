@@ -35,8 +35,6 @@ use App\Entity\VersionSummary;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
 use App\FilterList\FilterLists;
-use App\Entity\SupportRequestMessage;
-use App\Entity\SupportRequestRepository;
 use App\Form\Model\MaintainerRequest;
 use App\Form\Model\TransferPackageRequest;
 use App\Form\Type\AbandonedType;
@@ -54,14 +52,12 @@ use App\Security\Voter\PackageActions;
 use App\SecurityAdvisory\GitHubSecurityAdvisoriesSource;
 use App\Service\GitHubUserMigrationWorker;
 use App\Service\Scheduler;
+use App\Support\UrlChangeRequestTracker;
 use App\Util\Killswitch;
+use App\Validator\PopularPackageSafety;
 use Composer\MetadataMinifier\MetadataMinifier;
 use Composer\Package\Version\VersionParser;
 use Composer\Pcre\Preg;
-use App\Support\Attributes\PackageUrlChangeAttributes;
-use App\Support\SupportNotifier;
-use App\Support\SupportRequestType;
-use App\Validator\PopularPackageSafety;
 use Composer\Semver\Constraint\Constraint;
 use Composer\Semver\Constraint\MatchNoneConstraint;
 use Composer\Semver\Constraint\MultiConstraint;
@@ -1315,7 +1311,7 @@ class PackageController extends Controller
     }
 
     #[Route(path: '/packages/{name:package}/edit', name: 'edit_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
-    public function editAction(Request $req, #[MapEntity] Package $package, SupportRequestRepository $supportRequests, SupportNotifier $supportNotifier, #[CurrentUser] ?User $user = null): Response
+    public function editAction(Request $req, #[MapEntity] Package $package, UrlChangeRequestTracker $urlChangeTracker, #[CurrentUser] ?User $user = null): Response
     {
         $this->denyAccessUnlessGranted(PackageActions::Edit->value, $package);
 
@@ -1355,7 +1351,7 @@ class PackageController extends Controller
             $em->persist($package);
             $em->flush();
 
-            $this->noteUrlChangeOnSupportRequest($supportRequests, $supportNotifier, $package, $previousUrl, $supportRequestId, $user);
+            $urlChangeTracker->noteAppliedChange($package, $previousUrl, $supportRequestId, $user);
 
             $this->addFlash('success', 'Changes saved.');
 
@@ -1391,51 +1387,6 @@ class PackageController extends Controller
         }
 
         return null;
-    }
-
-    /**
-     * Notes an applied URL change on its support request, then resolves it and emails the requester
-     * once every package has moved. Not in PackageListener, which also fires for webhook rewrites.
-     */
-    private function noteUrlChangeOnSupportRequest(SupportRequestRepository $supportRequests, SupportNotifier $supportNotifier, Package $package, string $previousUrl, string $publicId, ?User $actor): void
-    {
-        if ($publicId === '' || $previousUrl === $package->getRepository()) {
-            return;
-        }
-
-        $request = $supportRequests->findOneByPublicId($publicId);
-        if ($request === null || !$request->isOpen() || $request->type !== SupportRequestType::PackageUrlChange) {
-            return;
-        }
-
-        $attributes = $request->attributesOf(PackageUrlChangeAttributes::class);
-        if (!\in_array($package->getName(), $attributes->names(), true)) {
-            return;
-        }
-
-        $em = $this->getEM();
-        $em->persist(SupportRequestMessage::internalNote(
-            $request,
-            'Repository for '.$package->getName().' changed from '.$previousUrl.' to '.$package->getRepository().'.',
-            $actor,
-        ));
-
-        $now = new \DateTimeImmutable();
-        $request->touch($now);
-
-        $reply = null;
-        $repo = $this->getEM()->getRepository(Package::class);
-        if ($attributes->isFullyApplied(static fn (string $name): ?Package => $repo->findOneBy(['name' => $name]))) {
-            $reply = SupportRequestMessage::reply($request, SupportRequestType::urlChangeAppliedReply($attributes), $actor);
-            $em->persist($reply);
-            $request->resolve($now);
-        }
-
-        $em->flush();
-
-        if ($reply !== null) {
-            $supportNotifier->notifyUserOfReply($request, $reply);
-        }
     }
 
     #[Route(path: '/packages/{name:package}/abandon', name: 'abandon_package', requirements: ['name' => Package::PACKAGE_NAME_REGEX])]
