@@ -17,7 +17,7 @@ use Webauthn\MetadataService\Service\MetadataBLOBPayload;
 
 final class FidoMetadataSerializer implements SerializerInterface
 {
-    private ?MetadataBLOBPayload $header = null;
+    public private(set) ?MetadataBLOBPayload $header = null;
 
     public function __construct(private SerializerInterface $serializer)
     {
@@ -38,10 +38,5 @@ final class FidoMetadataSerializer implements SerializerInterface
         }
 
         return $result;
-    }
-
-    public function getHeader(): MetadataBLOBPayload
-    {
-        return $this->header ?? throw new \LogicException('The metadata feed has not been deserialized');
     }
 }

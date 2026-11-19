@@ -182,8 +182,8 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::getEM()->clear();
         $credential = self::getEM()->find(WebAuthnCredential::class, hash('sha256', $this->authenticator->id));
         self::assertNotNull($credential);
-        self::assertSame('Test hardware key', $credential->getAuthenticatorDescription());
-        self::assertSame(CredentialType::VerifiedHardware, $credential->getCredentialType());
+        self::assertSame('Test hardware key', $credential->authenticatorDescription);
+        self::assertSame(CredentialType::VerifiedHardware, $credential->credentialType);
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::WebAuthnCredentialAdded, 'userId' => $this->user->getId()]);
         self::assertNotNull($audit);
         self::assertSame('hardware', $audit->attributes['credentialType']);
@@ -256,8 +256,8 @@ class WebAuthnControllerTest extends IntegrationTestCase
         ]);
         self::assertResponseIsSuccessful();
         $credential = self::getEM()->find(WebAuthnCredential::class, hash('sha256', $this->authenticator->id));
-        self::assertNull($credential->getAuthenticatorDescription());
-        self::assertSame(CredentialType::Regular, $credential->getCredentialType());
+        self::assertNull($credential->authenticatorDescription);
+        self::assertSame(CredentialType::Regular, $credential->credentialType);
     }
 
     public function testHardwareEnrollmentCannotCrossAccounts(): void

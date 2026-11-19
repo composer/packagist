@@ -54,7 +54,7 @@ class SecondFactorProofStore
         $this->record($credential->user, self::WEBAUTHN);
         $this->record($credential->user, self::WEBAUTHN.':'.$credential->id);
 
-        if ($credential->getCredentialType() === CredentialType::VerifiedHardware) {
+        if ($credential->credentialType === CredentialType::VerifiedHardware) {
             $this->record($credential->user, self::HARDWARE_KEY);
         }
     }

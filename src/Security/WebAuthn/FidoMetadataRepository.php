@@ -165,7 +165,7 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
         }
 
         // Inspect expiry only after the library has verified and deserialized the signed BLOB
-        $blob = $serializer->getHeader();
+        $blob = $serializer->header ?? throw new \LogicException('The metadata feed has not been deserialized');
         $expires = \DateTimeImmutable::createFromFormat('!Y-m-d', $blob->nextUpdate, new \DateTimeZone('UTC'));
 
         if ($blob->no < 1 || $expires === false || $expires->format('Y-m-d') !== $blob->nextUpdate || $expires <= $this->clock->now()) {

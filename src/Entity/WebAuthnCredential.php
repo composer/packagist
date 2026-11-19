@@ -88,11 +88,11 @@ class WebAuthnCredential
     private ?bool $uvInitialized;
 
     #[ORM\Column(length: 32, enumType: CredentialType::class, options: ['default' => 'regular'])]
-    private CredentialType $credentialType = CredentialType::Regular;
+    public private(set) CredentialType $credentialType = CredentialType::Regular;
 
     // Human-readable model name from verified FIDO metadata
     #[ORM\Column(type: 'text', nullable: true)]
-    private ?string $authenticatorDescription = null;
+    public private(set) ?string $authenticatorDescription = null;
 
     public function __construct(User $user, CredentialRecord $record)
     {
@@ -145,16 +145,6 @@ class WebAuthnCredential
 
         $this->credentialType = $credentialType;
         $this->authenticatorDescription = $description;
-    }
-
-    public function getCredentialType(): CredentialType
-    {
-        return $this->credentialType;
-    }
-
-    public function getAuthenticatorDescription(): ?string
-    {
-        return $this->authenticatorDescription;
     }
 
     public function getName(): string

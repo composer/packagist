@@ -556,8 +556,8 @@ class AuditRecord
             'actor' => self::getUserData($actor),
             'credentialId' => $credential->id,
             'credentialName' => $credential->getName(),
-            'credentialType' => $credential->getCredentialType()->value,
-            'authenticatorDescription' => $credential->getAuthenticatorDescription(),
+            'credentialType' => $credential->credentialType->value,
+            'authenticatorDescription' => $credential->authenticatorDescription,
         ];
 
         if ($type === AuditLogEventType::WebAuthnCredentialRenamed) {
