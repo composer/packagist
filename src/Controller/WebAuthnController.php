@@ -19,7 +19,10 @@ use App\Security\Voter\SecondFactorVoter;
 use App\Security\Voter\WebAuthnVoter;
 use App\Security\WebAuthn\CredentialType;
 use App\Security\WebAuthn\ExpiredWebAuthnChallengeException;
+use App\Security\WebAuthn\FidoMetadataRepository;
+use App\Security\WebAuthn\FidoMetadataUnavailableException;
 use App\Security\WebAuthn\WebAuthnManager;
+use Psr\Log\LoggerInterface;
 use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorTokenInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -39,6 +42,8 @@ class WebAuthnController extends Controller
         private WebAuthnManager $webAuthn,
         private TwoFactorAuthRateLimiter $limiter,
         private TranslatorInterface $translator,
+        private FidoMetadataRepository $metadata,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -91,7 +96,13 @@ class WebAuthnController extends Controller
         }
 
         try {
+            if ($credentialType->requiresAttestation()) {
+                $this->metadata->ensureAvailable();
+            }
+
             return JsonResponse::fromJsonString($this->webAuthn->startRegistration($user, $request->request->getString('name'), $credentialType), headers: ['Cache-Control' => 'no-store']);
+        } catch (FidoMetadataUnavailableException $e) {
+            return $this->unavailableMetadataResponse($e);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
@@ -109,6 +120,8 @@ class WebAuthnController extends Controller
 
         try {
             $backupCode = $this->webAuthn->register($user, $request->request->getString('credential'), $request->request->getString('name'));
+        } catch (FidoMetadataUnavailableException $e) {
+            return $this->unavailableMetadataResponse($e);
         } catch (ServiceUnavailableHttpException $e) {
             return $this->json(['error' => $e->getMessage()], $e->getStatusCode(), $e->getHeaders());
         } catch (BadCredentialsException|\InvalidArgumentException $e) {
@@ -250,6 +263,13 @@ class WebAuthnController extends Controller
     private function canManageKeys(User $user): bool
     {
         return !$user->hasSecondFactorAuthenticationEnabled() || $this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY);
+    }
+
+    private function unavailableMetadataResponse(FidoMetadataUnavailableException $e): JsonResponse
+    {
+        $this->logger->error('Hardware security key enrollment blocked: '.$e->getMessage(), ['exception' => $e]);
+
+        return $this->json(['error' => $this->translator->trans('webauthn.error.metadata_unavailable')], Response::HTTP_SERVICE_UNAVAILABLE);
     }
 
     private function checkCsrf(Request $request): void

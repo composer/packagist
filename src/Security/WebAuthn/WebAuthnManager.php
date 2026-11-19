@@ -236,7 +236,7 @@ class WebAuthnManager
             }
 
             return $credential;
-        } catch (ExpiredWebAuthnChallengeException $e) {
+        } catch (ExpiredWebAuthnChallengeException|FidoMetadataUnavailableException $e) {
             throw $e;
         } catch (\Throwable $e) {
             throw new BadCredentialsException($credentialType === CredentialType::Regular

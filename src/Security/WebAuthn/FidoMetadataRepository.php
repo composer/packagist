@@ -55,6 +55,18 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
         return $entry['statusReports'] === null ? [] : $this->serializer->deserialize($entry['statusReports'], StatusReport::class.'[]', 'json');
     }
 
+    public function ensureAvailable(): void
+    {
+        $nextUpdate = $this->connection->createQueryBuilder()
+            ->select('nextUpdate')
+            ->from('fido_metadata_feed')
+            ->orderBy('sequenceNumber', 'DESC')
+            ->setMaxResults(1)
+            ->fetchOne();
+
+        $this->checkExpiry($nextUpdate === false ? null : $nextUpdate);
+    }
+
     public function refresh(): int
     {
         if (!$this->locker->lockCommand(self::class)) {
@@ -75,23 +87,41 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
     private function findEntry(string $aaguid): array
     {
         // Read the header and the requested model in one snapshot during a concurrent import
-        $entry = $this->connection->fetchAssociative('SELECT f.nextUpdate, e.statement, e.statusReports FROM fido_metadata_feed f LEFT JOIN fido_metadata_entry e ON e.aaguid = :aaguid ORDER BY f.sequenceNumber DESC LIMIT 1', ['aaguid' => $aaguid]);
+        $entry = $this->connection->createQueryBuilder()
+            ->select('f.nextUpdate', 'e.statement', 'e.statusReports')
+            ->from('fido_metadata_feed', 'f')
+            ->leftJoin('f', 'fido_metadata_entry', 'e', 'e.aaguid = :aaguid')
+            ->setParameter('aaguid', $aaguid)
+            ->orderBy('f.sequenceNumber', 'DESC')
+            ->setMaxResults(1)
+            ->fetchAssociative();
 
-        if ($entry === false) {
-            throw new \RuntimeException('Import the FIDO metadata feed before enrolling attested keys');
+        $this->checkExpiry($entry === false ? null : $entry['nextUpdate']);
+
+        return ['statement' => $entry['statement'] ?? null, 'statusReports' => $entry['statusReports'] ?? null];
+    }
+
+    private function checkExpiry(?string $nextUpdate): void
+    {
+        if ($nextUpdate === null) {
+            throw new FidoMetadataUnavailableException('The FIDO metadata feed has not been imported');
         }
 
-        if (new \DateTimeImmutable($entry['nextUpdate'], new \DateTimeZone('UTC')) <= $this->clock->now()) {
-            throw new \RuntimeException('The FIDO metadata feed has expired');
+        if (new \DateTimeImmutable($nextUpdate, new \DateTimeZone('UTC')) <= $this->clock->now()) {
+            throw new FidoMetadataUnavailableException('The FIDO metadata feed has expired');
         }
-
-        return ['statement' => $entry['statement'], 'statusReports' => $entry['statusReports']];
     }
 
     /** @param Snapshot $snapshot */
     private function replace(array $snapshot): void
     {
-        $previousNumber = $this->connection->fetchOne('SELECT sequenceNumber FROM fido_metadata_feed ORDER BY sequenceNumber DESC LIMIT 1 FOR UPDATE');
+        $previousNumber = $this->connection->createQueryBuilder()
+            ->select('sequenceNumber')
+            ->from('fido_metadata_feed')
+            ->orderBy('sequenceNumber', 'DESC')
+            ->setMaxResults(1)
+            ->forUpdate()
+            ->fetchOne();
 
         if ($previousNumber !== false && $snapshot['number'] < $previousNumber) {
             throw new \RuntimeException('The FIDO metadata feed is older than the imported feed');
@@ -101,7 +131,7 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
             return;
         }
 
-        $this->connection->executeStatement('DELETE FROM fido_metadata_entry');
+        $this->connection->createQueryBuilder()->delete('fido_metadata_entry')->executeStatement();
 
         foreach ($snapshot['statements'] as $aaguid => $statement) {
             $this->connection->insert('fido_metadata_entry', [
@@ -118,7 +148,7 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
         ];
 
         // Keep only the current feed, replacing its identity with the signed sequence number
-        $this->connection->executeStatement('DELETE FROM fido_metadata_feed');
+        $this->connection->createQueryBuilder()->delete('fido_metadata_feed')->executeStatement();
         $this->connection->insert('fido_metadata_feed', $header);
     }
 

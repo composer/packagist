@@ -23,6 +23,7 @@ use App\Security\SecondFactorProofStore;
 use App\Security\TotpAuthManager;
 use App\Security\WebAuthn\CredentialType;
 use App\Security\WebAuthn\FidoMetadataRepository;
+use App\Security\WebAuthn\FidoMetadataUnavailableException;
 use App\Security\WebAuthn\WebAuthnManager;
 use App\Support\SupportRequestStatus;
 use App\Support\SupportRequestType;
@@ -130,6 +131,36 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'unknown']);
         self::assertResponseStatusCodeSame(400);
         self::assertStringContainsString('Choose a supported key type.', $this->client->getResponse()->getContent());
+    }
+
+    public function testUnavailableMetadataBlocksOnlyHardwareEnrollmentOptions(): void
+    {
+        $this->metadata->method('ensureAvailable')->willThrowException(new FidoMetadataUnavailableException('The FIDO metadata feed has not been imported'));
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
+        self::assertResponseStatusCodeSame(503);
+        self::assertJsonStringEqualsJsonString('{"error":"Verified hardware security key enrollment is temporarily unavailable. Please try again later."}', $this->client->getResponse()->getContent());
+
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'regular']);
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testMetadataCanExpireAfterHardwareEnrollmentOptionsAreIssued(): void
+    {
+        $authority = new AttestationAuthority();
+        $this->authenticator->attestation = $authority;
+        $this->authenticator->aaguid = AttestationAuthority::AAGUID;
+        $this->metadata->method('findOneByAAGUID')->willThrowException(new FidoMetadataUnavailableException('The FIDO metadata feed has expired'));
+
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
+        self::assertResponseIsSuccessful();
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/profile/security/keys/register', [
+            '_token' => $this->csrf, 'name' => 'My key',
+            'credential' => $this->authenticator->register($options),
+        ]);
+        self::assertResponseStatusCodeSame(503);
+        self::assertJsonStringEqualsJsonString('{"error":"Verified hardware security key enrollment is temporarily unavailable. Please try again later."}', $this->client->getResponse()->getContent());
+        self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
     }
 
     #[TestWith([''])]

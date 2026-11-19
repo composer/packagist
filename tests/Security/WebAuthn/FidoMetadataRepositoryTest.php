@@ -14,6 +14,7 @@ namespace App\Tests\Security\WebAuthn;
 
 use App\Entity\FidoMetadataFeed;
 use App\Security\WebAuthn\FidoMetadataRepository;
+use App\Security\WebAuthn\FidoMetadataUnavailableException;
 use App\Service\Locker;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -112,23 +113,40 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
         $repository->refresh();
     }
 
-    public function testRefreshFailureDoesNotUseAnExpiredSnapshot(): void
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testExpiredSnapshotIsUnavailable(bool $preflight): void
     {
         $this->feeds = [$this->blob(), 'invalid'];
         $repository = $this->repository();
         $repository->refresh();
         self::assertNotNull($repository->findOneByAAGUID(AttestationAuthority::AAGUID));
+        $repository->ensureAvailable();
         $this->clock->sleep(172800);
-        $this->expectException(\RuntimeException::class);
-        $repository->findOneByAAGUID(AttestationAuthority::AAGUID);
+        $this->expectException(FidoMetadataUnavailableException::class);
+
+        if ($preflight) {
+            $repository->ensureAvailable();
+        } else {
+            $repository->findOneByAAGUID(AttestationAuthority::AAGUID);
+        }
     }
 
-    public function testMissingMetadataDoesNotDownloadDuringEnrollment(): void
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testMissingMetadataDoesNotDownloadDuringEnrollment(bool $preflight): void
     {
+        $repository = $this->repository();
+
         try {
-            $this->repository()->findOneByAAGUID(AttestationAuthority::AAGUID);
+            if ($preflight) {
+                $repository->ensureAvailable();
+            } else {
+                $repository->findOneByAAGUID(AttestationAuthority::AAGUID);
+            }
+
             self::fail('Expected missing metadata to be rejected');
-        } catch (\RuntimeException) {
+        } catch (FidoMetadataUnavailableException) {
             self::assertSame(0, $this->downloads);
         }
     }
