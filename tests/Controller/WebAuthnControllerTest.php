@@ -373,7 +373,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSelectorNotExists('[data-credential-verification]');
         $storedCredential = self::getEM()->find(WebAuthnCredential::class, $credential->id);
         self::assertNotNull($storedCredential);
-        self::assertNotNull($storedCredential->getLastUsedAt());
+        self::assertNotNull($storedCredential->lastUsedAt);
     }
 
     private function assertWebAuthnProof(bool $authenticated, bool $hardware, bool $recent = true): void
@@ -430,7 +430,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testFirstKeyEnablesMfaAndShowsBackupCodeOnce(): void
     {
         $credential = $this->register();
-        self::assertSame('My key', $credential->getName());
+        self::assertSame('My key', $credential->name);
         self::assertFalse($this->freshUser()->isTotpAuthenticationEnabled());
         self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
         $crawler = $this->client->request('GET', '/profile/security/keys');
@@ -457,7 +457,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
             '_token' => $this->csrf, 'action' => 'rename', 'name' => 'Renamed key',
         ]);
         self::assertResponseRedirects('/profile/security/keys');
-        self::assertSame('Renamed key', $this->freshUser()->findWebAuthnCredential($credential->id)?->getName());
+        self::assertSame('Renamed key', $this->freshUser()->findWebAuthnCredential($credential->id)?->name);
         self::assertEmailCount(0);
         $renames = self::getEM()->getRepository(AuditRecord::class)->findBy(['type' => AuditLogEventType::WebAuthnCredentialRenamed, 'userId' => $this->user->getId()]);
         self::assertCount(1, $renames);
@@ -483,7 +483,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $credential = $this->register();
         $em = self::getEM();
         $em->getConnection()->update('webauthn_credential', ['name' => 'Changed in another request'], ['id' => $credential->id]);
-        self::assertSame('My key', $credential->getName());
+        self::assertSame('My key', $credential->name);
 
         self::getService(WebAuthnManager::class)->rename($credential, 'Renamed key');
 
@@ -505,7 +505,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
             '_token' => $this->csrf, 'action' => 'rename', 'name' => $name,
         ]);
         self::assertResponseRedirects('/profile/security/keys');
-        self::assertSame('My key', $this->freshUser()->findWebAuthnCredential($credential->id)?->getName());
+        self::assertSame('My key', $this->freshUser()->findWebAuthnCredential($credential->id)?->name);
         self::assertSame(0, self::getEM()->getRepository(AuditRecord::class)->count([
             'type' => AuditLogEventType::WebAuthnCredentialRenamed,
             'userId' => $this->user->getId(),
@@ -519,14 +519,14 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $userHandle);
 
         $credential = $this->register();
-        self::assertNull($credential->getLastUsedAt());
+        self::assertNull($credential->lastUsedAt);
         $this->authenticator->counter = 0xFFFFFFFE;
         $this->verify();
 
         self::getEM()->clear();
         $storedCredential = self::getEM()->find(WebAuthnCredential::class, $credential->id);
         self::assertNotNull($storedCredential);
-        self::assertNotNull($storedCredential->getLastUsedAt());
+        self::assertNotNull($storedCredential->lastUsedAt);
         self::assertSame($this->authenticator->counter, $storedCredential->toCredentialRecord()->counter);
         self::assertSame($userHandle, $this->freshUser()->getWebAuthnUserHandle());
     }
@@ -629,7 +629,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->request('POST', '/profile/security/keys/register', ['_token' => $this->csrf, 'name' => 'Reused', 'credential' => $this->authenticator->register($options)]);
         self::assertResponseStatusCodeSame(400);
         self::assertCount(0, $this->freshUser()->getWebAuthnCredentials());
-        self::assertNotNull(self::getEM()->find(WebAuthnCredential::class, $credential->id)->getRevokedAt());
+        self::assertNotNull(self::getEM()->find(WebAuthnCredential::class, $credential->id)->revokedAt);
     }
 
     #[TestWith([false])]
@@ -849,13 +849,13 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->verify();
         $this->client->request('POST', '/profile/security/keys/'.$first->id.'/edit', ['_token' => $this->csrf, 'name' => 'Renamed key', 'action' => 'rename']);
         self::assertResponseRedirects('/profile/security/keys');
-        self::assertSame('Renamed key', self::getEM()->find(WebAuthnCredential::class, $first->id)->getName());
+        self::assertSame('Renamed key', self::getEM()->find(WebAuthnCredential::class, $first->id)->name);
         $this->client->request('POST', '/profile/security/keys/'.$first->id.'/edit', ['_token' => $this->csrf, 'action' => 'remove']);
         self::assertResponseRedirects('/profile/security/keys');
         $active = $this->freshUser()->getWebAuthnCredentials();
         self::assertCount(1, $active);
         self::assertSame($second->id, $active[0]->id);
-        self::assertNotNull(self::getEM()->find(WebAuthnCredential::class, $first->id)->getRevokedAt());
+        self::assertNotNull(self::getEM()->find(WebAuthnCredential::class, $first->id)->revokedAt);
     }
 
     public function testRemovalReviewRequiresProofAndReturnsAfterConfirmationWithoutRemovingTheKey(): void
@@ -910,7 +910,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->request('GET', $destination);
         self::assertResponseIsSuccessful();
         self::assertCount(1, $this->freshUser()->getWebAuthnCredentials());
-        self::assertSame('My key', $this->freshUser()->getWebAuthnCredentials()[0]->getName());
+        self::assertSame('My key', $this->freshUser()->getWebAuthnCredentials()[0]->name);
     }
 
     public function testExpiredProofDoesNotTurnAnInvalidRemovalCsrfTokenIntoARedirect(): void

@@ -33,16 +33,16 @@ class WebAuthnCredential
     public readonly User $user;
 
     #[ORM\Column(length: 100)]
-    private string $name;
+    public private(set) string $name;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private \DateTimeImmutable $createdAt;
+    public private(set) \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $lastUsedAt = null;
+    public private(set) ?\DateTimeImmutable $lastUsedAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $revokedAt = null;
+    public private(set) ?\DateTimeImmutable $revokedAt = null;
 
     #[ORM\Column(type: 'base64')]
     private string $publicKeyCredentialId;
@@ -145,26 +145,6 @@ class WebAuthnCredential
 
         $this->credentialType = $credentialType;
         $this->authenticatorDescription = $description;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    public function getCreatedAt(): \DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function getLastUsedAt(): ?\DateTimeImmutable
-    {
-        return $this->lastUsedAt;
-    }
-
-    public function getRevokedAt(): ?\DateTimeImmutable
-    {
-        return $this->revokedAt;
     }
 
     public function rename(string $name): void

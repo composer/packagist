@@ -555,7 +555,7 @@ class AuditRecord
             'user' => self::getUserData($credential->user),
             'actor' => self::getUserData($actor),
             'credentialId' => $credential->id,
-            'credentialName' => $credential->getName(),
+            'credentialName' => $credential->name,
             'credentialType' => $credential->credentialType->value,
             'authenticatorDescription' => $credential->authenticatorDescription,
         ];

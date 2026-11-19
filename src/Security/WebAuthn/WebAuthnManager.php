@@ -118,7 +118,7 @@ class WebAuthnManager
                     ?? throw new BadCredentialsException('Unknown credential.');
                 $this->em->refresh($credential);
 
-                if ($credential->getRevokedAt() !== null) {
+                if ($credential->revokedAt !== null) {
                     throw new BadCredentialsException('Unknown credential.');
                 }
 
@@ -141,14 +141,14 @@ class WebAuthnManager
         $this->secondFactors->withAccountLock($credential->user, function () use ($credential, $name): void {
             $this->em->refresh($credential);
 
-            if ($credential->getRevokedAt() !== null) {
+            if ($credential->revokedAt !== null) {
                 throw new BadCredentialsException('This passkey or security key has already been removed.');
             }
 
-            $previousName = $credential->getName();
+            $previousName = $credential->name;
             $credential->rename($name);
 
-            if ($credential->getName() === $previousName) {
+            if ($credential->name === $previousName) {
                 return;
             }
 
