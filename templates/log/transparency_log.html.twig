@@ -66,10 +66,6 @@
                     <input type="hidden" name="user_id" value="{{ selectedFilters.user_id }}">
                 </div>
             {% endif %}
-            {% if selectedFilters.event %}
-                {# The event filter is only set by the "and N more packages" link of an account event #}
-                <input type="hidden" name="event" value="{{ selectedFilters.event }}">
-            {% endif %}
         {% endblock %}
     {% endembed %}
 

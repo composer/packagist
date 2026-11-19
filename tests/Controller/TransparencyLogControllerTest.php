@@ -807,8 +807,24 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         foreach (['acme/busy-one', 'acme/busy-two', 'other/busy-three'] as $package) {
             static::assertStringContainsString($package, $details);
         }
-        static::assertCount(1, $crawler->filter('input[type="hidden"][name="event"]'));
         static::assertStringContainsString('Showing every package of a single account event.', $crawler->filter('[data-test="event-filter-notice"]')->text());
+    }
+
+    public function testApplyingFiltersOnTheEventPageClearsTheEventFilter(): void
+    {
+        $this->givenAnAccountEventOfAMaintainerOfThreePackages();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log');
+        $crawler = $this->client->click($crawler->filter('[data-test="other-packages"]')->link());
+        static::assertCount(1, $crawler->filter('[data-test="event-filter-notice"]'));
+
+        $crawler = $this->client->submit($crawler->filter('form[name="filters"]')->form(['vendor' => 'acme']));
+        static::assertResponseIsSuccessful();
+
+        static::assertArrayNotHasKey('event', $this->client->getRequest()->query->all());
+        static::assertCount(0, $crawler->filter('[data-test="event-filter-notice"]'));
+        static::assertSame(2, $this->countPasswordChanges($crawler));
     }
 
     public function testTypeFilterGroupsTheTypesWithPackageFirst(): void
@@ -868,7 +884,7 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         static::assertResponseIsSuccessful();
         static::assertSame(1, $this->countPasswordChanges($crawler));
-        static::assertCount(0, $crawler->filter('input[type="hidden"][name="event"]'));
+        static::assertCount(0, $crawler->filter('[data-test="event-filter-notice"]'));
     }
 
     public function testAnEventWithOnePackageHasNoMorePackagesLink(): void
