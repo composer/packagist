@@ -12,8 +12,6 @@
 
 namespace App\QueryFilter\TransparencyLog;
 
-use Doctrine\ORM\QueryBuilder;
-
 class DateTimeFromFilter extends AbstractDateTimeFilter
 {
     protected static function key(): string
@@ -21,9 +19,8 @@ class DateTimeFromFilter extends AbstractDateTimeFilter
         return 'datetime_from';
     }
 
-    protected function applyFilter(QueryBuilder $qb, \DateTimeImmutable $dateTime): QueryBuilder
+    protected static function operator(): string
     {
-        return $qb->andWhere('t.datetime >= :datetime_from')
-            ->setParameter('datetime_from', $dateTime);
+        return '>=';
     }
 }
