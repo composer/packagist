@@ -384,6 +384,78 @@ class TransparencyLogControllerTest extends IntegrationTestCase
     }
 
     /**
+     * @return iterable<string, array{array<string, string>}>
+     */
+    public static function providePersonFilters(): iterable
+    {
+        yield 'user' => [['user' => 'pagedperson']];
+        yield 'actor' => [['actor' => 'pagedperson']];
+        yield 'user and actor' => [['user' => 'pagedperson', 'actor' => 'pagedperson']];
+        yield 'user and time range' => [['user' => 'pagedperson', 'datetime_from' => '2000-01-01T00:00:00']];
+    }
+
+    /**
+     * @param array<string, string> $query
+     */
+    #[DataProvider('providePersonFilters')]
+    public function testPersonFiltersPageThroughAllEntries(array $query): void
+    {
+        $this->givenAPersonWithMoreEntriesThanFitOnAPage();
+        $this->givenLoggedInVisitor();
+
+        $this->assertPagesShowEveryEntryOnce('/transparency-log?'.http_build_query($query));
+    }
+
+    public function testProfileLinkPagesThroughAllEntries(): void
+    {
+        $user = $this->givenAPersonWithMoreEntriesThanFitOnAPage();
+        $this->givenLoggedInVisitor();
+
+        $this->assertPagesShowEveryEntryOnce('/transparency-log?'.http_build_query(['user_id' => $user->getId()]));
+    }
+
+    /**
+     * The person changes their email 25 times, and maintains one package, so each change is one entry.
+     */
+    private function givenAPersonWithMoreEntriesThanFitOnAPage(): User
+    {
+        $user = self::createUser('pagedperson', 'pagedperson@example.org');
+        $this->store($user);
+        $this->store(self::createPackage('acme/paged', 'https://github.com/acme/paged', maintainers: [$user]));
+        for ($i = 1; $i <= 25; $i++) {
+            $this->store(AuditRecord::emailChanged($user, $user, 'old'.$i.'@example.org'));
+        }
+        $this->runProjector();
+
+        return $user;
+    }
+
+    private function assertPagesShowEveryEntryOnce(string $url): void
+    {
+        $crawler = $this->client->request('GET', $url);
+        static::assertResponseIsSuccessful();
+
+        $pages = 1;
+        $emailChanges = $this->countEmailChanges($crawler);
+        while (\count($next = $crawler->filter('a[rel="next"]')) > 0) {
+            $crawler = $this->client->click($next->link());
+            static::assertResponseIsSuccessful();
+            $pages++;
+            $emailChanges += $this->countEmailChanges($crawler);
+        }
+
+        static::assertSame(2, $pages);
+        static::assertSame(25, $emailChanges);
+    }
+
+    private function countEmailChanges(Crawler $crawler): int
+    {
+        $types = $crawler->filter('[data-test="log-type"]')->each(fn ($element) => trim($element->text()));
+
+        return \count(array_keys($types, 'Email address changed', true));
+    }
+
+    /**
      * Most entries name the person only as the actor, so the entry's userId is empty.
      */
     public function testActorFilterFindsEntriesThatOnlyNameThePersonAsTheActor(): void
@@ -540,10 +612,10 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         /** @var \Symfony\Bridge\Doctrine\DataCollector\DoctrineDataCollector $collector */
         $collector = $profile->getCollector('db');
         $sqls = array_column($collector->getQueries()['default'], 'sql');
-        $searchSqls = array_values(array_filter($sqls, static fn (string $sql) => str_starts_with($sql, 'SELECT') && str_contains($sql, 'JOIN package_transparency_log_search')));
+        $searchSqls = array_values(array_filter($sqls, static fn (string $sql) => str_starts_with($sql, 'SELECT') && str_contains($sql, ' package_transparency_log_search ')));
         static::assertNotEmpty($searchSqls);
         foreach ($searchSqls as $sql) {
-            static::assertSame(1, preg_match('{JOIN package_transparency_log_search (\w+)}', $sql, $match));
+            static::assertSame(1, preg_match('{(?:FROM|JOIN) package_transparency_log_search (\w+)}', $sql, $match));
             static::assertStringContainsString($match[1].'.datetime >= ?', $sql);
             static::assertStringContainsString($match[1].'.datetime <= ?', $sql);
         }
