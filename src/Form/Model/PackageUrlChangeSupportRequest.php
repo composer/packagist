@@ -12,6 +12,7 @@
 
 namespace App\Form\Model;
 
+use App\Entity\Package;
 use App\Support\Attributes\PackageUrlChange;
 use Composer\Pcre\Preg;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -37,14 +38,14 @@ class PackageUrlChangeSupportRequest
     #[Assert\Callback]
     public function validateRepository(ExecutionContextInterface $context): void
     {
-        $url = trim($this->repository);
+        // Checked in the form the admin's save will store, so nothing passes here that it would reject.
+        $url = Package::normalizeRepositoryUrl(trim($this->repository));
         if ($url === '') {
             return;
         }
 
-        $isScpLike = Preg::isMatch('{^[a-z0-9._-]+@[a-z0-9.-]+:[^/].*$}i', $url);
-        if (!$isScpLike && !Preg::isMatch('{^(https|ssh|git\+ssh)://}i', $url)) {
-            $context->buildViolation('Only https:// and ssh:// repository URLs can be requested here, or the git@host:path form.')
+        if (!str_starts_with($url, 'https://')) {
+            $context->buildViolation('Only https:// repository URLs are supported. git@ URLs for GitHub, GitLab and Bitbucket are converted automatically.')
                 ->atPath('repository')
                 ->addViolation();
 
@@ -61,9 +62,9 @@ class PackageUrlChangeSupportRequest
 
         // Not a security boundary on its own -- the admin's save is -- but it keeps URLs we could
         // never act on out of the queue, and keeps an admin from being handed an internal address.
+        // Requiring a named TLD also rules out IP literals in every notation (IPv6, decimal, hex).
         if (
-            filter_var($host, \FILTER_VALIDATE_IP) !== false
-            || \in_array(strtolower($host), ['localhost'], true)
+            !Preg::isMatch('{\.\p{L}[\p{L}\p{N}-]*$}u', $host)
             || Preg::isMatch('{\.(local|internal|localdomain)$}i', $host)
         ) {
             $context->buildViolation('The repository must be on a public host we can reach.')->atPath('repository')->addViolation();
@@ -71,13 +72,13 @@ class PackageUrlChangeSupportRequest
             return;
         }
 
-        if (!$isScpLike && parse_url($url, \PHP_URL_PORT) !== null) {
+        if (parse_url($url, \PHP_URL_PORT) !== null) {
             $context->buildViolation('Repository URLs with an explicit port cannot be requested here.')->atPath('repository')->addViolation();
 
             return;
         }
 
-        if (!$isScpLike && (parse_url($url, \PHP_URL_USER) !== null || parse_url($url, \PHP_URL_PASS) !== null)) {
+        if (parse_url($url, \PHP_URL_USER) !== null || parse_url($url, \PHP_URL_PASS) !== null) {
             $context->buildViolation('Remove the credentials from the URL before requesting the change.')->atPath('repository')->addViolation();
         }
     }

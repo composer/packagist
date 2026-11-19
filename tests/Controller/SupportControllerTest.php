@@ -714,6 +714,13 @@ class SupportControllerTest extends IntegrationTestCase
         yield 'localhost' => ['https://localhost/mover/moved'];
         yield 'explicit port' => ['https://example.org:8080/mover/moved'];
         yield 'embedded credentials' => ['https://user:pass@example.org/mover/moved'];
+        yield 'ssh on a host we cannot rewrite to https' => ['ssh://git@git.example.org/mover/moved.git'];
+        yield 'scp form on a host we cannot rewrite to https' => ['git@git.example.org:mover/moved.git'];
+        yield 'ipv6 literal' => ['https://[::1]/mover/moved'];
+        yield 'decimal ip' => ['https://2130706433/mover/moved'];
+        yield 'hex ip' => ['https://0x7f000001/mover/moved'];
+        yield 'short dotted ip' => ['https://127.1/mover/moved'];
+        yield 'internal domain' => ['https://git.corp.internal/mover/moved'];
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('unreachableRepositoryUrls')]
