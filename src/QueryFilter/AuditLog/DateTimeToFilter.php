@@ -25,19 +25,13 @@ class DateTimeToFilter implements QueryFilterInterface
 
     public function filter(QueryBuilder $qb): QueryBuilder
     {
-        if ($this->value === '') {
+        $dateTime = $this->getDateTime();
+        if ($dateTime === null) {
             return $qb;
         }
 
-        try {
-            $dateTime = new \DateTimeImmutable($this->value);
-            $qb->setParameter('datetime_to', $dateTime);
-            $qb->andWhere('a.datetime <= :datetime_to');
-        } catch (\Exception) {
-            // Invalid datetime format, don't use for filtering
-        }
-
-        return $qb;
+        return $qb->andWhere('a.datetime <= :datetime_to')
+            ->setParameter('datetime_to', $dateTime);
     }
 
     public function getSelectedValue(): mixed
@@ -71,9 +65,12 @@ class DateTimeToFilter implements QueryFilterInterface
         }
 
         try {
-            return new \DateTimeImmutable($this->value);
+            $dateTime = new \DateTimeImmutable($this->value);
         } catch (\Exception) {
             return null;
         }
+
+        // a date without a time includes that whole day
+        return preg_match('{^\d{4}-\d{2}-\d{2}$}', $this->value) ? $dateTime->setTime(23, 59, 59) : $dateTime;
     }
 }

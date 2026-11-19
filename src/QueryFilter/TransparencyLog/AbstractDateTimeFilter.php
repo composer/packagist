@@ -21,7 +21,7 @@ abstract class AbstractDateTimeFilter implements QueryFilterInterface
     use JoinsSearchIndex;
 
     final private function __construct(
-        private readonly string $value,
+        protected readonly string $value,
     ) {
     }
 
