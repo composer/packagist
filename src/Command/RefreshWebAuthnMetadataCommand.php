@@ -13,6 +13,7 @@
 namespace App\Command;
 
 use App\Security\WebAuthn\FidoMetadataRepository;
+use App\Service\Locker;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -23,13 +24,20 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'packagist:webauthn:refresh-metadata', description: 'Verify and import the official FIDO metadata feed for attested-key enrollment')]
 class RefreshWebAuthnMetadataCommand extends Command
 {
-    public function __construct(private FidoMetadataRepository $metadata, private LoggerInterface $logger)
-    {
+    public function __construct(
+        private FidoMetadataRepository $metadata,
+        private Locker $locker,
+        private LoggerInterface $logger,
+    ) {
         parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if (!$this->locker->lockCommand(__CLASS__)) {
+            return Command::SUCCESS;
+        }
+
         $io = new SymfonyStyle($input, $output);
 
         try {
@@ -39,6 +47,8 @@ class RefreshWebAuthnMetadataCommand extends Command
             $io->error('FIDO metadata import failed: '.$e->getMessage());
 
             return Command::FAILURE;
+        } finally {
+            $this->locker->unlockCommand(__CLASS__);
         }
 
         $io->success('Verified FIDO metadata feed '.$number.' is up to date');

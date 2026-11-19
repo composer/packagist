@@ -16,7 +16,6 @@ use App\Entity\FidoMetadataFeed;
 use App\Security\WebAuthn\FidoMetadataCertificateChainValidator;
 use App\Security\WebAuthn\FidoMetadataRepository;
 use App\Security\WebAuthn\FidoMetadataUnavailableException;
-use App\Service\Locker;
 use App\Tests\IntegrationTestCase;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Clock\MockClock;
@@ -267,7 +266,7 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
             hash('sha256', $this->authority->der($this->authority->root)),
         );
 
-        return new FidoMetadataRepository(self::getEM()->getConnection(), $client, $validator, $serializer ?? self::getService(SerializerInterface::class), $this->clock, self::getService(Locker::class));
+        return new FidoMetadataRepository(self::getEM()->getConnection(), $client, $validator, $serializer ?? self::getService(SerializerInterface::class), $this->clock);
     }
 
     private function serializer(): SerializerInterface

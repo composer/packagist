@@ -12,7 +12,6 @@
 
 namespace App\Security\WebAuthn;
 
-use App\Service\Locker;
 use Doctrine\DBAL\Connection;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -36,7 +35,6 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
         private FidoMetadataCertificateChainValidator $certificateValidator,
         private SerializerInterface $serializer,
         private ClockInterface $clock,
-        private Locker $locker,
     ) {
     }
 
@@ -68,18 +66,10 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
 
     public function refresh(): int
     {
-        if (!$this->locker->lockCommand(self::class)) {
-            throw new \RuntimeException('A FIDO metadata import is already running');
-        }
+        $snapshot = $this->download();
+        $this->connection->transactional(fn () => $this->replace($snapshot));
 
-        try {
-            $snapshot = $this->download();
-            $this->connection->transactional(fn () => $this->replace($snapshot));
-
-            return $snapshot['number'];
-        } finally {
-            $this->locker->unlockCommand(self::class);
-        }
+        return $snapshot['number'];
     }
 
     /** @return array{statement: ?string, statusReports: ?string} */
