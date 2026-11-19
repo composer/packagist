@@ -99,7 +99,7 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('t')
             ->where('t.leafIndex > :after')
             ->setParameter('after', $afterLeafIndex)
-            ->orderBy('t.leafIndex', 'ASC')
+            ->orderBy('t.leafIndex', \SortDirection::Ascending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

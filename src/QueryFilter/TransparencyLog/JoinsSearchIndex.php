@@ -23,8 +23,8 @@ trait JoinsSearchIndex
         return $qb
             ->join(PackageTransparencyLogSearch::class, $alias, Join::WITH, $alias.'.leafIndex = t.leafIndex')
             // order by the index columns, so MySQL reads the index in page order and does not sort
-            ->orderBy($alias.'.datetime', 'DESC')
-            ->addOrderBy($alias.'.leafIndex', 'DESC');
+            ->orderBy($alias.'.datetime', \SortDirection::Descending)
+            ->addOrderBy($alias.'.leafIndex', \SortDirection::Descending);
     }
 
     /**

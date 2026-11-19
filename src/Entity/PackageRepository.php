@@ -197,7 +197,7 @@ class PackageRepository extends ServiceEntityRepository
             ->join('p.maintainers', 'm')
             ->where('m.id = :userId')
             ->andWhere('p.frozen IN (:reasons)')
-            ->orderBy('p.name', 'ASC')
+            ->orderBy('p.name', \SortDirection::Ascending)
             ->getQuery()
             ->setParameters(['userId' => $userId, 'reasons' => PackageFreezeReason::appealableCases()])
             ->getResult();
