@@ -343,7 +343,7 @@ class SupportController extends Controller
         $form = $this->createForm(PackageUnfreezeSupportType::class, $data, ['frozen_packages' => $frozen])->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUnfreezeAttributes($data->packageNames));
+            $create = static fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUnfreezeAttributes($data->packageNames));
 
             if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageUnfreeze, $create)) {
                 return $response;
@@ -389,7 +389,7 @@ class SupportController extends Controller
                 if ($existing !== null) {
                     $response = $this->appendUrlChange($req, $user, $existing, $change, $data->description);
                 } else {
-                    $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUrlChangeAttributes([$change]));
+                    $create = static fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageUrlChangeAttributes([$change]));
                     $response = $this->storeRequest($req, $user, SupportRequestType::PackageUrlChange, $create);
                 }
 
@@ -421,7 +421,7 @@ class SupportController extends Controller
         $form = $this->createForm(PackageDeletionSupportType::class, $data, ['packages' => $packages])->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $create = fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageDeletionAttributes($data->packageNames));
+            $create = static fn (): SupportRequest => SupportRequest::create($user, $data->description, new PackageDeletionAttributes($data->packageNames));
 
             if (null !== $response = $this->storeRequest($req, $user, SupportRequestType::PackageDeletion, $create)) {
                 return $response;

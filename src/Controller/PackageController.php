@@ -1344,7 +1344,7 @@ class PackageController extends Controller
             ->getForm();
 
         $form->handleRequest($req);
-        $supportRequestId = $form->has('supportRequest') && is_string($id = $form->get('supportRequest')->getData()) ? $id : '';
+        $supportRequestId = $form->has('supportRequest') && \is_string($id = $form->get('supportRequest')->getData()) ? $id : '';
         if ($form->isSubmitted() && $form->isValid()) {
             // Force updating of packages once the package is viewed after the redirect.
             $package->setCrawledAt(null);
@@ -1386,7 +1386,7 @@ class PackageController extends Controller
             if ($cause instanceof ConstraintViolation && $cause->getCode() === PopularPackageSafety::POPULAR_PACKAGE_ERROR) {
                 $data = $form->get('repository')->getViewData();
 
-                return is_string($data) && $data !== '' ? $data : null;
+                return \is_string($data) && $data !== '' ? $data : null;
             }
         }
 
@@ -1409,7 +1409,7 @@ class PackageController extends Controller
         }
 
         $attributes = $request->attributesOf(PackageUrlChangeAttributes::class);
-        if (!in_array($package->getName(), $attributes->names(), true)) {
+        if (!\in_array($package->getName(), $attributes->names(), true)) {
             return;
         }
 

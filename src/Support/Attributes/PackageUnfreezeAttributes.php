@@ -33,7 +33,7 @@ final readonly class PackageUnfreezeAttributes implements SupportRequestAttribut
     {
         $names = $data['packageNames'] ?? [];
 
-        return new self(is_array($names) ? array_values(array_map(strval(...), $names)) : []);
+        return new self(\is_array($names) ? array_values(array_map(strval(...), $names)) : []);
     }
 
     public function toArray(): array

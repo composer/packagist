@@ -32,6 +32,6 @@ final readonly class PackageUrlChange
 
         $host = parse_url($url, \PHP_URL_HOST);
 
-        return is_string($host) && $host !== '' ? strtolower($host) : null;
+        return \is_string($host) && $host !== '' ? strtolower($host) : null;
     }
 }

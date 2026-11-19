@@ -1,68 +1,70 @@
-import jQuery from "jquery";
-
 /**
  * Select-all and per-vendor toggles for the support package pickers (PackagePickerType).
  * Built here so the shared request.html.twig shell can keep rendering form_widget() wholesale.
  */
-const init = function ($, form) {
+const init = function (form) {
     "use strict";
 
-    const checkboxes = form.find('[data-bulk-select]');
+    const checkboxes = Array.from(form.querySelectorAll('[data-bulk-select]'));
     if (checkboxes.length < 2) {
         return;
     }
 
     const vendors = [];
-    checkboxes.each(function () {
-        const vendor = $(this).attr('data-bulk-select-group');
-        if (vendor && vendors.indexOf(vendor) === -1) {
+    checkboxes.forEach((el) => {
+        const vendor = el.getAttribute('data-bulk-select-group');
+        if (vendor && !vendors.includes(vendor)) {
             vendors.push(vendor);
         }
     });
 
-    const bar = $('<div class="mb-2 package-picker-toggles"></div>');
+    const bar = document.createElement('div');
+    bar.className = 'mb-2 package-picker-toggles';
     const toggles = [];
 
+    const refresh = function () {
+        toggles.forEach((toggle) => {
+            const checked = toggle.members.filter((el) => el.checked).length;
+            toggle.box.checked = checked > 0 && checked === toggle.members.length;
+            toggle.box.indeterminate = checked > 0 && checked < toggle.members.length;
+        });
+    };
+
     const addToggle = function (label, group) {
-        const id = form.attr('id') + '-toggle-' + toggles.length;
-        const wrapper = $('<div class="form-check form-check-inline"></div>');
-        const box = $('<input type="checkbox" class="form-check-input" data-bulk-select-all />').attr('id', id);
-        wrapper.append(box).append($('<label class="form-check-label"></label>').attr('for', id).text(label));
+        const id = form.id + '-toggle-' + toggles.length;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-check form-check-inline';
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.className = 'form-check-input';
+        box.id = id;
+        box.setAttribute('data-bulk-select-all', '');
+        const labelEl = document.createElement('label');
+        labelEl.className = 'form-check-label';
+        labelEl.htmlFor = id;
+        labelEl.textContent = label;
+        wrapper.append(box, labelEl);
         bar.append(wrapper);
 
-        const members = group === null ? checkboxes : checkboxes.filter(function () {
-            return $(this).attr('data-bulk-select-group') === group;
-        });
+        const members = group === null ? checkboxes : checkboxes.filter((el) => el.getAttribute('data-bulk-select-group') === group);
 
-        box.on('change', function () {
-            members.prop('checked', box.prop('checked'));
+        box.addEventListener('change', () => {
+            members.forEach((el) => { el.checked = box.checked; });
             refresh();
         });
 
-        toggles.push({ box: box, members: members });
+        toggles.push({ box, members });
     };
 
     addToggle('Select all', null);
     // Only worth offering per vendor when there is more than one to tell apart.
     if (vendors.length > 1) {
-        vendors.forEach(function (vendor) {
-            addToggle(vendor, vendor);
-        });
+        vendors.forEach((vendor) => addToggle(vendor, vendor));
     }
 
-    const refresh = function () {
-        toggles.forEach(function (toggle) {
-            const checked = toggle.members.filter(':checked').length;
-            toggle.box.prop('checked', checked > 0 && checked === toggle.members.length);
-            toggle.box.prop('indeterminate', checked > 0 && checked < toggle.members.length);
-        });
-    };
-
-    checkboxes.first().closest('.mb-3, fieldset, div').first().before(bar);
-    checkboxes.on('change', refresh);
+    checkboxes[0].closest('.mb-3, fieldset, div').before(bar);
+    checkboxes.forEach((el) => el.addEventListener('change', refresh));
     refresh();
 };
 
-jQuery('[id$="-picker"]').each(function () {
-    init(jQuery, jQuery(this));
-});
+document.querySelectorAll('[id$="-picker"]').forEach(init);

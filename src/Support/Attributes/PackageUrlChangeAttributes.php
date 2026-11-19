@@ -33,13 +33,13 @@ final readonly class PackageUrlChangeAttributes implements SupportRequestAttribu
     public static function fromArray(array $data): self
     {
         $rows = $data['changes'] ?? [];
-        if (!is_array($rows)) {
+        if (!\is_array($rows)) {
             return new self([]);
         }
 
         $changes = [];
         foreach ($rows as $row) {
-            if (!is_array($row)) {
+            if (!\is_array($row)) {
                 continue;
             }
             $changes[] = new PackageUrlChange((string) ($row['packageName'] ?? ''), (string) ($row['repository'] ?? ''));
@@ -113,7 +113,7 @@ final readonly class PackageUrlChangeAttributes implements SupportRequestAttribu
             return '';
         }
 
-        $rest = count($this->changes) - 1;
+        $rest = \count($this->changes) - 1;
 
         return $first->packageName.' → '.$first->repository.($rest > 0 ? ' and '.$rest.' more' : '');
     }

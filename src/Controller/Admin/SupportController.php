@@ -372,7 +372,7 @@ class SupportController extends Controller
         }
 
         $name = $req->request->getString('package');
-        if (!in_array($name, $request->attributesOf(PackageUnfreezeAttributes::class)->packageNames, true)) {
+        if (!\in_array($name, $request->attributesOf(PackageUnfreezeAttributes::class)->packageNames, true)) {
             throw new BadRequestHttpException('Package is not part of this request');
         }
 
@@ -436,7 +436,7 @@ class SupportController extends Controller
         }
 
         $name = $req->request->getString('package');
-        if (!in_array($name, $request->attributesOf(PackageDeletionAttributes::class)->packageNames, true)) {
+        if (!\in_array($name, $request->attributesOf(PackageDeletionAttributes::class)->packageNames, true)) {
             throw new BadRequestHttpException('Package is not part of this request');
         }
 

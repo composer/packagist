@@ -63,7 +63,7 @@ class PackageUrlChangeSupportRequest
         // never act on out of the queue, and keeps an admin from being handed an internal address.
         if (
             filter_var($host, \FILTER_VALIDATE_IP) !== false
-            || in_array(strtolower($host), ['localhost'], true)
+            || \in_array(strtolower($host), ['localhost'], true)
             || Preg::isMatch('{\.(local|internal|localdomain)$}i', $host)
         ) {
             $context->buildViolation('The repository must be on a public host we can reach.')->atPath('repository')->addViolation();
