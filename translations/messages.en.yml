@@ -24,6 +24,7 @@ menu:
     security_overview: Overview
     authenticator_app: Authenticator app
     passkeys_security_keys: Passkeys and security keys
+    security_audit_log: Audit log
     my_packages: My packages
     my_organizations: My organizations
     my_favorites: My favorites

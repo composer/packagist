@@ -95,6 +95,19 @@ enum AuditLogEventType: string implements LogEventType
         return array_values(array_filter(self::cases(), static fn (self $type): bool => $type->category() === 'organization'));
     }
 
+    /**
+     * @return array<string, non-empty-list<self>> types by category, in display order
+     */
+    public static function casesByCategory(): array
+    {
+        $grouped = array_fill_keys(['ownership', 'package', 'version', 'user', 'filterlist', 'advisory', 'organization'], []);
+        foreach (self::cases() as $type) {
+            $grouped[$type->category()][] = $type;
+        }
+
+        return array_filter($grouped);
+    }
+
     public function category(): string
     {
         return match ($this) {
