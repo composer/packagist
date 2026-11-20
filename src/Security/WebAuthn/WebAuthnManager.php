@@ -86,7 +86,7 @@ class WebAuthnManager
             return $code;
         });
 
-        $this->notifyChange($credential);
+        $this->notifyChange($credential, 'added');
 
         return $backupCode;
     }
@@ -163,7 +163,7 @@ class WebAuthnManager
             $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialDeleted);
         });
 
-        $this->notifyChange($credential);
+        $this->notifyChange($credential, 'removed');
     }
 
     #[AsEventListener(priority: 10)]
@@ -188,9 +188,16 @@ class WebAuthnManager
         $this->em->flush();
     }
 
-    private function notifyChange(WebAuthnCredential $credential): void
+    /** @param 'added'|'removed' $action */
+    private function notifyChange(WebAuthnCredential $credential, string $action): void
     {
-        $this->notifier->notifyChange($credential->user->getEmail(), template: 'email/webauthn_changed.txt.twig', subject: 'Passkeys and security keys changed on Packagist.org', username: $credential->user->getUsername());
+        $this->notifier->notifyChange(
+            $credential->user->getEmail(),
+            template: 'email/webauthn_changed.txt.twig',
+            subject: 'Passkey or security key '.$action.' on Packagist.org',
+            username: $credential->user->getUsername(),
+            action: $action,
+        );
     }
 
     private function registrationOptions(User $user, CredentialType $credentialType): PublicKeyCredentialCreationOptions
