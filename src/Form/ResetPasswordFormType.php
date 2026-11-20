@@ -18,18 +18,15 @@ use App\Security\SecondFactorManager;
 use App\Security\TwoFactorAuthRateLimiter;
 use App\Validator\NotProhibitedPassword;
 use App\Validator\Password;
-use App\Validator\TotpCode;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @extends AbstractType<User>
@@ -39,7 +36,7 @@ class ResetPasswordFormType extends AbstractType
     public function __construct(
         private TwoFactorAuthRateLimiter $limiter,
         private SecondFactorManager $secondFactors,
-        private ValidatorInterface $validator,
+        private TotpCodeFormValidator $codeValidator,
     ) {
     }
 
@@ -94,9 +91,8 @@ class ResetPasswordFormType extends AbstractType
             // Parallel reset requests may have passed the initial check with the same attempt remaining
             $this->ensureResetAttemptAllowed($user);
 
-            foreach ($this->validator->validate($field->getData(), new TotpCode($user)) as $violation) {
+            if (!$this->codeValidator->validateCode($field, $user)) {
                 $this->limiter->recordFailure($user->getUserIdentifier());
-                $field->addError(new FormError((string) $violation->getMessage(), cause: $violation));
             }
         });
     }

@@ -34,9 +34,10 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        self::getContainer()->set('scheb_two_factor.security.totp_authenticator', self::getContainer()->get(TotpAuthenticatorStub::class));
         Clock::set($this->clock = new MockClock('2026-10-28 12:00:00 UTC'));
-        self::getContainer()->get('cache.app')->deleteItem('scheb_two_factor_code_reuse.'.sha1('verify.'.TotpAuthenticatorStub::MOCKED_VALID_CODE));
+        foreach ([TotpAuthenticatorStub::MOCKED_VALID_CODE, TotpAuthenticatorStub::NEXT_VALID_CODE] as $code) {
+            self::getContainer()->get('cache.app')->deleteItem('scheb_two_factor_code_reuse.'.sha1('verify.'.$code));
+        }
         $this->user = self::createUser('verify', 'verify@example.org');
         $this->user->setTotpSecret('JBSWY3DPEHPK3PXP');
         $this->user->setPassword(self::getContainer()->get(UserPasswordHasherInterface::class)->hashPassword($this->user, self::PASSWORD));
@@ -103,10 +104,47 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         self::assertInstanceOf(RememberMeToken::class, self::getContainer()->get('security.token_storage')->getToken());
         $this->client->request('GET', '/users/verify/totp/disable');
         $crawler = $this->client->followRedirect();
-        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $form = $crawler->selectButton('Confirm identity')->form();
+        $this->client->submit($form, ['verify_totp[code]' => '999 999']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('form[name="verify_totp"]', 'Invalid authenticator code');
+        $this->assertAuthenticationChecks(false, false);
+
+        $this->client->submit($form, ['verify_totp[code]' => TotpAuthenticatorStub::NEXT_VALID_CODE]);
         self::assertResponseRedirects();
         self::assertStringStartsWith('/users/verify/totp/disable?_hash=', (string) $this->client->getResponse()->headers->get('Location'));
         $this->assertAuthenticationChecks(true, true);
+    }
+
+    public function testCodeUsedForStepUpCannotCompleteLogin(): void
+    {
+        $crawler = $this->client->request('GET', '/profile/security/verify-totp');
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        self::assertResponseRedirects();
+
+        $this->assertLoginRejectsUsedCode(self::PASSWORD);
+    }
+
+    public function testPasswordResetConsumesTheCodeOnlyAfterPasswordValidation(): void
+    {
+        $this->user->initializeConfirmationToken();
+        $this->user->setPasswordRequestedAt(new \DateTimeImmutable());
+        self::getEM()->flush();
+        $this->client->restart();
+        $crawler = $this->client->request('GET', '/reset-password/reset/'.$this->user->getConfirmationToken());
+        $form = $crawler->selectButton('Reset password')->form();
+        $this->client->submit($form, [
+            'reset_password_form[plainPassword]' => $this->user->getEmail(),
+            'reset_password_form[twoFactorCode]' => TotpAuthenticatorStub::MOCKED_VALID_CODE,
+        ]);
+        self::assertResponseStatusCodeSame(422);
+        $this->client->submit($form, [
+            'reset_password_form[plainPassword]' => 'changed-test-password',
+            'reset_password_form[twoFactorCode]' => TotpAuthenticatorStub::MOCKED_VALID_CODE,
+        ]);
+        self::assertResponseRedirects();
+
+        $this->assertLoginRejectsUsedCode('changed-test-password');
     }
 
     public function testBackupCodeLoginDoesNotCountAsAuthenticatorAuthentication(): void
@@ -117,6 +155,17 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         $this->client->submit($crawler->filter('form[action="/2fa-check"]')->form(), ['_auth_code' => 'abc12345']);
         self::assertResponseRedirects();
         $this->assertAuthenticationChecks(false, false);
+    }
+
+    private function assertLoginRejectsUsedCode(string $password): void
+    {
+        $crawler = $this->beginLogin($password);
+        $form = $crawler->filter('form[action="/2fa-check"]')->form();
+        $this->client->submit($form, ['_auth_code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        self::assertResponseRedirects('/2fa');
+        $crawler = $this->client->followRedirect();
+        $this->client->submit($crawler->filter('form[action="/2fa-check"]')->form(), ['_auth_code' => TotpAuthenticatorStub::NEXT_VALID_CODE]);
+        $this->assertAuthenticationChecks(true, true);
     }
 
     private function assertAuthenticationChecks(bool $authenticated, bool $recent): void
@@ -137,10 +186,10 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         }
     }
 
-    private function beginLogin(): Crawler
+    private function beginLogin(string $password = self::PASSWORD): Crawler
     {
         $this->client->restart();
-        $this->client->request('POST', '/login/', ['_username' => 'verify', '_password' => self::PASSWORD]);
+        $this->client->request('POST', '/login/', ['_username' => 'verify', '_password' => $password]);
 
         return $this->client->request('GET', '/2fa');
     }

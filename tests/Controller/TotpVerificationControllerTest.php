@@ -72,7 +72,7 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         $this->client->submit($form);
         self::assertResponseRedirects();
         self::assertStringStartsWith('/profile/security/verify-totp?return_to=', (string) $this->client->getResponse()->headers->get('Location'));
-        $crawler = $this->verify();
+        $crawler = $this->verify(TotpAuthenticatorStub::NEXT_VALID_CODE);
         $this->client->submit($crawler->selectButton('Remove authenticator app')->form());
         self::assertResponseRedirects('/users/verify/totp/');
         $user = self::getEM()->find(User::class, $this->user->getId());
@@ -174,6 +174,7 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertNull(self::redisCache()->get('2fa-failures:verify'));
         $this->assertRemovalRequiresVerification();
+        $this->verify();
     }
 
     public function testInvalidReturnUrlDoesNotGrantProof(): void
@@ -241,11 +242,11 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertResponseRedirects('/profile/security/authenticator');
     }
 
-    private function verify(): Crawler
+    private function verify(string $code = TotpAuthenticatorStub::MOCKED_VALID_CODE): Crawler
     {
         $this->client->request('GET', '/users/verify/totp/disable');
         $crawler = $this->client->followRedirect();
-        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => $code]);
         self::assertResponseRedirects();
         self::assertStringStartsWith('/users/verify/totp/disable?_hash=', (string) $this->client->getResponse()->headers->get('Location'));
 

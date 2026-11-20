@@ -55,6 +55,11 @@ class UserControllerTest extends IntegrationTestCase
         self::assertNotNull($storedUser);
         self::assertTrue($storedUser->isTotpAuthenticationEnabled());
         self::assertTrue($storedUser->isBackupCode($backupCode));
+
+        $crawler = $this->client->request('GET', '/profile/security/verify-totp');
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('form[name="verify_totp"]', 'Invalid authenticator code');
     }
 
     #[TestWith([true])]
