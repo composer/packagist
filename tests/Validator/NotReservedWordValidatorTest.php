@@ -39,7 +39,7 @@ class NotReservedWordValidatorTest extends ConstraintValidatorTestCase
     /** @return iterable<string, array{string}> */
     public static function reservedNames(): iterable
     {
-        $names = ['composer', 'packagist', 'php', 'create'];
+        $names = ['composer', 'packagist', 'php', 'admin', 'create'];
 
         foreach (ActorLabel::cases() as $label) {
             $names[] = $label->value;

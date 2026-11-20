@@ -83,7 +83,7 @@ class AuditRecordSearchTermsTest extends TestCase
 
     public function testPackageTransferredIndexesMaintainerArraysAndSkipsStringActor(): void
     {
-        // a null actor is stored as the 'admin' string sentinel, which must not be indexed
+        // a null actor is stored as the 'packagist-admin' string sentinel, which must not be indexed
         $record = AuditRecord::packageTransferred(
             self::package('acme/widget', 1),
             null,
@@ -91,6 +91,7 @@ class AuditRecordSearchTermsTest extends TestCase
             [self::user('NewOwner', 3)],
         );
 
+        $this->assertSame('packagist-admin', $record->attributes['actor']);
         $this->assertEqualsCanonicalizing(
             ['package:acme/widget', 'user:oldowner', 'user:newowner'],
             self::flatten($record->getSearchTerms()),
