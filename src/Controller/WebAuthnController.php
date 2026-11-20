@@ -13,10 +13,13 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Entity\WebAuthnCredential;
 use App\Security\SecondFactorProofStore;
 use App\Security\TwoFactorAuthRateLimiter;
 use App\Security\Voter\SecondFactorVoter;
 use App\Security\Voter\WebAuthnVoter;
+use App\Security\WebAuthn\AttestationPolicy;
+use App\Security\WebAuthn\AttestationRejectedException;
 use App\Security\WebAuthn\CredentialType;
 use App\Security\WebAuthn\ExpiredWebAuthnChallengeException;
 use App\Security\WebAuthn\FidoMetadataRepository;
@@ -44,6 +47,7 @@ class WebAuthnController extends Controller
         private TranslatorInterface $translator,
         private FidoMetadataRepository $metadata,
         private LoggerInterface $logger,
+        private AttestationPolicy $attestation,
     ) {
     }
 
@@ -57,8 +61,10 @@ class WebAuthnController extends Controller
 
         $returnUrl = $this->resolveSignedReturnUrl($request, 'user_webauthn_manage');
         $credentialVerifications = [];
+        $credentialTrust = [];
 
         foreach ($user->getWebAuthnCredentials() as $credential) {
+            $credentialTrust[$credential->id] = $this->credentialTrust($credential);
             $remaining = $proofs->getCredentialProofRemainingLifetime($credential);
 
             if ($remaining > 0) {
@@ -75,6 +81,7 @@ class WebAuthnController extends Controller
             'webauthn_verification_url' => $this->generateUrl('user_webauthn_verify', ['return_to' => $returnUrl]),
             'credential_types' => CredentialType::cases(),
             'credential_verifications' => $credentialVerifications,
+            'credential_trust' => $credentialTrust,
             'backup_code' => $request->getSession()->remove('backup_code'),
         ]);
     }
@@ -257,7 +264,11 @@ class WebAuthnController extends Controller
             throw $this->createAccessDeniedException();
         }
 
-        return JsonResponse::fromJsonString($this->webAuthn->startAuthentication($token->getUser()), headers: ['Cache-Control' => 'no-store']);
+        try {
+            return JsonResponse::fromJsonString($this->webAuthn->startAuthentication($token->getUser()), headers: ['Cache-Control' => 'no-store']);
+        } catch (BadCredentialsException $e) {
+            return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
+        }
     }
 
     private function canManageKeys(User $user): bool
@@ -267,6 +278,29 @@ class WebAuthnController extends Controller
         }
 
         return $this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY);
+    }
+
+    private function credentialTrust(WebAuthnCredential $credential): string
+    {
+        $type = $credential->credentialType;
+
+        if ($credential->disabledAt !== null) {
+            return 'disabled';
+        }
+
+        if (!$type->requiresAttestation()) {
+            return 'regular';
+        }
+
+        try {
+            $this->attestation->verify($credential->toCredentialRecord(), $type->credentialRequirements(), $type->authenticatorRequirements());
+
+            return 'verified';
+        } catch (AttestationRejectedException) {
+            return 'rejected';
+        } catch (FidoMetadataUnavailableException) {
+            return 'unavailable';
+        }
     }
 
     private function unavailableMetadataResponse(FidoMetadataUnavailableException $e): JsonResponse

@@ -243,6 +243,7 @@ log:
         webauthn_credential_added: Passkey or security key added
         webauthn_credential_renamed: Passkey or security key renamed
         webauthn_credential_deleted: Passkey or security key deleted
+        webauthn_credential_disabled: Hardware security key disabled by FIDO metadata
         totp_activated: Authenticator app enabled
         totp_deactivated: Authenticator app removed
         password_reset: Password reset
@@ -298,6 +299,7 @@ webauthn:
         no_credential: 'No passkey or security key is registered.'
         expired_challenge: 'This passkey request expired or was replaced. Start again.'
         invalid_assertion: 'The passkey or security key could not be verified.'
+        disabled_credential: 'This hardware security key is no longer trusted. Use another second factor or your backup code.'
         invalid_registration: 'The passkey or security key could not be registered.'
         invalid_enrollment: 'Choose a supported key type.'
         invalid_attestation: 'This key could not be verified for the selected key type. Use a compatible device-bound key and allow your browser to share its manufacturer attestation.'

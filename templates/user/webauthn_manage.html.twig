@@ -62,7 +62,14 @@
                         <dl class="row g-2 small text-body-secondary mt-3 mb-0">
                             <dt class="col-3 fw-normal">Type</dt>
                             <dd class="col-9 mb-0">
-                                {% if credential.credentialType.requiresAttestation %}
+                                {% set trust = credential_trust[credential.id] %}
+                                {% if trust == 'disabled' or trust == 'rejected' %}
+                                    <span class="badge text-bg-danger">{{ trust == 'disabled' ? 'Hardware security key disabled' : 'Hardware security key no longer trusted' }}</span>
+                                    <p class="mb-0">Use another second factor or your backup code to recover access.</p>
+                                {% elseif trust == 'unavailable' %}
+                                    <span class="badge text-bg-warning">Hardware verification temporarily unavailable</span>
+                                    <p class="mb-0">This key cannot be used until current FIDO metadata is available. Use another second factor or try again later.</p>
+                                {% elseif trust == 'verified' %}
                                     <span class="badge text-bg-success text-wrap text-start">{{ credential.credentialType.label }}</span>
                                 {% else %}
                                     {{ credential.credentialType.label }}
@@ -83,7 +90,7 @@
                                 {% endif %}
                             </dd>
                             {% set remaining = credential_verifications[credential.id]|default(0) %}
-                            {% if remaining > 0 %}
+                            {% if remaining > 0 and trust in ['regular', 'verified'] %}
                                 <dt class="col-3 fw-normal">Verification</dt>
                                 <dd class="col-9 mb-0" data-credential-verification="{{ remaining }}" data-minutes-remaining="{{ 'webauthn.verification.minutes_remaining'|trans }}" data-less-than-minute="{{ 'webauthn.verification.less_than_minute'|trans }}">
                                     <span class="badge text-bg-success text-wrap text-start">{{ remaining < 60 ? 'webauthn.verification.less_than_minute'|trans : 'webauthn.verification.minutes_remaining'|trans({'%minutes%': (remaining / 60)|round(0, 'ceil')}) }}</span>

@@ -17,6 +17,8 @@ use App\Security\WebAuthn\FidoMetadataCertificateChainValidator;
 use App\Security\WebAuthn\FidoMetadataRepository;
 use App\Security\WebAuthn\FidoMetadataUnavailableException;
 use App\Tests\IntegrationTestCase;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Query\QueryBuilder;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -251,7 +253,24 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
         self::assertCount(1, $repository->findStatusReportsByAAGUID(AttestationAuthority::AAGUID));
     }
 
-    private function repository(?SerializerInterface $serializer = null): FidoMetadataRepository
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testDatabaseOutageIsReportedAsUnavailableMetadata(bool $preflight): void
+    {
+        $connection = $this->createStub(Connection::class);
+        $connection->method('createQueryBuilder')->willReturn(new QueryBuilder($connection));
+        $connection->method('executeQuery')->willThrowException(new class('Unavailable') extends \RuntimeException implements \Doctrine\DBAL\Exception {});
+        $repository = $this->repository(connection: $connection);
+        $this->expectException(FidoMetadataUnavailableException::class);
+
+        if ($preflight) {
+            $repository->ensureAvailable();
+        } else {
+            $repository->findOneByAAGUID(AttestationAuthority::AAGUID);
+        }
+    }
+
+    private function repository(?SerializerInterface $serializer = null, ?Connection $connection = null): FidoMetadataRepository
     {
         $client = new MockHttpClient(function (string $method, string $url): MockResponse {
             if (str_contains($url, 'rootr46')) {
@@ -266,7 +285,7 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
             hash('sha256', $this->authority->der($this->authority->root)),
         );
 
-        return new FidoMetadataRepository(self::getEM()->getConnection(), $client, $validator, $serializer ?? self::getService(SerializerInterface::class), $this->clock);
+        return new FidoMetadataRepository($connection ?? self::getEM()->getConnection(), $client, $validator, $serializer ?? self::getService(SerializerInterface::class), $this->clock);
     }
 
     private function serializer(): SerializerInterface

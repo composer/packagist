@@ -37,27 +37,27 @@ class AttestationPolicy
     {
         if (!$this->hasCertificateBackedAttestation($record)
             || !$this->hasAuthenticatorIdentifier($record)) {
-            throw new \UnexpectedValueException('Attested enrollment requires identifiable certificate-backed attestation');
+            throw new AttestationRejectedException('Attested enrollment requires identifiable certificate-backed attestation');
         }
 
         $aaguid = $record->aaguid->toRfc4122();
         $statement = $this->metadata->findOneByAAGUID($aaguid);
 
         if ($statement === null) {
-            throw new \UnexpectedValueException('The authenticator has no trusted metadata');
+            throw new AttestationRejectedException('The authenticator has no trusted metadata');
         }
 
         $this->verifyStatus($aaguid);
 
         foreach ($credentialRequirements as $requirement) {
             if (!$requirement->isSatisfiedBy($record)) {
-                throw new \UnexpectedValueException('The authenticator does not satisfy '.$requirement->name);
+                throw new AttestationRejectedException('The authenticator does not satisfy '.$requirement->name);
             }
         }
 
         foreach ($authenticatorRequirements as $requirement) {
             if (!$requirement->isSatisfiedBy($statement)) {
-                throw new \UnexpectedValueException('The authenticator does not satisfy '.$requirement->name);
+                throw new AttestationRejectedException('The authenticator does not satisfy '.$requirement->name);
             }
         }
 
@@ -76,11 +76,17 @@ class AttestationPolicy
 
     private function verifyStatus(string $aaguid): void
     {
-        // The bundle rejects compromised or revoked reports, but allows an empty list
+        // Assertion ceremonies do not run the bundle's enrollment metadata checks
         $reports = $this->metadata->findStatusReportsByAAGUID($aaguid);
 
         if ($reports === []) {
-            throw new \UnexpectedValueException('The authenticator has no trusted status report');
+            throw new AttestationRejectedException('The authenticator has no trusted status report');
+        }
+
+        foreach ($reports as $report) {
+            if ($report->isCompromised()) {
+                throw new AttestationRejectedException('The authenticator is marked '.$report->status.' in FIDO metadata');
+            }
         }
     }
 }

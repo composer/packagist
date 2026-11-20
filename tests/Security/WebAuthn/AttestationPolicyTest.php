@@ -127,6 +127,18 @@ class AttestationPolicyTest extends TestCase
         $this->policy(['hardware'], [])->verify($this->record());
     }
 
+    #[TestWith(['REVOKED'])]
+    #[TestWith(['USER_KEY_REMOTE_COMPROMISE'])]
+    #[TestWith(['USER_KEY_PHYSICAL_COMPROMISE'])]
+    #[TestWith(['ATTESTATION_KEY_COMPROMISE'])]
+    #[TestWith(['USER_VERIFICATION_BYPASS'])]
+    public function testUnsafeReportsAreRejectedEvenAlongsideCertification(string $status): void
+    {
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage($status);
+        $this->policy(['hardware'], ['FIDO_CERTIFIED', $status, 'FIDO_CERTIFIED_L1'])->verify($this->record());
+    }
+
     #[TestWith(['none'])]
     #[TestWith(['self'])]
     public function testUntrustedAttestationTypesAreRejected(string $attestationType): void

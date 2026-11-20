@@ -47,7 +47,7 @@ class SecondFactorProofStore
 
     public function recordWebAuthn(WebAuthnCredential $credential): void
     {
-        if ($credential->revokedAt !== null) {
+        if ($credential->revokedAt !== null || $credential->disabledAt !== null) {
             return;
         }
 
@@ -61,7 +61,7 @@ class SecondFactorProofStore
 
     public function getCredentialProofRemainingLifetime(WebAuthnCredential $credential): int
     {
-        if ($credential->revokedAt !== null) {
+        if ($credential->revokedAt !== null || $credential->disabledAt !== null) {
             return 0;
         }
 

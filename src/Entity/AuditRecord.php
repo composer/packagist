@@ -572,6 +572,23 @@ class AuditRecord
         );
     }
 
+    public static function webAuthnCredentialDisabled(WebAuthnCredential $credential, string $reason): self
+    {
+        return new self(
+            AuditLogEventType::WebAuthnCredentialDisabled,
+            [
+                'user' => self::getUserData($credential->user),
+                'actor' => 'automation',
+                'credentialId' => $credential->id,
+                'credentialName' => $credential->name,
+                'credentialType' => $credential->credentialType->value,
+                'authenticatorDescription' => $credential->authenticatorDescription,
+                'reason' => $reason,
+            ],
+            userId: $credential->user->getId(),
+        );
+    }
+
     public static function totpAuthenticationActivated(User $user, User $actor): self
     {
         return new self(

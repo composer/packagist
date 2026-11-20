@@ -44,6 +44,9 @@ class WebAuthnCredential
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     public private(set) ?\DateTimeImmutable $revokedAt = null;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    public private(set) ?\DateTimeImmutable $disabledAt = null;
+
     #[ORM\Column(type: 'base64')]
     private string $publicKeyCredentialId;
 
@@ -180,5 +183,10 @@ class WebAuthnCredential
     public function revoke(): void
     {
         $this->revokedAt ??= new \DateTimeImmutable();
+    }
+
+    public function disable(): void
+    {
+        $this->disabledAt ??= new \DateTimeImmutable();
     }
 }

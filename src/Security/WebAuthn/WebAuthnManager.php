@@ -23,6 +23,7 @@ use App\Security\UserNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -97,6 +98,10 @@ class WebAuthnManager
             throw new BadCredentialsException('webauthn.error.no_credential');
         }
 
+        if (!array_any($user->getWebAuthnCredentials(), static fn (WebAuthnCredential $credential) => $credential->disabledAt === null)) {
+            throw new BadCredentialsException('webauthn.error.disabled_credential');
+        }
+
         $options = $this->assertionOptions($user);
         $this->optionsStorage->store(Item::create($options, null));
 
@@ -118,7 +123,7 @@ class WebAuthnManager
                     ?? throw new BadCredentialsException('Unknown credential.');
                 $this->em->refresh($credential);
 
-                if ($credential->revokedAt !== null) {
+                if ($credential->revokedAt !== null || $credential->disabledAt !== null) {
                     throw new BadCredentialsException('Unknown credential.');
                 }
 
@@ -129,6 +134,7 @@ class WebAuthnManager
                 throw new BadCredentialsException('webauthn.error.invalid_assertion', previous: $e);
             }
 
+            $this->verifyCurrentAttestation($credential, $record);
             $credential->recordAuthentication($record);
             $this->em->flush();
 
@@ -180,6 +186,30 @@ class WebAuthnManager
         $credential->revoke();
         $credential->user->invalidateAllSessions();
         $this->eventDispatcher->dispatch(new SecondFactorRemovedEvent($credential->user));
+    }
+
+    private function verifyCurrentAttestation(WebAuthnCredential $credential, CredentialRecord $record): void
+    {
+        $type = $credential->credentialType;
+
+        if (!$type->requiresAttestation()) {
+            return;
+        }
+
+        try {
+            $this->attestation->verify($record, $type->credentialRequirements(), $type->authenticatorRequirements());
+        } catch (FidoMetadataUnavailableException $e) {
+            throw new ServiceUnavailableHttpException(60, 'Hardware security key verification is temporarily unavailable. Try again later or use another second factor.', $e);
+        } catch (AttestationRejectedException $e) {
+            $this->em->wrapInTransaction(function () use ($credential, $e): void {
+                // Keep disabled keys enrolled so losing the last usable key cannot turn off MFA
+                $credential->disable();
+                $credential->user->invalidateAllSessions();
+                $this->em->persist(AuditRecord::webAuthnCredentialDisabled($credential, $e->getMessage()));
+            });
+
+            throw new BadCredentialsException('webauthn.error.disabled_credential', previous: $e);
+        }
     }
 
     private function persistChange(WebAuthnCredential $credential, AuditLogEventType $type, ?string $previousName = null): void
