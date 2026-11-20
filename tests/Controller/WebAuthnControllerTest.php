@@ -824,15 +824,47 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertTrue($this->freshUser()->isBackupCode('keep1234'));
     }
 
-    public function testRememberedSessionCanEnrollAFirstKey(): void
+    #[TestWith(['/profile/security/keys/options', 'regular'])]
+    #[TestWith(['/profile/security/keys/register', 'regular'])]
+    #[TestWith(['/profile/security/keys/options', 'hardware'])]
+    #[TestWith(['/profile/security/keys/register', 'hardware'])]
+    public function testRememberedSessionCannotEnrollAFirstKey(string $path, string $kind): void
     {
+        if ($kind === 'hardware') {
+            $this->configureHardwareMetadata();
+        }
+
+        $this->client->restart();
+        $this->client->request('POST', '/login/', [
+            '_username' => 'keys', '_password' => 'existing-password', '_remember_me' => 'on',
+        ]);
+        self::assertNotNull($this->client->getCookieJar()->get('pauth'));
+        $crawler = $this->client->request('GET', '/profile/security/keys');
+        $this->csrf = $crawler->filter('form[data-webauthn="register"] input[name="_token"]')->attr('value');
+        $this->client->request('POST', '/profile/security/keys/options', [
+            '_token' => $this->csrf, 'name' => 'My key', 'kind' => $kind,
+        ]);
+        self::assertResponseIsSuccessful();
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $credential = $this->authenticator->register($options);
         $session = $this->client->getSession();
         self::assertNotNull($session);
-        $session->set('_security_main', serialize(new RememberMeToken($this->user, 'main')));
+        $session->remove('_security_main');
         $session->save();
 
-        $this->register();
-        self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertResponseIsSuccessful();
+        self::assertInstanceOf(RememberMeToken::class, self::getContainer()->get('security.token_storage')->getToken());
+        self::assertSelectorNotExists('form[data-webauthn="register"]');
+        self::assertSelectorTextContains('a[href="/login/"]', 'Sign in again to add your first key');
+        $this->client->request('POST', $path, [
+            '_token' => $this->csrf, 'name' => 'My key', 'kind' => $kind, 'credential' => $credential,
+        ]);
+        self::assertResponseRedirects('/login/');
+        self::getEM()->clear();
+        self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
+        self::assertCount(0, self::getEM()->getRepository(WebAuthnCredential::class)->findBy(['user' => $this->freshUser()]));
+        self::assertEmailCount(0);
     }
 
     #[TestWith(['/profile/security/keys/options', 'regular'])]

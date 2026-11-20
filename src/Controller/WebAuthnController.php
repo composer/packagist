@@ -262,7 +262,11 @@ class WebAuthnController extends Controller
 
     private function canManageKeys(User $user): bool
     {
-        return !$user->hasSecondFactorAuthenticationEnabled() || $this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY);
+        if (!$user->hasSecondFactorAuthenticationEnabled()) {
+            return $this->isGranted('IS_AUTHENTICATED_FULLY');
+        }
+
+        return $this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY);
     }
 
     private function unavailableMetadataResponse(FidoMetadataUnavailableException $e): JsonResponse

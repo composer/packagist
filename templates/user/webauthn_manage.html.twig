@@ -25,6 +25,9 @@
         </div>
         {% if not can_manage_keys %}
             <div class="d-flex flex-wrap align-items-start gap-2">
+                {% if not user.hasSecondFactorAuthenticationEnabled %}
+                    <a class="btn btn-sm btn-secondary" href="{{ path('login') }}">Sign in again to add your first key</a>
+                {% endif %}
                 {% if user.totpAuthenticationEnabled %}
                     <a class="btn btn-sm btn-secondary" href="{{ totp_verification_url }}">Confirm with authenticator app</a>
                 {% endif %}
