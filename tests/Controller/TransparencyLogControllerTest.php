@@ -556,6 +556,9 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         // only the entries of this account, not of the account that has the username now
         static::assertCount(2, $crawler->filter('[data-test="log-type"]'));
         static::assertStringContainsString('(#'.$renamed->getId().')', $crawler->filter('td.audit-log-details')->text());
+        // the notice names the account by its current username
+        static::assertSame('handover_old', $crawler->filter('[data-test="account-filter-notice"] strong')->text());
+        static::assertStringContainsString('(#'.$renamed->getId().'), as user or actor.', $crawler->filter('[data-test="account-filter-notice"]')->text());
 
         $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user_id' => $successor->getId()]));
         static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
@@ -654,6 +657,34 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         static::assertResponseIsSuccessful();
         static::assertCount(1, $crawler->filter('[data-test="log-type"]'));
+        static::assertCount(0, $crawler->filter('[data-test="account-filter-notice"]'));
+        static::assertCount(0, $crawler->filter('input[type="hidden"][name="user_id"]'));
+    }
+
+    public function testTheAccountNoticeShowsOnlyTheIdOfAnAccountThatNoLongerExists(): void
+    {
+        $this->givenProjectedLog();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user_id' => '999999']));
+
+        static::assertResponseIsSuccessful();
+        static::assertSame('Showing all entries of account #999999, as user or actor. Show all entries', $crawler->filter('[data-test="account-filter-notice"]')->text());
+        static::assertCount(0, $crawler->filter('[data-test="log-type"]'));
+    }
+
+    public function testApplyingFiltersKeepsTheAccountFilter(): void
+    {
+        [$renamed] = $this->givenARecycledUsername();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query(['user_id' => $renamed->getId()]));
+        $crawler = $this->client->submit($crawler->filter('form[name="filters"]')->form(['package' => 'acme/handover']));
+        static::assertResponseIsSuccessful();
+
+        static::assertSame((string) $renamed->getId(), $this->client->getRequest()->query->get('user_id'));
+        static::assertCount(1, $crawler->filter('[data-test="account-filter-notice"]'));
+        static::assertCount(2, $crawler->filter('[data-test="log-type"]'));
     }
 
     /**
