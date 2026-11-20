@@ -400,28 +400,21 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('log/display/package_with_repository.html.twig', $display->getTemplateName());
     }
 
-    #[TestWith([false, 999, '**@**.**'])]
-    #[TestWith([true, 999, 'john@doe.com'])]
-    #[TestWith([false, 123, 'john@doe.com'])]
-    public function testBuildUserVerified(bool $hasAuditorRole, int $authenticatedUserId, string $expectedEmail): void
+    #[TestWith([false, 999, '**@**.**', false])]
+    #[TestWith([true, 999, 'john@doe.com', true])]
+    #[TestWith([false, 123, 'john@doe.com', false])]
+    #[TestWith([true, 123, 'john@doe.com', false])]
+    public function testBuildUserVerified(bool $hasAuditorRole, int $authenticatedUserId, string $expectedEmail, bool $expectedAuditorOnly): void
     {
-        // override setUp objects to get a real mock here
-        $security = $this->createMock(Security::class);
-        $security
-            ->expects(self::once())
-            ->method('isGranted')
-            ->with('ROLE_AUDITOR')
-            ->willReturn($hasAuditorRole);
+        $security = $this->createStub(Security::class);
+        $security->method('isGranted')->willReturnMap([['ROLE_AUDITOR', null, null, $hasAuditorRole]]);
         $this->factory = new AuditLogDisplayFactory($security);
 
         $user = new User();
         $reflectionProperty = new \ReflectionProperty($user, 'id');
         $reflectionProperty->setValue($user, $authenticatedUserId);
 
-        $security
-            ->expects(self::atMost(1))
-            ->method('getUser')
-            ->willReturn($user);
+        $security->method('getUser')->willReturn($user);
 
         $auditRecord = $this->createAuditRecord(
             AuditLogEventType::UserVerified,
@@ -437,6 +430,7 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertInstanceOf(UserVerifiedDisplay::class, $display);
         self::assertSame('johndoe', $display->username);
         self::assertSame($expectedEmail, $display->email);
+        self::assertSame($expectedAuditorOnly, $display->emailAuditorOnly);
     }
 
     public function testBuildMultipleRecords(): void
@@ -936,9 +930,11 @@ class AuditLogDisplayFactoryTest extends TestCase
         self::assertSame('automation', $display->actor->username);
     }
 
-    #[TestWith([true, 'alice@example.org'])]
-    #[TestWith([false, '**@**.**'])]
-    public function testOrganizationInvitationEmailVisibility(bool $isAuditor, string $expectedEmail): void
+    #[TestWith([true, false, 'alice@example.org', true])]
+    #[TestWith([false, false, '**@**.**', false])]
+    #[TestWith([true, true, 'alice@example.org', false])]
+    #[TestWith([false, true, 'alice@example.org', false])]
+    public function testOrganizationInvitationEmailVisibility(bool $isAuditor, bool $revealEmails, string $expectedEmail, bool $expectedAuditorOnly): void
     {
         $security = $this->createStub(Security::class);
         $security->method('isGranted')->willReturn($isAuditor);
@@ -953,10 +949,11 @@ class AuditLogDisplayFactoryTest extends TestCase
             ],
         );
 
-        $display = $this->factory->buildSingle($auditRecord);
+        $display = $this->factory->buildSingle($auditRecord, $revealEmails);
 
         self::assertInstanceOf(OrganizationInvitationDisplay::class, $display);
         self::assertSame($expectedEmail, $display->email);
+        self::assertSame($expectedAuditorOnly, $display->emailAuditorOnly);
     }
 
     /**

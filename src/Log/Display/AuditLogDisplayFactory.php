@@ -214,6 +214,7 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
                 $this->obfuscateEmail($record->attributes['email'], $record->attributes['user']['id']),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
+                $this->isEmailAuditorOnly($record->attributes['user']['id']),
             ),
             AuditLogEventType::UserDeleted => new Event\UserDeletedDisplay(
                 $record->datetime,
@@ -255,6 +256,7 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
                 $this->obfuscateEmail($record->attributes['email_to'], $record->attributes['user']['id'] ?? null),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
+                $this->isEmailAuditorOnly($record->attributes['user']['id'] ?? null),
             ),
             AuditLogEventType::GitHubLinkedWithUser => new Event\GitHubLinkedWithUserDisplay(
                 $record->datetime,
@@ -452,6 +454,7 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
                 $this->obfuscateEmail($record->attributes['email'], revealEmails: $revealEmails),
                 $this->buildActor($record->attributes['actor']),
                 $record->ip,
+                $this->isEmailAuditorOnly(revealEmails: $revealEmails),
             ),
         };
     }
@@ -474,11 +477,25 @@ class AuditLogDisplayFactory extends AbstractLogDisplayFactory
             return $email;
         }
 
-        $currentUser = $this->security->getUser();
-        if ($currentUser instanceof User && $currentUser->getId() === $userId) {
+        if ($this->isCurrentUser($userId)) {
             return $email;
         }
 
         return '**@**.**';
+    }
+
+    /**
+     * Whether ROLE_AUDITOR is the only reason the viewer sees an email {@see obfuscateEmail()} let through.
+     */
+    private function isEmailAuditorOnly(?int $userId = null, bool $revealEmails = false): bool
+    {
+        return !$revealEmails && $this->security->isGranted('ROLE_AUDITOR') && !$this->isCurrentUser($userId);
+    }
+
+    private function isCurrentUser(?int $userId): bool
+    {
+        $currentUser = $this->security->getUser();
+
+        return $currentUser instanceof User && $currentUser->getId() === $userId;
     }
 }

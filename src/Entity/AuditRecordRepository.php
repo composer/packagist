@@ -20,6 +20,7 @@ use App\Util\IpAddress;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Uid\Ulid;
@@ -130,6 +131,23 @@ class AuditRecordRepository extends ServiceEntityRepository
         $records = $qb->getQuery()->getResult();
 
         return $records;
+    }
+
+    /**
+     * Everything that happened to the user's account or that they did themselves, newest first.
+     *
+     * Goes through audit_log_search for the same reason, and with the same previous-handle
+     * limitation, as {@see self::findForUser()}.
+     */
+    public function createQueryBuilderForUser(User $user): QueryBuilder
+    {
+        return $this->createQueryBuilder('a')
+            ->where(\sprintf('a.id IN (SELECT s.auditLogId FROM %s s WHERE s.type IN (:searchTypes) AND s.name = :username)', AuditLogSearch::class))
+            ->andWhere('a.userId = :userId OR a.actorId = :userId')
+            ->setParameter('searchTypes', [AuditLogSearchType::User->value, AuditLogSearchType::Actor->value])
+            ->setParameter('username', $user->getUsernameCanonical())
+            ->setParameter('userId', $user->getId())
+            ->orderBy('a.id', \SortDirection::Descending);
     }
 
     /**

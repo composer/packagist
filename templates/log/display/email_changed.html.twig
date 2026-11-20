@@ -1,3 +1,5 @@
+{% import 'log/macros.html.twig' as log %}
+
 <strong>{{ display.username }}</strong><br>
-From: {{ display.emailFrom }}<br>
-To: {{ display.emailTo }}
+From: {{ log.adminOnly(display.emailFrom, display.emailAuditorOnly) }}<br>
+To: {{ log.adminOnly(display.emailTo, display.emailAuditorOnly) }}

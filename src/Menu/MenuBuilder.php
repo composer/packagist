@@ -293,5 +293,10 @@ class MenuBuilder
                 ]],
             ]);
         }
+
+        $security->addChild($this->translator->trans('menu.security_audit_log'), [
+            'route' => 'security_audit_log',
+            'extras' => ['translation_domain' => false],
+        ]);
     }
 }

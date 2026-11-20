@@ -4,5 +4,5 @@
 {% if display.repository %}Repository: {{ display.repository }}<br>{% endif %}
 {% if display.reason %}Reason: {{ display.reason }}<br>{% endif %}
 {## transparency log never has an internal reason ##}
-{% if display.internalReason %}Internal reason: {{ display.internalReason }}<br>{% endif %}
+{% if display.internalReason %}{{ log.adminOnly('Internal reason: ' ~ display.internalReason) }}<br>{% endif %}
 Deleted by: {{ log.user(display.actor) }}

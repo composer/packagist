@@ -5,5 +5,5 @@
 {% if display.reasonTranslationKey %}Reason: {{ display.reasonTranslationKey|trans }}{% if display.reasonText %} ({{ display.reasonText }}){% endif %}<br>
 {% elseif display.reasonText %}Reason: {{ display.reasonText }}<br>{% endif %}
 {## transparency log never has an internal reason ##}
-{% if display.internalReasonText %}Internal reason: {{ display.internalReasonText }}<br>{% endif %}
+{% if display.internalReasonText %}{{ log.adminOnly('Internal reason: ' ~ display.internalReasonText) }}<br>{% endif %}
 By: {{ log.user(display.actor) }}

@@ -67,25 +67,10 @@ class AdminAuditLogController extends Controller
             $selectedFilters[$filter->getKey()] = $filter->getSelectedValue();
         }
 
-        // Group types by category in desired order
-        $categoryOrder = ['ownership', 'package', 'version', 'user', 'filterlist', 'advisory', 'organization'];
-        $groupedTypes = [];
-        foreach (AuditLogEventType::cases() as $type) {
-            $groupedTypes[$type->category()][] = $type;
-        }
-
-        // Reorder groups according to defined order
-        $orderedGroupedTypes = [];
-        foreach ($categoryOrder as $category) {
-            if (isset($groupedTypes[$category])) {
-                $orderedGroupedTypes[$category] = $groupedTypes[$category];
-            }
-        }
-
         return $this->render('admin/audit_log.html.twig', [
             'auditLogDisplays' => $displayFactory->build($auditLogs),
             'auditLogPaginator' => $auditLogs,
-            'groupedTypes' => $orderedGroupedTypes,
+            'groupedTypes' => AuditLogEventType::casesByCategory(),
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,
             'dateTimeToFilter' => $dateTimeToFilter,

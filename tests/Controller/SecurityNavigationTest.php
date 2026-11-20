@@ -75,6 +75,7 @@ class SecurityNavigationTest extends IntegrationTestCase
             '/profile/security/password' => 'Change password',
             '/profile/security/authenticator' => 'Authenticator app',
             '/profile/security/keys' => 'Passkeys and security keys',
+            '/profile/security/audit-log' => 'Audit log',
         ];
         foreach ($pages as $url => $label) {
             $crawler = $this->client->request('GET', $url);
@@ -85,7 +86,7 @@ class SecurityNavigationTest extends IntegrationTestCase
             self::assertNotContains('Change password', $accountLinks);
             self::assertSame('Security', $crawler->filter('nav[aria-label="Account settings"] li.active > a')->text());
             self::assertCount(0, $crawler->filter('header .mobile-account-menu a[href="/profile/security/password"]'));
-            self::assertCount(4, $crawler->filter('.security-tabs a'));
+            self::assertCount(5, $crawler->filter('.security-tabs a'));
         }
     }
 
@@ -187,7 +188,7 @@ class SecurityNavigationTest extends IntegrationTestCase
         $menu = self::getContainer()->get(\App\Menu\MenuBuilder::class)->createProfileMenu();
         $security = $menu->getChild('Security');
         self::assertNotNull($security);
-        self::assertSame(['Overview', 'Change password', 'Authenticator app'], array_keys($security->getChildren()));
+        self::assertSame(['Overview', 'Change password', 'Authenticator app', 'Audit log'], array_keys($security->getChildren()));
         self::assertCount(1, $security->getExtra('routes'));
         self::assertSame('/profile/security/password', $security->getChild('Change password')->getUri());
     }

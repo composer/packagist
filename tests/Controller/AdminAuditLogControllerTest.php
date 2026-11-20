@@ -58,6 +58,8 @@ class AdminAuditLogControllerTest extends IntegrationTestCase
         $details = $crawler->filter('td.audit-log-details')->text();
         static::assertStringContainsString('Reason: spam', $details);
         static::assertStringContainsString('Internal reason: reporter jane, ticket #42', $details);
+        static::assertSame('Internal reason: reporter jane, ticket #42', $crawler->filter('td.audit-log-details span.admin-only')->first()->text());
+        static::assertCount(1, $crawler->filter('[data-test=admin-only-legend]'));
     }
 
     #[DataProvider('filterProvider')]

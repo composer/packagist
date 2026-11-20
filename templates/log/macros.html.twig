@@ -32,3 +32,12 @@
         {{ organization.displayName }}
     {%- endif -%}
 {% endmacro %}
+
+{# what the viewer only gets to see as an admin, flagged so they can tell what everyone else is shown #}
+{% macro adminOnly(value, flagged = true) %}
+    {%- if flagged -%}
+        <span class="admin-only" title="Only visible to admins">{{ value }}</span>
+    {%- else -%}
+        {{ value }}
+    {%- endif -%}
+{% endmacro %}
