@@ -294,7 +294,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorNotExists('dl time');
         self::assertSelectorNotExists('[data-credential-verification]');
-        $this->assertWebAuthnProof(true, false);
+        $this->assertWebAuthnProof(false, false);
         $this->verify();
         $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorTextContains('dl time', ' UTC');
@@ -335,7 +335,6 @@ class WebAuthnControllerTest extends IntegrationTestCase
             return;
         }
 
-        $this->clock->sleep(600);
         $this->client->request('POST', '/profile/security/keys/verify/options', ['_token' => $this->csrf]);
         $options = json_decode($this->client->getResponse()->getContent(), true);
         $this->authenticator->corruptSignature = true;
@@ -345,12 +344,13 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(400);
         $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorNotExists('[data-credential-verification]');
-        $this->assertWebAuthnProof(true, false, false);
+        $this->assertWebAuthnProof(false, false);
     }
 
     public function testRecentVerificationIndicatorIdentifiesOnlyTheKeyUsed(): void
     {
         $first = $this->register('First key');
+        $this->verify();
         $firstAuthenticator = $this->authenticator;
         $this->authenticator = new VirtualAuthenticator();
         $second = $this->register('Second key');
@@ -455,11 +455,13 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->configureHardwareMetadata();
         $this->authenticator->counter = 0;
         $credential = $this->register('Hardware key', true);
-        $this->assertWebAuthnProof(true, false);
+        $this->verify();
+        $this->assertWebAuthnProof(true, true);
         $this->freshUser()->setBackupCode('keep1234');
         self::getEM()->flush();
         $version = $this->freshUser()->getSessionBuster();
-        $lastUsedAt = $credential->lastUsedAt;
+        $lastUsedAt = $this->freshUser()->findWebAuthnCredential($credential->id)?->lastUsedAt;
+        self::assertNotNull($lastUsedAt);
 
         if ($signIn) {
             $this->beginLogin();
@@ -499,7 +501,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertNotNull($stored);
         self::assertNotNull($stored->disabledAt);
         self::assertNull($stored->revokedAt);
-        self::assertEquals($lastUsedAt, $stored->lastUsedAt);
+        self::assertSame($lastUsedAt->getTimestamp(), $stored->lastUsedAt?->getTimestamp());
         self::assertTrue($user->hasSecondFactorAuthenticationEnabled());
         self::assertTrue($user->isBackupCode('keep1234'));
         self::assertSame($version + 1, $user->getSessionBuster());
@@ -570,7 +572,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertNull($stored->lastUsedAt);
         self::assertSame($version, $this->freshUser()->getSessionBuster());
         self::assertSame(0, self::getEM()->getRepository(AuditRecord::class)->count(['type' => AuditLogEventType::WebAuthnCredentialDisabled]));
-        $this->assertWebAuthnProof(!$signIn, false);
+        $this->assertWebAuthnProof(false, false);
         $this->metadataFailure = '';
 
         if ($signIn) {
@@ -620,13 +622,13 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertFalse($this->freshUser()->isTotpAuthenticationEnabled());
         self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
         $crawler = $this->client->request('GET', '/profile/security/keys');
-        self::assertSelectorExists('form[data-webauthn="register"]');
-        self::assertSelectorNotExists('form[data-webauthn="verify"]');
+        self::assertSelectorNotExists('form[data-webauthn="register"]');
+        self::assertSelectorExists('form[data-webauthn="verify"]');
         $backupCode = $crawler->filter('.two-factor-backup-code');
         self::assertCount(1, $backupCode);
         self::getEM()->clear();
         self::assertTrue($this->freshUser()->isBackupCode($backupCode->text()));
-        self::assertSame('My key', $crawler->filter('#key-'.$credential->id)->attr('value'));
+        self::assertSelectorTextContains('ul[aria-label="Registered keys"] h5', $credential->name);
         $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorNotExists('.two-factor-backup-code');
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::WebAuthnCredentialAdded, 'userId' => $this->user->getId()]);
@@ -636,9 +638,15 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertNull($audit->attributes['authenticatorDescription']);
     }
 
-    public function testNewlyEnrolledKeyCanBeRenamedAndAnotherAddedWithoutConfirmation(): void
+    public function testNewlyEnrolledKeyRequiresConfirmationBeforeRenaming(): void
     {
         $credential = $this->register();
+        $this->client->request('POST', '/profile/security/keys/'.$credential->id.'/edit', [
+            '_token' => $this->csrf, 'action' => 'rename', 'name' => 'Renamed key',
+        ]);
+        self::assertResponseRedirects('/profile/security/keys');
+        self::assertSame('My key', $this->freshUser()->findWebAuthnCredential($credential->id)?->name);
+        $this->verify();
         $this->client->request('POST', '/profile/security/keys/'.$credential->id.'/edit', [
             '_token' => $this->csrf, 'action' => 'rename', 'name' => 'Renamed key',
         ]);
@@ -657,11 +665,6 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('td.audit-log-details', 'My key → Renamed key');
         self::assertStringContainsString('My key', $this->client->getResponse()->getContent());
-        $this->client->loginUser($this->freshUser());
-
-        $this->authenticator = new VirtualAuthenticator();
-        $this->register('Spare key');
-        self::assertCount(2, $this->freshUser()->getWebAuthnCredentials());
     }
 
     public function testRenameAuditsTheLatestStoredName(): void
@@ -687,6 +690,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testSavingTheSameNameDoesNotRecordARename(string $name): void
     {
         $credential = $this->register();
+        $this->verify();
         $this->client->request('POST', '/profile/security/keys/'.$credential->id.'/edit', [
             '_token' => $this->csrf, 'action' => 'rename', 'name' => $name,
         ]);
@@ -775,6 +779,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testConcurrentAccountChangeShowsAnErrorInsteadOfRemovingTheKey(): void
     {
         $credential = $this->register();
+        $this->verify();
         $user = $this->freshUser();
         $userId = $user->getId();
         $sessionBuster = $user->getSessionBuster();
@@ -861,7 +866,6 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testAddingTotpToAnAccountWithAKeyKeepsTheBackupCode(): void
     {
         $this->register();
-        $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
         $user = $this->freshUser();
         $user->setBackupCode('keep1234');
         self::getEM()->flush();
@@ -901,7 +905,6 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testVerificationRejectsAnUnsignedReturnUrl(string $method, string $path): void
     {
         $credential = $this->register();
-        $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
         $this->client->request($method, $path.'?'.http_build_query(['return_to' => 'https://attacker.test/']), ['_token' => $this->csrf]);
         self::assertResponseStatusCodeSame(403);
 
@@ -994,8 +997,10 @@ class WebAuthnControllerTest extends IntegrationTestCase
 
         $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorNotExists('.two-factor-backup-code');
-        self::assertSelectorNotExists('form[data-webauthn="verify"]');
-        self::assertSelectorExists('form[data-webauthn="register"]');
+        self::assertSelectorExists('form[data-webauthn="verify"]');
+        self::assertSelectorNotExists('form[data-webauthn="register"]');
+
+        $this->verify();
 
         $this->authenticator = new VirtualAuthenticator();
         $this->register('Spare key');
@@ -1061,13 +1066,21 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(403);
     }
 
-    public function testStepUpAllowsMultipleKeysAndIndividualRenameAndRemoval(): void
+    public function testAddingASpareKeyDoesNotExtendRecentVerification(): void
     {
         $first = $this->register();
         $this->verify();
+        $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME - 1);
         $this->authenticator = new VirtualAuthenticator();
         $second = $this->register('Spare key');
         self::assertCount(2, $this->freshUser()->getWebAuthnCredentials());
+        $this->clock->sleep(1);
+
+        foreach (['options', 'register'] as $endpoint) {
+            $this->client->request('POST', '/profile/security/keys/'.$endpoint, ['_token' => $this->csrf, 'name' => 'Another key']);
+            self::assertResponseStatusCodeSame(403);
+        }
+
         $this->verify();
         $this->client->request('POST', '/profile/security/keys/'.$first->id.'/edit', ['_token' => $this->csrf, 'name' => 'Renamed key', 'action' => 'rename']);
         self::assertResponseRedirects('/profile/security/keys');
@@ -1083,6 +1096,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testRemovalReviewRequiresProofAndReturnsAfterConfirmationWithoutRemovingTheKey(): void
     {
         $credential = $this->register();
+        $this->verify();
         $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
         $crawler = $this->client->request('GET', '/profile/security/keys');
         self::assertSame('/profile/security/keys/'.$credential->id.'/remove', $crawler->selectLink('Remove')->attr('href'));
@@ -1530,7 +1544,10 @@ class WebAuthnControllerTest extends IntegrationTestCase
 
     private function verify(string $url = '/profile/security/keys/verify'): void
     {
-        $this->authenticator->counter++;
+        if ($this->authenticator->counter !== 0) {
+            $this->authenticator->counter++;
+        }
+
         $this->client->request('POST', '/profile/security/keys/verify/options', ['_token' => $this->csrf]);
         self::assertResponseIsSuccessful();
         $options = json_decode($this->client->getResponse()->getContent(), true);

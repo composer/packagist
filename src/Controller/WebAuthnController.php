@@ -117,7 +117,7 @@ class WebAuthnController extends Controller
 
     #[IsGranted(WebAuthnVoter::ENROLL)]
     #[Route('/profile/security/keys/register', name: 'user_webauthn_register', methods: ['POST'])]
-    public function register(Request $request, #[CurrentUser] User $user, SecondFactorProofStore $proofs): Response
+    public function register(Request $request, #[CurrentUser] User $user): Response
     {
         $this->checkCsrf($request);
 
@@ -135,14 +135,11 @@ class WebAuthnController extends Controller
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
 
-        // Keep key management available after enrollment
-        // Hardware and per-key proofs require a successful authentication assertion
-        $proofs->record($user, SecondFactorProofStore::WEBAUTHN);
-
         if ($backupCode !== null) {
             $request->getSession()->set('backup_code', $backupCode);
         }
 
+        // Enrollment invalidates earlier proofs. A new WebAuthn proof requires an assertion
         return $this->json(['redirect' => $this->generateUrl('user_webauthn_manage')]);
     }
 
