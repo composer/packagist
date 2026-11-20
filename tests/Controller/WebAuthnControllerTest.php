@@ -1360,6 +1360,50 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testSpentBackupCodeCanBeReplacedAfterVerifyingAnEnrolledHardwareKey(): void
+    {
+        $this->configureHardwareMetadata();
+        $this->register('Hardware key', true);
+        $user = $this->freshUser();
+        $user->removeRole('ROLE_ADMIN');
+        $user->setBackupCode('abc12345');
+        self::getEM()->flush();
+
+        $crawler = $this->beginLogin();
+        $this->client->submit($crawler->selectButton('Use backup code')->form(), ['_auth_code' => 'abc12345']);
+        $crawler = $this->client->request('GET', '/profile/security');
+        $form = $crawler->selectButton('Generate new backup code')->form();
+        $version = $this->freshUser()->getTrustedTokenVersion();
+        $this->client->submit($form);
+        self::assertResponseRedirects();
+        self::assertStringStartsWith('/profile/security/keys?return_to=', (string) $this->client->getResponse()->headers->get('Location'));
+        self::assertSame($version, $this->freshUser()->getTrustedTokenVersion());
+        $crawler = $this->client->followRedirect();
+        $verification = $crawler->selectButton('Confirm with verified hardware key')->form();
+        $this->csrf = $verification['_token']->getValue();
+        $this->verify($verification->getUri());
+        $destination = json_decode($this->client->getResponse()->getContent(), true)['redirect'];
+        self::assertStringStartsWith('/profile/security?_hash=', $destination);
+        $crawler = $this->client->request('GET', $destination);
+        $crawler = $this->client->submit($crawler->selectButton('Generate new backup code')->form());
+        self::assertResponseIsSuccessful();
+        self::assertTrue($this->client->getResponse()->headers->hasCacheControlDirective('no-store'));
+        $newCode = $crawler->filter('.alert-info code')->text();
+        self::assertTrue($this->freshUser()->isBackupCode($newCode));
+        self::assertTrue($this->freshUser()->hasVerifiedHardwareKey());
+        self::assertGreaterThan($version, $this->freshUser()->getTrustedTokenVersion());
+        $this->client->request('GET', '/profile/security');
+        self::assertSelectorNotExists('.alert-info code');
+
+        $crawler = $this->beginLogin();
+        $this->client->submit($crawler->selectButton('Use backup code')->form(), ['_auth_code' => $newCode]);
+        $this->client->request('GET', '/profile/security');
+        self::assertResponseIsSuccessful();
+        self::assertFalse($this->freshUser()->isBackupCode($newCode));
+        self::assertTrue($this->freshUser()->hasVerifiedHardwareKey());
+        $this->assertWebAuthnProof(false, false);
+    }
+
     #[TestWith([false, false])]
     #[TestWith([true, false])]
     #[TestWith([false, true])]

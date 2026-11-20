@@ -93,6 +93,57 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertFalse($user->isBackupCode('abc12345'));
     }
 
+    public function testRegeneratingABackupCodeRequiresRecentVerificationAndCsrf(): void
+    {
+        $this->verify();
+        $crawler = $this->client->request('GET', '/profile/security');
+        $form = $crawler->selectButton('Generate new backup code')->form();
+        $this->client->request('GET', $form->getUri());
+        self::assertResponseStatusCodeSame(405);
+        $this->client->request('POST', $form->getUri(), ['_token' => 'invalid']);
+        self::assertResponseStatusCodeSame(403);
+        $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
+        $this->client->submit($form);
+        self::assertResponseRedirects();
+        self::assertTrue($this->user->isBackupCode('abc12345'));
+        $crawler = $this->client->followRedirect();
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::NEXT_VALID_CODE]);
+        $crawler = $this->client->followRedirect();
+        $crawler = $this->client->submit($crawler->selectButton('Generate new backup code')->form());
+        self::assertResponseIsSuccessful();
+        $newCode = $crawler->filter('.alert-info code')->text();
+        $user = self::getEM()->find(User::class, $this->user->getId());
+        self::assertTrue($user->isBackupCode($newCode));
+        self::assertFalse($user->isBackupCode('abc12345'));
+        self::assertTrue($user->isTotpAuthenticationEnabled());
+        self::assertEmailCount(1);
+        self::assertStringNotContainsString($newCode, self::getMailerMessage()->getTextBody());
+    }
+
+    #[TestWith(['ROLE_ADMIN'])]
+    #[TestWith(['ROLE_SUPERADMIN'])]
+    #[TestWith([null])]
+    public function testBackupCodeActionIsUnavailableWithoutAnEligibleAccount(?string $role): void
+    {
+        $this->verify();
+        $crawler = $this->client->request('GET', '/profile/security');
+        $form = $crawler->selectButton('Generate new backup code')->form();
+        $user = self::getEM()->find(User::class, $this->user->getId());
+
+        if ($role === null) {
+            $user->setTotpSecret(null);
+        } else {
+            $user->addRole($role);
+        }
+        self::getEM()->flush();
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/profile/security');
+        self::assertCount(0, $crawler->selectButton('Generate new backup code'));
+        $this->client->submit($form);
+        self::assertResponseStatusCodeSame(403);
+        self::assertTrue($user->isBackupCode('abc12345'));
+    }
+
     public function testExpiredProofCannotBeUsedWithAnExistingRemovalForm(): void
     {
         $crawler = $this->verify();

@@ -82,8 +82,35 @@ class SecondFactorManager implements BackupCodeManagerInterface
             return null;
         }
 
-        $code = bin2hex(random_bytes(4));
+        do {
+            $code = bin2hex(random_bytes(4));
+        } while ($user->isBackupCode($code));
+
         $user->setBackupCode($code);
+
+        return $code;
+    }
+
+    public function regenerateBackupCode(User $user): string
+    {
+        $code = $this->withAccountLock($user, function () use ($user): string {
+            $code = $user->hasSecondFactorAuthenticationEnabled() ? $this->generateBackupCode($user) : null;
+
+            if ($code === null) {
+                throw new BadCredentialsException('Account security settings have changed. Please sign in again.');
+            }
+
+            $user->invalidateAllSessions();
+            $this->em->flush();
+
+            return $code;
+        });
+
+        $this->userNotifier->notifyChange(
+            $user->getEmail(),
+            reason: 'A new two-factor backup code was generated for your account.',
+            username: $user->getUsername(),
+        );
 
         return $code;
     }
@@ -173,6 +200,6 @@ class SecondFactorManager implements BackupCodeManagerInterface
         \assert($session instanceof FlashBagAwareSessionInterface);
         $session->getFlashBag()->add('warning', $factorsReset
             ? 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.'
-            : 'Your one-time backup code has been used. If you have lost all your verified hardware keys, contact support for a reset.');
+            : 'Your one-time backup code has been used. You can generate a new code in your security settings after confirming with an enrolled second factor. If you have lost all your verified hardware keys, contact support for a reset.');
     }
 }

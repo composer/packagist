@@ -49,4 +49,16 @@
             </div>
         </section>
     {% endif %}
+    {% if isActualUser and user.hasSecondFactorAuthenticationEnabled and can_use_backup_codes(user) %}
+        <section class="card mb-3" aria-labelledby="backup-code-heading">
+            <div class="card-body">
+                <h4 class="h5 mb-2" id="backup-code-heading">Backup code</h4>
+                <p>Generating a new code invalidates your previous code, signs out other sessions, and clears trusted devices.</p>
+                <form method="post" action="{{ path('user_regenerate_backup_code') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('regenerate_backup_code') }}">
+                    <button type="submit" class="btn btn-secondary">Generate new backup code</button>
+                </form>
+            </div>
+        </section>
+    {% endif %}
 {% endblock %}
