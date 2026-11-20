@@ -50,18 +50,11 @@ class EventTypeFilter implements QueryFilterInterface
     /**
      * @param InputBag<string> $bag
      */
-    public static function fromQuery(InputBag $bag, bool $allowHiddenTypes = false): self
+    public static function fromQuery(InputBag $bag): self
     {
-        $hidden = $allowHiddenTypes ? [] : array_map(
-            static fn (TransparencyLogEventType $type): string => $type->value,
-            TransparencyLogEventType::temporarilyHiddenTypes(),
-        );
-
         $types = array_filter(
             $bag->all('type'),
-            static fn (mixed $value): bool => \is_string($value)
-                && TransparencyLogEventType::tryFrom($value) !== null
-                && !\in_array($value, $hidden, true),
+            static fn (mixed $value): bool => \is_string($value) && TransparencyLogEventType::tryFrom($value) !== null,
         );
 
         return new self(array_values($types));
