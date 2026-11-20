@@ -10,14 +10,16 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Organization\EventStore;
+namespace App\Log;
 
 /**
- * Who/what triggered an action, recorded separately from the org role that authorized it.
+ * Who or what triggered an action, recorded separately from the role that authorized it.
  */
 enum ActorLabel: string
 {
     case User = 'user';
     case PackagistAdmin = 'packagist-admin';
     case Automation = 'automation';
+    case Unknown = 'unknown';
+    case Admin = 'admin';
 }

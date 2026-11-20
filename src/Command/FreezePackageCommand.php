@@ -14,6 +14,7 @@ namespace App\Command;
 
 use App\Entity\Package;
 use App\Entity\PackageFreezeReason;
+use App\Log\ActorLabel;
 use App\Model\PackageManager;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
@@ -71,7 +72,7 @@ class FreezePackageCommand extends Command
             return Command::FAILURE;
         }
 
-        $package->auditActorFallback = 'admin';
+        $package->auditActorFallback = ActorLabel::Admin;
         $this->packageManager->freeze($package, $reason);
 
         $output->writeln('<info>Package '.$name.' has been frozen ('.$reason->value.')</info>');

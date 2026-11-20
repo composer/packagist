@@ -13,6 +13,7 @@
 namespace App\Command;
 
 use App\Entity\Package;
+use App\Log\ActorLabel;
 use App\Model\PackageManager;
 use App\Util\DoctrineTrait;
 use Doctrine\Persistence\ManagerRegistry;
@@ -54,7 +55,7 @@ class UnfreezePackageCommand extends Command
             return Command::FAILURE;
         }
 
-        $package->auditActorFallback = 'admin';
+        $package->auditActorFallback = ActorLabel::Admin;
         $this->packageManager->unfreeze($package, 'unfreeze cmd');
 
         $output->writeln('<info>Package '.$name.' has been unfrozen and marked for update</info>');

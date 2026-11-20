@@ -12,6 +12,8 @@
 
 namespace App\Log\Display;
 
+use App\Log\ActorLabel;
+
 /**
  * Both logs store their actor the same way, so both factories build it the same way.
  */
@@ -23,7 +25,7 @@ abstract class AbstractLogDisplayFactory
     protected function buildActor(array|string|null $actor): ActorDisplay
     {
         if ($actor === null) {
-            return new ActorDisplay(null, 'unknown');
+            return new ActorDisplay(null, ActorLabel::Unknown->value);
         }
 
         if (\is_string($actor)) {

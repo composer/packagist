@@ -12,6 +12,7 @@
 
 namespace App\Validator;
 
+use App\Log\ActorLabel;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
@@ -23,15 +24,19 @@ class NotReservedWordValidator extends ConstraintValidator
      *
      * @var list<string>
      */
-    public const array RESERVED_WORDS = [
+    private const array RESERVED_WORDS = [
         'composer',
         'packagist',
         'php',
-        'automation', // used to describe background workers doing things automatically in transparency log
-        'unknown', // used to describe unknown actors in transparency log
-        'admin', // used to describe admin actors in transparency log
         'create', // used in the URL when creating an organization
     ];
+
+    /** @return list<string> */
+    public static function reservedWords(): array
+    {
+        // Log actor labels identify background workers, unknown actors and admins
+        return [...self::RESERVED_WORDS, ...array_column(ActorLabel::cases(), 'value')];
+    }
 
     public function validate(mixed $value, Constraint $constraint): void
     {
@@ -43,7 +48,7 @@ class NotReservedWordValidator extends ConstraintValidator
             return;
         }
 
-        if (\in_array(mb_strtolower($value), self::RESERVED_WORDS, true)) {
+        if (\in_array(mb_strtolower($value), self::reservedWords(), true)) {
             $this->context
                 ->buildViolation($constraint->message)
                 ->setParameter('{{ value }}', $value)
