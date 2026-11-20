@@ -16,6 +16,7 @@ use App\Audit\AbandonmentReason;
 use App\Audit\AuditLogSearchType;
 use App\Audit\UserRegistrationMethod;
 use App\Audit\VersionDeletionReason;
+use App\Log\ActorLabel;
 use App\Log\AuditLogEventType;
 use App\Log\Display\OrganizationDisplay;
 use Composer\Pcre\Preg;
@@ -172,7 +173,7 @@ class AuditRecord
     {
         return new self(
             AuditLogEventType::PackageDeleted,
-            ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason, 'internalReason' => $internalReason, 'actor' => self::getUserData($actor, 'automation')],
+            ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason, 'internalReason' => $internalReason, 'actor' => self::getUserData($actor, ActorLabel::Automation)],
             $actor?->getId(),
             $package->getVendor(),
             $package->getId()
@@ -397,7 +398,7 @@ class AuditRecord
             [
                 'organization' => new OrganizationDisplay((string) $organizationId, $slug, $displayName)->toRecord(),
                 'email' => $email,
-                'actor' => self::getUserData($actor, 'automation'),
+                'actor' => self::getUserData($actor, ActorLabel::Automation),
             ],
             $actor?->getId(),
             organizationId: $organizationId,
@@ -426,7 +427,7 @@ class AuditRecord
 
         return new self(
             AuditLogEventType::PackageTransferred,
-            ['name' => $package->getName(), 'actor' => self::getUserData($actor, 'admin'), 'previous_maintainers' => $previous, 'current_maintainers' => $current],
+            ['name' => $package->getName(), 'actor' => self::getUserData($actor, ActorLabel::Admin), 'previous_maintainers' => $previous, 'current_maintainers' => $current],
             $actor?->getId(),
             $package->getVendor(),
             $package->getId()
@@ -442,7 +443,7 @@ class AuditRecord
 
         return new self(
             AuditLogEventType::VersionCreated,
-            ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation'), 'metadata' => $metadata],
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, ActorLabel::Automation), 'metadata' => $metadata],
             $actor?->getId(),
             $package->getVendor(),
             $package->getId()
@@ -455,7 +456,7 @@ class AuditRecord
 
         return new self(
             AuditLogEventType::VersionDeleted,
-            ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, 'automation')],
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'actor' => self::getUserData($actor, ActorLabel::Automation)],
             $actor?->getId(),
             $package->getVendor(),
             $package->getId()
@@ -468,7 +469,7 @@ class AuditRecord
 
         return new self(
             AuditLogEventType::VersionSoftDeleted,
-            ['name' => $package->getName(), 'version' => $version->getVersion(), 'reason' => $reason->value, 'reasonText' => $reasonText, 'internalReasonText' => $internalReasonText, 'actor' => self::getUserData($actor, 'automation')],
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'reason' => $reason->value, 'reasonText' => $reasonText, 'internalReasonText' => $internalReasonText, 'actor' => self::getUserData($actor, ActorLabel::Automation)],
             $actor?->getId(),
             $package->getVendor(),
             $package->getId()
@@ -481,7 +482,7 @@ class AuditRecord
 
         return new self(
             AuditLogEventType::VersionRecovered,
-            ['name' => $package->getName(), 'version' => $version->getVersion(), 'previousReason' => $previousReason->value, 'actor' => self::getUserData($actor, 'automation')],
+            ['name' => $package->getName(), 'version' => $version->getVersion(), 'previousReason' => $previousReason->value, 'actor' => self::getUserData($actor, ActorLabel::Automation)],
             $actor?->getId(),
             $package->getVendor(),
             $package->getId()
@@ -510,20 +511,20 @@ class AuditRecord
 
     public static function packageAbandoned(Package $package, ?User $actor, ?string $replacementPackage, ?AbandonmentReason $reason = null): self
     {
-        return new self(AuditLogEventType::PackageAbandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'replacement_package' => $replacementPackage, 'reason' => $reason?->value, 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditLogEventType::PackageAbandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'replacement_package' => $replacementPackage, 'reason' => $reason?->value, 'actor' => self::getUserData($actor, ActorLabel::Automation)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
     public static function packageUnabandoned(Package $package, ?User $actor): self
     {
-        return new self(AuditLogEventType::PackageUnabandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, 'automation')], $actor?->getId(), $package->getVendor(), $package->getId());
+        return new self(AuditLogEventType::PackageUnabandoned, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, ActorLabel::Automation)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function packageFrozen(Package $package, ?User $actor, PackageFreezeReason $reason, string $fallbackActor = 'automation', ?string $internalReason = null): self
+    public static function packageFrozen(Package $package, ?User $actor, PackageFreezeReason $reason, ActorLabel $fallbackActor = ActorLabel::Automation, ?string $internalReason = null): self
     {
         return new self(AuditLogEventType::PackageFrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'reason' => $reason->value, 'internalReason' => $internalReason, 'actor' => self::getUserData($actor, $fallbackActor)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
 
-    public static function packageUnfrozen(Package $package, ?User $actor, string $fallbackActor = 'automation'): self
+    public static function packageUnfrozen(Package $package, ?User $actor, ActorLabel $fallbackActor = ActorLabel::Automation): self
     {
         return new self(AuditLogEventType::PackageUnfrozen, ['name' => $package->getName(), 'repository' => $package->getRepository(), 'actor' => self::getUserData($actor, $fallbackActor)], $actor?->getId(), $package->getVendor(), $package->getId());
     }
@@ -568,6 +569,23 @@ class AuditRecord
             $type,
             $attributes,
             actorId: $actor->getId(),
+            userId: $credential->user->getId(),
+        );
+    }
+
+    public static function webAuthnCredentialDisabled(WebAuthnCredential $credential, string $reason): self
+    {
+        return new self(
+            AuditLogEventType::WebAuthnCredentialDisabled,
+            [
+                'user' => self::getUserData($credential->user),
+                'actor' => ActorLabel::Automation->value,
+                'credentialId' => $credential->id,
+                'credentialName' => $credential->name,
+                'credentialType' => $credential->credentialType->value,
+                'authenticatorDescription' => $credential->authenticatorDescription,
+                'reason' => $reason,
+            ],
             userId: $credential->user->getId(),
         );
     }
@@ -620,7 +638,7 @@ class AuditRecord
             AuditLogEventType::UserDeleted,
             [
                 'user' => self::getUserData($user),
-                'actor' => self::getUserData($actor, 'automation'),
+                'actor' => self::getUserData($actor, ActorLabel::Automation),
             ],
             actorId: $actor?->getId(),
             userId: $user->getId(),
@@ -636,7 +654,7 @@ class AuditRecord
                 'reason' => $reason->value,
                 'reasonText' => $reasonText,
                 'internalReason' => $internalReason,
-                'actor' => self::getUserData($actor, 'automation'),
+                'actor' => self::getUserData($actor, ActorLabel::Automation),
             ],
             actorId: $actor?->getId(),
             userId: $user->getId(),
@@ -651,7 +669,7 @@ class AuditRecord
                 'user' => self::getUserData($user),
                 'reasonText' => $reasonText,
                 'internalReason' => $internalReason,
-                'actor' => self::getUserData($actor, 'automation'),
+                'actor' => self::getUserData($actor, ActorLabel::Automation),
             ],
             actorId: $actor?->getId(),
             userId: $user->getId(),
@@ -728,7 +746,7 @@ class AuditRecord
             [
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
-                'actor' => self::getUserData($actor, 'automation'),
+                'actor' => self::getUserData($actor, ActorLabel::Automation),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
             packageId: $packageId,
@@ -743,7 +761,7 @@ class AuditRecord
             [
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
-                'actor' => self::getUserData($actor, 'automation'),
+                'actor' => self::getUserData($actor, ActorLabel::Automation),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
             packageId: $packageId,
@@ -758,7 +776,7 @@ class AuditRecord
             [
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
-                'actor' => self::getUserData($actor, 'automation'),
+                'actor' => self::getUserData($actor, ActorLabel::Automation),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
             packageId: $packageId,
@@ -773,7 +791,7 @@ class AuditRecord
             [
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
-                'actor' => self::getUserData($actor, 'automation'),
+                'actor' => self::getUserData($actor, ActorLabel::Automation),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
             packageId: $packageId,
@@ -792,7 +810,7 @@ class AuditRecord
                 'name' => $entry->getPackageName(),
                 'entry' => self::getFilterListEntryData($entry),
                 'previous' => $previous,
-                'actor' => self::getUserData($actor, 'automation'),
+                'actor' => self::getUserData($actor, ActorLabel::Automation),
             ],
             vendor: self::getVendorFromPackage($entry->getPackageName()),
             packageId: $packageId,
@@ -839,10 +857,10 @@ class AuditRecord
     /**
      * @return array{id: int, username: string}|string
      */
-    private static function getUserData(?User $user, string $fallbackString = 'unknown'): array|string
+    private static function getUserData(?User $user, ActorLabel $fallback = ActorLabel::Unknown): array|string
     {
         if ($user === null) {
-            return $fallbackString;
+            return $fallback->value;
         }
 
         return ['id' => $user->getId(), 'username' => $user->getUsername()];
@@ -860,7 +878,7 @@ class AuditRecord
             'remoteId' => $advisory->getRemoteId(),
             'cve' => $advisory->getCve(),
             'title' => $advisory->getTitle(),
-            'actor' => self::getUserData($actor, 'automation'),
+            'actor' => self::getUserData($actor, ActorLabel::Automation),
         ];
     }
 

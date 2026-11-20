@@ -20,6 +20,7 @@ use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpFactory;
 class TotpAuthenticatorStub implements TotpAuthenticatorInterface
 {
     public const MOCKED_VALID_CODE = '999999';
+    public const NEXT_VALID_CODE = '888888';
 
     public function __construct(
         private readonly TotpFactory $totpFactory,
@@ -28,7 +29,7 @@ class TotpAuthenticatorStub implements TotpAuthenticatorInterface
 
     public function checkCode(TwoFactorInterface $user, string $code): bool
     {
-        return str_replace(' ', '', $code) === self::MOCKED_VALID_CODE;
+        return \in_array(str_replace(' ', '', $code), [self::MOCKED_VALID_CODE, self::NEXT_VALID_CODE], true);
     }
 
     public function getQRContent(TwoFactorInterface $user): string

@@ -19,10 +19,13 @@ use App\Event\SecondFactorRemovedEvent;
 use App\Event\SecondFactorsResetEvent;
 use App\Log\AuditLogEventType;
 use App\Security\SecondFactorManager;
+use App\Security\SecondFactorProofStore;
 use App\Security\UserNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -34,6 +37,7 @@ use Webauthn\Bundle\Security\Storage\Item;
 use Webauthn\Bundle\Service\PublicKeyCredentialCreationOptionsFactory;
 use Webauthn\Bundle\Service\PublicKeyCredentialRequestOptionsFactory;
 use Webauthn\CredentialRecord;
+use Webauthn\Exception\CertificateRevocationListException;
 use Webauthn\PublicKeyCredential;
 use Webauthn\PublicKeyCredentialCreationOptions;
 use Webauthn\PublicKeyCredentialDescriptor;
@@ -54,12 +58,27 @@ class WebAuthnManager
         private EventDispatcherInterface $eventDispatcher,
         private SecondFactorManager $secondFactors,
         private AttestationPolicy $attestation,
+        private SecondFactorProofStore $proofs,
         #[Autowire('%env(WEBAUTHN_RP_ID)%')] private readonly string $rpId,
     ) {
     }
 
+    public function needsHardwareVerification(User $user, CredentialType $type): bool
+    {
+        return $type === CredentialType::VerifiedHardware && $user->hasVerifiedHardwareKey()
+            && !$this->proofs->hasRecentProof($user, SecondFactorProofStore::HARDWARE_KEY);
+    }
+
+    private function requireHardwareVerification(User $user, CredentialType $type): void
+    {
+        if ($this->needsHardwareVerification($user, $type)) {
+            throw new AccessDeniedHttpException('Confirm with an enrolled verified hardware key to change your verified hardware keys.');
+        }
+    }
+
     public function startRegistration(User $user, string $name, CredentialType $credentialType = CredentialType::Regular): string
     {
+        $this->requireHardwareVerification($user, $credentialType);
         WebAuthnCredential::normalizeName($name);
         $options = $this->registrationOptions($user, $credentialType);
         $this->optionsStorage->store(Item::create($options, $options->user), $credentialType);
@@ -73,6 +92,8 @@ class WebAuthnManager
         $credential = $this->registrationCredential($user, $response);
 
         $backupCode = $this->secondFactors->withAccountLock($user, function () use ($user, $credential, $name): ?string {
+            $this->requireHardwareVerification($user, $credential->credentialType);
+
             if ($this->em->find(WebAuthnCredential::class, $credential->id) !== null) {
                 throw new BadCredentialsException('webauthn.error.already_registered');
             }
@@ -91,13 +112,26 @@ class WebAuthnManager
         return $backupCode;
     }
 
-    public function startAuthentication(User $user): string
+    public function startAuthentication(User $user, bool $hardwareOnly = false): string
     {
-        if ($user->getWebAuthnCredentials() === []) {
+        $credentials = $user->getWebAuthnCredentials();
+
+        if ($credentials === []) {
             throw new BadCredentialsException('webauthn.error.no_credential');
         }
 
-        $options = $this->assertionOptions($user);
+        $available = array_filter($credentials, static fn (WebAuthnCredential $credential) => $credential->disabledAt === null
+            && (!$hardwareOnly || $credential->credentialType === CredentialType::VerifiedHardware));
+
+        if ($available === []) {
+            if ($hardwareOnly) {
+                throw new BadCredentialsException('webauthn.error.no_usable_hardware_key');
+            }
+
+            throw $this->untrustedCredentialException($user);
+        }
+
+        $options = $this->requestOptions->create('packagist', $this->descriptors(array_values($available)));
         $this->optionsStorage->store(Item::create($options, null));
 
         return $this->serializer->serialize($options, 'json');
@@ -118,7 +152,7 @@ class WebAuthnManager
                     ?? throw new BadCredentialsException('Unknown credential.');
                 $this->em->refresh($credential);
 
-                if ($credential->revokedAt !== null) {
+                if ($credential->revokedAt !== null || $credential->disabledAt !== null) {
                     throw new BadCredentialsException('Unknown credential.');
                 }
 
@@ -129,6 +163,7 @@ class WebAuthnManager
                 throw new BadCredentialsException('webauthn.error.invalid_assertion', previous: $e);
             }
 
+            $this->verifyCurrentAttestation($credential, $record);
             $credential->recordAuthentication($record);
             $this->em->flush();
 
@@ -159,6 +194,7 @@ class WebAuthnManager
     public function revoke(WebAuthnCredential $credential): void
     {
         $this->secondFactors->withAccountLock($credential->user, function () use ($credential): void {
+            $this->requireHardwareVerification($credential->user, $credential->credentialType);
             $this->stageRevocation($credential);
             $this->persistChange($credential, AuditLogEventType::WebAuthnCredentialDeleted);
         });
@@ -182,13 +218,53 @@ class WebAuthnManager
         $this->eventDispatcher->dispatch(new SecondFactorRemovedEvent($credential->user));
     }
 
+    private function verifyCurrentAttestation(WebAuthnCredential $credential, CredentialRecord $record): void
+    {
+        $type = $credential->credentialType;
+
+        if (!$type->requiresAttestation()) {
+            return;
+        }
+
+        try {
+            $this->attestation->verify($record, $type->credentialRequirements(), $type->authenticatorRequirements());
+        } catch (FidoMetadataUnavailableException $e) {
+            throw new ServiceUnavailableHttpException(60, 'Hardware security key verification is temporarily unavailable. Try again later or use another second factor.', $e);
+        } catch (AttestationRejectedException $e) {
+            if ($e instanceof CompromisedAuthenticatorException) {
+                $this->disableCompromisedCredential($credential, $e);
+            }
+
+            throw $this->untrustedCredentialException($credential->user, $e);
+        }
+    }
+
+    private function disableCompromisedCredential(WebAuthnCredential $credential, CompromisedAuthenticatorException $reason): void
+    {
+        $this->em->wrapInTransaction(function () use ($credential, $reason): void {
+            // Keep disabled keys enrolled so losing the last usable key cannot turn off MFA
+            $credential->disable();
+            $credential->user->invalidateAllSessions();
+            $this->em->persist(AuditRecord::webAuthnCredentialDisabled($credential, $reason->getMessage()));
+        });
+
+        $this->notifyChange($credential, 'disabled');
+    }
+
+    private function untrustedCredentialException(User $user, ?AttestationRejectedException $previous = null): BadCredentialsException
+    {
+        $message = $this->secondFactors->canUseBackupCodes($user) ? 'webauthn.error.disabled_credential' : 'webauthn.error.disabled_credential_no_backup';
+
+        return new BadCredentialsException($message, previous: $previous);
+    }
+
     private function persistChange(WebAuthnCredential $credential, AuditLogEventType $type, ?string $previousName = null): void
     {
         $this->em->persist(AuditRecord::webAuthnCredentialChanged($credential, $type, previousName: $previousName));
         $this->em->flush();
     }
 
-    /** @param 'added'|'removed' $action */
+    /** @param 'added'|'removed'|'disabled' $action */
     private function notifyChange(WebAuthnCredential $credential, string $action): void
     {
         $this->notifier->notifyChange(
@@ -205,13 +281,8 @@ class WebAuthnManager
         return $this->creationOptions->create(
             $credentialType->creationProfile(),
             new PublicKeyCredentialUserEntity($user->getUsername(), $user->getWebAuthnUserHandle(), $user->getUsername()),
-            $this->descriptors($user),
+            $this->descriptors($user->getWebAuthnCredentials()),
         );
-    }
-
-    private function assertionOptions(User $user): PublicKeyCredentialRequestOptions
-    {
-        return $this->requestOptions->create('packagist', $this->descriptors($user));
     }
 
     private function registrationCredential(User $user, string $response): WebAuthnCredential
@@ -243,7 +314,7 @@ class WebAuthnManager
             }
 
             return $credential;
-        } catch (ExpiredWebAuthnChallengeException|FidoMetadataUnavailableException $e) {
+        } catch (CertificateRevocationListException|ExpiredWebAuthnChallengeException|FidoMetadataUnavailableException $e) {
             throw $e;
         } catch (\Throwable $e) {
             throw new BadCredentialsException($credentialType === CredentialType::Regular
@@ -285,12 +356,16 @@ class WebAuthnManager
         return $this->serializer->deserialize($response, PublicKeyCredential::class, 'json');
     }
 
-    /** @return list<PublicKeyCredentialDescriptor> */
-    private function descriptors(User $user): array
+    /**
+     * @param list<WebAuthnCredential> $credentials
+     *
+     * @return list<PublicKeyCredentialDescriptor>
+     */
+    private function descriptors(array $credentials): array
     {
         return array_map(
             static fn (WebAuthnCredential $credential) => $credential->getPublicKeyCredentialDescriptor(),
-            $user->getWebAuthnCredentials(),
+            $credentials,
         );
     }
 }

@@ -70,6 +70,7 @@ class TransparencyLogScrubberTest extends TestCase
         'totp_deactivated' => ['reason'],
         'webauthn_credential_added' => ['authenticatorDescription', 'credentialId', 'credentialName', 'credentialType'],
         'webauthn_credential_deleted' => ['authenticatorDescription', 'credentialId', 'credentialName', 'credentialType'],
+        'webauthn_credential_disabled' => ['authenticatorDescription', 'credentialId', 'credentialName', 'credentialType', 'reason'],
     ];
 
     private const PACKAGE_NAME = 'acme/widget';
@@ -334,6 +335,7 @@ class TransparencyLogScrubberTest extends TestCase
             // authenticator model names stay private
             'webauthn_credential_added',
             'webauthn_credential_deleted',
+            'webauthn_credential_disabled',
         ], $carryingPrivateData, 'a fixture no longer feeds private data into the scrubber, so its removal is no longer covered');
     }
 
@@ -503,6 +505,12 @@ class TransparencyLogScrubberTest extends TestCase
             AuditLogEventType::WebAuthnCredentialDeleted,
             AuditRecord::webAuthnCredentialChanged($credential, AuditLogEventType::WebAuthnCredentialDeleted, $admin),
             ['user' => self::MAINTAINER, 'actor' => self::ADMIN],
+        ];
+
+        yield 'webauthn_credential_disabled' => [
+            AuditLogEventType::WebAuthnCredentialDisabled,
+            AuditRecord::webAuthnCredentialDisabled($credential, self::PRIVATE_MARKER),
+            ['user' => self::MAINTAINER, 'actor' => 'automation'],
         ];
 
         yield 'totp_activated' => [

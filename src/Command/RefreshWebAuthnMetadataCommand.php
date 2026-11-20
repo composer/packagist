@@ -21,7 +21,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'packagist:webauthn:refresh-metadata', description: 'Verify and import the official FIDO metadata feed for attested-key enrollment')]
+#[AsCommand(name: 'packagist:webauthn:refresh-metadata', description: 'Verify and import the official FIDO metadata feed for verified hardware keys')]
 class RefreshWebAuthnMetadataCommand extends Command
 {
     public function __construct(

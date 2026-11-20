@@ -6,29 +6,34 @@
     <h3>Passkeys and security keys</h3>
     <p>Use a passkey or security key as your second factor when signing in with your password or GitHub.</p>
 
-    {% if backup_code %}
+    {% if backup_code and can_use_backup_codes(user) %}
         <section class="account-form p-4 mb-4 bg-body-secondary border rounded" aria-labelledby="backup-code-heading">
             <h4 class="h5" id="backup-code-heading">Save your backup code</h4>
             <p>Keep this one-time code somewhere safe. You can use it to sign in if you lose access to your second factors.</p>
             <kbd class="two-factor-backup-code">{{ backup_code }}</kbd>
             <p class="mb-2"><strong>This code will not be shown again.</strong></p>
-            <p class="small text-body-secondary mb-0">Using your backup code disables all second factors on your account.</p>
+            <p class="small text-body-secondary mb-0">{{ user.hasVerifiedHardwareKey ? 'Your verified hardware keys and other second factors stay enrolled after you use this code.' : 'Using your backup code disables all second factors on your account.' }}</p>
         </section>
     {% endif %}
 
+    {% set hardware_verification_blocked = needs_hardware_verification and 'verified' not in credential_trust %}
+    {% set show_general_confirmation = not can_manage_keys and (not hardware_verification_blocked or user.totpAuthenticationEnabled or 'regular' in credential_trust) %}
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-4 mb-3">
         <div>
             <h4 class="h6 mb-0">Registered keys</h4>
-            {% if not can_manage_keys %}
+            {% if show_general_confirmation %}
                 <p id="confirm-key-changes" class="small text-body-secondary mt-1 mb-0">{{ has_return_to ? 'Confirm your identity to continue with your security change.' : 'Confirm your identity to make changes.' }}</p>
             {% endif %}
         </div>
-        {% if not can_manage_keys %}
+        {% if show_general_confirmation %}
             <div class="d-flex flex-wrap align-items-start gap-2">
+                {% if not user.hasSecondFactorAuthenticationEnabled %}
+                    <a class="btn btn-sm btn-secondary" href="{{ path('login') }}">Sign in again to add your first key</a>
+                {% endif %}
                 {% if user.totpAuthenticationEnabled %}
                     <a class="btn btn-sm btn-secondary" href="{{ totp_verification_url }}">Confirm with authenticator app</a>
                 {% endif %}
-                {% if user.webAuthnCredentials is not empty %}
+                {% if 'regular' in credential_trust %}
                     <form class="mb-0" action="{{ webauthn_verification_url }}" method="post" data-webauthn="verify" data-options="{{ path('user_webauthn_verify_options') }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
                         <button class="btn btn-sm btn-secondary" type="submit">Confirm with passkey or security key</button>
@@ -38,6 +43,24 @@
             </div>
         {% endif %}
     </div>
+
+    {% if hardware_verification_blocked %}
+        <p class="alert alert-warning">
+            {% if 'unavailable' in credential_trust %}
+                Hardware verification is temporarily unavailable. Try again later to add or remove a verified hardware key.
+            {% else %}
+                None of your enrolled hardware keys can confirm changes. To add or remove a verified hardware key,
+                start signing in from a private browser window and <a href="{{ path('support_contact') }}#lost-totp">request a support reset</a> at the two-factor prompt.
+            {% endif %}
+        </p>
+    {% elseif needs_hardware_verification %}
+        <form class="mb-3" action="{{ webauthn_verification_url }}" method="post" data-webauthn="verify" data-options="{{ path('user_webauthn_verify_options', {hardware: 1}) }}">
+            <p class="mb-2">To add or remove a verified hardware key, confirm with one already enrolled on your account. If you have lost all of them, <a href="{{ path('support_contact') }}#lost-totp">request a support reset</a>.</p>
+            <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
+            <button class="btn btn-sm btn-secondary" type="submit">Confirm with verified hardware key</button>
+            {{ include('user/_webauthn_error.html.twig') }}
+        </form>
+    {% endif %}
 
     <ul class="list-unstyled mt-0" aria-label="Registered keys">
         {% for credential in user.webAuthnCredentials %}
@@ -59,7 +82,14 @@
                         <dl class="row g-2 small text-body-secondary mt-3 mb-0">
                             <dt class="col-3 fw-normal">Type</dt>
                             <dd class="col-9 mb-0">
-                                {% if credential.credentialType.requiresAttestation %}
+                                {% set trust = credential_trust[credential.id] %}
+                                {% if trust == 'disabled' or trust == 'rejected' %}
+                                    <span class="badge text-bg-danger">{{ trust == 'disabled' ? 'Hardware security key disabled' : 'Hardware security key no longer trusted' }}</span>
+                                    <p class="mb-0">This key cannot be used to sign in or confirm changes.</p>
+                                {% elseif trust == 'unavailable' %}
+                                    <span class="badge text-bg-warning">Hardware verification temporarily unavailable</span>
+                                    <p class="mb-0">This key cannot be used until current FIDO metadata is available.</p>
+                                {% elseif trust == 'verified' %}
                                     <span class="badge text-bg-success text-wrap text-start">{{ credential.credentialType.label }}</span>
                                 {% else %}
                                     {{ credential.credentialType.label }}
@@ -80,7 +110,7 @@
                                 {% endif %}
                             </dd>
                             {% set remaining = credential_verifications[credential.id]|default(0) %}
-                            {% if remaining > 0 %}
+                            {% if remaining > 0 and trust in ['regular', 'verified'] %}
                                 <dt class="col-3 fw-normal">Verification</dt>
                                 <dd class="col-9 mb-0" data-credential-verification="{{ remaining }}" data-minutes-remaining="{{ 'webauthn.verification.minutes_remaining'|trans }}" data-less-than-minute="{{ 'webauthn.verification.less_than_minute'|trans }}">
                                     <span class="badge text-bg-success text-wrap text-start">{{ remaining < 60 ? 'webauthn.verification.less_than_minute'|trans : 'webauthn.verification.minutes_remaining'|trans({'%minutes%': (remaining / 60)|round(0, 'ceil')}) }}</span>
@@ -89,7 +119,9 @@
                         </dl>
                     </div>
                     <div class="col-sm-4 text-sm-end">
-                        <a class="btn btn-sm btn-danger" href="{{ path('user_webauthn_remove', {id: credential.id}) }}">Remove</a>
+                        {% if not (hardware_verification_blocked and credential.credentialType.requiresAttestation) %}
+                            <a class="btn btn-sm btn-danger" href="{{ path('user_webauthn_remove', {id: credential.id}) }}">Remove</a>
+                        {% endif %}
                     </div>
                 </div>
             </li>
@@ -110,9 +142,9 @@
                 <legend class="h6">Key type</legend>
                 {% for type in credential_types %}
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="kind" id="key-{{ type.value }}" aria-describedby="key-{{ type.value }}-description" value="{{ type.value }}"{% if loop.first %} checked{% endif %}>
+                        <input class="form-check-input" type="radio" name="kind" id="key-{{ type.value }}" aria-describedby="key-{{ type.value }}-description" value="{{ type.value }}"{% if loop.first %} checked{% endif %}{% if type.requiresAttestation and needs_hardware_verification %} disabled{% endif %}>
                         <label class="form-check-label" for="key-{{ type.value }}">{{ type.label }}</label>
-                        <p class="small text-body-secondary" id="key-{{ type.value }}-description">{{ type.description }}</p>
+                        <p class="small text-body-secondary" id="key-{{ type.value }}-description">{{ type.description }}{% if type.requiresAttestation %} Enroll a spare verified key and keep it somewhere safe. Losing all your verified keys requires a support reset to replace them.{% endif %}</p>
                     </div>
                 {% endfor %}
             </fieldset>

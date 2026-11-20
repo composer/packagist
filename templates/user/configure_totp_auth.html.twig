@@ -3,7 +3,7 @@
 {% block title %}Security - {{ parent() }}{% endblock %}
 
 {% block security_content %}
-    {% if backup_code %}
+    {% if backup_code and can_use_backup_codes(user) %}
         <div class="alert alert-info">
             <p>If you lose access to your second factors, you can use this one-time backup code to sign in: <code>{{ backup_code }}</code></p>
             <p><strong>Take a moment to record this in a safe place. This code will not be shown again!</strong></p>
@@ -46,6 +46,18 @@
                 {% if isActualUser %}
                     <a class="btn {{ user.webAuthnCredentials is not empty ? 'btn-secondary' : 'btn-primary' }}" href="{{ path('user_webauthn_manage') }}">{{ user.webAuthnCredentials is not empty ? 'View passkeys and security keys' : 'Set up a passkey or security key' }}</a>
                 {% endif %}
+            </div>
+        </section>
+    {% endif %}
+    {% if isActualUser and user.hasSecondFactorAuthenticationEnabled and can_use_backup_codes(user) %}
+        <section class="card mb-3" aria-labelledby="backup-code-heading">
+            <div class="card-body">
+                <h4 class="h5 mb-2" id="backup-code-heading">Backup code</h4>
+                <p>Generating a new code invalidates your previous code, signs out other sessions, and clears trusted devices.</p>
+                <form method="post" action="{{ path('user_regenerate_backup_code') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('regenerate_backup_code') }}">
+                    <button type="submit" class="btn btn-secondary">Generate new backup code</button>
+                </form>
             </div>
         </section>
     {% endif %}

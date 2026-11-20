@@ -72,7 +72,7 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         $this->client->submit($form);
         self::assertResponseRedirects();
         self::assertStringStartsWith('/profile/security/verify-totp?return_to=', (string) $this->client->getResponse()->headers->get('Location'));
-        $crawler = $this->verify();
+        $crawler = $this->verify(TotpAuthenticatorStub::NEXT_VALID_CODE);
         $this->client->submit($crawler->selectButton('Remove authenticator app')->form());
         self::assertResponseRedirects('/users/verify/totp/');
         $user = self::getEM()->find(User::class, $this->user->getId());
@@ -91,6 +91,57 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertNotNull($user);
         self::assertFalse($user->isTotpAuthenticationEnabled());
         self::assertFalse($user->isBackupCode('abc12345'));
+    }
+
+    public function testRegeneratingABackupCodeRequiresRecentVerificationAndCsrf(): void
+    {
+        $this->verify();
+        $crawler = $this->client->request('GET', '/profile/security');
+        $form = $crawler->selectButton('Generate new backup code')->form();
+        $this->client->request('GET', $form->getUri());
+        self::assertResponseStatusCodeSame(405);
+        $this->client->request('POST', $form->getUri(), ['_token' => 'invalid']);
+        self::assertResponseStatusCodeSame(403);
+        $this->clock->sleep(SecondFactorProofStore::RECENT_AUTHENTICATION_LIFETIME);
+        $this->client->submit($form);
+        self::assertResponseRedirects();
+        self::assertTrue($this->user->isBackupCode('abc12345'));
+        $crawler = $this->client->followRedirect();
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::NEXT_VALID_CODE]);
+        $crawler = $this->client->followRedirect();
+        $crawler = $this->client->submit($crawler->selectButton('Generate new backup code')->form());
+        self::assertResponseIsSuccessful();
+        $newCode = $crawler->filter('.alert-info code')->text();
+        $user = self::getEM()->find(User::class, $this->user->getId());
+        self::assertTrue($user->isBackupCode($newCode));
+        self::assertFalse($user->isBackupCode('abc12345'));
+        self::assertTrue($user->isTotpAuthenticationEnabled());
+        self::assertEmailCount(1);
+        self::assertStringNotContainsString($newCode, self::getMailerMessage()->getTextBody());
+    }
+
+    #[TestWith(['ROLE_ADMIN'])]
+    #[TestWith(['ROLE_SUPERADMIN'])]
+    #[TestWith([null])]
+    public function testBackupCodeActionIsUnavailableWithoutAnEligibleAccount(?string $role): void
+    {
+        $this->verify();
+        $crawler = $this->client->request('GET', '/profile/security');
+        $form = $crawler->selectButton('Generate new backup code')->form();
+        $user = self::getEM()->find(User::class, $this->user->getId());
+
+        if ($role === null) {
+            $user->setTotpSecret(null);
+        } else {
+            $user->addRole($role);
+        }
+        self::getEM()->flush();
+        $this->client->loginUser($user);
+        $crawler = $this->client->request('GET', '/profile/security');
+        self::assertCount(0, $crawler->selectButton('Generate new backup code'));
+        $this->client->submit($form);
+        self::assertResponseStatusCodeSame(403);
+        self::assertTrue($user->isBackupCode('abc12345'));
     }
 
     public function testExpiredProofCannotBeUsedWithAnExistingRemovalForm(): void
@@ -174,6 +225,7 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertNull(self::redisCache()->get('2fa-failures:verify'));
         $this->assertRemovalRequiresVerification();
+        $this->verify();
     }
 
     public function testInvalidReturnUrlDoesNotGrantProof(): void
@@ -241,11 +293,11 @@ class TotpVerificationControllerTest extends IntegrationTestCase
         self::assertResponseRedirects('/profile/security/authenticator');
     }
 
-    private function verify(): Crawler
+    private function verify(string $code = TotpAuthenticatorStub::MOCKED_VALID_CODE): Crawler
     {
         $this->client->request('GET', '/users/verify/totp/disable');
         $crawler = $this->client->followRedirect();
-        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => $code]);
         self::assertResponseRedirects();
         self::assertStringStartsWith('/users/verify/totp/disable?_hash=', (string) $this->client->getResponse()->headers->get('Location'));
 

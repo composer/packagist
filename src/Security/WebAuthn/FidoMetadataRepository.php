@@ -54,12 +54,16 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
 
     public function ensureAvailable(): void
     {
-        $nextUpdate = $this->connection->createQueryBuilder()
-            ->select('nextUpdate')
-            ->from('fido_metadata_feed')
-            ->orderBy('sequenceNumber', 'DESC')
-            ->setMaxResults(1)
-            ->fetchOne();
+        try {
+            $nextUpdate = $this->connection->createQueryBuilder()
+                ->select('nextUpdate')
+                ->from('fido_metadata_feed')
+                ->orderBy('sequenceNumber', 'DESC')
+                ->setMaxResults(1)
+                ->fetchOne();
+        } catch (\Doctrine\DBAL\Exception $e) {
+            throw new FidoMetadataUnavailableException('The FIDO metadata feed could not be read', previous: $e);
+        }
 
         $this->checkExpiry($nextUpdate === false ? null : $nextUpdate);
     }
@@ -76,14 +80,18 @@ class FidoMetadataRepository implements MetadataStatementRepository, StatusRepor
     private function findEntry(string $aaguid): array
     {
         // Read the header and the requested model in one snapshot during a concurrent import
-        $entry = $this->connection->createQueryBuilder()
-            ->select('f.nextUpdate', 'e.statement', 'e.statusReports')
-            ->from('fido_metadata_feed', 'f')
-            ->leftJoin('f', 'fido_metadata_entry', 'e', 'e.aaguid = :aaguid')
-            ->setParameter('aaguid', $aaguid)
-            ->orderBy('f.sequenceNumber', 'DESC')
-            ->setMaxResults(1)
-            ->fetchAssociative();
+        try {
+            $entry = $this->connection->createQueryBuilder()
+                ->select('f.nextUpdate', 'e.statement', 'e.statusReports')
+                ->from('fido_metadata_feed', 'f')
+                ->leftJoin('f', 'fido_metadata_entry', 'e', 'e.aaguid = :aaguid')
+                ->setParameter('aaguid', $aaguid)
+                ->orderBy('f.sequenceNumber', 'DESC')
+                ->setMaxResults(1)
+                ->fetchAssociative();
+        } catch (\Doctrine\DBAL\Exception $e) {
+            throw new FidoMetadataUnavailableException('The FIDO metadata feed could not be read', previous: $e);
+        }
 
         $this->checkExpiry($entry === false ? null : $entry['nextUpdate']);
 

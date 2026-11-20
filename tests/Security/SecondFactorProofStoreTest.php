@@ -154,6 +154,15 @@ class SecondFactorProofStoreTest extends TestCase
         self::assertFalse($this->secondFactorProofStore->hasProof($this->user));
     }
 
+    public function testDisabledKeyCannotGrantProofOrShowVerification(): void
+    {
+        $credential = $this->credential(CredentialType::VerifiedHardware);
+        $credential->disable();
+        $this->secondFactorProofStore->recordWebAuthn($credential);
+        self::assertFalse($this->secondFactorProofStore->hasProof($this->user));
+        self::assertSame(0, $this->secondFactorProofStore->getCredentialProofRemainingLifetime($credential));
+    }
+
     public function testCredentialProofsExpireIndependentlyAtTenMinutes(): void
     {
         $first = $this->credential(CredentialType::VerifiedHardware, 'first');

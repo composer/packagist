@@ -12,11 +12,12 @@
 
 namespace App\Form\Type;
 
-use App\Validator\TotpCode;
+use App\Form\TotpCodeFormValidator;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -25,13 +26,18 @@ use Symfony\Component\Validator\Constraints\NotBlank;
  */
 class VerifyTotpType extends AbstractType
 {
+    public function __construct(private TotpCodeFormValidator $codeValidator)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder->add('code', TextType::class, [
             'label' => 'Authentication code:',
             'attr' => ['inputmode' => 'numeric', 'autocomplete' => 'one-time-code', 'autofocus' => true],
-            'constraints' => [new NotBlank(), new TotpCode($options['user'])],
+            'constraints' => [new NotBlank()],
         ]);
+        $builder->addEventListener(FormEvents::POST_SUBMIT, $this->codeValidator->onPostSubmit(...), -1);
     }
 
     public function configureOptions(OptionsResolver $resolver): void

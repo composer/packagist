@@ -37,7 +37,7 @@ final class OrganizationSlugClaimGuard
      */
     public function assertClaimable(Slug $slug, User $user, ?OrganizationReadModel $claimingOrg = null): void
     {
-        if (\in_array($slug->value, NotReservedWordValidator::RESERVED_WORDS, true)) {
+        if (\in_array($slug->value, NotReservedWordValidator::reservedWords(), true)) {
             throw new InvalidSlugException(\sprintf('"%s" is a reserved name and cannot be used.', $slug->value));
         }
 

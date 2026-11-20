@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Security\WebAuthn\CredentialType;
 use App\Validator\NotReservedWord;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -21,6 +22,7 @@ use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfiguration;
 use Scheb\TwoFactorBundle\Model\Totp\TotpConfigurationInterface;
 use Scheb\TwoFactorBundle\Model\Totp\TwoFactorInterface;
+use Scheb\TwoFactorBundle\Model\TrustedDeviceInterface;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\LegacyPasswordAuthenticatedUserInterface;
@@ -53,7 +55,7 @@ enum UserFreezeReason: string
 #[ORM\Index(name: 'user_github_id_idx', columns: ['githubId'])]
 #[UniqueEntity(fields: ['usernameCanonical'], message: 'There is already an account with this username', errorPath: 'username')]
 #[UniqueEntity(fields: ['emailCanonical'], message: 'There is already an account with this email', errorPath: 'email')]
-class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, EquatableInterface, PasswordAuthenticatedUserInterface, LegacyPasswordAuthenticatedUserInterface
+class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, TrustedDeviceInterface, EquatableInterface, PasswordAuthenticatedUserInterface, LegacyPasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -330,6 +332,12 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function getWebAuthnCredentials(): array
     {
         return array_values($this->webAuthnCredentials->filter(static fn (WebAuthnCredential $credential) => $credential->revokedAt === null)->toArray());
+    }
+
+    public function hasVerifiedHardwareKey(): bool
+    {
+        // Disabled keys still protect the account until explicitly removed or reset by support
+        return array_any($this->getWebAuthnCredentials(), static fn (WebAuthnCredential $key) => $key->credentialType === CredentialType::VerifiedHardware);
     }
 
     public function findWebAuthnCredential(string $id): ?WebAuthnCredential
@@ -703,5 +711,10 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Eq
     public function invalidateAllSessions(): void
     {
         $this->sessionBuster = ($this->sessionBuster + 1) % 65535;
+    }
+
+    public function getTrustedTokenVersion(): int
+    {
+        return $this->sessionBuster;
     }
 }

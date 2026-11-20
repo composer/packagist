@@ -7,8 +7,8 @@
 
     <p>Removing the authenticator app means you will no longer be asked for codes from this app when signing in.
         {% if user.webAuthnCredentials is not empty %}
-            Your passkeys and security keys will remain enabled, and your backup code will remain valid.
-        {% else %}
+            Your passkeys and security keys will remain enabled{% if can_use_backup_codes(user) %}, and your backup code will remain valid{% endif %}.
+        {% elseif can_use_backup_codes(user) %}
             Its backup code will also be invalidated.
         {% endif %}
     </p>

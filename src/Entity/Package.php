@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Log\ActorLabel;
 use App\Package\Git\RepositoryNotFoundException;
 use App\Package\VcsRepositoryFactory;
 use App\Util\HttpDownloaderOptionsFactory;
@@ -287,7 +288,7 @@ class Package
      * Transient (not persisted): audit actor label used when no user is logged in, e.g. 'admin' for
      * (un)freezes done from the CLI. Defaults to 'automation' in the audit record.
      */
-    public ?string $auditActorFallback = null;
+    public ?ActorLabel $auditActorFallback = null;
 
     /**
      * Transient (not persisted): admin-only explanation of a freeze, e.g. the update error or a moderator's notes

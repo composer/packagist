@@ -37,8 +37,10 @@
         {% endif %}
         <details class="mb-3">
             <summary>Lost access?</summary>
-            <p class="mt-2">Enter your backup code in the form above instead. Using it disables your configured second factors.</p>
-            <p class="mb-0">No backup code? <a href="{{ path('support_lost_second_factor') }}">Request a reset</a>.</p>
+            {% if can_use_backup_codes(app.user) %}
+                <p class="mt-2">{{ app.user.hasVerifiedHardwareKey ? 'Your backup code signs you in once. Your verified keys stay enrolled. If you have lost all of them, request a reset.' : 'Enter your backup code in the form above instead. Using it disables your configured second factors.' }}</p>
+            {% endif %}
+            <p class="mb-0">Need help recovering your second factors? <a href="{{ path('support_lost_second_factor') }}">Request a reset</a>.</p>
         </details>
     </div>
 {% endblock %}

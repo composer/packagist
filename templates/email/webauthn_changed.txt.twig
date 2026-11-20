@@ -1,6 +1,13 @@
 Hello {{ username }},
 
+{% if action == 'disabled' %}
+Packagist disabled a hardware security key on your account because FIDO reported a security issue with that model. For your protection, we signed you out of your other sessions.
+
+Use another enrolled factor to sign in. If you have lost access to all your verified hardware keys, you can request a support reset at the two-factor sign-in prompt.
+{{ url('support_contact') }}#lost-totp
+{% else %}
 A passkey or security key was {{ action }} {{ action == 'added' ? 'to' : 'from' }} your Packagist.org account.
 Review your security settings: {{ url('security_overview') }}
 
 If you did not make this change, please contact support.
+{% endif %}

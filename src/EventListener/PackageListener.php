@@ -17,6 +17,7 @@ use App\Entity\Package;
 use App\Entity\User;
 use App\Event\PackageAbandonedEvent;
 use App\Event\PackageUnabandonedEvent;
+use App\Log\ActorLabel;
 use App\Util\DoctrineTrait;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\EntityManager;
@@ -108,10 +109,10 @@ class PackageListener
 
             if ($newFrozen !== null) {
                 // Package was frozen (frozen reason is now set)
-                $this->buffered[] = AuditRecord::packageFrozen($package, $this->getUser(), $newFrozen, $package->auditActorFallback ?? 'automation', $package->auditFreezeInternalReason);
+                $this->buffered[] = AuditRecord::packageFrozen($package, $this->getUser(), $newFrozen, $package->auditActorFallback ?? ActorLabel::Automation, $package->auditFreezeInternalReason);
             } elseif ($oldFrozen !== null) {
                 // Package was unfrozen (frozen reason is now null)
-                $this->buffered[] = AuditRecord::packageUnfrozen($package, $this->getUser(), $package->auditActorFallback ?? 'automation');
+                $this->buffered[] = AuditRecord::packageUnfrozen($package, $this->getUser(), $package->auditActorFallback ?? ActorLabel::Automation);
             }
         }
     }

@@ -16,7 +16,7 @@ services:
         public: true
 
     # stub to replace TOTP code generation
-    App\Tests\Mock\TotpAuthenticatorStub:
+    scheb_two_factor.security.totp_authenticator:
+        class: App\Tests\Mock\TotpAuthenticatorStub
         arguments:
             $totpFactory: '@scheb_two_factor.security.totp_factory'
-    Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Totp\TotpAuthenticatorInterface: '@App\Tests\Mock\TotpAuthenticatorStub'

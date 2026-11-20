@@ -18,7 +18,6 @@ use App\Event\SecondFactorRemovedEvent;
 use App\Event\SecondFactorsResetEvent;
 use App\Service\Locker;
 use Doctrine\ORM\EntityManagerInterface;
-use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -26,7 +25,9 @@ use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Twig\Attribute\AsTwigFunction;
 
 class SecondFactorManager implements BackupCodeManagerInterface
 {
@@ -37,6 +38,7 @@ class SecondFactorManager implements BackupCodeManagerInterface
         private UserNotifier $userNotifier,
         private Locker $locker,
         private UserRepository $users,
+        private RoleHierarchyInterface $roles,
     ) {
     }
 
@@ -67,17 +69,50 @@ class SecondFactorManager implements BackupCodeManagerInterface
         }
     }
 
-    public function generateBackupCode(User $user): string
+    #[AsTwigFunction(name: 'can_use_backup_codes')]
+    public function canUseBackupCodes(User $user): bool
     {
-        $code = bin2hex(random_bytes(4));
+        // The two-factor challenge token does not carry the account's admin roles
+        return !\in_array('ROLE_ADMIN', $this->roles->getReachableRoleNames($user->getRoles()), true);
+    }
+
+    public function generateBackupCode(User $user): ?string
+    {
+        if (!$this->canUseBackupCodes($user)) {
+            return null;
+        }
+
+        do {
+            $code = bin2hex(random_bytes(4));
+        } while ($user->isBackupCode($code));
+
         $user->setBackupCode($code);
 
         return $code;
     }
 
-    public function isValidBackupCode(BackupCodeInterface $user, string $code): bool
+    public function regenerateBackupCode(User $user): string
     {
-        return $user->isBackupCode($code);
+        $code = $this->withAccountLock($user, function () use ($user): string {
+            $code = $user->hasSecondFactorAuthenticationEnabled() ? $this->generateBackupCode($user) : null;
+
+            if ($code === null) {
+                throw new BadCredentialsException('Account security settings have changed. Please sign in again.');
+            }
+
+            $user->invalidateAllSessions();
+            $this->em->flush();
+
+            return $code;
+        });
+
+        $this->userNotifier->notifyChange(
+            $user->getEmail(),
+            reason: 'A new two-factor backup code was generated for your account.',
+            username: $user->getUsername(),
+        );
+
+        return $code;
     }
 
     private function clearIfNoSecondFactorsRemain(User $user): void
@@ -95,7 +130,7 @@ class SecondFactorManager implements BackupCodeManagerInterface
 
     public function isBackupCode(object $user, string $code): bool
     {
-        return $user instanceof BackupCodeInterface && $this->isValidBackupCode($user, $code);
+        return $user instanceof User && $this->canUseBackupCodes($user) && $user->isBackupCode($code);
     }
 
     public function notifySupportReset(User $user): void
@@ -117,6 +152,7 @@ class SecondFactorManager implements BackupCodeManagerInterface
         }
 
         $user->invalidateAllBackupCodes();
+        $user->invalidateAllSessions();
     }
 
     public function invalidateBackupCode(object $user, string $code): void
@@ -126,13 +162,22 @@ class SecondFactorManager implements BackupCodeManagerInterface
         }
 
         try {
-            $this->withAccountLock($user, function () use ($user, $code): void {
-                if (!$this->isValidBackupCode($user, $code)) {
+            $factorsReset = $this->withAccountLock($user, function () use ($user, $code): bool {
+                if (!$this->isBackupCode($user, $code)) {
                     throw new BadCredentialsException('Invalid backup code.');
                 }
 
-                $this->em->wrapInTransaction(function () use ($user): void {
+                return $this->em->wrapInTransaction(function () use ($user): bool {
+                    if ($user->hasVerifiedHardwareKey()) {
+                        $user->invalidateAllBackupCodes();
+                        $user->invalidateAllSessions();
+
+                        return false;
+                    }
+
                     $this->stageSecondFactorReset($user, $user, 'Backup code used');
+
+                    return true;
                 });
             });
         } catch (ServiceUnavailableHttpException $e) {
@@ -141,8 +186,8 @@ class SecondFactorManager implements BackupCodeManagerInterface
 
         $this->userNotifier->notifyChange(
             $user->getEmail(),
-            reason: 'A backup code was used to sign in and all configured second factors were disabled.',
-            subject: 'Two-factor authentication disabled after backup code use on Packagist.org',
+            reason: $factorsReset ? 'A backup code was used to sign in and all configured second factors were disabled.' : 'A backup code was used to sign in. Your verified hardware keys and other second factors remain enrolled.',
+            subject: $factorsReset ? 'Two-factor authentication disabled after backup code use on Packagist.org' : 'Backup code used on Packagist.org',
             username: $user->getUsername(),
         );
 
@@ -153,6 +198,8 @@ class SecondFactorManager implements BackupCodeManagerInterface
         }
 
         \assert($session instanceof FlashBagAwareSessionInterface);
-        $session->getFlashBag()->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
+        $session->getFlashBag()->add('warning', $factorsReset
+            ? 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.'
+            : 'Your one-time backup code has been used. You can generate a new code in your security settings after confirming with an enrolled second factor. If you have lost all your verified hardware keys, contact support for a reset.');
     }
 }

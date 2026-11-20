@@ -78,6 +78,12 @@ services:
     App\Entity\:
         resource: '../src/Entity/*Repository.php'
 
+    Webauthn\MetadataService\CertificateChain\PhpCertificateChainValidator:
+        arguments:
+            $client: '@webauthn.http_client'
+            $clock: '@webauthn.clock'
+            $allowFailures: false
+
     Graze\DogStatsD\Client: ~
 
     App\ArgumentResolver\:

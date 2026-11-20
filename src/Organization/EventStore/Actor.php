@@ -13,6 +13,7 @@
 namespace App\Organization\EventStore;
 
 use App\Entity\User;
+use App\Log\ActorLabel;
 
 /**
  * The actor behind an event. `userId` is the stable user reference; `label` records

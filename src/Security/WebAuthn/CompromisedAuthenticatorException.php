@@ -10,14 +10,8 @@
  * file that was distributed with this source code.
  */
 
-namespace App\Organization\EventStore;
+namespace App\Security\WebAuthn;
 
-/**
- * Who/what triggered an action, recorded separately from the org role that authorized it.
- */
-enum ActorLabel: string
+final class CompromisedAuthenticatorException extends AttestationRejectedException
 {
-    case User = 'user';
-    case PackagistAdmin = 'packagist-admin';
-    case Automation = 'automation';
 }

@@ -26,6 +26,7 @@ use App\Form\Type\FreezeType;
 use App\Form\Type\UnfreezeType;
 use App\Model\FavoriteManager;
 use App\Model\RedisAdapter;
+use App\Security\SecondFactorManager;
 use App\Security\SecondFactorProofStore;
 use App\Security\TotpAuthManager;
 use App\Security\Voter\SecondFactorVoter;
@@ -320,6 +321,36 @@ class UserController extends Controller
     }
 
     #[IsGranted('ROLE_USER')]
+    #[Route('/profile/security/backup-code', name: 'user_regenerate_backup_code', methods: ['POST'])]
+    public function regenerateBackupCode(Request $request, #[CurrentUser] User $user, SecondFactorManager $secondFactors): Response
+    {
+        if (!$this->isCsrfTokenValid('regenerate_backup_code', $request->request->getString('_token'))
+            || !$secondFactors->canUseBackupCodes($user) || !$user->hasSecondFactorAuthenticationEnabled()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY)) {
+            $this->addFlash('info', 'Confirm your identity before generating a new backup code.');
+
+            return $this->redirectToRoute($user->isTotpAuthenticationEnabled() ? 'user_verify_totp' : 'user_webauthn_manage', [
+                'return_to' => $this->uriSigner->sign($this->generateUrl('security_overview')),
+            ]);
+        }
+
+        try {
+            $code = $secondFactors->regenerateBackupCode($user);
+        } catch (BadCredentialsException|ServiceUnavailableHttpException $e) {
+            $this->addFlash('error', $e->getMessage());
+
+            return $this->redirectToRoute('security_overview');
+        }
+
+        $request->getSession()->remove('backup_code');
+
+        return $this->render('user/configure_totp_auth.html.twig', ['user' => $user, 'backup_code' => $code], new Response(headers: ['Cache-Control' => 'private, no-store']));
+    }
+
+    #[IsGranted('ROLE_USER')]
     #[Route('/profile/security/authenticator', name: 'security_authenticator', methods: ['GET'])]
     public function authenticatorSettings(#[CurrentUser] User $user): Response
     {
@@ -426,7 +457,7 @@ class UserController extends Controller
 
         $backupCode = $req->getSession()->remove('backup_code');
 
-        if (empty($backupCode)) {
+        if (empty($backupCode) || $this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('security_overview');
         }
 

@@ -13,10 +13,13 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Entity\WebAuthnCredential;
 use App\Security\SecondFactorProofStore;
 use App\Security\TwoFactorAuthRateLimiter;
 use App\Security\Voter\SecondFactorVoter;
 use App\Security\Voter\WebAuthnVoter;
+use App\Security\WebAuthn\AttestationPolicy;
+use App\Security\WebAuthn\AttestationRejectedException;
 use App\Security\WebAuthn\CredentialType;
 use App\Security\WebAuthn\ExpiredWebAuthnChallengeException;
 use App\Security\WebAuthn\FidoMetadataRepository;
@@ -27,6 +30,7 @@ use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorTokenInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -35,6 +39,7 @@ use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationExc
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Webauthn\Exception\CertificateRevocationListException;
 
 class WebAuthnController extends Controller
 {
@@ -44,6 +49,7 @@ class WebAuthnController extends Controller
         private TranslatorInterface $translator,
         private FidoMetadataRepository $metadata,
         private LoggerInterface $logger,
+        private AttestationPolicy $attestation,
     ) {
     }
 
@@ -57,8 +63,10 @@ class WebAuthnController extends Controller
 
         $returnUrl = $this->resolveSignedReturnUrl($request, 'user_webauthn_manage');
         $credentialVerifications = [];
+        $credentialTrust = [];
 
         foreach ($user->getWebAuthnCredentials() as $credential) {
+            $credentialTrust[$credential->id] = $this->credentialTrust($credential);
             $remaining = $proofs->getCredentialProofRemainingLifetime($credential);
 
             if ($remaining > 0) {
@@ -69,12 +77,14 @@ class WebAuthnController extends Controller
         return $this->render('user/webauthn_manage.html.twig', [
             'user' => $user,
             'can_manage_keys' => $this->canManageKeys($user),
+            'needs_hardware_verification' => $this->webAuthn->needsHardwareVerification($user, CredentialType::VerifiedHardware),
             'can_enroll_keys' => $this->isGranted(WebAuthnVoter::ENROLL),
             'has_return_to' => $request->query->has('return_to'),
             'totp_verification_url' => $this->generateUrl('user_verify_totp', ['return_to' => $returnUrl]),
             'webauthn_verification_url' => $this->generateUrl('user_webauthn_verify', ['return_to' => $returnUrl]),
             'credential_types' => CredentialType::cases(),
             'credential_verifications' => $credentialVerifications,
+            'credential_trust' => $credentialTrust,
             'backup_code' => $request->getSession()->remove('backup_code'),
         ]);
     }
@@ -101,8 +111,10 @@ class WebAuthnController extends Controller
             }
 
             return JsonResponse::fromJsonString($this->webAuthn->startRegistration($user, $request->request->getString('name'), $credentialType), headers: ['Cache-Control' => 'no-store']);
+        } catch (AccessDeniedHttpException $e) {
+            return $this->json(['error' => $e->getMessage()], $e->getStatusCode());
         } catch (FidoMetadataUnavailableException $e) {
-            return $this->unavailableMetadataResponse($e);
+            return $this->unavailableAttestationResponse($e);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
@@ -110,7 +122,7 @@ class WebAuthnController extends Controller
 
     #[IsGranted(WebAuthnVoter::ENROLL)]
     #[Route('/profile/security/keys/register', name: 'user_webauthn_register', methods: ['POST'])]
-    public function register(Request $request, #[CurrentUser] User $user, SecondFactorProofStore $proofs): Response
+    public function register(Request $request, #[CurrentUser] User $user): Response
     {
         $this->checkCsrf($request);
 
@@ -120,22 +132,19 @@ class WebAuthnController extends Controller
 
         try {
             $backupCode = $this->webAuthn->register($user, $request->request->getString('credential'), $request->request->getString('name'));
-        } catch (FidoMetadataUnavailableException $e) {
-            return $this->unavailableMetadataResponse($e);
-        } catch (ServiceUnavailableHttpException $e) {
+        } catch (CertificateRevocationListException|FidoMetadataUnavailableException $e) {
+            return $this->unavailableAttestationResponse($e);
+        } catch (AccessDeniedHttpException|ServiceUnavailableHttpException $e) {
             return $this->json(['error' => $e->getMessage()], $e->getStatusCode(), $e->getHeaders());
         } catch (BadCredentialsException|\InvalidArgumentException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
 
-        // Keep key management available after enrollment
-        // Hardware and per-key proofs require a successful authentication assertion
-        $proofs->record($user, SecondFactorProofStore::WEBAUTHN);
-
         if ($backupCode !== null) {
             $request->getSession()->set('backup_code', $backupCode);
         }
 
+        // Enrollment invalidates earlier proofs. A new WebAuthn proof requires an assertion
         return $this->json(['redirect' => $this->generateUrl('user_webauthn_manage')]);
     }
 
@@ -149,7 +158,7 @@ class WebAuthnController extends Controller
             throw $this->createNotFoundException();
         }
 
-        if (!$this->canManageKeys($user)) {
+        if (!$this->canManageKeys($user) || $this->webAuthn->needsHardwareVerification($user, $credential->credentialType)) {
             $this->addFlash('info', 'Confirm your identity before removing this passkey or security key.');
 
             return $this->redirectToRoute('user_webauthn_manage', [
@@ -202,7 +211,7 @@ class WebAuthnController extends Controller
         $this->checkCsrf($request);
 
         try {
-            return JsonResponse::fromJsonString($this->webAuthn->startAuthentication($user), headers: ['Cache-Control' => 'no-store']);
+            return JsonResponse::fromJsonString($this->webAuthn->startAuthentication($user, $request->query->getBoolean('hardware')), headers: ['Cache-Control' => 'no-store']);
         } catch (BadCredentialsException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
@@ -257,15 +266,46 @@ class WebAuthnController extends Controller
             throw $this->createAccessDeniedException();
         }
 
-        return JsonResponse::fromJsonString($this->webAuthn->startAuthentication($token->getUser()), headers: ['Cache-Control' => 'no-store']);
+        try {
+            return JsonResponse::fromJsonString($this->webAuthn->startAuthentication($token->getUser()), headers: ['Cache-Control' => 'no-store']);
+        } catch (BadCredentialsException $e) {
+            return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
+        }
     }
 
     private function canManageKeys(User $user): bool
     {
-        return !$user->hasSecondFactorAuthenticationEnabled() || $this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY);
+        if (!$user->hasSecondFactorAuthenticationEnabled()) {
+            return $this->isGranted('IS_AUTHENTICATED_FULLY');
+        }
+
+        return $this->isGranted(SecondFactorVoter::IS_AUTHENTICATED_2FA_RECENTLY);
     }
 
-    private function unavailableMetadataResponse(FidoMetadataUnavailableException $e): JsonResponse
+    private function credentialTrust(WebAuthnCredential $credential): string
+    {
+        $type = $credential->credentialType;
+
+        if ($credential->disabledAt !== null) {
+            return 'disabled';
+        }
+
+        if (!$type->requiresAttestation()) {
+            return 'regular';
+        }
+
+        try {
+            $this->attestation->verify($credential->toCredentialRecord(), $type->credentialRequirements(), $type->authenticatorRequirements());
+
+            return 'verified';
+        } catch (AttestationRejectedException) {
+            return 'rejected';
+        } catch (FidoMetadataUnavailableException) {
+            return 'unavailable';
+        }
+    }
+
+    private function unavailableAttestationResponse(CertificateRevocationListException|FidoMetadataUnavailableException $e): JsonResponse
     {
         $this->logger->error('Hardware security key enrollment blocked: '.$e->getMessage(), ['exception' => $e]);
 

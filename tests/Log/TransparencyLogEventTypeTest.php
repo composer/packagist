@@ -26,6 +26,7 @@ class TransparencyLogEventTypeTest extends TestCase
         return [
             AuditLogEventType::WebAuthnCredentialAdded,
             AuditLogEventType::WebAuthnCredentialDeleted,
+            AuditLogEventType::WebAuthnCredentialDisabled,
             AuditLogEventType::TotpAuthenticationActivated,
             AuditLogEventType::TotpAuthenticationDeactivated,
             AuditLogEventType::PasswordReset,

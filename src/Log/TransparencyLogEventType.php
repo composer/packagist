@@ -45,6 +45,7 @@ enum TransparencyLogEventType: string implements LogEventType
     // account security (fanned out to every package the user maintains)
     case WebAuthnCredentialAdded = 'webauthn_credential_added';
     case WebAuthnCredentialDeleted = 'webauthn_credential_deleted';
+    case WebAuthnCredentialDisabled = 'webauthn_credential_disabled';
     case TotpAuthenticationActivated = 'totp_activated';
     case TotpAuthenticationDeactivated = 'totp_deactivated';
     case PasswordReset = 'password_reset';
@@ -80,6 +81,7 @@ enum TransparencyLogEventType: string implements LogEventType
             AuditLogEventType::VersionRecovered => self::VersionRecovered,
             AuditLogEventType::WebAuthnCredentialAdded => self::WebAuthnCredentialAdded,
             AuditLogEventType::WebAuthnCredentialDeleted => self::WebAuthnCredentialDeleted,
+            AuditLogEventType::WebAuthnCredentialDisabled => self::WebAuthnCredentialDisabled,
             AuditLogEventType::TotpAuthenticationActivated => self::TotpAuthenticationActivated,
             AuditLogEventType::TotpAuthenticationDeactivated => self::TotpAuthenticationDeactivated,
             AuditLogEventType::PasswordReset => self::PasswordReset,
@@ -128,7 +130,7 @@ enum TransparencyLogEventType: string implements LogEventType
     public function fansOutToMaintainedPackages(): bool
     {
         return match ($this) {
-            self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted, self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated,
+            self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted, self::WebAuthnCredentialDisabled, self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated,
             self::PasswordReset, self::PasswordChanged,
             self::EmailChanged, self::GitHubLinkedWithUser, self::GitHubDisconnectedFromUser => true,
             default => false,
@@ -145,7 +147,7 @@ enum TransparencyLogEventType: string implements LogEventType
             self::MaintainerAdded, self::MaintainerRemoved, self::PackageTransferred => 'maintainers',
             self::VersionCreated, self::VersionReferenceChangeBlocked, self::VersionDeleted,
             self::VersionSoftDeleted, self::VersionRecovered => 'version',
-            self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted,
+            self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted, self::WebAuthnCredentialDisabled,
             self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated,
             self::PasswordReset, self::PasswordChanged, self::EmailChanged,
             self::GitHubLinkedWithUser, self::GitHubDisconnectedFromUser => 'security',
@@ -170,7 +172,7 @@ enum TransparencyLogEventType: string implements LogEventType
      */
     public static function temporarilyHiddenTypes(): array
     {
-        return [self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated, self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted];
+        return [self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated, self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted, self::WebAuthnCredentialDisabled];
     }
 
     /**
