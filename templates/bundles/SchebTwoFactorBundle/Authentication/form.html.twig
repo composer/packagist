@@ -2,57 +2,43 @@
 
 {% block content %}
     <h2 class="title">Authenticator app</h2>
-
-    <p>Enter the code from your authenticator app to sign in.</p>
-    {% if 'webauthn' in availableTwoFactorProviders %}
-        <p><a href="{{ path('2fa_login', {preferProvider: 'webauthn'}) }}">Use passkey or security key instead</a></p>
-    {% endif %}
-
-    <section class="row">
-        <div class="col-lg-6">
-            {# Authentication errors #}
-            {% if authenticationError %}
-                <p class="alert alert-danger">{{ authenticationError|trans(authenticationErrorData, 'SchebTwoFactorBundle') }}</p>
+    <p>Enter the code from your authenticator app to finish signing in.</p>
+    <div class="account-form">
+        {% if authenticationError %}
+            <p class="alert alert-danger">{{ authenticationError|trans(authenticationErrorData, 'SchebTwoFactorBundle') }}</p>
+        {% endif %}
+        <form action="{{ path('2fa_login_check') }}" method="post">
+            {% if isCsrfProtectionEnabled %}
+                <input type="hidden" name="{{ csrfParameterName }}" value="{{ csrf_token(csrfTokenId) }}">
             {% endif %}
-
-            <form action="{{ path("2fa_login_check") }}" method="post">
+            <div class="form-group">
+                <label for="_auth_code">Authentication code</label>
+                <div class="input-group">
+                    <span class="input-group-text"><span class="icon-key" aria-hidden="true"></span></span>
+                    <input id="_auth_code" class="form-control" type="text" autocomplete="off" name="{{ authCodeParameterName }}">
+                </div>
+            </div>
+            {% if displayTrustedOption %}
                 <div class="form-group">
-                    <label for="_auth_code">Authentication code:</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><span class="icon-key"></span></span>
-                        <input id="_auth_code" class="form-control" type="text" autocomplete="off" name="{{ authCodeParameterName }}" />
+                    <div class="form-check">
+                        <input class="form-check-input" id="_trusted" type="checkbox" name="{{ trustedParameterName }}">
+                        <label class="form-check-label" for="_trusted">Trust this computer for 30 days</label>
                     </div>
                 </div>
-
-                {% if displayTrustedOption %}
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input id="_trusted" class="form-check-input" type="checkbox" name="{{ trustedParameterName }}" />
-                            <label class="form-check-label" for="_trusted">Trust this computer for 30 days</label>
-                        </div>
-                    </div>
-                {% endif %}
-
-                <div class="form-actions">
-                    <input type="submit" class="btn btn-primary" value="{{ "login"|trans({}, 'SchebTwoFactorBundle') }}" />
-                </div>
-
-                {% if isCsrfProtectionEnabled %}
-                    <input type="hidden" name="{{ csrfParameterName }}" value="{{ csrf_token(csrfTokenId) }}">
-                {% endif %}
-            </form>
-
-            <p>
-                Lost access to your authenticator? Enter the backup code in the form above to disable your configured second factors.
-                No backup code either? <a href="{{ path('support_lost_second_factor') }}">Request a reset</a> and we
-                will review it by hand.
-            </p>
-
-            <hr>
-
-            {# The logout link gives the user a way out if they can't complete two-factor authentication #}
-            <a href="{{ logout_path() }}">{{ "cancel"|trans({}, 'SchebTwoFactorBundle') }}</a>
-        </div>
-        <div class="clearfix"></div>
-    </section>
+            {% endif %}
+            <div class="form-actions mb-4">
+                <input type="submit" class="btn btn-primary" value="{{ 'login'|trans({}, 'SchebTwoFactorBundle') }}">
+                {# The logout link gives the user a way out if they can't complete two-factor authentication #}
+                <a class="btn btn-secondary" href="{{ logout_path() }}">Cancel</a>
+            </div>
+        </form>
+        {% if 'webauthn' in availableTwoFactorProviders %}
+            <p><a href="{{ path('2fa_login', {preferProvider: 'webauthn'}) }}">Use passkey or security key instead</a></p>
+        {% endif %}
+        <details class="mb-3">
+            <summary>Lost access?</summary>
+            <p class="mt-2">Enter your backup code in the form above instead. Using it disables your configured second factors.</p>
+            <p class="mb-0">No backup code? <a href="{{ path('support_lost_second_factor') }}">Request a reset</a>.</p>
+        </details>
+    </div>
 {% endblock %}
