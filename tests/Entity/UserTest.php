@@ -107,15 +107,15 @@ class UserTest extends TestCase
         self::assertFalse($user->hasSecondFactorAuthenticationEnabled());
     }
 
-    public function testTrustedTokenVersionDoesNotWrapAtTheOldSessionLimit(): void
+    public function testTrustedTokenVersionFollowsTheSessionCounterThroughRollover(): void
     {
         $user = new User();
         new \ReflectionProperty($user, 'sessionBuster')->setValue($user, 65534);
 
         $user->invalidateAllSessions();
-        self::assertSame(65535, $user->getTrustedTokenVersion());
+        self::assertSame(0, $user->getTrustedTokenVersion());
         $user->invalidateAllSessions();
-        self::assertSame(65536, $user->getTrustedTokenVersion());
+        self::assertSame(1, $user->getTrustedTokenVersion());
         self::assertSame($user->getSessionBuster(), $user->getTrustedTokenVersion());
     }
 

@@ -166,7 +166,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Tr
     #[ORM\Column(type: 'string', length: 8, nullable: true)]
     private ?string $backupCode = null;
 
-    #[ORM\Column(type: 'integer', options: ['unsigned' => true, 'default' => 0])]
+    #[ORM\Column(type: 'smallint', options: ['unsigned' => true, 'default' => 0])]
     private int $sessionBuster = 0;
 
     /** @var Collection<int, WebAuthnCredential> */
@@ -710,7 +710,7 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Tr
 
     public function invalidateAllSessions(): void
     {
-        ++$this->sessionBuster;
+        $this->sessionBuster = ($this->sessionBuster + 1) % 65535;
     }
 
     public function getTrustedTokenVersion(): int
