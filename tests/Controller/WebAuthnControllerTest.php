@@ -1380,8 +1380,10 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::getEM()->flush();
         $version = $user->getTrustedTokenVersion();
         $crawler = $this->beginLogin();
-        $this->client->submit($crawler->selectButton('Use backup code')->form(), ['_auth_code' => 'abc12345']);
+        $form = $crawler->selectButton('Use backup code')->form(['_auth_code' => 'abc12345']);
+        $this->client->request('POST', $form->getUri(), $form->getPhpValues() + ['_trusted' => 'on']);
         self::assertResponseRedirects();
+        self::assertNull($this->client->getCookieJar()->get('trusted_device'));
         self::assertEmailCount(1);
         self::assertEmailHeaderSame(self::getMailerMessage(), 'Subject', $hardware ? 'Backup code used on Packagist.org' : 'Two-factor authentication disabled after backup code use on Packagist.org');
         self::assertEmailTextBodyContains(self::getMailerMessage(), 'Username: keys');
@@ -1394,6 +1396,13 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertFalse($user->isBackupCode('abc12345'));
         self::assertGreaterThan($version, $user->getTrustedTokenVersion());
         $this->assertWebAuthnProof(false, false);
+
+        if ($hardware) {
+            $this->client->getCookieJar()->expire($this->client->getSession()->getName());
+            $this->client->request('POST', '/login/', ['_username' => 'keys', '_password' => 'existing-password']);
+            $this->client->request('GET', '/profile/security');
+            self::assertResponseRedirects('/2fa');
+        }
     }
 
     #[TestWith([false, false])]

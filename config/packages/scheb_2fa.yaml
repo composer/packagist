@@ -16,6 +16,7 @@ scheb_two_factor:
 
     trusted_device:
         enabled: true
+        manager: App\Security\TrustedDeviceManager
         lifetime: 2592000 # 30 days
 
     # prevent reusing 2FA codes

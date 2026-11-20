@@ -154,8 +154,9 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         self::getEM()->flush();
         $crawler = $this->beginLogin();
         self::assertSelectorTextContains('details', 'Enter your backup code in the form above instead. Using it disables your configured second factors.');
-        $this->client->submit($crawler->filter('form[action="/2fa-check"]')->form(), ['_auth_code' => 'abc12345']);
+        $this->client->submit($crawler->filter('form[action="/2fa-check"]')->form(), ['_auth_code' => 'abc12345', '_trusted' => 'on']);
         self::assertResponseRedirects();
+        self::assertNull($this->client->getCookieJar()->get('trusted_device'));
         $this->assertAuthenticationChecks(false, false);
     }
 
