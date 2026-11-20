@@ -58,6 +58,9 @@ class AdminAuditLogControllerTest extends IntegrationTestCase
         $details = $crawler->filter('td.audit-log-details')->text();
         static::assertStringContainsString('Reason: spam', $details);
         static::assertStringContainsString('Internal reason: reporter jane, ticket #42', $details);
+
+        // the shared templates link to the transparency log's filters, which differ from this page's
+        static::assertCount(0, $crawler->filter('[data-test="log-search-link"]'));
     }
 
     #[DataProvider('filterProvider')]

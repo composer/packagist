@@ -4,6 +4,8 @@
     {%- else -%}
         {{ packageName }}
     {%- endif -%}
+    {%- import _self as log -%}
+    {{ log.searchLink({package: packageName}, 'Show only entries of this package') }}
 {% endmacro %}
 
 {% macro userLink(username) %}
@@ -22,8 +24,19 @@
 {# an {id, username} array or an ActorDisplay #}
 {% macro user(user) %}
     {%- import _self as log -%}
-    {{ user.username }}{{ log.userId(user.id ?? null) }}
+    {{ user.username }}{{ log.userId(user.id ?? null) }}{{ log.userSearchLink(user.id ?? null) }}
 {%- endmacro %}
+
+{# don't show a filter without an id ("unknown", "automation") #}
+{% macro userSearchLink(id) %}
+    {%- import _self as log -%}
+    {%- if id is not null %}{{ log.searchLink({user_id: id}, 'Show only entries of this account') }}{% endif -%}
+{% endmacro %}
+
+{# The audit logs also use this macro, through shared templates. Show the link on the transparency log only. #}
+{% macro searchLink(query, title) %}
+    {%- if app.current_route == 'view_transparency_log' %} <a href="{{ path('view_transparency_log', query) }}" class="log-search-link" rel="nofollow" title="{{ title }}" aria-label="{{ title }}" data-test="log-search-link"><i class="bi bi-search" aria-hidden="true"></i></a>{% endif -%}
+{% endmacro %}
 
 {% macro organizationLink(organization) %}
     {%- if organization.slug is existing_organization -%}

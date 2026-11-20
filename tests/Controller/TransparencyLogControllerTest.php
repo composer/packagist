@@ -105,6 +105,45 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertCount(0, $crawler->filter('[data-test="log-type"]'));
     }
 
+    public function testSearchLinksReplaceAllFiltersWithThePackageOrAccount(): void
+    {
+        $this->givenAPackageDeletedByAnAdmin();
+        $actorId = $this->getEM()->getRepository(User::class)->findOneBy(['username' => 'onlyactor'])?->getId();
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log?'.http_build_query([
+            'vendor' => 'acme',
+            'type' => [TransparencyLogEventType::PackageDeleted->value],
+            'datetime_from' => '2000-01-01T00:00:00',
+        ]));
+        static::assertResponseIsSuccessful();
+
+        $links = $crawler->filter('[data-test="log-search-link"]')->each(static fn (Crawler $link) => $link->attr('href'));
+        static::assertSame([
+            '/transparency-log?package=acme/actor-only',
+            '/transparency-log?user_id='.$actorId,
+        ], $links);
+
+        $crawler = $this->client->click($crawler->filter('[data-test="log-search-link"]')->eq(1)->link());
+        static::assertResponseIsSuccessful();
+        static::assertSame(['Package deleted'], $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text())));
+    }
+
+    /**
+     * Actors without an account id are not accounts, so there is nothing to search for.
+     */
+    public function testNoSearchLinkForActorsWithoutAnAccount(): void
+    {
+        $this->insertEntries('auto', 1, 1);
+        $this->givenLoggedInVisitor();
+
+        $crawler = $this->client->request('GET', '/transparency-log');
+        static::assertResponseIsSuccessful();
+
+        $links = $crawler->filter('[data-test="log-search-link"]')->each(static fn (Crawler $link) => $link->attr('href'));
+        static::assertSame(['/transparency-log?package=auto/p1'], $links);
+    }
+
     public function testFreezeReasonIsRenderedAsALabelNotARawEnumValue(): void
     {
         $admin = self::createUser('freezer', 'freezer@example.org', roles: ['ROLE_ADMIN']);
