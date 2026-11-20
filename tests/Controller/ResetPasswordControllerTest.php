@@ -16,8 +16,11 @@ use App\Entity\AuditRecord;
 use App\Entity\User;
 use App\Entity\UserFreezeReason;
 use App\Log\AuditLogEventType;
+use App\Security\TwoFactorAuthRateLimiter;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
+use App\Validator\RateLimitingRecaptcha;
+use PHPUnit\Framework\Attributes\WithEnvironmentVariable;
 use Scheb\TwoFactorBundle\Security\Http\Authenticator\TwoFactorAuthenticator;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -66,6 +69,7 @@ class ResetPasswordControllerTest extends IntegrationTestCase
     {
         $user = $this->setupUserWithPasswordResetRequest(false);
         $oldPassword = $user->getPassword();
+        self::redisCache()->set('2fa-failures:'.$user->getUserIdentifier(), (string) TwoFactorAuthRateLimiter::MAX_ATTEMPTS);
 
         $crawler = $this->client->request('GET', '/reset-password/reset/'.$user->getConfirmationToken());
         $this->assertResponseStatusCodeSame(200);
@@ -101,6 +105,63 @@ class ResetPasswordControllerTest extends IntegrationTestCase
 
         $this->submitPasswordResetFormAndAsserStatusCode($crawler, newPassword: $user->getEmail(), expectedStatusCode: 422);
         $this->assertUserHasUnchangedPassword($user, $oldPassword);
+    }
+
+    public function testResetTotpSharesTheAccountLimitAcrossIps(): void
+    {
+        $user = $this->setupUserWithPasswordResetRequest(true);
+        $url = '/reset-password/reset/'.$user->getConfirmationToken();
+        $oldPassword = $user->getPassword();
+        $limiter = self::getService(TwoFactorAuthRateLimiter::class);
+        $limiter->recordFailure($user->getUserIdentifier());
+
+        for ($attempt = 1; $attempt < TwoFactorAuthRateLimiter::MAX_ATTEMPTS; ++$attempt) {
+            $form = $this->client->request('GET', $url)->selectButton('Reset password')->form();
+            $this->client->submit($form, [
+                'reset_password_form[plainPassword]' => 'new-password',
+                'reset_password_form[twoFactorCode]' => '123456',
+            ], ['REMOTE_ADDR' => '192.0.2.'.$attempt]);
+            self::assertResponseStatusCodeSame(422);
+            self::assertSelectorTextContains('#reset_password', 'Invalid authenticator code');
+        }
+
+        $this->client->restart();
+        $form = $this->client->request('GET', $url)->selectButton('Reset password')->form();
+        $this->client->submit($form, [
+            'reset_password_form[plainPassword]' => 'new-password',
+            'reset_password_form[twoFactorCode]' => TotpAuthenticatorStub::MOCKED_VALID_CODE,
+        ], ['REMOTE_ADDR' => '192.0.2.100']);
+        self::assertResponseStatusCodeSame(429);
+        self::assertResponseHeaderSame('Retry-After', (string) (TwoFactorAuthRateLimiter::RATE_LIMIT_DURATION * 60));
+        $this->assertUserHasUnchangedPassword($user, $oldPassword);
+    }
+
+    #[WithEnvironmentVariable('APP_RECAPTCHA_ENABLED', 'true')]
+    public function testMissingCaptchaPreventsResetTotpValidation(): void
+    {
+        $user = $this->setupUserWithPasswordResetRequest(true);
+        $url = '/reset-password/reset/'.$user->getConfirmationToken();
+        $form = $this->client->request('GET', $url)->selectButton('Reset password')->form();
+        $ip = '192.0.2.10';
+        for ($attempt = 0; $attempt < 3; ++$attempt) {
+            $this->client->submit($form, [
+                'reset_password_form[plainPassword]' => 'new-password',
+                'reset_password_form[twoFactorCode]' => '123456',
+            ], ['REMOTE_ADDR' => $ip]);
+            self::assertResponseStatusCodeSame(422);
+            self::assertSelectorTextContains('#reset_password', 'Invalid authenticator code');
+        }
+
+        foreach (['123456', TotpAuthenticatorStub::MOCKED_VALID_CODE] as $code) {
+            $this->client->submit($form, [
+                'reset_password_form[plainPassword]' => 'new-password',
+                'reset_password_form[twoFactorCode]' => $code,
+            ], ['REMOTE_ADDR' => $ip]);
+            self::assertResponseStatusCodeSame(422);
+            self::assertSelectorTextContains('#reset_password', RateLimitingRecaptcha::MISSING_RECAPTCHA_MESSAGE);
+            self::assertSame('3', self::redisCache()->get('2fa-failures:'.$user->getUserIdentifier()));
+            self::assertSame('3', self::redisCache()->get('bf:login:ip:'.$ip));
+        }
     }
 
     public function testFrozenUserGetsNoResetEmail(): void
