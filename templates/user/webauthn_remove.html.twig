@@ -12,6 +12,10 @@
         <p>Your other second factors and backup code will remain enabled.</p>
     {% endif %}
 
+    {% if credential.credentialType.requiresAttestation and user.webAuthnCredentials|filter(key => key.credentialType.requiresAttestation)|length == 1 %}
+        <p class="text-danger">This is your last verified hardware key. Once removed, enrolling a new one will no longer require confirmation with a verified key. If you are replacing this key, add its replacement first.</p>
+    {% endif %}
+
     <form class="account-form" method="post" action="{{ path('user_webauthn_edit', {id: credential.id}) }}">
         <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
         <input type="hidden" name="action" value="remove">

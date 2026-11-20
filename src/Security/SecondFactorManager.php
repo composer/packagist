@@ -127,13 +127,22 @@ class SecondFactorManager implements BackupCodeManagerInterface
         }
 
         try {
-            $this->withAccountLock($user, function () use ($user, $code): void {
+            $factorsReset = $this->withAccountLock($user, function () use ($user, $code): bool {
                 if (!$this->isValidBackupCode($user, $code)) {
                     throw new BadCredentialsException('Invalid backup code.');
                 }
 
-                $this->em->wrapInTransaction(function () use ($user): void {
+                return $this->em->wrapInTransaction(function () use ($user): bool {
+                    if ($user->hasVerifiedHardwareKey()) {
+                        $user->invalidateAllBackupCodes();
+                        $user->invalidateAllSessions();
+
+                        return false;
+                    }
+
                     $this->stageSecondFactorReset($user, $user, 'Backup code used');
+
+                    return true;
                 });
             });
         } catch (ServiceUnavailableHttpException $e) {
@@ -142,8 +151,8 @@ class SecondFactorManager implements BackupCodeManagerInterface
 
         $this->userNotifier->notifyChange(
             $user->getEmail(),
-            reason: 'A backup code was used to sign in and all configured second factors were disabled.',
-            subject: 'Two-factor authentication disabled after backup code use on Packagist.org',
+            reason: $factorsReset ? 'A backup code was used to sign in and all configured second factors were disabled.' : 'A backup code was used to sign in. Your verified hardware keys and other second factors remain enrolled.',
+            subject: $factorsReset ? 'Two-factor authentication disabled after backup code use on Packagist.org' : 'Backup code used on Packagist.org',
             username: $user->getUsername(),
         );
 
@@ -154,6 +163,8 @@ class SecondFactorManager implements BackupCodeManagerInterface
         }
 
         \assert($session instanceof FlashBagAwareSessionInterface);
-        $session->getFlashBag()->add('warning', 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.');
+        $session->getFlashBag()->add('warning', $factorsReset
+            ? 'Use of your backup code has disabled two-factor authentication for your account. Please consider re-enabling it for your security.'
+            : 'Your one-time backup code has been used. If you have lost all your verified hardware keys, contact support for a reset.');
     }
 }

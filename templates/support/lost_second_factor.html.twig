@@ -24,8 +24,7 @@
 
                 <p>
                     We have also emailed that address to let the account owner know the request was
-                    made. If you still have your backup code, you do not need to wait for us: enter it
-                    in place of the authentication code on the login form.
+                    made. If you still have your backup code, you can use it to sign in while you wait.
                 </p>
 
                 <p><a href="{{ logout_path() }}">Back to the site</a></p>
@@ -37,9 +36,11 @@
                 </p>
 
                 <p>
-                    Still have your backup code? You do not need this form - enter the backup
-                    code in place of the authentication code and your second factors will be
-                    removed straight away.
+                    {% if app.user.hasVerifiedHardwareKey %}
+                        Your backup code can sign you in once. If you have lost all your verified hardware keys, use this form to request their removal.
+                    {% else %}
+                        Still have your backup code? Enter it at the two-factor sign-in prompt to remove your second factors immediately.
+                    {% endif %}
                 </p>
 
                 <div class="alert alert-warning">

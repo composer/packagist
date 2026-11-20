@@ -540,6 +540,10 @@ class SupportController extends Controller
     private function approveSecondFactorReset(SupportRequest $request, User $actor, SecondFactorManager $secondFactors): SecondFactorResetResult
     {
         return $secondFactors->withAccountLock($request->user, function () use ($request, $actor, $secondFactors): SecondFactorResetResult {
+            if ($request->user->getId() === $actor->getId() && $request->user->hasVerifiedHardwareKey()) {
+                throw $this->createAccessDeniedException('Another support administrator must review your hardware key reset.');
+            }
+
             // Check the refreshed account before claiming the request or changing any factors
             if ($request->user->isFrozen()) {
                 return new SecondFactorResetResult(SecondFactorResetOutcome::Frozen);

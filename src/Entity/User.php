@@ -12,6 +12,7 @@
 
 namespace App\Entity;
 
+use App\Security\WebAuthn\CredentialType;
 use App\Validator\NotReservedWord;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -331,6 +332,12 @@ class User implements UserInterface, TwoFactorInterface, BackupCodeInterface, Tr
     public function getWebAuthnCredentials(): array
     {
         return array_values($this->webAuthnCredentials->filter(static fn (WebAuthnCredential $credential) => $credential->revokedAt === null)->toArray());
+    }
+
+    public function hasVerifiedHardwareKey(): bool
+    {
+        // Disabled keys still protect the account until explicitly removed or reset by support
+        return array_any($this->getWebAuthnCredentials(), static fn (WebAuthnCredential $key) => $key->credentialType === CredentialType::VerifiedHardware);
     }
 
     public function findWebAuthnCredential(string $id): ?WebAuthnCredential

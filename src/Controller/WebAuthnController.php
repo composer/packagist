@@ -30,6 +30,7 @@ use Scheb\TwoFactorBundle\Security\Authentication\Token\TwoFactorTokenInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -76,6 +77,7 @@ class WebAuthnController extends Controller
         return $this->render('user/webauthn_manage.html.twig', [
             'user' => $user,
             'can_manage_keys' => $this->canManageKeys($user),
+            'needs_hardware_verification' => $this->webAuthn->needsHardwareVerification($user, CredentialType::VerifiedHardware),
             'can_enroll_keys' => $this->isGranted(WebAuthnVoter::ENROLL),
             'has_return_to' => $request->query->has('return_to'),
             'totp_verification_url' => $this->generateUrl('user_verify_totp', ['return_to' => $returnUrl]),
@@ -109,6 +111,8 @@ class WebAuthnController extends Controller
             }
 
             return JsonResponse::fromJsonString($this->webAuthn->startRegistration($user, $request->request->getString('name'), $credentialType), headers: ['Cache-Control' => 'no-store']);
+        } catch (AccessDeniedHttpException $e) {
+            return $this->json(['error' => $e->getMessage()], $e->getStatusCode());
         } catch (FidoMetadataUnavailableException $e) {
             return $this->unavailableAttestationResponse($e);
         } catch (\InvalidArgumentException $e) {
@@ -130,7 +134,7 @@ class WebAuthnController extends Controller
             $backupCode = $this->webAuthn->register($user, $request->request->getString('credential'), $request->request->getString('name'));
         } catch (CertificateRevocationListException|FidoMetadataUnavailableException $e) {
             return $this->unavailableAttestationResponse($e);
-        } catch (ServiceUnavailableHttpException $e) {
+        } catch (AccessDeniedHttpException|ServiceUnavailableHttpException $e) {
             return $this->json(['error' => $e->getMessage()], $e->getStatusCode(), $e->getHeaders());
         } catch (BadCredentialsException|\InvalidArgumentException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
@@ -154,7 +158,7 @@ class WebAuthnController extends Controller
             throw $this->createNotFoundException();
         }
 
-        if (!$this->canManageKeys($user)) {
+        if (!$this->canManageKeys($user) || $this->webAuthn->needsHardwareVerification($user, $credential->credentialType)) {
             $this->addFlash('info', 'Confirm your identity before removing this passkey or security key.');
 
             return $this->redirectToRoute('user_webauthn_manage', [
@@ -207,7 +211,7 @@ class WebAuthnController extends Controller
         $this->checkCsrf($request);
 
         try {
-            return JsonResponse::fromJsonString($this->webAuthn->startAuthentication($user), headers: ['Cache-Control' => 'no-store']);
+            return JsonResponse::fromJsonString($this->webAuthn->startAuthentication($user, $request->query->getBoolean('hardware')), headers: ['Cache-Control' => 'no-store']);
         } catch (BadCredentialsException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }

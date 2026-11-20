@@ -12,7 +12,7 @@
             <p>Keep this one-time code somewhere safe. You can use it to sign in if you lose access to your second factors.</p>
             <kbd class="two-factor-backup-code">{{ backup_code }}</kbd>
             <p class="mb-2"><strong>This code will not be shown again.</strong></p>
-            <p class="small text-body-secondary mb-0">Using your backup code disables all second factors on your account.</p>
+            <p class="small text-body-secondary mb-0">{{ user.hasVerifiedHardwareKey ? 'Your verified hardware keys and other second factors stay enrolled after you use this code.' : 'Using your backup code disables all second factors on your account.' }}</p>
         </section>
     {% endif %}
 
@@ -31,7 +31,7 @@
                 {% if user.totpAuthenticationEnabled %}
                     <a class="btn btn-sm btn-secondary" href="{{ totp_verification_url }}">Confirm with authenticator app</a>
                 {% endif %}
-                {% if user.webAuthnCredentials is not empty %}
+                {% if user.webAuthnCredentials|filter(key => not key.credentialType.requiresAttestation) is not empty %}
                     <form class="mb-0" action="{{ webauthn_verification_url }}" method="post" data-webauthn="verify" data-options="{{ path('user_webauthn_verify_options') }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
                         <button class="btn btn-sm btn-secondary" type="submit">Confirm with passkey or security key</button>
@@ -41,6 +41,15 @@
             </div>
         {% endif %}
     </div>
+
+    {% if needs_hardware_verification %}
+        <form class="mb-3" action="{{ webauthn_verification_url }}" method="post" data-webauthn="verify" data-options="{{ path('user_webauthn_verify_options', {hardware: 1}) }}">
+            <p class="mb-2">To add or remove a verified hardware key, confirm with one already enrolled on your account. If you have lost all of them, <a href="{{ path('support_contact') }}#lost-totp">request a support reset</a>.</p>
+            <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
+            <button class="btn btn-sm btn-secondary" type="submit">Confirm with verified hardware key</button>
+            {{ include('user/_webauthn_error.html.twig') }}
+        </form>
+    {% endif %}
 
     <ul class="list-unstyled mt-0" aria-label="Registered keys">
         {% for credential in user.webAuthnCredentials %}
@@ -120,9 +129,9 @@
                 <legend class="h6">Key type</legend>
                 {% for type in credential_types %}
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="kind" id="key-{{ type.value }}" aria-describedby="key-{{ type.value }}-description" value="{{ type.value }}"{% if loop.first %} checked{% endif %}>
+                        <input class="form-check-input" type="radio" name="kind" id="key-{{ type.value }}" aria-describedby="key-{{ type.value }}-description" value="{{ type.value }}"{% if loop.first %} checked{% endif %}{% if type.requiresAttestation and needs_hardware_verification %} disabled{% endif %}>
                         <label class="form-check-label" for="key-{{ type.value }}">{{ type.label }}</label>
-                        <p class="small text-body-secondary" id="key-{{ type.value }}-description">{{ type.description }}</p>
+                        <p class="small text-body-secondary" id="key-{{ type.value }}-description">{{ type.description }}{% if type.requiresAttestation %} Enroll a spare verified key and keep it somewhere safe. Losing all your verified keys requires a support reset to replace them.{% endif %}</p>
                     </div>
                 {% endfor %}
             </fieldset>

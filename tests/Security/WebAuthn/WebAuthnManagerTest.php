@@ -16,6 +16,7 @@ use App\Entity\User;
 use App\Entity\UserRepository;
 use App\Entity\WebAuthnCredential;
 use App\Security\SecondFactorManager;
+use App\Security\SecondFactorProofStore;
 use App\Security\UserNotifier;
 use App\Security\WebAuthn\AttestationPolicy;
 use App\Security\WebAuthn\ExpiringOptionsStorage;
@@ -201,6 +202,7 @@ class WebAuthnManagerTest extends TestCase
             $events,
             new SecondFactorManager($events, $em, $requests, $notifier, $locker, $users),
             new AttestationPolicy($this->createStub(FidoMetadataRepository::class)),
+            new SecondFactorProofStore($requests, new NativeClock()),
             'packagist.wip',
         );
     }
