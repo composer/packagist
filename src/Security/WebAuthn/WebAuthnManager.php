@@ -124,6 +124,10 @@ class WebAuthnManager
             && (!$hardwareOnly || $credential->credentialType === CredentialType::VerifiedHardware));
 
         if ($available === []) {
+            if ($hardwareOnly) {
+                throw new BadCredentialsException('webauthn.error.no_usable_hardware_key');
+            }
+
             throw $this->disabledCredentialException($user);
         }
 

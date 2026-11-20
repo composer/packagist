@@ -297,6 +297,7 @@ webauthn:
         failed: 'Verification failed. Refresh the page and try again.'
         already_registered: 'This credential is already registered.'
         no_credential: 'No passkey or security key is registered.'
+        no_usable_hardware_key: 'No enrolled verified hardware key is available for confirmation. If your keys are disabled, request a support reset at the two-factor sign-in prompt.'
         expired_challenge: 'This passkey request expired or was replaced. Start again.'
         invalid_assertion: 'The passkey or security key could not be verified.'
         disabled_credential: 'This hardware security key is no longer trusted. Use another second factor or your backup code.'

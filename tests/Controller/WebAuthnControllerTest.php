@@ -570,6 +570,9 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.text-bg-warning', 'Hardware verification temporarily unavailable');
         self::assertSelectorNotExists('.text-bg-success');
+        self::assertSelectorNotExists('form[data-options*="hardware=1"]');
+        self::assertSelectorTextContains('.alert-warning', 'Try again later');
+        self::assertSelectorNotExists('.alert-warning a[href="/contact#lost-totp"]');
 
         if ($signIn) {
             $this->beginLogin();
@@ -1031,12 +1034,19 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertTrue($this->freshUser()->isBackupCode('keep1234'));
     }
 
-    public function testTotpCannotReplaceTheLastVerifiedHardwareKey(): void
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testTotpCannotReplaceTheLastVerifiedHardwareKey(bool $disabled): void
     {
         $this->configureHardwareMetadata();
         $credential = $this->register('Primary', true);
         $user = $this->freshUser();
         $user->setTotpSecret('JBSWY3DPEHPK3PXP');
+
+        if ($disabled) {
+            $credential->disable();
+        }
+
         self::getEM()->flush();
         $this->client->loginUser($user);
         $crawler = $this->client->request('GET', '/profile/security/keys');
@@ -1045,7 +1055,17 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->followRedirect();
         self::assertSelectorExists('#key-hardware[disabled]');
         self::assertSelectorExists('#key-regular:not([disabled])');
-        self::assertSelectorExists('form[data-options*="hardware=1"]');
+
+        if ($disabled) {
+            self::assertSelectorNotExists('form[data-options*="hardware=1"]');
+            self::assertSelectorNotExists('a[href="/profile/security/keys/'.$credential->id.'/remove"]');
+            self::assertSelectorTextContains('.alert-warning a[href="/contact#lost-totp"]', 'request a support reset');
+            $this->client->request('POST', '/profile/security/keys/verify/options?hardware=1', ['_token' => $this->csrf]);
+            self::assertResponseStatusCodeSame(400);
+            self::assertStringContainsString('request a support reset', $this->client->getResponse()->getContent());
+        } else {
+            self::assertSelectorExists('form[data-options*="hardware=1"]');
+        }
 
         $parameters = ['_token' => $this->csrf, 'name' => 'Spare'];
         $this->client->request('POST', '/profile/security/keys/options', $parameters + ['kind' => 'regular']);
@@ -1094,6 +1114,13 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->verify();
         $this->authenticator = $spare;
         $spareCredential = $this->register('Spare', true);
+        $primaryCredential = $this->freshUser()->findWebAuthnCredential($credential->id);
+        self::assertNotNull($primaryCredential);
+        $primaryCredential->disable();
+        self::getEM()->flush();
+        $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorExists('form[data-options*="hardware=1"]');
+        self::assertSelectorExists('a[href="/profile/security/keys/'.$credential->id.'/remove"]');
         $this->verify();
         $crawler = $this->client->request('GET', '/profile/security/keys/'.$credential->id.'/remove');
         $this->client->submit($crawler->selectButton('Remove key')->form());

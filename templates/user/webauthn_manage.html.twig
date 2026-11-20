@@ -16,14 +16,16 @@
         </section>
     {% endif %}
 
+    {% set hardware_verification_blocked = needs_hardware_verification and 'verified' not in credential_trust %}
+    {% set show_general_confirmation = not can_manage_keys and (not hardware_verification_blocked or user.totpAuthenticationEnabled or 'regular' in credential_trust) %}
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-4 mb-3">
         <div>
             <h4 class="h6 mb-0">Registered keys</h4>
-            {% if not can_manage_keys %}
+            {% if show_general_confirmation %}
                 <p id="confirm-key-changes" class="small text-body-secondary mt-1 mb-0">{{ has_return_to ? 'Confirm your identity to continue with your security change.' : 'Confirm your identity to make changes.' }}</p>
             {% endif %}
         </div>
-        {% if not can_manage_keys %}
+        {% if show_general_confirmation %}
             <div class="d-flex flex-wrap align-items-start gap-2">
                 {% if not user.hasSecondFactorAuthenticationEnabled %}
                     <a class="btn btn-sm btn-secondary" href="{{ path('login') }}">Sign in again to add your first key</a>
@@ -31,7 +33,7 @@
                 {% if user.totpAuthenticationEnabled %}
                     <a class="btn btn-sm btn-secondary" href="{{ totp_verification_url }}">Confirm with authenticator app</a>
                 {% endif %}
-                {% if user.webAuthnCredentials|filter(key => not key.credentialType.requiresAttestation) is not empty %}
+                {% if 'regular' in credential_trust %}
                     <form class="mb-0" action="{{ webauthn_verification_url }}" method="post" data-webauthn="verify" data-options="{{ path('user_webauthn_verify_options') }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
                         <button class="btn btn-sm btn-secondary" type="submit">Confirm with passkey or security key</button>
@@ -42,7 +44,16 @@
         {% endif %}
     </div>
 
-    {% if needs_hardware_verification %}
+    {% if hardware_verification_blocked %}
+        <p class="alert alert-warning">
+            {% if 'unavailable' in credential_trust %}
+                Hardware verification is temporarily unavailable. Try again later to add or remove a verified hardware key.
+            {% else %}
+                None of your enrolled hardware keys can confirm changes. To add or remove a verified hardware key,
+                start signing in from a private browser window and <a href="{{ path('support_contact') }}#lost-totp">request a support reset</a> at the two-factor prompt.
+            {% endif %}
+        </p>
+    {% elseif needs_hardware_verification %}
         <form class="mb-3" action="{{ webauthn_verification_url }}" method="post" data-webauthn="verify" data-options="{{ path('user_webauthn_verify_options', {hardware: 1}) }}">
             <p class="mb-2">To add or remove a verified hardware key, confirm with one already enrolled on your account. If you have lost all of them, <a href="{{ path('support_contact') }}#lost-totp">request a support reset</a>.</p>
             <input type="hidden" name="_token" value="{{ csrf_token('webauthn') }}">
@@ -74,10 +85,10 @@
                                 {% set trust = credential_trust[credential.id] %}
                                 {% if trust == 'disabled' or trust == 'rejected' %}
                                     <span class="badge text-bg-danger">{{ trust == 'disabled' ? 'Hardware security key disabled' : 'Hardware security key no longer trusted' }}</span>
-                                    <p class="mb-0">Use another second factor{% if can_use_backup_codes(user) %} or your backup code{% endif %} to recover access.</p>
+                                    <p class="mb-0">This key cannot be used to sign in or confirm changes.</p>
                                 {% elseif trust == 'unavailable' %}
                                     <span class="badge text-bg-warning">Hardware verification temporarily unavailable</span>
-                                    <p class="mb-0">This key cannot be used until current FIDO metadata is available. Use another second factor or try again later.</p>
+                                    <p class="mb-0">This key cannot be used until current FIDO metadata is available.</p>
                                 {% elseif trust == 'verified' %}
                                     <span class="badge text-bg-success text-wrap text-start">{{ credential.credentialType.label }}</span>
                                 {% else %}
@@ -108,7 +119,9 @@
                         </dl>
                     </div>
                     <div class="col-sm-4 text-sm-end">
-                        <a class="btn btn-sm btn-danger" href="{{ path('user_webauthn_remove', {id: credential.id}) }}">Remove</a>
+                        {% if not (hardware_verification_blocked and credential.credentialType.requiresAttestation) %}
+                            <a class="btn btn-sm btn-danger" href="{{ path('user_webauthn_remove', {id: credential.id}) }}">Remove</a>
+                        {% endif %}
                     </div>
                 </div>
             </li>
