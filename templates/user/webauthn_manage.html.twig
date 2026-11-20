@@ -72,7 +72,13 @@
                             <dt class="col-3 fw-normal">Added</dt>
                             <dd class="col-9 mb-0">{{ credential.createdAt|date('Y-m-d') }}</dd>
                             <dt class="col-3 fw-normal">Last used</dt>
-                            <dd class="col-9 mb-0">{{ credential.lastUsedAt ? credential.lastUsedAt|date('Y-m-d H:i') : 'never' }}</dd>
+                            <dd class="col-9 mb-0">
+                                {% if credential.lastUsedAt %}
+                                    <time datetime="{{ credential.lastUsedAt|date('c', 'UTC') }}">{{ credential.lastUsedAt|date('Y-m-d H:i', 'UTC') }} UTC</time>
+                                {% else %}
+                                    never
+                                {% endif %}
+                            </dd>
                             {% set remaining = credential_verifications[credential.id]|default(0) %}
                             {% if remaining > 0 %}
                                 <dt class="col-3 fw-normal">Verification</dt>

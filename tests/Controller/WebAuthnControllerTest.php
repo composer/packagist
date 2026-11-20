@@ -289,10 +289,12 @@ class WebAuthnControllerTest extends IntegrationTestCase
 
         $this->register('My key', $hardware);
         $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorNotExists('dl time');
         self::assertSelectorNotExists('[data-credential-verification]');
         $this->assertWebAuthnProof(true, false);
         $this->verify();
         $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorTextContains('dl time', ' UTC');
         self::assertSelectorTextContains('[data-credential-verification] .badge', 'Verified in this session · 10 min remaining');
         $this->assertWebAuthnProof(true, $hardware);
         $this->clock->sleep(599);
@@ -300,6 +302,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSelectorTextContains('[data-credential-verification] .badge', 'less than a minute remaining');
         $this->clock->sleep(1);
         $this->client->request('GET', '/profile/security/keys');
+        self::assertSelectorTextContains('dl time', ' UTC');
         self::assertSelectorNotExists('[data-credential-verification]');
         $this->assertWebAuthnProof(true, $hardware, false);
         $this->beginLogin();
