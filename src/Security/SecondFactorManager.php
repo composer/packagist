@@ -117,6 +117,7 @@ class SecondFactorManager implements BackupCodeManagerInterface
         }
 
         $user->invalidateAllBackupCodes();
+        $user->invalidateAllSessions();
     }
 
     public function invalidateBackupCode(object $user, string $code): void

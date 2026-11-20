@@ -1247,6 +1247,62 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseRedirects('/2fa');
     }
 
+    #[TestWith(['backup'])]
+    #[TestWith(['support'])]
+    #[TestWith(['removal'])]
+    #[TestWith(['sessions'])]
+    public function testTrustedCookieIsRevokedAfterRecoveryAndReenrollment(string $action): void
+    {
+        $credential = $this->register();
+        $this->freshUser()->setBackupCode('abc12345');
+        self::getEM()->flush();
+        $this->beginLogin();
+        $this->finishLoginWithKey(true);
+        $trusted = $this->client->getCookieJar()->get('trusted_device');
+        self::assertNotNull($trusted);
+
+        $this->client->restart();
+        $this->client->getCookieJar()->set($trusted);
+        $this->client->request('POST', '/login/', ['_username' => 'keys', '_password' => 'existing-password']);
+        $this->client->request('GET', '/profile/security');
+        self::assertResponseIsSuccessful();
+
+        $user = $this->freshUser();
+        $manager = self::getService(SecondFactorManager::class);
+
+        if ($action === 'backup') {
+            $manager->invalidateBackupCode($user, 'abc12345');
+        } elseif ($action === 'support') {
+            self::getEM()->wrapInTransaction(static function () use ($manager, $user): void {
+                $manager->stageSecondFactorReset($user, $user, 'Support reset');
+            });
+        } elseif ($action === 'removal') {
+            $credential = $user->findWebAuthnCredential($credential->id);
+            self::assertNotNull($credential);
+            self::getService(WebAuthnManager::class)->revoke($credential);
+        } else {
+            $user->invalidateAllSessions();
+            self::getEM()->flush();
+        }
+
+        if ($action !== 'sessions') {
+            self::assertFalse($user->hasSecondFactorAuthenticationEnabled());
+            $this->client->loginUser($user);
+            $crawler = $this->client->request('GET', '/profile/security/keys');
+            $this->csrf = $crawler->filter('form[data-webauthn="register"] input[name="_token"]')->attr('value');
+            $this->authenticator = new VirtualAuthenticator();
+            $this->register('Replacement key');
+        }
+
+        $this->client->restart();
+        $this->client->getCookieJar()->set($trusted);
+        $this->client->request('POST', '/login/', ['_username' => 'keys', '_password' => 'existing-password']);
+        $this->client->request('GET', '/profile/security');
+        self::assertResponseRedirects('/2fa');
+        $this->client->followRedirect();
+        self::assertSelectorExists('form[data-webauthn="login"]');
+    }
+
     private function register(string $name = 'My key', bool $hardware = false): WebAuthnCredential
     {
         $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => $name, 'kind' => $hardware ? 'hardware' : 'regular']);
@@ -1282,13 +1338,19 @@ class WebAuthnControllerTest extends IntegrationTestCase
         return $crawler;
     }
 
-    private function finishLoginWithKey(): void
+    private function finishLoginWithKey(bool $trusted = false): void
     {
         $this->client->request('POST', '/2fa/webauthn/options', ['_token' => $this->csrf]);
         self::assertResponseIsSuccessful();
         $options = json_decode($this->client->getResponse()->getContent(), true);
         $crawler = $this->client->request('GET', '/2fa');
-        $this->client->submit($crawler->filter('form[data-webauthn="login"]')->form(), ['_auth_code' => $this->authenticator->authenticate($options)]);
+        $parameters = ['_auth_code' => $this->authenticator->authenticate($options)];
+
+        if ($trusted) {
+            $parameters['_trusted'] = 'on';
+        }
+
+        $this->client->submit($crawler->filter('form[data-webauthn="login"]')->form(), $parameters);
         self::assertResponseRedirects();
     }
 
