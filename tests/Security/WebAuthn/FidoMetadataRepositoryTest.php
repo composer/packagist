@@ -36,6 +36,7 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
     /** @var list<string> */
     private array $feeds;
     private int $downloads = 0;
+    private int $revocationListRequests = 0;
 
     protected function setUp(): void
     {
@@ -183,6 +184,25 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
         }
     }
 
+    public function testUnavailableSigningCertificateRevocationListPreservesTheVerifiedFeed(): void
+    {
+        $repository = $this->repository();
+        self::assertSame(1, $repository->refresh());
+        $this->authority = new AttestationAuthority(withRevocationList: true);
+        $this->clock = new MockClock();
+        $this->feeds[] = $this->blob(2);
+
+        try {
+            $this->repository()->refresh();
+            self::fail('Expected the feed with unavailable certificate revocation information to be rejected');
+        } catch (\RuntimeException $e) {
+            self::assertSame('The FIDO metadata feed could not be verified', $e->getMessage());
+            self::assertSame(1, $this->revocationListRequests);
+            self::assertSame(1, (int) self::getEM()->getConnection()->fetchOne('SELECT sequenceNumber FROM fido_metadata_feed'));
+            self::assertNotNull($repository->findOneByAAGUID(AttestationAuthority::AAGUID));
+        }
+    }
+
     public function testAReplacementFeedRemovesModelsNoLongerListed(): void
     {
         $other = '1be3c47c-2338-42c0-9159-482b189d7862';
@@ -273,6 +293,12 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
     private function repository(?SerializerInterface $serializer = null, ?Connection $connection = null): FidoMetadataRepository
     {
         $client = new MockHttpClient(function (string $method, string $url): MockResponse {
+            if ($url === AttestationAuthority::CRL_URL) {
+                ++$this->revocationListRequests;
+
+                return new MockResponse('', ['http_code' => 503]);
+            }
+
             if (str_contains($url, 'rootr46')) {
                 return new MockResponse($this->authority->der($this->authority->root));
             }
@@ -281,7 +307,7 @@ class FidoMetadataRepositoryTest extends IntegrationTestCase
         });
 
         $validator = new FidoMetadataCertificateChainValidator(
-            new PhpCertificateChainValidator($client, $this->clock),
+            new PhpCertificateChainValidator($client, $this->clock, allowFailures: false),
             hash('sha256', $this->authority->der($this->authority->root)),
         );
 

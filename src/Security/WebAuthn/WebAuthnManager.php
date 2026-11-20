@@ -35,6 +35,7 @@ use Webauthn\Bundle\Security\Storage\Item;
 use Webauthn\Bundle\Service\PublicKeyCredentialCreationOptionsFactory;
 use Webauthn\Bundle\Service\PublicKeyCredentialRequestOptionsFactory;
 use Webauthn\CredentialRecord;
+use Webauthn\Exception\CertificateRevocationListException;
 use Webauthn\PublicKeyCredential;
 use Webauthn\PublicKeyCredentialCreationOptions;
 use Webauthn\PublicKeyCredentialDescriptor;
@@ -273,7 +274,7 @@ class WebAuthnManager
             }
 
             return $credential;
-        } catch (ExpiredWebAuthnChallengeException|FidoMetadataUnavailableException $e) {
+        } catch (CertificateRevocationListException|ExpiredWebAuthnChallengeException|FidoMetadataUnavailableException $e) {
             throw $e;
         } catch (\Throwable $e) {
             throw new BadCredentialsException($credentialType === CredentialType::Regular

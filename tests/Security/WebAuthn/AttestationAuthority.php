@@ -23,14 +23,19 @@ use Webauthn\MetadataService\Statement\MetadataStatement;
 class AttestationAuthority
 {
     public const string AAGUID = '9e458c98-0115-41f4-bc7b-b7ce86747111';
+    public const string CRL_URL = 'https://manufacturer.example.test/attestation.crl';
     public string $root = '';
     public string $certificate = '';
     private \OpenSSLAsymmetricKey $key;
 
-    public function __construct()
+    public function __construct(bool $withRevocationList = false)
     {
         $config = tempnam(sys_get_temp_dir(), 'webauthn-cert-');
         file_put_contents($config, "[req]\ndistinguished_name=dn\n[dn]\n[ca]\nbasicConstraints=critical,CA:TRUE\nkeyUsage=critical,keyCertSign,cRLSign\nsubjectKeyIdentifier=hash\n[leaf]\nbasicConstraints=critical,CA:FALSE\nkeyUsage=digitalSignature\nsubjectKeyIdentifier=hash\nauthorityKeyIdentifier=keyid,issuer\n");
+
+        if ($withRevocationList) {
+            file_put_contents($config, 'crlDistributionPoints=URI:'.self::CRL_URL."\n", \FILE_APPEND);
+        }
 
         try {
             $options = ['config' => $config, 'digest_alg' => 'sha256'];

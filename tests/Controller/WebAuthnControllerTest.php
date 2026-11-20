@@ -37,6 +37,8 @@ use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Clock\NativeClock;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -52,6 +54,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     private MockClock $clock;
     private string $csrf;
     private FidoMetadataRepository $metadata;
+    private MockHttpClient $httpClient;
     private string $metadataFailure = '';
     /** @var list<string> */
     private array $metadataStatuses = [];
@@ -59,6 +62,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     protected function setUp(): void
     {
         parent::setUp();
+        self::getContainer()->set('http_client', $this->httpClient = new MockHttpClient());
         Clock::set($this->clock = new MockClock('2026-11-05 12:00:00 UTC'));
         $this->user = self::createUser('keys', 'keys@example.org', roles: ['ROLE_ADMIN']);
         $this->user->setPassword(self::getContainer()->get(UserPasswordHasherInterface::class)->hashPassword($this->user, 'existing-password'));
@@ -224,6 +228,27 @@ class WebAuthnControllerTest extends IntegrationTestCase
             'credential' => $this->authenticator->register($options, $failure === 'self'),
         ]);
         self::assertResponseStatusCodeSame(400);
+        self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
+        self::assertSame(0, self::getEM()->getRepository(WebAuthnCredential::class)->count([]));
+        self::assertEmailCount(0);
+    }
+
+    #[TestWith([503, ''])]
+    #[TestWith([200, 'unreadable list'])]
+    public function testHardwareEnrollmentRequiresAReadableAdvertisedRevocationList(int $status, string $body): void
+    {
+        $this->configureHardwareMetadata(authority: new AttestationAuthority(withRevocationList: true));
+        $response = new MockResponse($body, ['http_code' => $status]);
+        $this->httpClient->setResponseFactory([$response]);
+
+        $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
+        self::assertResponseIsSuccessful();
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/profile/security/keys/register', [
+            '_token' => $this->csrf, 'name' => 'My key', 'credential' => $this->authenticator->register($options),
+        ]);
+        self::assertSame(AttestationAuthority::CRL_URL, $response->getRequestUrl());
+        self::assertResponseStatusCodeSame(503);
         self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
         self::assertSame(0, self::getEM()->getRepository(WebAuthnCredential::class)->count([]));
         self::assertEmailCount(0);
@@ -397,10 +422,10 @@ class WebAuthnControllerTest extends IntegrationTestCase
     }
 
     /** @param list<string>|null $statuses */
-    private function configureHardwareMetadata(string $failure = '', ?array $statuses = null): void
+    private function configureHardwareMetadata(string $failure = '', ?array $statuses = null, ?AttestationAuthority $authority = null): void
     {
         Clock::set($this->clock = new MockClock());
-        $authority = new AttestationAuthority();
+        $authority ??= new AttestationAuthority();
         $statement = $authority->statement();
         $this->authenticator->attestation = \in_array($failure, ['none', 'self'], true) ? null : $authority;
         $this->authenticator->aaguid = $failure === 'nil' ? '00000000-0000-0000-0000-000000000000' : $authority::AAGUID;

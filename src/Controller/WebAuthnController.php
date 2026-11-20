@@ -38,6 +38,7 @@ use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationExc
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Webauthn\Exception\CertificateRevocationListException;
 
 class WebAuthnController extends Controller
 {
@@ -109,7 +110,7 @@ class WebAuthnController extends Controller
 
             return JsonResponse::fromJsonString($this->webAuthn->startRegistration($user, $request->request->getString('name'), $credentialType), headers: ['Cache-Control' => 'no-store']);
         } catch (FidoMetadataUnavailableException $e) {
-            return $this->unavailableMetadataResponse($e);
+            return $this->unavailableAttestationResponse($e);
         } catch (\InvalidArgumentException $e) {
             return $this->json(['error' => $this->translator->trans($e->getMessage())], 400);
         }
@@ -127,8 +128,8 @@ class WebAuthnController extends Controller
 
         try {
             $backupCode = $this->webAuthn->register($user, $request->request->getString('credential'), $request->request->getString('name'));
-        } catch (FidoMetadataUnavailableException $e) {
-            return $this->unavailableMetadataResponse($e);
+        } catch (CertificateRevocationListException|FidoMetadataUnavailableException $e) {
+            return $this->unavailableAttestationResponse($e);
         } catch (ServiceUnavailableHttpException $e) {
             return $this->json(['error' => $e->getMessage()], $e->getStatusCode(), $e->getHeaders());
         } catch (BadCredentialsException|\InvalidArgumentException $e) {
@@ -300,7 +301,7 @@ class WebAuthnController extends Controller
         }
     }
 
-    private function unavailableMetadataResponse(FidoMetadataUnavailableException $e): JsonResponse
+    private function unavailableAttestationResponse(CertificateRevocationListException|FidoMetadataUnavailableException $e): JsonResponse
     {
         $this->logger->error('Hardware security key enrollment blocked: '.$e->getMessage(), ['exception' => $e]);
 
