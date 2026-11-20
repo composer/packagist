@@ -94,6 +94,7 @@ class TransparencyLogController extends Controller
             'transparencyLogDisplays' => $displayFactory->build($entries, $packageCounts),
             'paginator' => $paginator,
             'selectableTypes' => $this->selectableTypes($includeHiddenTypes),
+            'hiddenTypes' => $includeHiddenTypes ? TransparencyLogEventType::temporarilyHiddenTypes() : [],
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,
             'dateTimeToFilter' => $dateTimeToFilter,

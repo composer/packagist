@@ -86,6 +86,7 @@
         displays: transparencyLogDisplays,
         emptyMessage: 'No transparency log entries found.',
         surroundingLogsRoute: 'view_transparency_log',
+        adminOnlyTypes: hiddenTypes,
     } only %}
 
     {% if transparencyLogDisplays|length and paginator.haveToPaginate() %}

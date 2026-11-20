@@ -25,6 +25,8 @@ readonly class EmailChangedDisplay extends AbstractLogDisplay
         public string $emailTo,
         ActorDisplay $actor,
         ?string $ip,
+        /** The viewer only sees the address thanks to ROLE_AUDITOR, so the template flags it. */
+        public bool $emailAuditorOnly = false,
     ) {
         parent::__construct($datetime, $actor, $ip);
     }

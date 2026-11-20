@@ -2795,6 +2795,28 @@ body {
     container-type: inline-size;
 }
 
+// what a log only shows to admins, so they can tell it apart from what everyone else sees
+.admin-only {
+    background-color: var(--bs-warning-bg-subtle);
+}
+
+span.admin-only {
+    padding: 0 0.25em;
+    border-radius: 3px;
+}
+
+// Bootstrap paints table cells from --bs-table-bg, a background on the row or cell is covered
+.audit-log-table {
+    tr.admin-only > *,
+    .audit-log-ip.admin-only {
+        --bs-table-bg: var(--bs-warning-bg-subtle);
+    }
+}
+
+.admin-only-legend {
+    font-size: 0.875em;
+}
+
 @container (max-width: 800px) {
     .audit-log-table {
         .audit-log-ip {

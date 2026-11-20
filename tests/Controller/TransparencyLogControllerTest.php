@@ -156,6 +156,26 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertContains('Package created', $types);
     }
 
+    public function testAuditorSeesSecondFactorEventsFlaggedAsAdminOnly(): void
+    {
+        $auditor = self::createUser('auditor', 'auditor@example.com', roles: ['ROLE_AUDITOR']);
+        $this->store($auditor);
+        $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$auditor]);
+        $this->store($package);
+
+        $this->getEM()->getRepository(AuditRecord::class)->insert(AuditRecord::totpAuthenticationDeactivated($auditor, $auditor, 'x'));
+        $this->runProjector();
+        $this->client->loginUser($auditor);
+
+        $crawler = $this->client->request('GET', '/transparency-log');
+        static::assertResponseIsSuccessful();
+
+        static::assertCount(1, $crawler->filter('[data-test=admin-only-legend]'));
+        $flagged = $crawler->filter('tr.admin-only [data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
+        static::assertSame(['Authenticator app removed'], $flagged);
+        static::assertGreaterThan(1, $crawler->filter('[data-test="log-type"]')->count());
+    }
+
     /**
      * The display templates are shared with the internal audit log, which does render the internal
      * moderation note, so make sure the public page keeps leaving it out.
