@@ -433,6 +433,10 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testFirstKeyEnablesMfaAndShowsBackupCodeOnce(): void
     {
         $credential = $this->register();
+        self::assertEmailCount(1);
+        self::assertEmailHeaderSame(self::getMailerMessage(), 'Subject', 'Passkey or security key added on Packagist.org');
+        self::assertEmailTextBodyContains(self::getMailerMessage(), 'A passkey or security key was added to your Packagist.org account.');
+
         self::assertSame('My key', $credential->name);
         self::assertFalse($this->freshUser()->isTotpAuthenticationEnabled());
         self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
@@ -613,6 +617,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $session = $this->client->getSession();
         self::assertNotNull($session);
         self::assertSame(['Account security settings have changed. Please sign in again.'], $session->getFlashBag()->peek('error'));
+        self::assertEmailCount(0);
         self::assertNull(self::getEM()->getConnection()->fetchOne('SELECT revokedAt FROM webauthn_credential WHERE id = ?', [$credential->id]));
         $this->client->followRedirect();
         self::assertResponseRedirects('/login/');
@@ -664,6 +669,9 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertCount(1, $this->freshUser()->getWebAuthnCredentials());
         $this->client->submit($crawler->selectButton('Remove key')->form());
         self::assertResponseRedirects('/profile/security/keys');
+        self::assertEmailCount(1);
+        self::assertEmailHeaderSame(self::getMailerMessage(), 'Subject', 'Passkey or security key removed on Packagist.org');
+        self::assertEmailTextBodyContains(self::getMailerMessage(), 'A passkey or security key was removed from your Packagist.org account.');
 
         $user = $this->freshUser();
         self::getEM()->refresh($user);

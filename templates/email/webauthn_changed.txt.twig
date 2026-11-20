@@ -1,6 +1,6 @@
 Hello {{ username }},
 
-The passkeys and security keys on your Packagist.org account have changed.
+A passkey or security key was {{ action }} {{ action == 'added' ? 'to' : 'from' }} your Packagist.org account.
 Review your security settings: {{ url('security_overview') }}
 
 If you did not make this change, please contact support.
