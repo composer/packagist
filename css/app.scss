@@ -2807,6 +2807,20 @@ body {
     }
 }
 
+a.log-search-link {
+    font-size: 0.6em;
+    font-weight: normal;
+    vertical-align: 0.2em;
+    color: var(--bs-secondary-color);
+    opacity: 0.6;
+    text-decoration: none;
+
+    &:hover, &:focus-visible {
+        color: var(--bs-link-hover-color);
+        opacity: 1;
+    }
+}
+
 .audit-log-ref {
     width: 103px;
     text-overflow: ellipsis;
