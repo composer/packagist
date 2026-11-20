@@ -127,9 +127,9 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         static::assertStringNotContainsString('remote_id', $details);
     }
 
-    public function testSecondFactorEventsAreHiddenEvenWhenRequestedExplicitly(): void
+    public function testSecondFactorEventsAreShownAndFilterable(): void
     {
-        $user = self::createUser('hidden', 'hidden@example.com');
+        $user = self::createUser('secondfactor', 'secondfactor@example.com');
         $this->store($user);
         $package = self::createPackage('vendor1/package1', 'https://github.com/vendor1/package1', maintainers: [$user]);
         $this->store($package);
@@ -147,12 +147,15 @@ class TransparencyLogControllerTest extends IntegrationTestCase
         ]));
         static::assertResponseIsSuccessful();
 
-        // The hidden type is dropped from the filter, so this falls back to the unfiltered list, which
-        // itself excludes it. The rows are still projected, see TransparencyLogProjectorTest.
         $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
-        static::assertNotContains('Authenticator app removed', $types);
-        static::assertNotContains('Passkey or security key added', $types);
-        static::assertCount(0, $crawler->filter('option[value="webauthn_credential_added"]'));
+        sort($types);
+        static::assertSame(['Authenticator app removed', 'Passkey or security key added'], $types);
+        static::assertCount(1, $crawler->filter('option[value="webauthn_credential_added"]'));
+
+        $crawler = $this->client->request('GET', '/transparency-log');
+        $types = $crawler->filter('[data-test="log-type"]')->each(static fn ($element) => trim($element->text()));
+        static::assertContains('Authenticator app removed', $types);
+        static::assertContains('Passkey or security key added', $types);
         static::assertContains('Package created', $types);
     }
 
@@ -844,8 +847,10 @@ class TransparencyLogControllerTest extends IntegrationTestCase
 
         $security = $groups->eq(3)->filter('option')->each(fn ($option) => $option->attr('value'));
         static::assertContains(TransparencyLogEventType::PasswordChanged->value, $security);
-        static::assertNotContains(TransparencyLogEventType::TotpAuthenticationActivated->value, $security);
-        static::assertNotContains(TransparencyLogEventType::TotpAuthenticationDeactivated->value, $security);
+        static::assertContains(TransparencyLogEventType::TotpAuthenticationActivated->value, $security);
+        static::assertContains(TransparencyLogEventType::TotpAuthenticationDeactivated->value, $security);
+        static::assertContains(TransparencyLogEventType::WebAuthnCredentialAdded->value, $security);
+        static::assertContains(TransparencyLogEventType::WebAuthnCredentialDeleted->value, $security);
     }
 
     /**

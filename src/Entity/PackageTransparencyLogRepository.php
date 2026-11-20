@@ -12,7 +12,6 @@
 
 namespace App\Entity;
 
-use App\Log\TransparencyLogEventType;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\QueryBuilder;
@@ -143,13 +142,11 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
     /**
      * All entries, newest event first. Ordered by event time rather than leafIndex, so a late or
      * backfilled entry shows up where it happened instead of at the top.
-     * {@see TransparencyLogEventType::temporarilyHiddenTypes()} are projected but only shown when
-     * $includeHiddenTypes is set.
      *
      * With $showAccountEventsOnce, only the entry with the lowest packageId of each account event is
      * shown, as a stand-in for all its packages.
      */
-    public function getQueryBuilderForPublicView(bool $includeHiddenTypes = false, bool $showAccountEventsOnce = false): QueryBuilder
+    public function getQueryBuilderForPublicView(bool $showAccountEventsOnce = false): QueryBuilder
     {
         $qb = $this->createQueryBuilder('t')
             ->orderBy('t.datetime', \SortDirection::Descending)
@@ -158,19 +155,6 @@ class PackageTransparencyLogRepository extends ServiceEntityRepository
         if ($showAccountEventsOnce) {
             // NOT EXISTS on source_package_uniq stops at the first sibling with a lower packageId.
             $qb->andWhere('NOT EXISTS (SELECT sibling.id FROM '.PackageTransparencyLog::class.' sibling WHERE sibling.sourceAuditLogId = t.sourceAuditLogId AND sibling.packageId < t.packageId)');
-        }
-
-        if ($includeHiddenTypes) {
-            return $qb;
-        }
-
-        $hiddenTypes = array_map(
-            static fn (TransparencyLogEventType $type): string => $type->value,
-            TransparencyLogEventType::temporarilyHiddenTypes(),
-        );
-        if ($hiddenTypes !== []) {
-            $qb->andWhere('t.type NOT IN (:hiddenTypes)')
-                ->setParameter('hiddenTypes', $hiddenTypes);
         }
 
         return $qb;

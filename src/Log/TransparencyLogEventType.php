@@ -166,14 +166,6 @@ enum TransparencyLogEventType: string implements LogEventType
     }
 
     /**
-     * @return list<self>
-     */
-    public static function temporarilyHiddenTypes(): array
-    {
-        return [self::TotpAuthenticationActivated, self::TotpAuthenticationDeactivated, self::WebAuthnCredentialAdded, self::WebAuthnCredentialDeleted];
-    }
-
-    /**
      * The subset of {@see self::projectedAuditLogEventTypes()} whose audit row already has a package,
      * so it projects 1:1 with no fan-out and can safely be backfilled from audit_log.
      *

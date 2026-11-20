@@ -41,9 +41,6 @@ class TransparencyLogController extends Controller
     #[Route(path: '/transparency-log', name: 'view_transparency_log', methods: ['GET'])]
     public function viewTransparencyLog(Request $request, PackageTransparencyLogRepository $repository, TransparencyLogDisplayFactory $displayFactory, PositionResolver $positionResolver): Response
     {
-        // Auditors see everything; the temporarily-hidden types stay hidden for everyone else.
-        $includeHiddenTypes = $this->isGranted('ROLE_AUDITOR');
-
         $dateTimeFromFilter = DateTimeFromFilter::fromQuery($request->query);
         $dateTimeToFilter = DateTimeToFilter::fromQuery($request->query);
 
@@ -62,7 +59,7 @@ class TransparencyLogController extends Controller
 
         /** @var QueryFilterInterface[] $filters */
         $filters = [
-            EventTypeFilter::fromQuery($request->query, $includeHiddenTypes),
+            EventTypeFilter::fromQuery($request->query),
             ActorFilter::fromQuery($request->query),
             UserFilter::fromQuery($request->query),
             UserIdFilter::fromQuery($request->query),
@@ -71,7 +68,7 @@ class TransparencyLogController extends Controller
             $dateTimeToFilter,
         ];
 
-        $qb = $repository->getQueryBuilderForPublicView($includeHiddenTypes, $showAccountEventsOnce);
+        $qb = $repository->getQueryBuilderForPublicView($showAccountEventsOnce);
 
         $selectedFilters = [];
         foreach ($filters as $filter) {
@@ -93,7 +90,7 @@ class TransparencyLogController extends Controller
         return $this->render('log/transparency_log.html.twig', [
             'transparencyLogDisplays' => $displayFactory->build($entries, $packageCounts),
             'paginator' => $paginator,
-            'selectableTypes' => $this->selectableTypes($includeHiddenTypes),
+            'selectableTypes' => $this->selectableTypes(),
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,
             'dateTimeToFilter' => $dateTimeToFilter,
@@ -103,15 +100,11 @@ class TransparencyLogController extends Controller
     /**
      * @return array<string, list<TransparencyLogEventType>> types by category, in {@see TransparencyLogEventType::CATEGORY_ORDER}
      */
-    private function selectableTypes(bool $includeHiddenTypes): array
+    private function selectableTypes(): array
     {
-        $hidden = $includeHiddenTypes ? [] : TransparencyLogEventType::temporarilyHiddenTypes();
-
         $grouped = array_fill_keys(TransparencyLogEventType::CATEGORY_ORDER, []);
         foreach (TransparencyLogEventType::cases() as $type) {
-            if (!\in_array($type, $hidden, true)) {
-                $grouped[$type->category()][] = $type;
-            }
+            $grouped[$type->category()][] = $type;
         }
 
         return array_filter($grouped);
