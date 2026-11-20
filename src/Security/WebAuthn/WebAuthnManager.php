@@ -124,7 +124,7 @@ class WebAuthnManager
             && (!$hardwareOnly || $credential->credentialType === CredentialType::VerifiedHardware));
 
         if ($available === []) {
-            throw new BadCredentialsException('webauthn.error.disabled_credential');
+            throw $this->disabledCredentialException($user);
         }
 
         $options = $this->requestOptions->create('packagist', $this->descriptors(array_values($available)));
@@ -234,8 +234,15 @@ class WebAuthnManager
                 $this->em->persist(AuditRecord::webAuthnCredentialDisabled($credential, $e->getMessage()));
             });
 
-            throw new BadCredentialsException('webauthn.error.disabled_credential', previous: $e);
+            throw $this->disabledCredentialException($credential->user, $e);
         }
+    }
+
+    private function disabledCredentialException(User $user, ?AttestationRejectedException $previous = null): BadCredentialsException
+    {
+        $message = $this->secondFactors->canUseBackupCodes($user) ? 'webauthn.error.disabled_credential' : 'webauthn.error.disabled_credential_no_backup';
+
+        return new BadCredentialsException($message, previous: $previous);
     }
 
     private function persistChange(WebAuthnCredential $credential, AuditLogEventType $type, ?string $previousName = null): void

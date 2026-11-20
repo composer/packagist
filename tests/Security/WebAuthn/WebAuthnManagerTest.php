@@ -38,6 +38,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
+use Symfony\Component\Security\Core\Role\RoleHierarchy;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
 use Webauthn\AttestationStatement\AttestationStatementSupportManager;
@@ -200,7 +201,7 @@ class WebAuthnManagerTest extends TestCase
             $em,
             $notifier,
             $events,
-            new SecondFactorManager($events, $em, $requests, $notifier, $locker, $users),
+            new SecondFactorManager($events, $em, $requests, $notifier, $locker, $users, new RoleHierarchy([])),
             new AttestationPolicy($this->createStub(FidoMetadataRepository::class)),
             new SecondFactorProofStore($requests, new NativeClock()),
             'packagist.wip',

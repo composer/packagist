@@ -426,7 +426,7 @@ class UserController extends Controller
 
         $backupCode = $req->getSession()->remove('backup_code');
 
-        if (empty($backupCode)) {
+        if (empty($backupCode) || $this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('security_overview');
         }
 

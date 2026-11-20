@@ -16,6 +16,7 @@ use App\Entity\User;
 use App\Security\Voter\SecondFactorVoter;
 use App\Tests\IntegrationTestCase;
 use App\Tests\Mock\TotpAuthenticatorStub;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\Clock\Clock;
 use Symfony\Component\Clock\MockClock;
 use Symfony\Component\Clock\NativeClock;
@@ -152,9 +153,31 @@ class SecondFactorAuthenticationTest extends IntegrationTestCase
         $this->user->setBackupCode('abc12345');
         self::getEM()->flush();
         $crawler = $this->beginLogin();
+        self::assertSelectorTextContains('details', 'Enter your backup code in the form above instead. Using it disables your configured second factors.');
         $this->client->submit($crawler->filter('form[action="/2fa-check"]')->form(), ['_auth_code' => 'abc12345']);
         self::assertResponseRedirects();
         $this->assertAuthenticationChecks(false, false);
+    }
+
+    #[TestWith(['ROLE_ADMIN'])]
+    #[TestWith(['ROLE_SUPERADMIN'])]
+    public function testPromotionBlocksAnExistingBackupCodeButAllowsTotp(string $role): void
+    {
+        $this->user->setBackupCode('abc12345');
+        $this->user->addRole($role);
+        self::getEM()->flush();
+
+        $crawler = $this->beginLogin();
+        self::assertStringNotContainsString('backup code', $crawler->filter('details')->text());
+        self::assertCount(1, $crawler->selectLink('Request a reset'));
+        $this->client->submit($crawler->filter('form[action="/2fa-check"]')->form(), ['_auth_code' => 'abc12345']);
+        self::assertResponseRedirects('/2fa');
+        $this->client->request('GET', '/profile/security');
+        self::assertResponseRedirects('/2fa');
+
+        $crawler = $this->client->followRedirect();
+        $this->client->submit($crawler->filter('form[action="/2fa-check"]')->form(), ['_auth_code' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);
+        $this->assertAuthenticationChecks(true, true);
     }
 
     private function assertLoginRejectsUsedCode(string $password): void

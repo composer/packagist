@@ -23,9 +23,11 @@ use PHPUnit\Framework\Attributes\TestWith;
 
 class UserControllerTest extends IntegrationTestCase
 {
-    public function testEnableTwoFactorCode(): void
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testEnableTwoFactorCode(bool $admin): void
     {
-        $user = self::createUser();
+        $user = self::createUser(roles: $admin ? ['ROLE_ADMIN'] : []);
         $this->store($user);
 
         $this->client->loginUser($user);
@@ -47,14 +49,19 @@ class UserControllerTest extends IntegrationTestCase
         $this->client->submit($form);
         $this->assertResponseStatusCodeSame(302);
         $crawler = $this->client->followRedirect();
-        $backupCode = $crawler->filter('.two-factor-backup-code')->text();
+        $backupCode = $crawler->filter('.two-factor-backup-code');
+        self::assertCount($admin ? 0 : 1, $backupCode);
 
         $em = self::getEM();
         $em->clear();
         $storedUser = $em->getRepository(User::class)->find($user->getId());
         self::assertNotNull($storedUser);
         self::assertTrue($storedUser->isTotpAuthenticationEnabled());
-        self::assertTrue($storedUser->isBackupCode($backupCode));
+        if ($admin) {
+            self::assertNull($em->getConnection()->fetchOne('SELECT backupCode FROM fos_user WHERE id = ?', [$storedUser->getId()]));
+        } else {
+            self::assertTrue($storedUser->isBackupCode($backupCode->text()));
+        }
 
         $crawler = $this->client->request('GET', '/profile/security/verify-totp');
         $this->client->submit($crawler->selectButton('Confirm identity')->form(), ['verify_totp[code]' => TotpAuthenticatorStub::MOCKED_VALID_CODE]);

@@ -18,7 +18,6 @@ use App\Event\SecondFactorRemovedEvent;
 use App\Event\SecondFactorsResetEvent;
 use App\Service\Locker;
 use Doctrine\ORM\EntityManagerInterface;
-use Scheb\TwoFactorBundle\Model\BackupCodeInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Backup\BackupCodeManagerInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -26,7 +25,9 @@ use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Twig\Attribute\AsTwigFunction;
 
 class SecondFactorManager implements BackupCodeManagerInterface
 {
@@ -37,6 +38,7 @@ class SecondFactorManager implements BackupCodeManagerInterface
         private UserNotifier $userNotifier,
         private Locker $locker,
         private UserRepository $users,
+        private RoleHierarchyInterface $roles,
     ) {
     }
 
@@ -67,17 +69,23 @@ class SecondFactorManager implements BackupCodeManagerInterface
         }
     }
 
-    public function generateBackupCode(User $user): string
+    #[AsTwigFunction(name: 'can_use_backup_codes')]
+    public function canUseBackupCodes(User $user): bool
     {
+        // The two-factor challenge token does not carry the account's admin roles
+        return !\in_array('ROLE_ADMIN', $this->roles->getReachableRoleNames($user->getRoles()), true);
+    }
+
+    public function generateBackupCode(User $user): ?string
+    {
+        if (!$this->canUseBackupCodes($user)) {
+            return null;
+        }
+
         $code = bin2hex(random_bytes(4));
         $user->setBackupCode($code);
 
         return $code;
-    }
-
-    public function isValidBackupCode(BackupCodeInterface $user, string $code): bool
-    {
-        return $user->isBackupCode($code);
     }
 
     private function clearIfNoSecondFactorsRemain(User $user): void
@@ -95,7 +103,7 @@ class SecondFactorManager implements BackupCodeManagerInterface
 
     public function isBackupCode(object $user, string $code): bool
     {
-        return $user instanceof BackupCodeInterface && $this->isValidBackupCode($user, $code);
+        return $user instanceof User && $this->canUseBackupCodes($user) && $user->isBackupCode($code);
     }
 
     public function notifySupportReset(User $user): void
@@ -128,7 +136,7 @@ class SecondFactorManager implements BackupCodeManagerInterface
 
         try {
             $factorsReset = $this->withAccountLock($user, function () use ($user, $code): bool {
-                if (!$this->isValidBackupCode($user, $code)) {
+                if (!$this->isBackupCode($user, $code)) {
                     throw new BadCredentialsException('Invalid backup code.');
                 }
 

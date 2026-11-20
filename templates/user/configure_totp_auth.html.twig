@@ -3,7 +3,7 @@
 {% block title %}Security - {{ parent() }}{% endblock %}
 
 {% block security_content %}
-    {% if backup_code %}
+    {% if backup_code and can_use_backup_codes(user) %}
         <div class="alert alert-info">
             <p>If you lose access to your second factors, you can use this one-time backup code to sign in: <code>{{ backup_code }}</code></p>
             <p><strong>Take a moment to record this in a safe place. This code will not be shown again!</strong></p>

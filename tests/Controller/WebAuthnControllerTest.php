@@ -197,7 +197,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSame('Test hardware key', $audit->attributes['authenticatorDescription']);
         $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorTextContains('.badge', 'Verified hardware security key');
-        self::assertSelectorExists('.two-factor-backup-code');
+        self::assertSelectorNotExists('.two-factor-backup-code');
         $this->beginLogin();
         $this->finishLoginWithKey();
         $this->client->request('GET', '/profile/security/keys');
@@ -482,6 +482,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $credential = $this->register('Hardware key', true);
         $this->verify();
         $this->assertWebAuthnProof(true, true);
+        $this->freshUser()->removeRole('ROLE_ADMIN');
         $this->freshUser()->setBackupCode('keep1234');
         self::getEM()->flush();
         $version = $this->freshUser()->getSessionBuster();
@@ -637,7 +638,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSame(0, self::getEM()->getRepository(AuditRecord::class)->count(['type' => AuditLogEventType::WebAuthnCredentialDisabled]));
     }
 
-    public function testFirstKeyEnablesMfaAndShowsBackupCodeOnce(): void
+    public function testFirstAdminKeyEnablesMfaWithoutIssuingABackupCode(): void
     {
         $credential = $this->register();
         self::assertEmailCount(1);
@@ -647,15 +648,11 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSame('My key', $credential->name);
         self::assertFalse($this->freshUser()->isTotpAuthenticationEnabled());
         self::assertTrue($this->freshUser()->hasSecondFactorAuthenticationEnabled());
-        $crawler = $this->client->request('GET', '/profile/security/keys');
+        $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorNotExists('form[data-webauthn="register"]');
         self::assertSelectorExists('form[data-webauthn="verify"]');
-        $backupCode = $crawler->filter('.two-factor-backup-code');
-        self::assertCount(1, $backupCode);
-        self::getEM()->clear();
-        self::assertTrue($this->freshUser()->isBackupCode($backupCode->text()));
+        self::assertNull(self::getEM()->getConnection()->fetchOne('SELECT backupCode FROM fos_user WHERE id = ?', [$this->user->getId()]));
         self::assertSelectorTextContains('ul[aria-label="Registered keys"] h5', $credential->name);
-        $this->client->request('GET', '/profile/security/keys');
         self::assertSelectorNotExists('.two-factor-backup-code');
         $audit = self::getEM()->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::WebAuthnCredentialAdded, 'userId' => $this->user->getId()]);
         self::assertNotNull($audit);
@@ -871,7 +868,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
 
         if ($withTotp) {
             self::assertSelectorNotExists('.security-settings .text-danger');
-            self::assertSelectorTextContains('.security-settings', 'Your other second factors and backup code will remain enabled.');
+            self::assertSelectorTextContains('.security-settings', 'Your other second factors will remain enabled.');
         } else {
             self::assertSelectorTextContains('.security-settings .text-danger', 'This is your last second factor.');
         }
@@ -1340,6 +1337,29 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertFalse($this->freshUser()->isTotpAuthenticationEnabled());
     }
 
+    public function testAdminCannotSignInWithAnExistingBackupCodeInsteadOfAKey(): void
+    {
+        $credential = $this->register();
+        $user = $this->freshUser();
+        $user->setBackupCode('abc12345');
+        self::getEM()->flush();
+        $version = $user->getSessionBuster();
+
+        $crawler = $this->beginLogin();
+        self::assertSelectorNotExists('#backup-code');
+        self::assertCount(1, $crawler->selectLink('Request a reset'));
+        $this->client->submit($crawler->filter('form[data-webauthn="login"]')->form(), ['_auth_code' => 'abc12345']);
+        self::assertResponseRedirects('/2fa');
+        $this->client->request('GET', '/profile/security');
+        self::assertResponseRedirects('/2fa');
+        $user = $this->freshUser();
+        self::assertNotNull($user->findWebAuthnCredential($credential->id));
+        self::assertSame($version, $user->getSessionBuster());
+        $this->finishLoginWithKey();
+        $this->client->request('GET', '/profile/security');
+        self::assertResponseIsSuccessful();
+    }
+
     #[TestWith([false, false])]
     #[TestWith([true, false])]
     #[TestWith([false, true])]
@@ -1480,14 +1500,18 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSelectorTextContains('.alert-danger', 'This passkey request expired or was replaced. Start again.');
     }
 
-    public function testRecoveryRejectsABackupCodeChangedAfterLoadingTheAccount(): void
+    #[TestWith([false])]
+    #[TestWith([true])]
+    public function testRecoveryRechecksTheBackupCodeAndRolesUnderTheLock(bool $promoted): void
     {
         $this->register();
         $user = $this->freshUser();
+        $user->removeRole('ROLE_ADMIN');
         $user->setBackupCode('old12345');
         $em = self::getEM();
         $em->flush();
-        $em->getConnection()->update('fos_user', ['backupCode' => 'new12345'], ['id' => $user->getId()]);
+        $changes = $promoted ? ['roles' => '["ROLE_ADMIN"]'] : ['backupCode' => 'new12345'];
+        $em->getConnection()->update('fos_user', $changes, ['id' => $user->getId()]);
 
         $manager = self::getService(SecondFactorManager::class);
         self::assertTrue($manager->isBackupCode($user, 'old12345'));
@@ -1497,7 +1521,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
             $manager->invalidateBackupCode($user, 'old12345');
             self::fail('Expected stale backup code to be rejected');
         } catch (BadCredentialsException) {
-            self::assertTrue($user->isBackupCode('new12345'));
+            self::assertTrue($user->isBackupCode($promoted ? 'old12345' : 'new12345'));
             self::assertCount(1, $user->getWebAuthnCredentials());
             self::assertEmailCount($emailCount);
         }
@@ -1527,6 +1551,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     {
         $credential = $this->register();
         $user = $this->freshUser();
+        $user->removeRole('ROLE_ADMIN');
         $user->setTotpSecret('JBSWY3DPEHPK3PXP');
         $user->setBackupCode('abc12345');
         $em = self::getEM();
@@ -1609,6 +1634,10 @@ class WebAuthnControllerTest extends IntegrationTestCase
     public function testTrustedCookieIsRevokedAfterRecoveryAndReenrollment(string $action): void
     {
         $credential = $this->register();
+
+        if ($action === 'backup') {
+            $this->freshUser()->removeRole('ROLE_ADMIN');
+        }
         $this->freshUser()->setBackupCode('abc12345');
         self::getEM()->flush();
         $this->beginLogin();
@@ -1642,6 +1671,10 @@ class WebAuthnControllerTest extends IntegrationTestCase
 
         if ($action !== 'sessions') {
             self::assertFalse($user->hasSecondFactorAuthenticationEnabled());
+            if ($action === 'backup') {
+                $user->addRole('ROLE_ADMIN');
+                self::getEM()->flush();
+            }
             $this->client->loginUser($user);
             $crawler = $this->client->request('GET', '/profile/security/keys');
             $this->csrf = $crawler->filter('form[data-webauthn="register"] input[name="_token"]')->attr('value');

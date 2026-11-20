@@ -6,7 +6,7 @@
     <h3>Passkeys and security keys</h3>
     <p>Use a passkey or security key as your second factor when signing in with your password or GitHub.</p>
 
-    {% if backup_code %}
+    {% if backup_code and can_use_backup_codes(user) %}
         <section class="account-form p-4 mb-4 bg-body-secondary border rounded" aria-labelledby="backup-code-heading">
             <h4 class="h5" id="backup-code-heading">Save your backup code</h4>
             <p>Keep this one-time code somewhere safe. You can use it to sign in if you lose access to your second factors.</p>
@@ -74,7 +74,7 @@
                                 {% set trust = credential_trust[credential.id] %}
                                 {% if trust == 'disabled' or trust == 'rejected' %}
                                     <span class="badge text-bg-danger">{{ trust == 'disabled' ? 'Hardware security key disabled' : 'Hardware security key no longer trusted' }}</span>
-                                    <p class="mb-0">Use another second factor or your backup code to recover access.</p>
+                                    <p class="mb-0">Use another second factor{% if can_use_backup_codes(user) %} or your backup code{% endif %} to recover access.</p>
                                 {% elseif trust == 'unavailable' %}
                                     <span class="badge text-bg-warning">Hardware verification temporarily unavailable</span>
                                     <p class="mb-0">This key cannot be used until current FIDO metadata is available. Use another second factor or try again later.</p>

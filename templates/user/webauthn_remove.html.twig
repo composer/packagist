@@ -7,9 +7,9 @@
     <p>You will no longer be able to use this passkey or security key to sign in.</p>
 
     {% if user.webAuthnCredentials|length == 1 and not user.totpAuthenticationEnabled %}
-        <p class="text-danger"><strong>This is your last second factor. Removing it will turn off two-factor authentication and invalidate your backup code.</strong></p>
+        <p class="text-danger"><strong>This is your last second factor. Removing it will turn off two-factor authentication{% if can_use_backup_codes(user) %} and invalidate your backup code{% endif %}.</strong></p>
     {% else %}
-        <p>Your other second factors and backup code will remain enabled.</p>
+        <p>Your other second factors{% if can_use_backup_codes(user) %} and backup code{% endif %} will remain enabled.</p>
     {% endif %}
 
     {% if credential.credentialType.requiresAttestation and user.webAuthnCredentials|filter(key => key.credentialType.requiresAttestation)|length == 1 %}
