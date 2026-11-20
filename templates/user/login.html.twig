@@ -56,18 +56,9 @@
 
                 <div class="form-actions">
                     <input class="btn btn-primary recaptcha-protected" type="submit" id="_submit" name="_submit" value="Log in" />
+                    <a class="btn btn-github" href="{{ path('login_github_start') }}"><span class="icon-github"></span>Log in with GitHub</a>
                 </div>
             </form>
-
-            <hr>
-        </div>
-
-        <div class="clearfix"></div>
-
-        <div class="col-lg-6">
-            <div class="form-actions">
-                <a class="btn btn-github" href="{{ path('login_github_start') }}"><span class="icon-github"></span>Log in with GitHub</a>
-            </div>
         </div>
     {% endif %}
 {% endblock %}
