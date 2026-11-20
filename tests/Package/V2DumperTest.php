@@ -495,9 +495,14 @@ class V2DumperTest extends IntegrationTestCase
         $package = self::createPackage('acme/package', 'https://example.com/acme/package');
         $this->store($package, $this->createVersion($package, '1.0.0'));
         $packageId = $package->getId();
-        $this->requestDumpAt($packageId, 'now');
+        $this->requestDumpAt($packageId, '-1 minute');
 
         $this->dumper->dump([$packageId]);
+        // Copy the recorded dump time rather than stamping "now" before the dump: the clock can tick
+        // over between the two, which leaves the mark a second older and legitimately covered.
+        $dumpedAt = self::getEM()->getConnection()->fetchOne('SELECT dumpedAtV2 FROM package WHERE id = :id', ['id' => $packageId]);
+        self::assertIsString($dumpedAt);
+        $this->requestDumpAt($packageId, $dumpedAt);
         self::assertContains($packageId, $this->stalePackageIds(), 'a same-second mark must be re-dumped rather than assumed covered');
 
         // The ambiguity only lasts as long as that one second: the next run to start in a later second
