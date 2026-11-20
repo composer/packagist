@@ -14,9 +14,11 @@ namespace App\Tests\Security\WebAuthn;
 
 use App\Security\WebAuthn\AttestationPolicy;
 use App\Security\WebAuthn\AuthenticatorRequirement;
+use App\Security\WebAuthn\CompromisedAuthenticatorException;
 use App\Security\WebAuthn\CredentialRequirement;
 use App\Security\WebAuthn\CredentialType;
 use App\Security\WebAuthn\FidoMetadataRepository;
+use App\Security\WebAuthn\FidoMetadataUnavailableException;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\NilUuid;
@@ -120,9 +122,9 @@ class AttestationPolicyTest extends TestCase
         $this->policy(['hardware'])->verify($record, [], [AuthenticatorRequirement::HardwareProtected]);
     }
 
-    public function testMissingStatusReportsAreRejected(): void
+    public function testMissingStatusReportsMakeMetadataUnavailable(): void
     {
-        $this->expectException(\UnexpectedValueException::class);
+        $this->expectException(FidoMetadataUnavailableException::class);
         $this->expectExceptionMessage('The authenticator has no trusted status report');
         $this->policy(['hardware'], [])->verify($this->record());
     }
@@ -134,7 +136,7 @@ class AttestationPolicyTest extends TestCase
     #[TestWith(['USER_VERIFICATION_BYPASS'])]
     public function testUnsafeReportsAreRejectedEvenAlongsideCertification(string $status): void
     {
-        $this->expectException(\UnexpectedValueException::class);
+        $this->expectException(CompromisedAuthenticatorException::class);
         $this->expectExceptionMessage($status);
         $this->policy(['hardware'], ['FIDO_CERTIFIED', $status, 'FIDO_CERTIFIED_L1'])->verify($this->record());
     }

@@ -12,6 +12,6 @@
 
 namespace App\Security\WebAuthn;
 
-final class AttestationRejectedException extends \UnexpectedValueException
+class AttestationRejectedException extends \UnexpectedValueException
 {
 }

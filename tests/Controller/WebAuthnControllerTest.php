@@ -210,14 +210,14 @@ class WebAuthnControllerTest extends IntegrationTestCase
     #[TestWith(['software'])]
     #[TestWith(['backup'])]
     #[TestWith(['nil'])]
-    #[TestWith(['no_status'])]
+    #[TestWith(['no_status', 503])]
     #[TestWith(['revoked'])]
     #[TestWith(['compromised'])]
     #[TestWith(['untrusted'])]
     #[TestWith(['platform'])]
     #[TestWith(['missing_attachment'])]
     #[TestWith(['mixed_attachment'])]
-    public function testHardwareEnrollmentRejectsUnverifiedKeys(string $failure): void
+    public function testHardwareEnrollmentRejectsUnverifiedKeys(string $failure, int $expectedStatus = 400): void
     {
         $this->configureHardwareMetadata($failure);
         $this->client->request('POST', '/profile/security/keys/options', ['_token' => $this->csrf, 'name' => 'My key', 'kind' => 'hardware']);
@@ -227,7 +227,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
             '_token' => $this->csrf, 'name' => 'Hardware key', 'kind' => 'regular',
             'credential' => $this->authenticator->register($options, $failure === 'self'),
         ]);
-        self::assertResponseStatusCodeSame(400);
+        self::assertResponseStatusCodeSame($expectedStatus);
         self::assertFalse($this->freshUser()->hasSecondFactorAuthenticationEnabled());
         self::assertSame(0, self::getEM()->getRepository(WebAuthnCredential::class)->count([]));
         self::assertEmailCount(0);
@@ -471,11 +471,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
     #[TestWith(['USER_KEY_PHYSICAL_COMPROMISE', false])]
     #[TestWith(['ATTESTATION_KEY_COMPROMISE', true])]
     #[TestWith(['USER_VERIFICATION_BYPASS', false])]
-    #[TestWith(['missing', false])]
-    #[TestWith(['missing', true])]
-    #[TestWith(['no_status', false])]
-    #[TestWith(['software', true])]
-    public function testCurrentMetadataDisablesAnEnrolledHardwareKey(string $failure, bool $signIn): void
+    public function testCompromiseReportDisablesAnEnrolledHardwareKey(string $status, bool $signIn): void
     {
         $this->configureHardwareMetadata();
         $this->authenticator->counter = 0;
@@ -498,14 +494,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseIsSuccessful();
         $options = json_decode($this->client->getResponse()->getContent(), true);
 
-        if ($failure === 'missing') {
-            $this->metadataFailure = 'missing';
-        } elseif ($failure === 'software') {
-            $this->metadata->findOneByAAGUID(AttestationAuthority::AAGUID)->keyProtection = ['software'];
-        } else {
-            $this->metadataStatuses = $failure === 'no_status' ? [] : ['FIDO_CERTIFIED', $failure, 'FIDO_CERTIFIED_L1'];
-        }
-
+        $this->metadataStatuses = ['FIDO_CERTIFIED', $status, 'FIDO_CERTIFIED_L1'];
         $response = $this->authenticator->authenticate($options);
 
         if ($signIn) {
@@ -548,7 +537,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertResponseStatusCodeSame(400);
         self::assertStringContainsString('no longer trusted', $this->client->getResponse()->getContent());
 
-        if ($failure === 'REVOKED' && !$signIn) {
+        if ($status === 'REVOKED' && !$signIn) {
             $crawler = $this->client->request('GET', '/2fa');
             $this->client->submit($crawler->selectButton('Use backup code')->form(), ['_auth_code' => 'keep1234']);
             self::assertResponseRedirects();
@@ -558,14 +547,23 @@ class WebAuthnControllerTest extends IntegrationTestCase
         }
     }
 
-    #[TestWith([false])]
-    #[TestWith([true])]
-    public function testMetadataOutageTemporarilyBlocksHardwareAssertions(bool $signIn): void
+    #[TestWith(['unavailable', false])]
+    #[TestWith(['unavailable', true])]
+    #[TestWith(['missing', false])]
+    #[TestWith(['missing', true])]
+    #[TestWith(['no_status', false])]
+    #[TestWith(['no_status', true])]
+    public function testUnavailableMetadataTemporarilyBlocksHardwareAssertions(string $failure, bool $signIn): void
     {
         $this->configureHardwareMetadata();
         $credential = $this->register('Hardware key', true);
         $version = $this->freshUser()->getSessionBuster();
-        $this->metadataFailure = 'unavailable';
+        $this->metadataFailure = $failure;
+
+        if ($failure === 'no_status') {
+            $this->metadataStatuses = [];
+        }
+
         $this->client->request('GET', '/profile/security/keys');
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.text-bg-warning', 'Hardware verification temporarily unavailable');
@@ -604,6 +602,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         self::assertSame(0, self::getEM()->getRepository(AuditRecord::class)->count(['type' => AuditLogEventType::WebAuthnCredentialDisabled]));
         $this->assertWebAuthnProof(false, false);
         $this->metadataFailure = '';
+        $this->metadataStatuses = ['FIDO_CERTIFIED'];
 
         if ($signIn) {
             $this->finishLoginWithKey();
@@ -611,6 +610,33 @@ class WebAuthnControllerTest extends IntegrationTestCase
             $this->verify();
         }
 
+        $this->assertWebAuthnProof(true, true);
+    }
+
+    public function testHardwarePolicyMismatchBlocksAssertionsUntilTheModelQualifiesAgain(): void
+    {
+        $this->configureHardwareMetadata();
+        $credential = $this->register('Hardware key', true);
+        $version = $this->freshUser()->getSessionBuster();
+        $statement = $this->metadata->findOneByAAGUID(AttestationAuthority::AAGUID);
+        self::assertNotNull($statement);
+        $statement->keyProtection = ['software'];
+
+        $this->client->request('POST', '/profile/security/keys/verify/options', ['_token' => $this->csrf]);
+        self::assertResponseIsSuccessful();
+        $options = json_decode($this->client->getResponse()->getContent(), true);
+        $this->client->request('POST', '/profile/security/keys/verify', [
+            '_token' => $this->csrf, 'credential' => $this->authenticator->authenticate($options),
+        ]);
+        self::assertResponseStatusCodeSame(400);
+        $this->assertWebAuthnProof(false, false);
+        self::getEM()->clear();
+        self::assertNull($this->freshUser()->findWebAuthnCredential($credential->id)->disabledAt);
+        self::assertSame($version, $this->freshUser()->getSessionBuster());
+        self::assertSame(0, self::getEM()->getRepository(AuditRecord::class)->count(['type' => AuditLogEventType::WebAuthnCredentialDisabled]));
+
+        $statement->keyProtection = ['hardware'];
+        $this->verify();
         $this->assertWebAuthnProof(true, true);
     }
 

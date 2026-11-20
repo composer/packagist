@@ -128,7 +128,7 @@ class WebAuthnManager
                 throw new BadCredentialsException('webauthn.error.no_usable_hardware_key');
             }
 
-            throw $this->disabledCredentialException($user);
+            throw $this->untrustedCredentialException($user);
         }
 
         $options = $this->requestOptions->create('packagist', $this->descriptors(array_values($available)));
@@ -231,18 +231,25 @@ class WebAuthnManager
         } catch (FidoMetadataUnavailableException $e) {
             throw new ServiceUnavailableHttpException(60, 'Hardware security key verification is temporarily unavailable. Try again later or use another second factor.', $e);
         } catch (AttestationRejectedException $e) {
-            $this->em->wrapInTransaction(function () use ($credential, $e): void {
-                // Keep disabled keys enrolled so losing the last usable key cannot turn off MFA
-                $credential->disable();
-                $credential->user->invalidateAllSessions();
-                $this->em->persist(AuditRecord::webAuthnCredentialDisabled($credential, $e->getMessage()));
-            });
+            if ($e instanceof CompromisedAuthenticatorException) {
+                $this->disableCompromisedCredential($credential, $e);
+            }
 
-            throw $this->disabledCredentialException($credential->user, $e);
+            throw $this->untrustedCredentialException($credential->user, $e);
         }
     }
 
-    private function disabledCredentialException(User $user, ?AttestationRejectedException $previous = null): BadCredentialsException
+    private function disableCompromisedCredential(WebAuthnCredential $credential, CompromisedAuthenticatorException $reason): void
+    {
+        $this->em->wrapInTransaction(function () use ($credential, $reason): void {
+            // Keep disabled keys enrolled so losing the last usable key cannot turn off MFA
+            $credential->disable();
+            $credential->user->invalidateAllSessions();
+            $this->em->persist(AuditRecord::webAuthnCredentialDisabled($credential, $reason->getMessage()));
+        });
+    }
+
+    private function untrustedCredentialException(User $user, ?AttestationRejectedException $previous = null): BadCredentialsException
     {
         $message = $this->secondFactors->canUseBackupCodes($user) ? 'webauthn.error.disabled_credential' : 'webauthn.error.disabled_credential_no_backup';
 

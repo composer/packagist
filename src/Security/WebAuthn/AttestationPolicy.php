@@ -44,7 +44,7 @@ class AttestationPolicy
         $statement = $this->metadata->findOneByAAGUID($aaguid);
 
         if ($statement === null) {
-            throw new AttestationRejectedException('The authenticator has no trusted metadata');
+            throw new FidoMetadataUnavailableException('The authenticator has no trusted metadata');
         }
 
         $this->verifyStatus($aaguid);
@@ -80,12 +80,12 @@ class AttestationPolicy
         $reports = $this->metadata->findStatusReportsByAAGUID($aaguid);
 
         if ($reports === []) {
-            throw new AttestationRejectedException('The authenticator has no trusted status report');
+            throw new FidoMetadataUnavailableException('The authenticator has no trusted status report');
         }
 
         foreach ($reports as $report) {
             if ($report->isCompromised()) {
-                throw new AttestationRejectedException('The authenticator is marked '.$report->status.' in FIDO metadata');
+                throw new CompromisedAuthenticatorException('The authenticator is marked '.$report->status.' in FIDO metadata');
             }
         }
     }
