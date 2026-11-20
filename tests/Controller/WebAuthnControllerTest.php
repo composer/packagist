@@ -510,6 +510,14 @@ class WebAuthnControllerTest extends IntegrationTestCase
             self::assertResponseStatusCodeSame(400);
         }
 
+        self::assertEmailCount(1);
+        $email = self::getMailerMessage();
+        self::assertEmailAddressContains($email, 'To', $this->user->getEmail());
+        self::assertEmailHeaderSame($email, 'Subject', 'Passkey or security key disabled on Packagist.org');
+        self::assertEmailTextBodyContains($email, 'FIDO reported a security issue with that model');
+        self::assertEmailTextBodyContains($email, 'we signed you out of your other sessions');
+        self::assertEmailTextBodyContains($email, '/contact#lost-totp');
+
         self::getEM()->clear();
         $user = $this->freshUser();
         $stored = $user->findWebAuthnCredential($credential->id);
@@ -536,6 +544,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         $this->client->request('POST', '/2fa/webauthn/options', ['_token' => $this->csrf]);
         self::assertResponseStatusCodeSame(400);
         self::assertStringContainsString('no longer trusted', $this->client->getResponse()->getContent());
+        self::assertEmailCount(0);
 
         if ($status === 'REVOKED' && !$signIn) {
             $crawler = $this->client->request('GET', '/2fa');
@@ -585,12 +594,14 @@ class WebAuthnControllerTest extends IntegrationTestCase
             $crawler = $this->client->request('GET', '/2fa');
             $this->client->submit($crawler->filter('form[data-webauthn="login"]')->form(), ['_auth_code' => $response]);
             self::assertResponseRedirects('/2fa');
+            self::assertEmailCount(0);
             $this->client->followRedirect();
             self::assertSelectorTextContains('.alert-danger', 'Hardware security key verification is temporarily unavailable');
         } else {
             $this->client->request('POST', '/profile/security/keys/verify', ['_token' => $this->csrf, 'credential' => $response]);
             self::assertResponseStatusCodeSame(503);
             self::assertResponseHeaderSame('Retry-After', '60');
+            self::assertEmailCount(0);
         }
 
         self::getEM()->clear();
@@ -630,6 +641,7 @@ class WebAuthnControllerTest extends IntegrationTestCase
         ]);
         self::assertResponseStatusCodeSame(400);
         $this->assertWebAuthnProof(false, false);
+        self::assertEmailCount(0);
         self::getEM()->clear();
         self::assertNull($this->freshUser()->findWebAuthnCredential($credential->id)->disabledAt);
         self::assertSame($version, $this->freshUser()->getSessionBuster());

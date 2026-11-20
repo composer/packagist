@@ -247,6 +247,8 @@ class WebAuthnManager
             $credential->user->invalidateAllSessions();
             $this->em->persist(AuditRecord::webAuthnCredentialDisabled($credential, $reason->getMessage()));
         });
+
+        $this->notifyChange($credential, 'disabled');
     }
 
     private function untrustedCredentialException(User $user, ?AttestationRejectedException $previous = null): BadCredentialsException
@@ -262,7 +264,7 @@ class WebAuthnManager
         $this->em->flush();
     }
 
-    /** @param 'added'|'removed' $action */
+    /** @param 'added'|'removed'|'disabled' $action */
     private function notifyChange(WebAuthnCredential $credential, string $action): void
     {
         $this->notifier->notifyChange(
