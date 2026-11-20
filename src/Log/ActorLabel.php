@@ -21,5 +21,4 @@ enum ActorLabel: string
     case PackagistAdmin = 'packagist-admin';
     case Automation = 'automation';
     case Unknown = 'unknown';
-    case Admin = 'admin';
 }

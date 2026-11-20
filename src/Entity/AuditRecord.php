@@ -427,7 +427,7 @@ class AuditRecord
 
         return new self(
             AuditLogEventType::PackageTransferred,
-            ['name' => $package->getName(), 'actor' => self::getUserData($actor, ActorLabel::Admin), 'previous_maintainers' => $previous, 'current_maintainers' => $current],
+            ['name' => $package->getName(), 'actor' => self::getUserData($actor, ActorLabel::PackagistAdmin), 'previous_maintainers' => $previous, 'current_maintainers' => $current],
             $actor?->getId(),
             $package->getVendor(),
             $package->getId()

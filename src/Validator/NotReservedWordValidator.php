@@ -28,6 +28,7 @@ class NotReservedWordValidator extends ConstraintValidator
         'composer',
         'packagist',
         'php',
+        'admin', // actor label in older log entries, now 'packagist-admin'
         'create', // used in the URL when creating an organization
     ];
 
