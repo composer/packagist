@@ -57,19 +57,26 @@
                 </small>
             </div>
             {% if selectedFilters.user_id %}
-                {# The user_id filter is currently only used when clicking on the Transparency log link on the profile page #}
-                <div class="form-group">
-                    <small class="help-block">
-                        Showing all entries of a single account.
-                        <a href="{{ url('view_transparency_log') }}">Show all entries</a>
-                    </small>
-                    <input type="hidden" name="user_id" value="{{ selectedFilters.user_id }}">
-                </div>
+                {# The user_id filter is only set by the Transparency log link on the profile page #}
+                <input type="hidden" name="user_id" value="{{ selectedFilters.user_id }}">
             {% endif %}
         {% endblock %}
     {% endembed %}
 
     {% include 'log/_time_range.html.twig' %}
+
+    {% if selectedFilters.user_id %}
+        <div class="alert alert-info" data-test="account-filter-notice">
+            Showing all entries of
+            {% if filteredAccount %}
+                <strong>{{ filteredAccount.username }}</strong> (#{{ selectedFilters.user_id }}),
+            {% else %}
+                account #{{ selectedFilters.user_id }},
+            {% endif %}
+            as user or actor.
+            <a href="{{ url('view_transparency_log') }}">Show all entries</a>
+        </div>
+    {% endif %}
 
     {% if selectedFilters.event %}
         <div class="alert alert-info" data-test="event-filter-notice">
