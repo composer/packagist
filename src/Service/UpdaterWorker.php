@@ -28,6 +28,7 @@ use App\Package\Updater;
 use App\Package\VcsRepositoryFactory;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\Util\DoctrineTrait;
+use App\Util\GitHubTokenRefusal;
 use App\Util\LoggingHttpDownloader;
 use Composer\Console\HtmlOutputFormatter;
 use Composer\Downloader\TransportException;
@@ -42,11 +43,8 @@ use Doctrine\ORM\EntityNotFoundException;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Level;
-use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
-use Psr\SimpleCache\CacheInterface;
 use Seld\Signal\SignalHandler;
-use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
@@ -56,7 +54,6 @@ class UpdaterWorker
     use DoctrineTrait;
 
     private const string GONE_AFTER_UNREACHABLE_FOR = '4 weeks';
-    private const int IP_ALLOW_LIST_SKIP_TTL = 7 * 86400;
 
     private LoggerInterface $logger;
     private ManagerRegistry $doctrine;
@@ -65,7 +62,6 @@ class UpdaterWorker
     private Scheduler $scheduler;
     private PackageManager $packageManager;
     private DownloadManager $downloadManager;
-    private CacheInterface $cache;
     /** For use in fixtures loader only */
     private bool $loadMinimalVersions = false;
 
@@ -79,11 +75,10 @@ class UpdaterWorker
         DownloadManager $downloadManager,
         private StatsDClient $statsd,
         private readonly FallbackGitHubAuthProvider $fallbackGitHubAuthProvider,
-        CacheItemPoolInterface $cache,
+        private readonly MaintainerGitHubTokenPicker $maintainerGitHubTokenPicker,
         private readonly string $updaterWorkerCacheDir,
         private readonly RepositoryApiChecker $repositoryApiChecker,
     ) {
-        $this->cache = new Psr16Cache($cache);
         $this->logger = $logger;
         $this->doctrine = $doctrine;
         $this->updater = $updater;
@@ -144,53 +139,13 @@ class UpdaterWorker
         }
 
         $usesPackagistToken = false;
-        $maintainerTokenAllowListKey = null;
-        if (Preg::isMatchStrictGroups('{^https://github\.com/(?P<repo>(?P<owner>[^/]+)/[^/]+?)(?:\.git)?$}i', $package->getRepository(), $matches)) {
-            $usesPackagistToken = true;
-
-            foreach ($package->getMaintainers() as $maintainer) {
-                if ($maintainer->getId() === 1) {
-                    continue;
-                }
-                if (!($newGithubToken = $maintainer->getGithubToken())) {
-                    continue;
-                }
-
-                // an org IP allow list applies to its members' tokens, another token may still read a public repo
-                $allowListKey = 'github_ip_allow_list_'.$maintainer->getUsernameCanonical().'_'.strtolower($matches['owner']);
-                if ('1' === $this->cache->get($allowListKey)) {
-                    continue;
-                }
-
-                $valid = $this->cache->get('is_token_valid_'.$maintainer->getUsernameCanonical());
-                if ('1' !== $valid) {
-                    $context = stream_context_create(['http' => [
-                        'header' => ['User-agent: packagist-token-check', 'Authorization: token '.$newGithubToken],
-                        'ignore_errors' => true,
-                    ]]);
-                    $rateResponse = json_decode((string) @file_get_contents('https://api.github.com/repos/'.$matches['repo'].'/git/refs/heads?per_page=1', false, $context), true);
-                    // invalid/outdated token, wipe it so we don't try it again
-                    if (!$rateResponse || (isset($http_response_header[0]) && Preg::isMatch('{HTTP/\s+ 4[0-9][0-9] }', $http_response_header[0]))) {
-                        if (str_contains($http_response_header[0], '403') && \is_array($rateResponse) && \is_string($rateResponse['message'] ?? null) && UpdateFailureClassifier::isGitHubIpAllowListResponse($rateResponse['message'])) {
-                            $this->cache->set($allowListKey, '1', self::IP_ALLOW_LIST_SKIP_TTL);
-                            continue;
-                        }
-                        if (str_contains($http_response_header[0], '403') || str_contains($http_response_header[0], '401')) {
-                            $this->logger->error('Invalid token check response for '.$maintainer->getUsernameCanonical().' on '.$matches['repo'], ['headers' => $http_response_header, 'response' => $rateResponse]);
-                            $maintainer->setGithubToken(null);
-                            $em->persist($maintainer);
-                            $em->flush();
-                            continue;
-                        }
-                    }
-                }
-
-                $this->cache->set('is_token_valid_'.$maintainer->getUsernameCanonical(), '1', 86400);
-
-                $usesPackagistToken = false;
-                $maintainerTokenAllowListKey = $allowListKey;
-                $io->setAuthentication('github.com', $newGithubToken, 'x-oauth-basic');
-                break;
+        $maintainerToken = null;
+        if (Preg::isMatchStrictGroups('{^https://github\.com/(?P<owner>[^/]+)/[^/]+?(?:\.git)?$}i', $package->getRepository(), $matches)) {
+            $maintainerToken = $this->maintainerGitHubTokenPicker->pick($package, $matches['owner']);
+            if (null !== $maintainerToken) {
+                $io->setAuthentication('github.com', $maintainerToken->token, 'x-oauth-basic');
+            } else {
+                $usesPackagistToken = true;
             }
         }
 
@@ -295,10 +250,8 @@ class UpdaterWorker
             if ($verdict !== null) {
                 $internalReason = UpdateFailureClassifier::describe($verdict, $e);
 
-                if ($verdict->code === UpdateFailureClassifier::GITHUB_IP_ALLOW_LIST && $maintainerTokenAllowListKey !== null) {
-                    // the maintainer's token was refused, the next update retries with another one before this counts against the package
-                    $this->cache->set($maintainerTokenAllowListKey, '1', self::IP_ALLOW_LIST_SKIP_TTL);
-
+                if ($verdict->code === UpdateFailureClassifier::GITHUB_IP_ALLOW_LIST && $httpDownloader->maintainerTokenRefusal === GitHubTokenRefusal::IpAllowList) {
+                    // the maintainer's token is skipped in finally, so this only counts against the package once another token was refused too
                     return [
                         'status' => Job::STATUS_FAILED,
                         'message' => 'Update of '.$packageName.' failed, the GitHub organization IP allow list refused the maintainer\'s token. The next update will use another token.',
@@ -400,6 +353,9 @@ class UpdaterWorker
             // unexpected error so mark the job errored
             throw $e;
         } finally {
+            if (null !== $maintainerToken && null !== $httpDownloader->maintainerTokenRefusal) {
+                $this->maintainerGitHubTokenPicker->recordRefusal($maintainerToken, $httpDownloader->maintainerTokenRefusal);
+            }
             $this->locker->unlockPackageUpdate($id);
             Intervals::clear(); // ValidatingArrayLoader uses that so it is safer to clear to avoid caches leaking memory slowly
         }
