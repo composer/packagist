@@ -27,6 +27,7 @@ use App\Package\RepositoryApiState;
 use App\Package\Updater;
 use App\Service\FallbackGitHubAuthProvider;
 use App\Service\Locker;
+use App\Service\MaintainerGitHubTokenPicker;
 use App\Service\Scheduler;
 use App\Service\UpdaterWorker;
 use App\Service\VersionCache;
@@ -445,7 +446,7 @@ class UpdaterWorkerTest extends IntegrationTestCase
             self::getService(DownloadManager::class),
             $this->createStub(StatsDClient::class),
             self::getService(FallbackGitHubAuthProvider::class),
-            new ArrayAdapter(),
+            new MaintainerGitHubTokenPicker(new ArrayAdapter()),
             '',
             $apiChecker,
         );
