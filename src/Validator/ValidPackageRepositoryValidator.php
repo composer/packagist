@@ -115,9 +115,13 @@ class ValidPackageRepositoryValidator extends ConstraintValidator
             return;
         }
 
-        $reservedVendors = ['php', 'packagist', 'api', 'sdk', 'auth', 'openai', 'annotation', 'authentication', 'authorization', 'dependency', 'dependencies', 'kernel', 'namespace', 'namespaces', 'rfc', 'routing', 'standards', 'standard', 'token', ...NotReservedWordValidator::reservedWords()];
+        $reservedVendors = ['php', 'packagist', 'api', 'sdk', 'auth', 'openai', 'annotation', 'authentication', 'authorization', 'dependency', 'dependencies', 'kernel', 'namespace', 'namespaces', 'rfc', 'routing', 'standards', 'standard', 'token'];
         $bits = explode('/', strtolower($name));
-        if (\in_array($bits[0], $reservedVendors, true)) {
+        if (
+            \in_array($bits[0], $reservedVendors, true)
+            // username/organization reserved words only block new vendors, existing ones like composer predate them
+            || (\in_array($bits[0], NotReservedWordValidator::reservedWords(), true) && !$this->packageRepository->isVendorTaken($bits[0]))
+        ) {
             $this->addViolation('The vendor name '.htmlentities($bits[0], \ENT_COMPAT, 'utf-8').' is reserved, please use another name or reach out to us if you have a legitimate use for it.');
 
             return;
