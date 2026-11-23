@@ -16,6 +16,7 @@ use App\Entity\Job;
 use App\Entity\JobRepository;
 use App\Entity\Package;
 use App\Tests\IntegrationTestCase;
+use Doctrine\DBAL\ArrayParameterType;
 
 class JobRepositoryTest extends IntegrationTestCase
 {
@@ -56,6 +57,35 @@ class JobRepositoryTest extends IntegrationTestCase
         $this->store($this->createJob('queued00', $package, 'package:updates', '2026-08-04 10:00:00', null));
 
         self::assertNull($this->jobRepository->findLatestExecutedJob($package->getId(), 'package:updates'));
+    }
+
+    public function testMarkTimedOutJobsOnlyTimesOutStaleStartedJobs(): void
+    {
+        $package = self::createPackage('test/pkg', 'https://example.org/pkg');
+        $this->store($package);
+
+        $stale = $this->createJob('stale000', $package, 'package:updates', '2026-08-01 10:00:00', null);
+        $stale->start();
+        $running = $this->createJob('running0', $package, 'package:updates', '2026-08-01 10:00:00', null);
+        $running->start();
+        $queued = $this->createJob('queued00', $package, 'package:updates', '2026-08-01 10:00:00', null);
+        $completed = $this->createJob('complete', $package, 'package:updates', '2026-08-01 10:00:00', Job::STATUS_COMPLETED);
+        $this->store($stale, $running, $queued, $completed);
+
+        $conn = self::getEM()->getConnection();
+        $conn->executeStatement('UPDATE job SET startedAt = :old WHERE id IN (:ids)', [
+            'old' => date('Y-m-d H:i:s', strtotime('-31 minutes')),
+            'ids' => ['stale000', 'complete'],
+        ], ['ids' => ArrayParameterType::STRING]);
+
+        $this->jobRepository->markTimedOutJobs();
+
+        self::assertSame([
+            'complete' => Job::STATUS_COMPLETED,
+            'queued00' => Job::STATUS_QUEUED,
+            'running0' => Job::STATUS_STARTED,
+            'stale000' => Job::STATUS_TIMEOUT,
+        ], $conn->fetchAllKeyValue('SELECT id, status FROM job ORDER BY id'));
     }
 
     private function createJob(string $id, Package $package, string $type, string $createdAt, ?string $status): Job

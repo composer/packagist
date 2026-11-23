@@ -19,6 +19,8 @@ use App\Service\PackagePurgeWorker;
 use App\Service\QueueWorker;
 use Composer\IO\BufferIO;
 use Composer\Util\Http\ResponseWarnings;
+use Doctrine\DBAL\Driver\PDO\Exception as PdoDriverException;
+use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
@@ -86,6 +88,68 @@ class QueueWorkerTest extends TestCase
         self::assertSame(Level::Notice, $records[0]->level);
         self::assertSame('Job job1 failed', $records[0]->message);
         self::assertArrayNotHasKey('logLevel', $records[0]->context);
+    }
+
+    public function testJobCompletionIsRetriedAfterADeadlock(): void
+    {
+        $jobs = [];
+        $worker = $this->createWorkerWithFailingFlushes(1, $jobs);
+
+        $this->processJob($worker, 'job1');
+
+        // one fetch to run the job, then one per write attempt
+        self::assertCount(3, $jobs);
+        self::assertSame(Job::STATUS_COMPLETED, end($jobs)->getStatus());
+    }
+
+    public function testJobCompletionGivesUpAfterRepeatedDeadlocks(): void
+    {
+        $jobs = [];
+        $worker = $this->createWorkerWithFailingFlushes(\PHP_INT_MAX, $jobs);
+
+        try {
+            $this->processJob($worker, 'job1');
+            self::fail('Expected the deadlock to be rethrown');
+        } catch (DeadlockException) {
+        }
+
+        self::assertCount(4, $jobs);
+    }
+
+    /**
+     * @param list<Job<AnyJob>> $jobs the job objects the worker fetched to write the result
+     */
+    private function createWorkerWithFailingFlushes(int $failures, array &$jobs): QueueWorker
+    {
+        $jobWorker = $this->createStub(PackagePurgeWorker::class);
+        $jobWorker->method('process')->willReturn(['status' => Job::STATUS_COMPLETED, 'message' => 'done']);
+
+        $repo = $this->createStub(JobRepository::class);
+        $repo->method('start')->willReturn(true);
+        $repo->method('find')->willReturnCallback(static function (string $id) use (&$jobs) {
+            return $jobs[] = new Job($id, 'package:purge', ['name' => 'test/pkg']);
+        });
+
+        $em = $this->createStub(EntityManager::class);
+        $em->method('getRepository')->willReturn($repo);
+        $em->method('isOpen')->willReturn(true);
+        $em->method('flush')->willReturnCallback(static function () use (&$failures): void {
+            if ($failures-- > 0) {
+                throw new DeadlockException(new PdoDriverException('Deadlock found when trying to get lock', '40001', 1213), null);
+            }
+        });
+
+        $doctrine = $this->createStub(ManagerRegistry::class);
+        $doctrine->method('getManager')->willReturn($em);
+
+        return new QueueWorker(
+            $this->createStub(Redis::class),
+            $doctrine,
+            new Logger('test'),
+            ['package:purge' => $jobWorker],
+            $this->createStub(StatsDClient::class),
+            new LogIdProcessor(),
+        );
     }
 
     /**
