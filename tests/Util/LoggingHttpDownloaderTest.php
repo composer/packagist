@@ -12,6 +12,7 @@
 
 namespace App\Tests\Util;
 
+use App\Util\GitHubTokenRefusal;
 use App\Util\LoggingHttpDownloader;
 use Composer\Config;
 use Composer\Downloader\TransportException;
@@ -92,6 +93,69 @@ class LoggingHttpDownloaderTest extends TestCase
         $this->assertSame([self::REPO_URL, self::REPO_URL], $downloader->requested);
         $this->assertSame('packagist-token', $io->getAuthentication('github.com')['username']);
         $this->assertMatchesRegularExpression('{failed with HTTP '.$status.'.*using a maintainer\'s token.*\n.*Retrying with the Packagist token}', $io->getOutput());
+    }
+
+    /**
+     * @return iterable<string, array{int, list<string>, string, GitHubTokenRefusal|null}>
+     */
+    public static function refusalProvider(): iterable
+    {
+        yield 'revoked token' => [401, [], '', GitHubTokenRefusal::Rejected];
+        yield 'saml sso' => [403, ['X-GitHub-SSO: required; url=https://github.com/orgs/acme/sso'], '', GitHubTokenRefusal::SamlSso];
+        yield 'rate limit' => [403, ['x-ratelimit-remaining: 0'], '', GitHubTokenRefusal::RateLimited];
+        yield 'ip allow list' => [403, [], '{"message":"the `acme` organization has an IP allow list enabled"}', GitHubTokenRefusal::IpAllowList];
+        yield 'not found' => [404, [], '{"message":"Not Found"}', null];
+    }
+
+    /**
+     * @param list<string> $headers
+     */
+    #[DataProvider('refusalProvider')]
+    public function testRecordsWhyTheMaintainerTokenWasRefused(int $status, array $headers, string $body, ?GitHubTokenRefusal $expected): void
+    {
+        $downloader = $this->createDownloader(new BufferIO(), false, static fn () => 'packagist-token', [
+            self::createException($status, $headers, $body),
+            new Response(['url' => self::REPO_URL], 200, [], '{"name":"lib"}'),
+        ]);
+
+        $downloader->get(self::REPO_URL);
+
+        $this->assertSame($expected, $downloader->maintainerTokenRefusal);
+    }
+
+    public function testKeepsTheMaintainerTokenRefusalWhenThePackagistTokenIsRefusedToo(): void
+    {
+        $downloader = $this->createDownloader(new BufferIO(), false, static fn () => 'packagist-token', [
+            self::createException(401),
+            self::createException(403, ['x-ratelimit-remaining: 0']),
+        ]);
+
+        try {
+            $downloader->get(self::REPO_URL);
+            $this->fail('Expected the TransportException to be rethrown');
+        } catch (TransportException) {
+        }
+
+        $this->assertSame(GitHubTokenRefusal::Rejected, $downloader->maintainerTokenRefusal);
+    }
+
+    public function testDoesNotRecordRefusalsOfThePackagistTokenOrOtherUrls(): void
+    {
+        $packagistDownloader = $this->createDownloader(new BufferIO(), true, static fn () => 'packagist-token', [self::createException(401)]);
+        try {
+            $packagistDownloader->get(self::REPO_URL);
+            $this->fail('Expected the TransportException to be rethrown');
+        } catch (TransportException) {
+        }
+        $this->assertNull($packagistDownloader->maintainerTokenRefusal);
+
+        $contentsDownloader = $this->createDownloader(new BufferIO(), false, static fn () => 'packagist-token', [self::createException(401)]);
+        try {
+            $contentsDownloader->get(self::REPO_URL.'/contents/composer.json?ref=abc');
+            $this->fail('Expected the TransportException to be rethrown');
+        } catch (TransportException) {
+        }
+        $this->assertNull($contentsDownloader->maintainerTokenRefusal);
     }
 
     public function testRetriesOnlyOnce(): void

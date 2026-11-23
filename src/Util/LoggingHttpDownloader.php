@@ -26,6 +26,9 @@ class LoggingHttpDownloader extends HttpDownloader
     /** For use in fixtures loading only */
     private bool $loadMinimalVersions = false;
 
+    /** Why GitHub refused the maintainer's token for the repository data, if it did */
+    public private(set) ?GitHubTokenRefusal $maintainerTokenRefusal = null;
+
     /**
      * @param (\Closure(): ?string)|null $packagistTokenProvider used to retry repo data requests a maintainer's token is refused for
      */
@@ -136,14 +139,11 @@ class LoggingHttpDownloader extends HttpDownloader
             return;
         }
 
-        $headers = $e->getHeaders() ?? [];
-        $reason = match (true) {
-            401 === $status => 'token rejected',
-            null !== Response::findHeaderValue($headers, 'x-github-sso') => 'token not authorized for the organization\'s SAML SSO',
-            '0' === Response::findHeaderValue($headers, 'x-ratelimit-remaining') => 'rate limit exhausted',
-            str_contains((string) $e->getResponse(), 'IP allow list') => 'organization IP allow list blocks the token',
-            default => null,
-        };
+        $refusal = GitHubTokenRefusal::fromFailure($e);
+        $reason = $refusal?->value;
+        if (null !== $refusal && !$this->usesPackagistToken && $isRepoDataUrl) {
+            $this->maintainerTokenRefusal ??= $refusal;
+        }
 
         $this->io->writeError(\sprintf(
             '<warning>GitHub API request to %s failed with HTTP %s%s using %s</warning>',

@@ -28,6 +28,7 @@ use App\Package\Updater;
 use App\Package\VcsRepositoryFactory;
 use App\SecurityAdvisory\FriendsOfPhpSecurityAdvisoriesSource;
 use App\Util\DoctrineTrait;
+use App\Util\GitHubTokenRefusal;
 use App\Util\LoggingHttpDownloader;
 use Composer\Console\HtmlOutputFormatter;
 use Composer\Downloader\TransportException;
@@ -249,10 +250,8 @@ class UpdaterWorker
             if ($verdict !== null) {
                 $internalReason = UpdateFailureClassifier::describe($verdict, $e);
 
-                if ($verdict->code === UpdateFailureClassifier::GITHUB_IP_ALLOW_LIST && $maintainerToken !== null) {
-                    // the maintainer's token was refused, the next update retries with another one before this counts against the package
-                    $this->maintainerGitHubTokenPicker->skipForIpAllowList($maintainerToken);
-
+                if ($verdict->code === UpdateFailureClassifier::GITHUB_IP_ALLOW_LIST && $httpDownloader->maintainerTokenRefusal === GitHubTokenRefusal::IpAllowList) {
+                    // the maintainer's token is skipped in finally, so this only counts against the package once another token was refused too
                     return [
                         'status' => Job::STATUS_FAILED,
                         'message' => 'Update of '.$packageName.' failed, the GitHub organization IP allow list refused the maintainer\'s token. The next update will use another token.',
@@ -354,6 +353,9 @@ class UpdaterWorker
             // unexpected error so mark the job errored
             throw $e;
         } finally {
+            if (null !== $maintainerToken && null !== $httpDownloader->maintainerTokenRefusal) {
+                $this->maintainerGitHubTokenPicker->recordRefusal($maintainerToken, $httpDownloader->maintainerTokenRefusal);
+            }
             $this->locker->unlockPackageUpdate($id);
             Intervals::clear(); // ValidatingArrayLoader uses that so it is safer to clear to avoid caches leaking memory slowly
         }

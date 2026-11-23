@@ -15,6 +15,7 @@ namespace App\Tests\Service;
 use App\Entity\User;
 use App\Service\MaintainerGitHubTokenPicker;
 use App\Tests\Fixtures\Fixtures;
+use App\Util\GitHubTokenRefusal;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
@@ -58,7 +59,7 @@ class MaintainerGitHubTokenPickerTest extends TestCase
 
         $bob = $picker->pick($package, 'acme');
         self::assertNotNull($bob);
-        $picker->skipForIpAllowList($bob);
+        $picker->recordRefusal($bob, GitHubTokenRefusal::IpAllowList);
 
         self::assertSame('carol-token', $picker->pick($package, 'ACME')?->token);
     }
@@ -70,10 +71,52 @@ class MaintainerGitHubTokenPickerTest extends TestCase
 
         $bob = $picker->pick($package, 'acme');
         self::assertNotNull($bob);
-        $picker->skipForIpAllowList($bob);
+        $picker->recordRefusal($bob, GitHubTokenRefusal::IpAllowList);
 
         self::assertNull($picker->pick($package, 'acme'));
         self::assertSame('bob-token', $picker->pick($package, 'other-org')?->token);
+    }
+
+    public function testSamlSsoSkipOnlyAppliesToThatOwner(): void
+    {
+        $package = self::createPackage('acme/lib', 'https://github.com/acme/lib', maintainers: [self::maintainer('bob', 'bob-token')]);
+        $picker = new MaintainerGitHubTokenPicker(new ArrayAdapter());
+
+        $bob = $picker->pick($package, 'acme');
+        self::assertNotNull($bob);
+        $picker->recordRefusal($bob, GitHubTokenRefusal::SamlSso);
+
+        self::assertNull($picker->pick($package, 'acme'));
+        self::assertSame('bob-token', $picker->pick($package, 'other-org')?->token);
+    }
+
+    public function testRejectedTokenIsSkippedForEveryOwnerUntilReplaced(): void
+    {
+        $bobUser = self::maintainer('bob', 'bob-token');
+        $package = self::createPackage('acme/lib', 'https://github.com/acme/lib', maintainers: [$bobUser, self::maintainer('carol', 'carol-token')]);
+        $picker = new MaintainerGitHubTokenPicker(new ArrayAdapter());
+
+        $bob = $picker->pick($package, 'acme');
+        self::assertNotNull($bob);
+        $picker->recordRefusal($bob, GitHubTokenRefusal::Rejected);
+
+        self::assertSame('carol-token', $picker->pick($package, 'acme')?->token);
+        self::assertSame('carol-token', $picker->pick($package, 'other-org')?->token);
+
+        $bobUser->setGithubToken('bob-new-token');
+        self::assertSame('bob-new-token', $picker->pick($package, 'acme')?->token);
+    }
+
+    public function testRateLimitedTokenIsNotSkipped(): void
+    {
+        $package = self::createPackage('acme/lib', 'https://github.com/acme/lib', maintainers: [self::maintainer('bob', 'bob-token')]);
+        $picker = new MaintainerGitHubTokenPicker(new ArrayAdapter());
+
+        $bob = $picker->pick($package, 'acme');
+        self::assertNotNull($bob);
+        $picker->recordRefusal($bob, GitHubTokenRefusal::RateLimited);
+
+        self::assertSame('bob-token', $picker->pick($package, 'acme')?->token);
     }
 
     public function testSkipsThePackagistAccount(): void
