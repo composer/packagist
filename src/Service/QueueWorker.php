@@ -16,6 +16,7 @@ use App\Entity\Job;
 use App\Logger\LogIdProcessor;
 use App\Util\DoctrineTrait;
 use Composer\Util\Http\ResponseWarnings;
+use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\Persistence\ManagerRegistry;
 use Graze\DogStatsD\Client as StatsDClient;
 use Monolog\Level;
@@ -157,26 +158,10 @@ class QueueWorker
             'jobType' => $job->getType(),
         ]);
 
-        // If an exception is thrown during a transaction the EntityManager is closed
-        // and we won't be able to update the job or handle future jobs
-        if (!$this->getEM()->isOpen()) {
-            $this->doctrine->resetManager();
-        }
-
-        // reset EM for safety to avoid flushing anything not flushed during the job, and refetch objects
-        $em = $this->getEM();
-        $em->clear();
-        $repo = $em->getRepository(Job::class);
-        $job = $repo->find($jobId);
-        if (null === $job) {
-            throw new \LogicException('At this point a job should always be found');
-        }
-
         if ($result['status'] === Job::STATUS_RESCHEDULE) {
             Assert::keyExists($result, 'after', message: '$result must have an "after" key when returning a reschedule status.');
-            $job->reschedule($result['after']);
-            $em->persist($job);
-            $em->flush();
+            $after = $result['after'];
+            $this->updateJob($jobId, static fn (Job $job) => $job->reschedule($after));
 
             $this->logger->reset();
 
@@ -190,9 +175,9 @@ class QueueWorker
         $logLevel = $result['logLevel'] ?? null;
         unset($result['logLevel']);
         if ($result['status'] === Job::STATUS_FAILED) {
-            $this->logger->log($logLevel ?? Level::Warning, 'Job '.$job->getId().' failed', $result);
+            $this->logger->log($logLevel ?? Level::Warning, 'Job '.$jobId.' failed', $result);
         } elseif ($result['status'] === Job::STATUS_ERRORED) {
-            $this->logger->error('Job '.$job->getId().' errored', $result);
+            $this->logger->error('Job '.$jobId.' errored', $result);
         }
 
         if (isset($result['exception'])) {
@@ -201,16 +186,54 @@ class QueueWorker
             unset($result['exception']);
         }
 
-        $job->complete($result);
-        $em->persist($job);
+        $this->redis->setex('job-'.$jobId, 600, json_encode($result));
 
-        $this->redis->setex('job-'.$job->getId(), 600, json_encode($result));
-
-        $em->flush();
-        $em->clear();
+        $this->updateJob($jobId, static fn (Job $job) => $job->complete($result));
 
         $this->logger->reset();
 
         return true;
+    }
+
+    /**
+     * @param \Closure(Job<AnyJob>): void $update
+     */
+    private function updateJob(string $jobId, \Closure $update): void
+    {
+        for ($attempt = 1;; $attempt++) {
+            // If an exception is thrown during a transaction the EntityManager is closed
+            // and we won't be able to update the job or handle future jobs
+            if (!$this->getEM()->isOpen()) {
+                $this->doctrine->resetManager();
+            }
+
+            // reset EM for safety to avoid flushing anything not flushed during the job, and refetch objects
+            $em = $this->getEM();
+            $em->clear();
+            /** @var Job<AnyJob>|null $job */
+            $job = $em->getRepository(Job::class)->find($jobId);
+            if (null === $job) {
+                throw new \LogicException('At this point a job should always be found');
+            }
+
+            $update($job);
+            $em->persist($job);
+
+            try {
+                $em->flush();
+            } catch (RetryableException $e) {
+                // other job table writers (e.g. the out-of-app history cleanup) may still deadlock with this update
+                if ($attempt >= 3) {
+                    throw $e;
+                }
+                $this->logger->info('Retrying job '.$jobId.' update after '.$e->getMessage());
+
+                continue;
+            }
+
+            $em->clear();
+
+            return;
+        }
     }
 }

@@ -42,11 +42,22 @@ class JobRepository extends ServiceEntityRepository
     {
         $conn = $this->getEntityManager()->getConnection();
 
-        $conn->executeStatement('UPDATE job SET status = :newstatus WHERE status = :status AND startedAt < :timeout', [
+        $timeout = date('Y-m-d H:i:s', strtotime('-30 minutes'));
+        $jobIds = $conn->fetchFirstColumn('SELECT id FROM job WHERE status = :status AND startedAt < :timeout', [
             'status' => Job::STATUS_STARTED,
-            'newstatus' => Job::STATUS_TIMEOUT,
-            'timeout' => date('Y-m-d H:i:s', strtotime('-30 minutes')),
+            'timeout' => $timeout,
         ]);
+
+        // update by primary key only: a range UPDATE locks status/startedAt index entries before the rows,
+        // the reverse of a worker completing a job, which deadlocks them
+        foreach ($jobIds as $jobId) {
+            $conn->executeStatement('UPDATE job SET status = :newstatus WHERE id = :id AND status = :status AND startedAt < :timeout', [
+                'id' => $jobId,
+                'status' => Job::STATUS_STARTED,
+                'newstatus' => Job::STATUS_TIMEOUT,
+                'timeout' => $timeout,
+            ]);
+        }
     }
 
     /**
