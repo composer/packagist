@@ -23,7 +23,7 @@ trait JoinsSearchIndex
     private static function joinSearchIndex(QueryBuilder $qb, string $alias): QueryBuilder
     {
         if (self::searchIndexAliases($qb) !== []) {
-            return $qb->join(PackageTransparencyLogSearch::class, $alias, Join::WITH, $alias.'.leafIndex = t.leafIndex');
+            return $qb->join(PackageTransparencyLogSearch::class, $alias, Join::ON, $alias.'.leafIndex = t.leafIndex');
         }
 
         // The list must be sorted by the index columns, or MySQL sorts all entries of the person before
@@ -32,7 +32,7 @@ trait JoinsSearchIndex
         return $qb
             ->resetDQLPart('from')
             ->from(PackageTransparencyLogSearch::class, $alias)
-            ->join(PackageTransparencyLog::class, 't', Join::WITH, 't.leafIndex = '.$alias.'.leafIndex')
+            ->join(PackageTransparencyLog::class, 't', Join::ON, 't.leafIndex = '.$alias.'.leafIndex')
             ->orderBy($alias.'.datetime', \SortDirection::Descending)
             ->addOrderBy($alias.'.leafIndex', \SortDirection::Descending);
     }
