@@ -1406,11 +1406,11 @@ class UpdaterTest extends IntegrationTestCase
         $versionId = $existing->getId();
         $this->markPackageAsDumped();
 
-        // the control char is stripped on the way into the DB, so comparing the stored value against the
-        // raw upstream one could never agree — the trigger has to normalize before comparing
+        // the control char and tags are stripped on the way into the DB, so comparing the stored value against
+        // the raw upstream one could never agree — the trigger has to normalize before comparing
         $upstream = $this->buildCompletePackage('test/pkg', 'dev-main', 'dev-main', 'devref1234567890');
         $upstream->setIsDefaultBranch(true);
-        $upstream->setAbandoned("new/replace\x08ment");
+        $upstream->setAbandoned("<fg=red>new/replace\x08ment</>");
         $this->repositoryMock = $this->createStub(VcsRepository::class);
         $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
         $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());

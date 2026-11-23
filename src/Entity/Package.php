@@ -1017,6 +1017,11 @@ class Package
 
     public function setReplacementPackage(?string $replacementPackage): void
     {
+        // a package name or URL never contains markup, and Composer renders this through its console formatter
+        if (null !== $replacementPackage) {
+            $replacementPackage = strip_tags($replacementPackage);
+        }
+
         if ('' === $replacementPackage) {
             $this->replacementPackage = null;
         } else {

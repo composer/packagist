@@ -1277,13 +1277,16 @@ class Updater
     /**
      * Normalizes an upstream "abandoned" replacement exactly as Package::setReplacementPackage() stores
      * it. updateInformation() compares the declared value against the stored one, so every
-     * transformation storage applies — stripped control chars, '' to null, the column's 255 char limit —
+     * transformation storage applies — stripped control chars and tags, '' to null, the column's 255 char limit —
      * has to be applied here too or the two never agree and the version is rebuilt on every crawl. The
      * cap also stops an over-long value from failing the flush under MySQL's strict mode.
      */
     private function normalizeReplacementPackage(?string $replacement): ?string
     {
         $replacement = $this->sanitize($replacement);
+        if ($replacement !== null) {
+            $replacement = strip_tags($replacement);
+        }
         if ($replacement === null || $replacement === '') {
             return null;
         }
