@@ -54,9 +54,11 @@ These steps are provided for development purposes only.
    bin/console doctrine:database:create --env=test
    ```
 
-6. Setup the database schema:
+6. Create the schema on the empty development database and mark any existing migrations as applied.
    ```bash
    bin/console doctrine:schema:create
+   bin/console doctrine:migrations:sync-metadata-storage
+   bin/console doctrine:migrations:version --add --all --no-interaction
    ```
 
 7. Run a CRON job `bin/console packagist:run-workers` to make sure packages update.

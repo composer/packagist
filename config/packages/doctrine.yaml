@@ -2,6 +2,9 @@ doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
         profiling_collect_backtrace: '%kernel.debug%'
+        default_table_options:
+            charset: utf8mb4
+            engine: InnoDB
         options:
             # PDO::ATTR_TIMEOUT
             2: 1.3

@@ -83,9 +83,15 @@ Check `composer.json` for exact versions.
   detection; it is deployed out of band (`SPAM_MODEL_FILE`).
 
 ## Database
-- No Doctrine migrations: schema changes are raw SQL files added to `migrations/`, named
-  `YYYY_MM_description.sql` with a comment header explaining what and why. Never apply them
-  yourself.
+- Track schema and data changes as Doctrine migrations in `migrations/`: change the mapping, run
+  `bin/console doctrine:migrations:diff` against an up-to-date local database and review the
+  generated SQL (it must leave `doctrine:schema:validate` clean). Write data changes by hand with
+  `doctrine:migrations:generate`, and keep them safe to run twice.
+- Migrations are non-transactional because MySQL DDL implicitly commits. Override
+  `isTransactional()` for data changes that must succeed or fail together.
+- Fresh databases are created from the current ORM mappings with existing migrations marked as
+  applied (see README / `tests/bootstrap.php`), so a migration only ever runs on existing data.
+- Apply migrations only to disposable local databases unless explicitly authorized for the target.
 - Write datetimes from PHP (bound parameters), not with SQL `NOW()`: PHP runs on UTC and the
   MySQL session timezone isn't guaranteed to match, so mixing the two breaks comparisons.
 - `download.package_id` is nullable and write-once; filter stats queries on

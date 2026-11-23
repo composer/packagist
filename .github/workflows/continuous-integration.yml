@@ -46,10 +46,8 @@ jobs:
         with:
           redis-version: 6
 
-      - name: "Setup DB"
-        run: |
-          bin/console doctrine:database:create -n
-          bin/console doctrine:schema:create -n
-
       - name: "Run tests"
         run: "composer test"
+
+      - name: "Validate the test schema"
+        run: bin/console doctrine:schema:validate --skip-mapping

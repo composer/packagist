@@ -43,7 +43,7 @@ class OrganizationTeamMember
 
         /** Null once the adding user is deleted, or for bootstrap/self-join memberships with no explicit actor. */
         #[ORM\ManyToOne(targetEntity: User::class)]
-        #[ORM\JoinColumn(name: 'addedBy', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+        #[ORM\JoinColumn(name: 'addedBy', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL', foreignKeyName: 'FK_organization_team_member_added_by')]
         public readonly ?User $addedBy,
 
         #[ORM\Column(type: 'datetime_immutable')]

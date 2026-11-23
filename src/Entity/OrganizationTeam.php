@@ -34,7 +34,7 @@ class OrganizationTeam
         public readonly Ulid $teamId,
 
         #[ORM\ManyToOne(targetEntity: Organization::class)]
-        #[ORM\JoinColumn(name: 'orgId', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+        #[ORM\JoinColumn(name: 'orgId', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE', foreignKeyName: 'FK_organization_team_org')]
         public readonly Organization $organization,
 
         #[ORM\Column(length: 16)]
@@ -45,7 +45,7 @@ class OrganizationTeam
 
         /** Null once the creating user is deleted, or for system/bootstrap teams with no explicit creator. */
         #[ORM\ManyToOne(targetEntity: User::class)]
-        #[ORM\JoinColumn(name: 'createdBy', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+        #[ORM\JoinColumn(name: 'createdBy', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL', foreignKeyName: 'FK_organization_team_created_by')]
         public readonly ?User $createdBy,
 
         #[ORM\Column(type: 'datetime_immutable')]

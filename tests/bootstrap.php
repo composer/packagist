@@ -52,6 +52,8 @@ if (!getenv('QUICK')) {
     executeCommand('php ./bin/console doctrine:database:drop --env=test --force -q', false);
     executeCommand('php ./bin/console doctrine:database:create --env=test -q');
     executeCommand('php ./bin/console doctrine:schema:create --env=test -q');
+    executeCommand('php ./bin/console doctrine:migrations:sync-metadata-storage --env=test -q');
+    executeCommand('php ./bin/console doctrine:migrations:version --add --all --env=test -n -q');
     executeCommand('php ./bin/console redis:query flushall --env=test -n -q');
 }
 

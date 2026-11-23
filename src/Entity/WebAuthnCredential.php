@@ -20,7 +20,7 @@ use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\TrustPath\TrustPath;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'webauthn_credential')]
+#[ORM\Table(name: 'webauthn_credential', options: ['collation' => 'utf8mb4_unicode_ci'])]
 #[ORM\Index(name: 'webauthn_user_idx', columns: ['user_id'])]
 class WebAuthnCredential
 {
@@ -29,7 +29,7 @@ class WebAuthnCredential
     public readonly string $id;
 
     #[ORM\ManyToOne(inversedBy: 'webAuthnCredentials')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE', foreignKeyName: 'webauthn_user_fk')]
     public readonly User $user;
 
     #[ORM\Column(length: 100)]
