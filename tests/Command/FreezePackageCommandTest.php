@@ -57,7 +57,7 @@ class FreezePackageCommandTest extends IntegrationTestCase
 
         $audit = $em->getRepository(AuditRecord::class)->findOneBy(['type' => AuditLogEventType::PackageFrozen, 'packageId' => $packageId]);
         self::assertNotNull($audit);
-        self::assertSame('admin', $audit->attributes['actor']);
+        self::assertSame('packagist-admin', $audit->attributes['actor']);
         self::assertSame('spam', $audit->attributes['reason']);
 
         self::assertNotNull($em->getRepository(Job::class)->findOneBy(['type' => 'package:purge', 'packageId' => $packageId]));

@@ -72,7 +72,7 @@ class FreezePackageCommand extends Command
             return Command::FAILURE;
         }
 
-        $package->auditActorFallback = ActorLabel::Admin;
+        $package->auditActorFallback = ActorLabel::PackagistAdmin;
         $this->packageManager->freeze($package, $reason);
 
         $output->writeln('<info>Package '.$name.' has been frozen ('.$reason->value.')</info>');

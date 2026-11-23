@@ -285,8 +285,8 @@ class Package
     private ?User $submittedOnBehalfOf = null;
 
     /**
-     * Transient (not persisted): audit actor label used when no user is logged in, e.g. 'admin' for
-     * (un)freezes done from the CLI. Defaults to 'automation' in the audit record.
+     * Transient (not persisted): audit actor label used when no user is logged in, e.g.
+     * 'packagist-admin' for (un)freezes done from the CLI. Defaults to 'automation' in the audit record.
      */
     public ?ActorLabel $auditActorFallback = null;
 
