@@ -222,7 +222,7 @@ class QueueWorker
             try {
                 $em->flush();
             } catch (RetryableException $e) {
-                // other writers of the job table (timeout sweep, cleanup) can deadlock with this update
+                // other job table writers (e.g. the out-of-app history cleanup) may still deadlock with this update
                 if ($attempt >= 3) {
                     throw $e;
                 }

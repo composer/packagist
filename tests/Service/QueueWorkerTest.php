@@ -93,19 +93,22 @@ class QueueWorkerTest extends TestCase
     public function testJobCompletionIsRetriedAfterADeadlock(): void
     {
         $jobs = [];
-        $worker = $this->createWorkerWithFailingFlushes(1, $jobs);
+        $resets = 0;
+        $worker = $this->createWorkerWithFailingFlushes(1, self::deadlock(), $jobs, $resets);
 
         $this->processJob($worker, 'job1');
 
         // one fetch to run the job, then one per write attempt
         self::assertCount(3, $jobs);
         self::assertSame(Job::STATUS_COMPLETED, end($jobs)->getStatus());
+        self::assertSame(1, $resets, 'The entity manager closed by the failed flush must be reset before retrying');
     }
 
     public function testJobCompletionGivesUpAfterRepeatedDeadlocks(): void
     {
         $jobs = [];
-        $worker = $this->createWorkerWithFailingFlushes(\PHP_INT_MAX, $jobs);
+        $resets = 0;
+        $worker = $this->createWorkerWithFailingFlushes(\PHP_INT_MAX, self::deadlock(), $jobs, $resets);
 
         try {
             $this->processJob($worker, 'job1');
@@ -116,10 +119,34 @@ class QueueWorkerTest extends TestCase
         self::assertCount(4, $jobs);
     }
 
+    public function testJobCompletionIsNotRetriedAfterOtherErrors(): void
+    {
+        $jobs = [];
+        $resets = 0;
+        $worker = $this->createWorkerWithFailingFlushes(1, new \RuntimeException('boom'), $jobs, $resets);
+
+        try {
+            $this->processJob($worker, 'job1');
+            self::fail('Expected the error to be rethrown');
+        } catch (\RuntimeException $e) {
+            self::assertSame('boom', $e->getMessage());
+        }
+
+        self::assertCount(2, $jobs);
+        self::assertSame(0, $resets);
+    }
+
+    private static function deadlock(): DeadlockException
+    {
+        return new DeadlockException(new PdoDriverException('Deadlock found when trying to get lock', '40001', 1213), null);
+    }
+
     /**
-     * @param list<Job<AnyJob>> $jobs the job objects the worker fetched to write the result
+     * Each failing flush closes the entity manager, as Doctrine does, until resetManager() reopens it.
+     *
+     * @param list<Job<AnyJob>> $jobs the job objects the worker fetched
      */
-    private function createWorkerWithFailingFlushes(int $failures, array &$jobs): QueueWorker
+    private function createWorkerWithFailingFlushes(int $failures, \Throwable $error, array &$jobs, int &$resets): QueueWorker
     {
         $jobWorker = $this->createStub(PackagePurgeWorker::class);
         $jobWorker->method('process')->willReturn(['status' => Job::STATUS_COMPLETED, 'message' => 'done']);
@@ -130,17 +157,28 @@ class QueueWorkerTest extends TestCase
             return $jobs[] = new Job($id, 'package:purge', ['name' => 'test/pkg']);
         });
 
+        $open = true;
         $em = $this->createStub(EntityManager::class);
         $em->method('getRepository')->willReturn($repo);
-        $em->method('isOpen')->willReturn(true);
-        $em->method('flush')->willReturnCallback(static function () use (&$failures): void {
+        $em->method('isOpen')->willReturnCallback(static function () use (&$open): bool {
+            return $open;
+        });
+        $em->method('flush')->willReturnCallback(static function () use (&$failures, &$open, $error): void {
             if ($failures-- > 0) {
-                throw new DeadlockException(new PdoDriverException('Deadlock found when trying to get lock', '40001', 1213), null);
+                $open = false;
+
+                throw $error;
             }
         });
 
         $doctrine = $this->createStub(ManagerRegistry::class);
         $doctrine->method('getManager')->willReturn($em);
+        $doctrine->method('resetManager')->willReturnCallback(static function () use (&$open, &$resets, $em) {
+            $open = true;
+            ++$resets;
+
+            return $em;
+        });
 
         return new QueueWorker(
             $this->createStub(Redis::class),
