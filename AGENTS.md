@@ -96,8 +96,6 @@ Check `composer.json` for exact versions.
   MySQL session timezone isn't guaranteed to match, so mixing the two breaks comparisons.
 - `download.package_id` is nullable and write-once; filter stats queries on
   `package_version.package_id`.
-- Ad-hoc SQL using user variables needs `SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;` first, as
-  the tables are `utf8mb4_unicode_ci` and MySQL 8 connections default to `utf8mb4_0900_ai_ci`.
 - Dev data is far smaller and skewed compared to prod, so don't size queries or trust `EXPLAIN`
   plans from it; use it to check that SQL is valid and the intended index is picked.
 

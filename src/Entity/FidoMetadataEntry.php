@@ -15,7 +15,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'fido_metadata_entry', options: ['collation' => 'utf8mb4_unicode_ci'])]
+#[ORM\Table(name: 'fido_metadata_entry')]
 class FidoMetadataEntry
 {
     /**

@@ -20,7 +20,7 @@ use Webauthn\PublicKeyCredentialDescriptor;
 use Webauthn\TrustPath\TrustPath;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'webauthn_credential', options: ['collation' => 'utf8mb4_unicode_ci'])]
+#[ORM\Table(name: 'webauthn_credential')]
 #[ORM\Index(name: 'webauthn_user_idx', columns: ['user_id'])]
 class WebAuthnCredential
 {

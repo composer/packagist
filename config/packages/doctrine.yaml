@@ -4,6 +4,7 @@ doctrine:
         profiling_collect_backtrace: '%kernel.debug%'
         default_table_options:
             charset: utf8mb4
+            collation: utf8mb4_0900_ai_ci
             engine: InnoDB
         options:
             # PDO::ATTR_TIMEOUT

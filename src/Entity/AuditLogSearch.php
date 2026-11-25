@@ -26,7 +26,7 @@ use Symfony\Component\Uid\Ulid;
  * @see AuditRecord::getSearchTerms()
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'audit_log_search', options: ['collation' => 'utf8mb4_unicode_ci'])]
+#[ORM\Table(name: 'audit_log_search')]
 #[ORM\Index(name: 'audit_log_id_idx', columns: ['auditLogId'])]
 class AuditLogSearch
 {

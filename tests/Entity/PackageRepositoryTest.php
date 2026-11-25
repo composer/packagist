@@ -80,7 +80,7 @@ class PackageRepositoryTest extends IntegrationTestCase
 
     public function testIteratePackageNamesByTypeAndVendorSortsInSql(): void
     {
-        // Pins the ordering contract for the streamed branch: utf8mb4_unicode_ci, not PHP's
+        // Pins the ordering contract for the streamed branch: utf8mb4_0900_ai_ci, not PHP's
         // SORT_STRING|SORT_FLAG_CASE, which would put `_` after the digits rather than first.
         $packages = [];
         foreach (['sortvendor/ab', 'sortvendor/a-b', 'sortvendor/a_b', 'sortvendor/a0b', 'sortvendor/a.b'] as $name) {

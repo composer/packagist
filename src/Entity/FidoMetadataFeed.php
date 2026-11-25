@@ -15,7 +15,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'fido_metadata_feed', options: ['collation' => 'utf8mb4_unicode_ci'])]
+#[ORM\Table(name: 'fido_metadata_feed')]
 class FidoMetadataFeed
 {
     public function __construct(
