@@ -53,23 +53,36 @@ class Tag
     public static function getByName(EntityManager $em, string $name, bool $create = false): self
     {
         try {
-            $qb = $em->createQueryBuilder();
-            $qb->select('t')
-                ->from(__CLASS__, 't')
-                ->where('t.name = ?1')
-                ->setMaxResults(1)
-                ->setParameter(1, $name);
-
-            return $qb->getQuery()->getSingleResult();
+            return self::findByName($em, $name);
         } catch (NoResultException $e) {
-            if ($create) {
-                $tag = new self($name);
-                $em->persist($tag);
-
-                return $tag;
+            if (!$create) {
+                throw $e;
             }
-            throw $e;
         }
+
+        // Insert right away instead of persisting: packages sharing a repository update in parallel, and
+        // keywords equal only by collation ('aşet'/'aset') would otherwise both be persisted and clash on flush.
+        $em->getConnection()->executeStatement(
+            'INSERT INTO tag (name) VALUES (:name) ON DUPLICATE KEY UPDATE id = id',
+            ['name' => $name],
+        );
+
+        return self::findByName($em, $name);
+    }
+
+    /**
+     * @throws NoResultException
+     */
+    private static function findByName(EntityManager $em, string $name): self
+    {
+        return $em->createQueryBuilder()
+            ->select('t')
+            ->from(self::class, 't')
+            ->where('t.name = ?1')
+            ->setMaxResults(1)
+            ->setParameter(1, $name)
+            ->getQuery()
+            ->getSingleResult();
     }
 
     public function getId(): int

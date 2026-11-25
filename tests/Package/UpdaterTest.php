@@ -325,6 +325,29 @@ class UpdaterTest extends IntegrationTestCase
         self::assertSame('Bob', $authors[0]['name']);
     }
 
+    public function testKeywordsEqualUnderTheCollationShareOneTag(): void
+    {
+        $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
+        $upstream->setSourceType('git');
+        $upstream->setSourceUrl('https://example.com/test/pkg');
+        $upstream->setSourceReference('abcdef1234567890');
+        // distinct after mb_strtolower(), but the same tag name as far as the collation is concerned
+        $upstream->setKeywords(['aşet', 'aset', 'asset']);
+
+        $this->repositoryMock = $this->createStub(VcsRepository::class);
+        $this->repositoryMock->method('getPackages')->willReturn([$upstream]);
+        $this->repositoryMock->method('getDriver')->willReturn($this->stableDriver());
+
+        // previously threw a UniqueConstraintViolationException on tag_name_idx at flush
+        $this->updater->update($this->ioMock, $this->config, $this->httpDownloader, $this->package, $this->repositoryMock);
+
+        $version = $this->getEM()->getRepository(Version::class)->findOneBy(['name' => 'test/pkg', 'normalizedVersion' => '1.0.0.0']);
+        self::assertNotNull($version);
+        $tagNames = array_map(static fn ($t) => $t->getName(), $version->getTags()->toArray());
+        sort($tagNames);
+        self::assertSame(['asset', 'aşet'], $tagNames);
+    }
+
     public function testHandlesMalformedListShapedSupportAndFunding(): void
     {
         $upstream = new CompletePackage('test/pkg', '1.0.0.0', '1.0.0');
