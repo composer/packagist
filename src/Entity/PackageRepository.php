@@ -148,7 +148,7 @@ class PackageRepository extends ServiceEntityRepository
     /**
      * Sorts in SQL rather than with PHP's SORT_STRING|SORT_FLAG_CASE like the lookups above, because
      * a stream cannot be sorted after the fact. Over the legal package name charset the two orders
-     * differ only in where `_` lands: utf8mb4_unicode_ci puts it before `-`, `.`, `/` and the digits.
+     * differ only in where `_` lands: utf8mb4_0900_ai_ci puts it before `-`, `.`, `/` and the digits.
      *
      * @return \Generator<int, string>
      */

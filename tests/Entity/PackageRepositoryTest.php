@@ -80,7 +80,7 @@ class PackageRepositoryTest extends IntegrationTestCase
 
     public function testIteratePackageNamesByTypeAndVendorSortsInSql(): void
     {
-        // Pins the ordering contract for the streamed branch: utf8mb4_unicode_ci, not PHP's
+        // Pins the ordering contract for the streamed branch: utf8mb4_0900_ai_ci, not PHP's
         // SORT_STRING|SORT_FLAG_CASE, which would put `_` after the digits rather than first.
         $packages = [];
         foreach (['sortvendor/ab', 'sortvendor/a-b', 'sortvendor/a_b', 'sortvendor/a0b', 'sortvendor/a.b'] as $name) {
@@ -568,9 +568,7 @@ class PackageRepositoryTest extends IntegrationTestCase
 
     public function testProvidedPackageNameIsIndexed(): void
     {
-        // findProviders() filters link_provide on packageName and had no index to use, so it scanned
-        // all ~78k rows on every /providers/{name} request. This guards the mapping; putting it on
-        // prod is migrations/2026_09_link_provide_name_idx.sql, which this cannot see.
+        // Without this index, findProviders() scanned all ~78k rows on every /providers/{name} request
         $indexes = self::getEM()->getConnection()->createSchemaManager()->listTableIndexes('link_provide');
 
         $indexedColumns = array_map(static fn ($index): array => $index->getColumns(), array_values($indexes));
@@ -761,9 +759,7 @@ class PackageRepositoryTest extends IntegrationTestCase
 
     public function testDumpRequestedAtIsIndexed(): void
     {
-        // The bounded select ranges on dumpRequestedAt, which dumped2_requested_crawled_frozen_idx
-        // cannot lead. Guards the mapping; prod gets it from
-        // migrations/2026_09_package_dump_requested_idx.sql, which this cannot see.
+        // The bounded select ranges on dumpRequestedAt, which dumped2_requested_crawled_frozen_idx cannot lead
         $indexes = self::getEM()->getConnection()->createSchemaManager()->listTableIndexes('package');
 
         $indexedColumns = array_map(static fn ($index): array => $index->getColumns(), array_values($indexes));

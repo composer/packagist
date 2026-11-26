@@ -29,7 +29,7 @@ class WebAuthnCredential
     public readonly string $id;
 
     #[ORM\ManyToOne(inversedBy: 'webAuthnCredentials')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE', foreignKeyName: 'webauthn_user_fk')]
     public readonly User $user;
 
     #[ORM\Column(length: 100)]

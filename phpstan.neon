@@ -23,6 +23,7 @@ parameters:
 
     paths:
         - src/
+        - migrations/
 
     symfony:
         containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml

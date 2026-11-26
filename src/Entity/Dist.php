@@ -46,7 +46,7 @@ class Dist
      * @param array<non-empty-string, non-empty-string> $hashes
      */
     public function __construct(
-        #[ORM\OneToOne(targetEntity: Version::class, inversedBy: 'dist')]
+        #[ORM\OneToOne(targetEntity: Version::class)]
         #[ORM\JoinColumn('version_id', nullable: false)]
         public readonly Version $version,
         #[ORM\Column(type: 'integer', options: ['unsigned' => true])]

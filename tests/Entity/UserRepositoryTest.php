@@ -30,9 +30,7 @@ class UserRepositoryTest extends IntegrationTestCase
 
     public function testGitHubIdIsIndexed(): void
     {
-        // findOneBy(['githubId' => ...]) runs on every GitHub login and had no index to use, so it
-        // read all 875,663 rows of fos_user every time. This guards the mapping; putting it on prod
-        // is migrations/2026_09_user_github_id_idx.sql, which this cannot see.
+        // Without this index, each GitHub login scanned the entire fos_user table to find the account
         $indexes = self::getEM()->getConnection()->createSchemaManager()->listTableIndexes('fos_user');
 
         $indexedColumns = array_map(static fn ($index): array => $index->getColumns(), array_values($indexes));

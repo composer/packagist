@@ -32,6 +32,7 @@
         "composer/composer": "^2.11@dev",
         "composer/pcre": "^3.0",
         "doctrine/doctrine-bundle": "^3",
+        "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3",
         "endroid/qr-code": "^6",
         "graze/dog-statsd": "^1",
