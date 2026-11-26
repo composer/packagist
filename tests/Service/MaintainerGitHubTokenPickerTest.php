@@ -18,6 +18,7 @@ use App\Tests\Fixtures\Fixtures;
 use App\Util\GitHubTokenRefusal;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 
 class MaintainerGitHubTokenPickerTest extends TestCase
 {
@@ -75,6 +76,23 @@ class MaintainerGitHubTokenPickerTest extends TestCase
 
         self::assertNull($picker->pick($package, 'acme'));
         self::assertSame('bob-token', $picker->pick($package, 'other-org')?->token);
+    }
+
+    public function testUsernameWithReservedCacheKeyCharacters(): void
+    {
+        $package = self::createPackage('acme/lib', 'https://github.com/acme/lib', maintainers: [self::maintainer('amc:)@{x}', 'bob-token')]);
+        // ArrayAdapter only validates keys in assert(), the prod adapters always do
+        $cache = new FilesystemAdapter('token-picker-test-'.bin2hex(random_bytes(4)));
+        $picker = new MaintainerGitHubTokenPicker($cache);
+
+        $bob = $picker->pick($package, 'acme');
+        self::assertNotNull($bob);
+        $picker->recordRefusal($bob, GitHubTokenRefusal::IpAllowList);
+        $picker->recordRefusal($bob, GitHubTokenRefusal::SamlSso);
+
+        self::assertNull($picker->pick($package, 'acme'));
+        self::assertSame('bob-token', $picker->pick($package, 'other-org')?->token);
+        $cache->clear();
     }
 
     public function testSamlSsoSkipOnlyAppliesToThatOwner(): void

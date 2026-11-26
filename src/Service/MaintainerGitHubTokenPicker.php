@@ -74,12 +74,18 @@ class MaintainerGitHubTokenPicker
 
     private static function allowListKey(MaintainerGitHubToken $token): string
     {
-        return 'github_ip_allow_list_'.$token->username.'_'.$token->owner;
+        return 'github_ip_allow_list_'.self::keySuffix($token);
     }
 
     private static function samlSsoKey(MaintainerGitHubToken $token): string
     {
-        return 'github_saml_sso_'.$token->username.'_'.$token->owner;
+        return 'github_saml_sso_'.self::keySuffix($token);
+    }
+
+    // usernames may contain PSR-6 reserved characters like @:(){}
+    private static function keySuffix(MaintainerGitHubToken $token): string
+    {
+        return rawurlencode($token->username).'_'.rawurlencode($token->owner);
     }
 
     // keyed on the token so linking a new one takes effect right away
