@@ -15,6 +15,7 @@ namespace App\Controller;
 use App\Log\Display\TransparencyLogDisplayFactory;
 use App\Log\TransparencyLogEventType;
 use App\Entity\PackageTransparencyLogRepository;
+use App\Entity\UserRepository;
 use App\QueryFilter\QueryFilterInterface;
 use App\QueryFilter\TransparencyLog\ActorFilter;
 use App\QueryFilter\TransparencyLog\DateTimeFromFilter;
@@ -39,13 +40,14 @@ class TransparencyLogController extends Controller
 
     #[IsGranted('ROLE_USER')]
     #[Route(path: '/transparency-log', name: 'view_transparency_log', methods: ['GET'])]
-    public function viewTransparencyLog(Request $request, PackageTransparencyLogRepository $repository, TransparencyLogDisplayFactory $displayFactory, PositionResolver $positionResolver): Response
+    public function viewTransparencyLog(Request $request, PackageTransparencyLogRepository $repository, TransparencyLogDisplayFactory $displayFactory, PositionResolver $positionResolver, UserRepository $userRepository): Response
     {
         // Auditors see everything; the temporarily-hidden types stay hidden for everyone else.
         $includeHiddenTypes = $this->isGranted('ROLE_AUDITOR');
 
         $dateTimeFromFilter = DateTimeFromFilter::fromQuery($request->query);
         $dateTimeToFilter = DateTimeToFilter::fromQuery($request->query);
+        $userIdFilter = UserIdFilter::fromQuery($request->query);
 
         // An account event has one entry per package the user maintains. Views filtered by vendor,
         // package name or event (the "and N more packages" link) show every entry, all other views
@@ -65,7 +67,7 @@ class TransparencyLogController extends Controller
             EventTypeFilter::fromQuery($request->query, $includeHiddenTypes),
             ActorFilter::fromQuery($request->query),
             UserFilter::fromQuery($request->query),
-            UserIdFilter::fromQuery($request->query),
+            $userIdFilter,
             ...$packageScopedFilters,
             $dateTimeFromFilter,
             $dateTimeToFilter,
@@ -98,6 +100,7 @@ class TransparencyLogController extends Controller
             'selectedFilters' => $selectedFilters,
             'dateTimeFromFilter' => $dateTimeFromFilter,
             'dateTimeToFilter' => $dateTimeToFilter,
+            'filteredAccount' => $userIdFilter->getSelectedValue() !== null ? $userRepository->find($userIdFilter->getSelectedValue()) : null,
         ]);
     }
 
